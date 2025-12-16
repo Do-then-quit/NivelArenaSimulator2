@@ -1,4 +1,5 @@
 import { Card, CardType, Attribute } from './types';
+import { createEntryEffect } from './effects';
 
 export const DUMMY_CARDS: Card[] = [
     {
@@ -47,12 +48,25 @@ export const DUMMY_CARDS: Card[] = [
         cost: 1,
         text: 'Deal 2000 damage to a unit.',
     },
+    {
+        id: 'U004',
+        name: 'Supply Soldier',
+        type: CardType.UNIT,
+        attribute: Attribute.EARTH,
+        cost: 1,
+        power: 1000,
+        hit: 1,
+        text: '[Entry] Draw 1 card.',
+        effects: [
+            createEntryEffect('Draw 1 card', 'DRAW', 1)
+        ]
+    },
 ];
 
 export function createDeck(): Card[] {
     const deck: Card[] = [];
     for (let i = 0; i < 40; i++) {
-        const template = DUMMY_CARDS[1 + (i % 4)]; // Cycle through units/skills
+        const template = DUMMY_CARDS[1 + (i % 5)]; // Cycle through units/skills
         deck.push({ ...template, id: `${template.id}_${i}` });
     }
     return deck;

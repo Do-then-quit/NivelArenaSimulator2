@@ -24,6 +24,39 @@ export enum Zone {
     TRASH = 'TRASH',
 }
 
+export enum EffectType {
+    ENTRY = 'ENTRY',         // Enters play
+    PASSIVE = 'PASSIVE',     // Always active while in zone
+    ACTIVE = 'ACTIVE',       // Ignition/Activated effect
+    ATTACKER = 'ATTACKER',   // When attacking
+    DEFENDER = 'DEFENDER',   // When defending
+    EXIT = 'EXIT',           // When leaving play/destroyed
+    TRIGGER = 'TRIGGER',     // Damage trigger
+    TURN_START = 'TURN_START',
+    TURN_END = 'TURN_END',
+    ESACPE = 'ESCAPE',       // Specific keyword
+}
+
+export interface EffectCondition {
+    type: string; // e.g., 'ALWAYS', 'HAS_ITEM', 'LEADER_LEVEL', 'COST_COMPARISON'
+    value?: any;
+}
+
+export interface Effect {
+    type: EffectType;
+    condition?: EffectCondition;
+    description: string;
+    // We will use a flexible action handler system.
+    // In a real robust system, this might be a structured object (e.g. { action: 'DRAW', value: 1 })
+    // For this simulator, we might use a function callback or a structured identifier handled by the engine.
+    // Let's go with a structured identifier for serializability and defined logic.
+    action: {
+        type: string; // e.g. 'DRAW', 'POWER_BUFF', 'DESTROY', 'DAMAGE'
+        value?: any;
+        target?: string; // 'SELF', 'OPPONENT', 'ALL_UNITS'
+    };
+}
+
 export enum Phase {
     LEVEL_UP = 'LEVEL_UP',
     DRAW = 'DRAW',
@@ -43,6 +76,7 @@ export interface Card {
     hit?: number;   // Only for Units
     text: string;
     imageUrl?: string;
+    effects?: Effect[];
 }
 
 export interface UnitZoneState {

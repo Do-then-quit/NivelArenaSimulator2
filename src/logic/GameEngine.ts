@@ -1,9 +1,12 @@
-import { GameState, PlayerState, Phase, Card, CardType, UnitZoneState } from './types';
+import { GameState, PlayerState, Phase, Card, CardType, UnitZoneState, EffectType } from './types';
+import { EffectManager } from './effects';
 
 export class GameEngine {
     state: GameState;
+    effectManager: EffectManager;
 
     constructor(player1Name: string, player2Name: string, deck1: Card[], deck2: Card[], leader1: Card, leader2: Card) {
+        this.effectManager = new EffectManager(this);
         this.state = {
             players: [
                 this.createPlayer(player1Name, deck1, leader1),
@@ -163,6 +166,15 @@ export class GameEngine {
         this.currentPlayer.hand.splice(cardIndex, 1);
         zone.unit = card;
         zone.hasPlacedUnitThisTurn = true;
+
+        // Trigger Entry Effects
+        this.effectManager.trigger(EffectType.ENTRY, {
+            sourceCard: card,
+            player: this.currentPlayer,
+            opponent: this.opponentPlayer,
+            unitZone: zone,
+            machine: this
+        });
     }
 
     attack(attackerZoneIndex: number) {
@@ -171,6 +183,15 @@ export class GameEngine {
         if (!attackerZone.unit || attackerZone.hasAttacked) return;
 
         attackerZone.hasAttacked = true;
+
+        // Trigger Attacker Effects
+        this.effectManager.trigger(EffectType.ATTACKER, {
+            sourceCard: attackerZone.unit,
+            player: this.currentPlayer,
+            opponent: this.opponentPlayer,
+            unitZone: attackerZone,
+            machine: this
+        });
 
         // Lane Alignment: Player 1's Lane 0 faces Player 2's Lane 2 (assuming 3 lanes)
         const blockerZoneIndex = 2 - attackerZoneIndex;
@@ -196,6 +217,15 @@ export class GameEngine {
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
         if (shouldBlock && blockerZone.unit) {
+            // Trigger Defender Effects
+            this.effectManager.trigger(EffectType.DEFENDER, {
+                sourceCard: blockerZone.unit,
+                player: this.opponentPlayer,
+                opponent: this.currentPlayer,
+                unitZone: blockerZone,
+                machine: this
+            });
+
             // Combat
             this.resolveCombat(attackerZone, blockerZone);
         } else {
@@ -221,8 +251,17 @@ export class GameEngine {
         }
     }
 
-    private destroyUnit(player: PlayerState, zone: UnitZoneState) {
+    public destroyUnit(player: PlayerState, zone: UnitZoneState) {
         if (zone.unit) {
+            // Trigger Exit Effects
+            this.effectManager.trigger(EffectType.EXIT, {
+                sourceCard: zone.unit,
+                player: player,
+                opponent: player === this.state.players[0] ? this.state.players[1] : this.state.players[0], // simplified check for opponent
+                unitZone: zone,
+                machine: this
+            });
+
             player.trash.push(zone.unit);
             zone.items.forEach(i => player.trash.push(i));
             zone.unit = null;
@@ -230,7 +269,7 @@ export class GameEngine {
         }
     }
 
-    private dealDamage(player: PlayerState, amount: number) {
+    public dealDamage(player: PlayerState, amount: number) {
         for (let i = 0; i < amount; i++) {
             if (player.deck.length === 0) {
                 this.state.winner = this.state.turnPlayerIndex === 0 ? this.state.players[0].id : this.state.players[1].id;
