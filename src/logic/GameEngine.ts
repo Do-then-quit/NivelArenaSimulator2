@@ -1,4 +1,4 @@
-import { GameState, PlayerState, Phase, Card, CardType, UnitZoneState, EffectType } from './types';
+import { GameState, PlayerState, Phase, Card, CardType, UnitZoneState, ActivationCondition } from './types';
 import { EffectManager } from './effects';
 
 export class GameEngine {
@@ -145,22 +145,33 @@ export class GameEngine {
             return;
         }
 
-        const currentSize = this.currentPlayer.leaderLevel + this.currentPlayer.damage.length;
-        const currentFieldCost = this.calculateFieldCost(this.currentPlayer);
-        if (currentFieldCost + card.cost > currentSize) {
-            console.log("Cost exceeds Size limit");
-            return;
-        }
+        let costToSubtract = 0;
+        let isUpgrade = false;
 
         if (zone.unit) {
             if (card.cost > zone.unit.cost) {
-                this.currentPlayer.trash.push(zone.unit);
-                zone.items.forEach(i => this.currentPlayer.trash.push(i));
-                zone.items = [];
+                isUpgrade = true;
+                // 6.4.1.1.2.1 Subtract cost of existing unit and its items when upgrading
+                costToSubtract = zone.unit.cost + zone.items.reduce((sum, item) => sum + item.cost, 0);
             } else {
                 console.log("Cannot place unit here (occupied and not upgradeable)");
                 return;
             }
+        }
+
+        const currentSize = this.currentPlayer.leaderLevel + this.currentPlayer.damage.length;
+        const currentFieldCost = this.calculateFieldCost(this.currentPlayer);
+
+        if (currentFieldCost - costToSubtract + card.cost > currentSize) {
+            console.log("Cost exceeds Size limit");
+            return;
+        }
+
+        if (isUpgrade && zone.unit) {
+            // Trash existing unit and items
+            this.currentPlayer.trash.push(zone.unit);
+            zone.items.forEach(i => this.currentPlayer.trash.push(i));
+            zone.items = [];
         }
 
         this.currentPlayer.hand.splice(cardIndex, 1);
@@ -168,11 +179,35 @@ export class GameEngine {
         zone.hasPlacedUnitThisTurn = true;
 
         // Trigger Entry Effects
-        this.effectManager.trigger(EffectType.ENTRY, {
+        this.effectManager.processEffects(ActivationCondition.ENTRY, {
             sourceCard: card,
             player: this.currentPlayer,
             opponent: this.opponentPlayer,
             unitZone: zone,
+            machine: this
+        });
+    }
+
+    playSkill(cardIndex: number) {
+        if (this.state.phase !== Phase.MAIN) return;
+        const card = this.currentPlayer.hand[cardIndex];
+        if (!card || card.type !== CardType.SKILL) return;
+
+        const currentSize = this.currentPlayer.leaderLevel + this.currentPlayer.damage.length;
+        const currentFieldCost = this.calculateFieldCost(this.currentPlayer);
+        if (currentFieldCost + card.cost > currentSize) {
+            console.log("Cost exceeds Size limit");
+            return;
+        }
+
+        this.currentPlayer.hand.splice(cardIndex, 1);
+        this.currentPlayer.skillZone.push(card);
+
+        // Trigger Main effects of Skill (usually ENTRY activation)
+        this.effectManager.processEffects(ActivationCondition.ENTRY, {
+            sourceCard: card,
+            player: this.currentPlayer,
+            opponent: this.opponentPlayer,
             machine: this
         });
     }
@@ -185,7 +220,7 @@ export class GameEngine {
         attackerZone.hasAttacked = true;
 
         // Trigger Attacker Effects
-        this.effectManager.trigger(EffectType.ATTACKER, {
+        this.effectManager.processEffects(ActivationCondition.ATTACKER, {
             sourceCard: attackerZone.unit,
             player: this.currentPlayer,
             opponent: this.opponentPlayer,
@@ -218,7 +253,7 @@ export class GameEngine {
 
         if (shouldBlock && blockerZone.unit) {
             // Trigger Defender Effects
-            this.effectManager.trigger(EffectType.DEFENDER, {
+            this.effectManager.processEffects(ActivationCondition.DEFENDER, {
                 sourceCard: blockerZone.unit,
                 player: this.opponentPlayer,
                 opponent: this.currentPlayer,
@@ -254,7 +289,7 @@ export class GameEngine {
     public destroyUnit(player: PlayerState, zone: UnitZoneState) {
         if (zone.unit) {
             // Trigger Exit Effects
-            this.effectManager.trigger(EffectType.EXIT, {
+            this.effectManager.processEffects(ActivationCondition.EXIT, {
                 sourceCard: zone.unit,
                 player: player,
                 opponent: player === this.state.players[0] ? this.state.players[1] : this.state.players[0], // simplified check for opponent

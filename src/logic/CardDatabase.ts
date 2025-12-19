@@ -1,5 +1,4 @@
-import { Card, CardType, Attribute } from './types';
-import { createEntryEffect } from './effects';
+import { Card, CardType, Attribute, ActivationCondition } from './types';
 
 export const DUMMY_CARDS: Card[] = [
     {
@@ -37,7 +36,14 @@ export const DUMMY_CARDS: Card[] = [
         text: "엑시트 : 자신의 리더 레벨+1.",
         traits: "이펙트 / 테트라",
         keywords: "엑시트",
-        imageUrl: "/assets/cards/ST02-003.jpg"
+        imageUrl: "/assets/cards/ST02-003.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.EXIT,
+                description: "자신의 리더 레벨+1.",
+                action: { type: 'GAIN_LEVEL', value: 1 }
+            }
+        ]
     },
     {
         id: "ST02-004",
@@ -63,7 +69,14 @@ export const DUMMY_CARDS: Card[] = [
         text: "엔트리 : 자신의 리더 레벨+1.",
         traits: "이펙트 / 테트라",
         keywords: "엔트리",
-        imageUrl: "/assets/cards/ST02-005.jpg"
+        imageUrl: "/assets/cards/ST02-005.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.ENTRY,
+                description: "자신의 리더 레벨+1.",
+                action: { type: 'GAIN_LEVEL', value: 1 }
+            }
+        ]
     },
     {
         id: "ST02-006",
@@ -90,6 +103,7 @@ export const DUMMY_CARDS: Card[] = [
         traits: "이펙트 / 엘리시온",
         keywords: "액티브",
         imageUrl: "/assets/cards/ST02-007.jpg"
+        // Active and Trigger keywords are complex, skipping for now
     },
     {
         id: "ST02-008",
@@ -163,7 +177,14 @@ export const DUMMY_CARDS: Card[] = [
         text: "자신의 리더 레벨+1.",
         traits: "-",
         keywords: "-",
-        imageUrl: "/assets/cards/ST02-013.jpg"
+        imageUrl: "/assets/cards/ST02-013.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.ENTRY,
+                description: "자신의 리더 레벨+1.",
+                action: { type: 'GAIN_LEVEL', value: 1 }
+            }
+        ]
     },
     {
         id: "ST02-014",

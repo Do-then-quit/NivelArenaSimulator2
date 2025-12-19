@@ -1,5 +1,5 @@
 import { GameEngine } from './GameEngine';
-import { Effect, EffectType, PlayerState } from './types';
+import { ActivationCondition, Effect, UnitZoneState } from './types';
 
 export class EffectManager {
     private engine: GameEngine;
@@ -8,31 +8,24 @@ export class EffectManager {
         this.engine = engine;
     }
 
-    // Trigger effects of a specific type for a specific card/source
-    trigger(type: EffectType, context: any) {
-        // This is a simplified trigger. In a full system, we'd gather all valid effects, sort them, and execute.
-        // For this simulator, we'll check the source card's effects.
-
+    /**
+     * Process effects for a specific activation condition.
+     * System-level "triggering" renamed to avoid confusion with in-game "Trigger" keyword.
+     */
+    processEffects(activation: ActivationCondition, context: any) {
         const { sourceCard } = context;
 
         if (!sourceCard || !sourceCard.effects) return;
 
         sourceCard.effects.forEach((effect: Effect) => {
-            if (effect.type === type) {
+            if (effect.activation === activation) {
                 if (this.checkCondition(effect, context)) {
-                    this.resolve(effect, context);
+                    if (this.payCost(effect, context)) {
+                        this.resolve(effect, context);
+                    }
                 }
             }
         });
-    }
-
-    // Trigger all passive effects (re-calculate stat buffs, etc.)
-    // This typically runs every state update or when specific events happen.
-    // For simplicity, we might call this before resolving combat or drawing UI.
-    applyPassives(_player: PlayerState) {
-        // Reset buffs first? In this simple engine, maybe we calculate dynamic power on the fly.
-        // But let's assume we are modifying UnitZoneState temporarily or using a getter.
-        // For this task, let's focus on Event triggers first (Entry, Attack, etc.)
     }
 
     private checkCondition(effect: Effect, context: any): boolean {
@@ -46,8 +39,26 @@ export class EffectManager {
             case 'LEADER_LEVEL':
                 return player.leaderLevel >= value;
             case 'HAS_ITEM':
-                return context.unitZone && context.unitZone.items.length > 0;
-            // Add more conditions as needed
+                return (context.unitZone as UnitZoneState)?.items.length > 0;
+            default: return true;
+        }
+    }
+
+    private payCost(effect: Effect, context: any): boolean {
+        if (!effect.cost) return true;
+
+        const { type, value } = effect.cost;
+        const { player } = context;
+
+        switch (type) {
+            case 'NONE': return true;
+            case 'TRASH_HAND':
+                if (player.hand.length >= value) {
+                    // Logic to select cards to trash would go here.
+                    // For now, let's assume it's the first N cards or handled by the engine.
+                    return true;
+                }
+                return false;
             default: return true;
         }
     }
@@ -60,26 +71,25 @@ export class EffectManager {
 
         switch (action.type) {
             case 'DRAW':
-                this.engine.drawCard(player === this.engine.state.players[0] ? 0 : 1, action.value);
+                const drawCount = action.value || 1;
+                const pIdx = this.engine.state.players.indexOf(player);
+                this.engine.drawCard(pIdx, drawCount);
                 break;
-            case 'POWER_BUFF':
-                // This would need a way to persist buffs. 
-                // For now, let's assume it's a "Until End of Turn" buff if it's an Action,
-                // or a permanent change if it's an instantaneous effect? 
-                // Actually, Power Buffs are usually Passives or "Until End of Turn".
-                // Let's implement a simple "Heal" or "Damage" for now as they are instant.
+            case 'GAIN_LEVEL':
+                player.leaderLevel += (action.value || 1);
+                if (player.leaderLevel > 10) player.leaderLevel = 10;
                 break;
             case 'DAMAGE':
-                // Deal damage to opponent
-                // We need to access GameEngine's dealDamage. 
-                // We can expose dealDamage as public or use a method on Engine.
-                // For now, let's cast engine to any to access private methods or make them public in next step.
-                (this.engine as any).dealDamage(opponent, action.value);
+                this.engine.dealDamage(opponent, action.value);
                 break;
             case 'DESTROY_SELF':
                 if (unitZone) {
-                    (this.engine as any).destroyUnit(player, unitZone);
+                    this.engine.destroyUnit(player, unitZone);
                 }
+                break;
+            case 'DESTROY_TARGET':
+                // This would need target selection logic
+                console.log(`Destroy target triggered for ${action.value} cost/condition`);
                 break;
             default:
                 console.warn(`Unknown action type: ${action.type}`);
@@ -90,7 +100,7 @@ export class EffectManager {
 // Factory functions for creating effects easily
 export function createEntryEffect(description: string, actionType: string, actionValue: any): Effect {
     return {
-        type: EffectType.ENTRY,
+        activation: ActivationCondition.ENTRY,
         description,
         action: { type: actionType, value: actionValue }
     };
@@ -98,7 +108,7 @@ export function createEntryEffect(description: string, actionType: string, actio
 
 export function createExitEffect(description: string, actionType: string, actionValue: any): Effect {
     return {
-        type: EffectType.EXIT,
+        activation: ActivationCondition.EXIT,
         description,
         action: { type: actionType, value: actionValue }
     };
@@ -106,7 +116,7 @@ export function createExitEffect(description: string, actionType: string, action
 
 export function createAttackerEffect(description: string, actionType: string, actionValue: any): Effect {
     return {
-        type: EffectType.ATTACKER,
+        activation: ActivationCondition.ATTACKER,
         description,
         action: { type: actionType, value: actionValue }
     };

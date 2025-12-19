@@ -65,3 +65,21 @@ Core Tech: TypeScript, Vite.
 
 ---
 *Created by Antigravity based on rules_text.txt and current codebase.*
+
+## 5. Card Effect System
+
+### Design Principle: Trigger-Cost-Action
+To avoid hardcoding individual card effects, we use a structured data model:
+- **Activation (Trigger)**: When the effect occurs (e.g., `ENTRY`, `EXIT`, `ATTACKER`).
+- **Condition**: Requirements for the effect to activate (e.g., `LEADER_LEVEL >= 3`).
+- **Cost**: Resources spent to activate (e.g., `TRASH_HAND: 1`).
+- **Action**: The actual result (e.g., `GAIN_LEVEL: 1`, `DRAW: 1`).
+
+### Naming Conventions
+- **System Level**: We use `processEffects` and `ActivationCondition` to refer to the technical "triggering" of code.
+- **Game Level**: The keyword **"TRIGGER"** in NivelArena refers specifically to effects that activate when a card is revealed during damage check (`DAMAGE_TRIGGER`).
+
+### Implementation Details
+- Located in `src/logic/effects.ts` and managed by `EffectManager`.
+- Actions are resolved through common handlers to ensure consistency.
+- Costs must be validated and paid before actions resolve.

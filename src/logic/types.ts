@@ -24,17 +24,16 @@ export enum Zone {
     TRASH = 'TRASH',
 }
 
-export enum EffectType {
+export enum ActivationCondition {
     ENTRY = 'ENTRY',         // Enters play
     PASSIVE = 'PASSIVE',     // Always active while in zone
     ACTIVE = 'ACTIVE',       // Ignition/Activated effect
     ATTACKER = 'ATTACKER',   // When attacking
     DEFENDER = 'DEFENDER',   // When defending
     EXIT = 'EXIT',           // When leaving play/destroyed
-    TRIGGER = 'TRIGGER',     // Damage trigger
+    DAMAGE_TRIGGER = 'DAMAGE_TRIGGER', // Game keyword "TRIGGER" (when dealt as damage)
     TURN_START = 'TURN_START',
     TURN_END = 'TURN_END',
-    ESACPE = 'ESCAPE',       // Specific keyword
 }
 
 export interface EffectCondition {
@@ -42,19 +41,23 @@ export interface EffectCondition {
     value?: any;
 }
 
+export interface EffectCost {
+    type: string; // e.g., 'TRASH_HAND', 'RETIRE_UNIT', 'NONE'
+    value?: any;
+}
+
+export interface EffectAction {
+    type: string; // e.g. 'DRAW', 'POWER_BUFF', 'DESTROY', 'DAMAGE', 'GAIN_LEVEL'
+    value?: any;
+    target?: string; // e.g. 'SELF', 'OPPONENT', 'CHOICE_UNIT', 'ALL_MY_UNITS'
+}
+
 export interface Effect {
-    type: EffectType;
+    activation: ActivationCondition;
     condition?: EffectCondition;
+    cost?: EffectCost;
+    action: EffectAction;
     description: string;
-    // We will use a flexible action handler system.
-    // In a real robust system, this might be a structured object (e.g. { action: 'DRAW', value: 1 })
-    // For this simulator, we might use a function callback or a structured identifier handled by the engine.
-    // Let's go with a structured identifier for serializability and defined logic.
-    action: {
-        type: string; // e.g. 'DRAW', 'POWER_BUFF', 'DESTROY', 'DAMAGE'
-        value?: any;
-        target?: string; // 'SELF', 'OPPONENT', 'ALL_UNITS'
-    };
 }
 
 export enum Phase {
