@@ -193,8 +193,8 @@ export class GameEngine {
             machine: this
         });
 
-        // Lane Alignment: Player 1's Lane 0 faces Player 2's Lane 2 (assuming 3 lanes)
-        const blockerZoneIndex = 2 - attackerZoneIndex;
+        // Lane Alignment: In mirrored layout, Lane 0 faces Lane 0
+        const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
         if (blockerZone.unit) {
@@ -213,7 +213,7 @@ export class GameEngine {
         const attackerZoneIndex = this.state.pendingAttackerIndex;
         const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
 
-        const blockerZoneIndex = 2 - attackerZoneIndex;
+        const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
         if (shouldBlock && blockerZone.unit) {

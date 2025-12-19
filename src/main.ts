@@ -22,17 +22,20 @@ function render() {
     app.innerHTML = `
     <div class="game-container">
       <div class="header">
-        <h1>NivelArena Simulator</h1>
-        <div class="status-bar">
-          <span>Turn: ${game.state.turnCount}</span>
-          <span>Phase: ${game.state.phase}</span>
-          <span>Turn Player: ${game.currentPlayer.name}</span>
-        </div>
-        <button id="next-phase" ${game.state.phase === Phase.BLOCK ? 'disabled' : ''}>Next Phase</button>
+        <h1>NivelArena</h1>
       </div>
 
       ${renderPlayer(opponent, true)}
       ${renderPlayer(currentPlayer, false)}
+
+      <div class="game-controls">
+        <div class="status-bar">
+          <div class="status-item"><span>Turn</span> <strong>${game.state.turnCount}</strong></div>
+          <div class="status-item"><span>Phase</span> <strong>${game.state.phase}</strong></div>
+          <div class="status-item"><span>Active</span> <strong>${game.currentPlayer.name}</strong></div>
+        </div>
+        <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK ? 'disabled' : ''}>Next Phase</button>
+      </div>
 
       <div class="hand-zone">
           ${currentPlayer.hand.map((c, i) => `
@@ -63,7 +66,7 @@ function renderPlayer(player: any, isOpponent: boolean) {
             <!-- Unit Zones (3) -->
             <div class="units-container">
                 ${player.unitZones.map((z: any, i: number) => {
-        const blockerZoneIndex = 2 - (game.state.pendingAttackerIndex ?? -1);
+        const blockerZoneIndex = (game.state.pendingAttackerIndex ?? -1);
         const isBlockingTarget = game.state.phase === Phase.BLOCK && isOpponent && blockerZoneIndex === i;
         return `
                     <div class="zone unit-zone ${!isOpponent ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
