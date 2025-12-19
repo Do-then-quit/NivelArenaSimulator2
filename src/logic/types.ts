@@ -75,6 +75,8 @@ export interface Card {
     power?: number; // Only for Units
     hit?: number;   // Only for Units
     text: string;
+    traits?: string;
+    keywords?: string;
     imageUrl?: string;
     effects?: Effect[];
 }

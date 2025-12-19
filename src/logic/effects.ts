@@ -29,7 +29,7 @@ export class EffectManager {
     // Trigger all passive effects (re-calculate stat buffs, etc.)
     // This typically runs every state update or when specific events happen.
     // For simplicity, we might call this before resolving combat or drawing UI.
-    applyPassives(player: PlayerState) {
+    applyPassives(_player: PlayerState) {
         // Reset buffs first? In this simple engine, maybe we calculate dynamic power on the fly.
         // But let's assume we are modifying UnitZoneState temporarily or using a getter.
         // For this task, let's focus on Event triggers first (Entry, Attack, etc.)

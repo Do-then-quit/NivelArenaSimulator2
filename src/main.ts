@@ -96,18 +96,21 @@ function renderCard(card: Card) {
     const isUnit = card.type === CardType.UNIT;
     return `
         <div class="card ${card.attribute.toLowerCase()}">
-            <div class="card-top">
-                <span class="card-cost">${card.cost}</span>
-                <span class="card-type-icon">${card.type[0]}</span>
-            </div>
-            <div class="card-name">${card.name}</div>
-            <div class="card-text">${card.text || ''}</div>
-            ${isUnit ? `
-                <div class="card-stats-row">
-                    <span class="stat-power">P:${card.power}</span>
-                    <span class="stat-hit">H:${card.hit}</span>
+            ${card.imageUrl ? `<img src="${card.imageUrl}" class="card-image" alt="${card.name}">` : ''}
+            <div class="card-overlay">
+                <div class="card-top">
+                    <span class="card-cost">${card.cost}</span>
+                    <span class="card-type-icon">${card.type[0]}</span>
                 </div>
-            ` : ''}
+                <div class="card-name">${card.name}</div>
+                <div class="card-text">${card.text || ''}</div>
+                ${isUnit ? `
+                    <div class="card-stats-row">
+                        <span class="stat-power">P:${card.power}</span>
+                        <span class="stat-hit">H:${card.hit}</span>
+                    </div>
+                ` : ''}
+            </div>
         </div>
     `;
 }
