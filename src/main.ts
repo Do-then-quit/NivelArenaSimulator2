@@ -26,65 +26,20 @@ function render() {
         <div class="status-bar">
           <span>Turn: ${game.state.turnCount}</span>
           <span>Phase: ${game.state.phase}</span>
-          <span>Turn Player: ${currentPlayer.name}</span>
+          <span>Turn Player: ${game.currentPlayer.name}</span>
         </div>
         <button id="next-phase" ${game.state.phase === Phase.BLOCK ? 'disabled' : ''}>Next Phase</button>
       </div>
 
-      <!-- Opponent Area (Top) -->
-      <div class="player-area opponent">
-        <div class="hand-zone">Hand: ${opponent.hand.length} cards</div>
-        <div class="field-row">
-            <div class="zone deck-zone">Deck: ${opponent.deck.length}</div>
-            <div class="zone trash-zone">Trash: ${opponent.trash.length}</div>
-            <div class="zone level-zone">Lv: ${opponent.leaderLevel}</div>
-            <div class="zone damage-zone">Dmg: ${opponent.damage.length}</div>
-        </div>
-        <div class="field-row units">
-            ${opponent.unitZones.map((z, i) => {
-        // Correctly highlight the blocker zone based on pending attacker
-        const isBlockingTarget = game.state.phase === Phase.BLOCK && (2 - (game.state.pendingAttackerIndex ?? -1)) === i;
-        return `
-                <div class="zone unit-zone ${isBlockingTarget ? 'blocking-target' : ''}" data-player="opponent" data-index="${i}">
-                    ${z.unit ? renderCard(z.unit) : 'Empty'}
-                    ${z.unit ? `<div class="stats">${z.unit.power} / ${z.unit.hit}</div>` : ''}
-                    ${isBlockingTarget ? `
-                        <div class="block-controls">
-                            <button class="block-btn">Block</button>
-                            <button class="pass-btn">Pass</button>
-                        </div>
-                    ` : ''}
-                </div>
-            `}).join('')}
-        </div>
-      </div>
+      ${renderPlayer(opponent, true)}
+      ${renderPlayer(currentPlayer, false)}
 
-      <hr/>
-
-      <!-- Current Player Area (Bottom) -->
-      <div class="player-area current">
-        <div class="field-row units">
-            ${currentPlayer.unitZones.map((z, i) => `
-                <div class="zone unit-zone interactive drop-zone" data-player="current" data-index="${i}">
-                    ${z.unit ? renderCard(z.unit) : 'Empty'}
-                    ${z.unit ? `<div class="stats">${z.unit.power} / ${z.unit.hit}</div>` : ''}
-                    ${z.unit && game.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
-                </div>
-            `).join('')}
-        </div>
-        <div class="field-row">
-            <div class="zone deck-zone">Deck: ${currentPlayer.deck.length}</div>
-            <div class="zone trash-zone">Trash: ${currentPlayer.trash.length}</div>
-            <div class="zone level-zone">Lv: ${currentPlayer.leaderLevel}</div>
-            <div class="zone damage-zone">Dmg: ${currentPlayer.damage.length}</div>
-        </div>
-        <div class="hand-zone interactive">
-            ${currentPlayer.hand.map((c, i) => `
-                <div class="card-in-hand" draggable="${isMainPhase}" data-index="${i}">
-                    ${renderCard(c)}
-                </div>
-            `).join('')}
-        </div>
+      <div class="hand-zone">
+          ${currentPlayer.hand.map((c, i) => `
+              <div class="card-in-hand" draggable="${isMainPhase}" data-index="${i}">
+                  ${renderCard(c)}
+              </div>
+          `).join('')}
       </div>
     </div>
   `;
@@ -92,19 +47,74 @@ function render() {
     attachListeners();
 }
 
-function renderCard(card: Card) {
+function renderPlayer(player: any, isOpponent: boolean) {
+    return `
+      <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
+        <!-- Level Zone (1) -->
+        <div class="level-zone">
+            ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
+                <div class="level-indicator ${player.leaderLevel >= lv ? 'active' : ''}">${lv}</div>
+            `).join('')}
+            <div class="level-indicator" style="color: #fff; font-size: 0.6rem;">LVL</div>
+        </div>
+
+        <!-- Main Field (2, 3, 4) -->
+        <div class="field-center">
+            <!-- Unit Zones (3) -->
+            <div class="units-container">
+                ${player.unitZones.map((z: any, i: number) => {
+        const blockerZoneIndex = 2 - (game.state.pendingAttackerIndex ?? -1);
+        const isBlockingTarget = game.state.phase === Phase.BLOCK && isOpponent && blockerZoneIndex === i;
+        return `
+                    <div class="zone unit-zone ${!isOpponent ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
+                        ${z.unit ? renderCard(z.unit) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
+                        ${z.unit && !isOpponent && game.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
+                        ${isBlockingTarget ? `
+                            <div class="block-controls">
+                                <button class="block-btn">Block</button>
+                                <button class="pass-btn">Pass</button>
+                            </div>
+                        ` : ''}
+                        ${z.unit ? `<div class="stats">${z.unit.power} / ${z.unit.hit}</div>` : ''}
+                    </div>
+                `}).join('')}
+            </div>
+
+            <!-- Bottom Field (2, 4) -->
+            <div class="bottom-center">
+                <div class="damage-zone">
+                    ${player.damage.map((c: any) => renderCard(c, true)).join('')}
+                    ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
+                </div>
+                <div class="skill-zone">
+                    <span style="color: rgba(255,255,255,0.1); font-weight: bold;">SKILL</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side (5, 6) -->
+        <div class="field-right">
+            <div class="deck-zone">
+                <div class="deck-count">${player.deck.length}</div>
+                <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
+            </div>
+            <div class="trash-zone">
+                ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
+            </div>
+        </div>
+      </div>
+    `;
+}
+
+function renderCard(card: Card, isSmall: boolean = false) {
     const isUnit = card.type === CardType.UNIT;
     return `
-        <div class="card ${card.attribute.toLowerCase()}">
+        <div class="card ${card.attribute.toLowerCase()} ${isSmall ? 'small-card' : ''}">
             ${card.imageUrl ? `<img src="${card.imageUrl}" class="card-image" alt="${card.name}">` : ''}
             <div class="card-overlay">
-                <div class="card-top">
-                    <span class="card-cost">${card.cost}</span>
-                    <span class="card-type-icon">${card.type[0]}</span>
-                </div>
+                <div class="card-cost">${card.cost}</div>
                 <div class="card-name">${card.name}</div>
-                <div class="card-text">${card.text || ''}</div>
-                ${isUnit ? `
+                ${isUnit && !isSmall ? `
                     <div class="card-stats-row">
                         <span class="stat-power">P:${card.power}</span>
                         <span class="stat-hit">H:${card.hit}</span>
