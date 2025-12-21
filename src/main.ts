@@ -3,6 +3,8 @@ import { GameEngine } from './logic/GameEngine';
 import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
 
+import { DebugManager } from './logic/DebugManager';
+
 const deck1 = createDeck();
 const deck2 = createDeck();
 const leader1 = DUMMY_CARDS[0];
@@ -10,11 +12,19 @@ const leader2 = DUMMY_CARDS[0];
 
 const game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2);
 
+// Debug System
+declare global {
+    interface Window {
+        debug: DebugManager;
+    }
+}
+
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function render() {
     const currentPlayer = game.currentPlayer;
     const opponent = game.opponentPlayer;
+
 
     // Helper to determine if a zone is a valid drop target
     const isMainPhase = game.state.phase === Phase.MAIN;
@@ -246,7 +256,7 @@ function attachListeners() {
     if (game.state.interactionMode === 'SELECT_TARGET') {
         const units = document.querySelectorAll('.unit-zone');
         units.forEach(u => {
-            u.addEventListener('click', (e) => {
+            u.addEventListener('click', (_e) => {
                 const el = u as HTMLElement;
                 const zoneIndex = parseInt(el.dataset.index!);
                 const isOpponent = el.dataset.player === 'opponent';
@@ -260,5 +270,8 @@ function attachListeners() {
         });
     }
 }
+
+const debugManager = new DebugManager(game, render);
+window.debug = debugManager;
 
 render();

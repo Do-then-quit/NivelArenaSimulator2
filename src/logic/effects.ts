@@ -1,5 +1,5 @@
 import { GameEngine } from './GameEngine';
-import { ActivationCondition, Effect, UnitZoneState, ActionType, TargetSchema, Card } from './types';
+import { ActivationCondition, Effect, UnitZoneState, TargetSchema } from './types';
 
 export class EffectManager {
     private engine: GameEngine;
@@ -139,9 +139,9 @@ export class EffectManager {
         }
     }
 
-    private checkCondition(effect: Effect, context: any): boolean {
+    private checkCondition(effect: Effect, _context: any): boolean {
         if (!effect.condition) return true;
-        const { type, value } = effect.condition;
+        const { type } = effect.condition;
         // Simple implementation
         if (type === 'ALWAYS') return true;
         return true;
@@ -170,7 +170,7 @@ export class EffectManager {
     private resolveAutoTargets(schema: TargetSchema | undefined, context: any): any[] {
         if (!schema) return []; // No targets needed (Self or Global effect)
 
-        const { player, opponent, unitZone } = context;
+        const { player, opponent } = context;
 
         if (schema.scope === 'SELF') {
             // Return the unit zone of the source card if applicable

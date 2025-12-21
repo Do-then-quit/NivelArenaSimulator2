@@ -455,7 +455,7 @@ export class GameEngine {
         return power;
     }
 
-    public getUnitHit(zone: UnitZoneState, player: PlayerState): number {
+    public getUnitHit(zone: UnitZoneState, _player: PlayerState): number {
         if (!zone.unit) return 0;
         let hit = zone.unit.hit || 0;
 
