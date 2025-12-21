@@ -218,6 +218,19 @@ export class GameEngine {
             return;
         }
 
+        // Validate Targets Existence for Manual Effects
+        if (card.effects) {
+            for (const effect of card.effects) {
+                if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+                    const hasValidTargets = this.checkPotentialTargets(effect.targets.scope);
+                    if (!hasValidTargets) {
+                        console.log(`Cannot play ${card.name}: No valid targets for effect.`);
+                        return;
+                    }
+                }
+            }
+        }
+
         // Move to Skill Zone
         this.currentPlayer.hand.splice(cardIndex, 1);
         this.currentPlayer.skillZone.push(card);
@@ -229,6 +242,26 @@ export class GameEngine {
             opponent: this.opponentPlayer,
             machine: this
         });
+    }
+
+    private checkPotentialTargets(scope: string): boolean {
+        switch (scope) {
+            case 'MY_FIELD':
+                return this.currentPlayer.unitZones.some(z => z.unit !== null);
+            case 'OPP_FIELD':
+                return this.opponentPlayer.unitZones.some(z => z.unit !== null);
+            case 'SHARED_LANE':
+                // Needs units in BOTH slots of the same lane index
+                for (let i = 0; i < 3; i++) {
+                    if (this.currentPlayer.unitZones[i].unit && this.opponentPlayer.unitZones[i].unit) return true;
+                }
+                return false;
+            case 'ALL':
+            case 'BOTH_FIELDS':
+                return this.currentPlayer.unitZones.some(z => z.unit !== null) || this.opponentPlayer.unitZones.some(z => z.unit !== null);
+            default:
+                return true; // Self or other non-unit targets assumed always valid or checked elsewhere
+        }
     }
 
     initiateTargetSelection(effect: any, context: any) {
@@ -469,16 +502,38 @@ export class GameEngine {
 
         const targetPlayer = isOpponentZone ? this.opponentPlayer : this.currentPlayer;
         const targetZone = targetPlayer.unitZones[zoneIndex];
+        const scope = effect.targets?.scope;
 
-        // Basic Validation (Target Exists?)
-        if (effect.targets?.scope === 'SHARED_LANE' || effect.targets?.type === 'ALL') {
-            // For Shared Lane, we might just need the index, handled below
-        } else {
+        // 1. Ownership Scope Validation
+        if (scope === 'MY_FIELD' && isOpponentZone) {
+            console.log("Invalid Target: Must pick your own unit.");
+            return;
+        }
+        if (scope === 'OPP_FIELD' && !isOpponentZone) {
+            console.log("Invalid Target: Must pick opponent's unit.");
+            return;
+        }
+
+        // 2. Unit Existence Validation
+        // For shared lane, we deal with the lane index, but usually user clicks a unit.
+        // We'll trust the checked lane logic.
+        if (scope !== 'SHARED_LANE' && effect.targets?.type === 'UNIT') {
             if (!targetZone.unit) {
-                console.log("Invalid Target: Empty Zone (and simple target expected)");
+                console.log("Invalid Target: Empty Zone.");
                 return;
             }
         }
+
+        // 3. Shared Lane Validation
+        if (scope === 'SHARED_LANE') {
+            const myUnit = this.currentPlayer.unitZones[zoneIndex].unit;
+            const oppUnit = this.opponentPlayer.unitZones[zoneIndex].unit;
+            if (!myUnit || !oppUnit) {
+                console.log("Invalid Target: Lane is not shared (needs units on both sides).");
+                return;
+            }
+        }
+
 
         // If everything good, execute
         // For Shared Lane, we pass the index
