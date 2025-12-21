@@ -95,7 +95,7 @@ export interface UnitZoneState {
 
 export interface Buff {
     id: string; // unique id for removal if needed
-    sourceId: string; // card id that created it
+    sourceCard?: Card; // card that created it (optional for now to be safe, but preferred)
     type: 'POWER' | 'HIT';
     value: number;
     duration: 'TURN_END' | 'PERMANENT';
@@ -121,4 +121,14 @@ export interface GameState {
     turnCount: number;
     winner: string | null;
     pendingAttackerIndex: number | null; // Track who is attacking during BLOCK phase
+    interactionMode: 'NORMAL' | 'SELECT_TARGET';
+    pendingEffect: PendingEffect | null;
+}
+
+export interface PendingEffect {
+    sourceCard: Card;
+    sourcePlayerId: string;
+    actionType: string;
+    actionValue: any;
+    validTargets: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE'; // Simplified target constraint
 }

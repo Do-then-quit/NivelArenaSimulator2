@@ -188,8 +188,10 @@ body {
     background: rgba(156, 39, 176, 0.05);
     border-radius: 12px;
     display: flex;
+    overflow-x: auto;
+    padding: 10px;
+    gap: 8px;
     align-items: center;
-    justify-content: center;
 }
 
 /* --- Right Side (5, 6) --- */

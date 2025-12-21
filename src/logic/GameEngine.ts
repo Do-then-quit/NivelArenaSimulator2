@@ -17,6 +17,8 @@ export class GameEngine {
             turnCount: 1,
             winner: null,
             pendingAttackerIndex: null,
+            interactionMode: 'NORMAL',
+            pendingEffect: null,
         };
         this.startGame();
     }
@@ -221,10 +223,63 @@ export class GameEngine {
             return;
         }
 
+        // Check for Targeted Effects FIRST (Validation Phase)
+        let pendingTargetEffect: { manualEffect: any, validTargets: string } | null = null;
+
+        if (card.effects) {
+            const manualEffect = card.effects.find(e => e.activation === ActivationCondition.ACTIVE || e.activation === ActivationCondition.ENTRY); // Skill usually Entry or Active
+            if (manualEffect && (manualEffect.action.target === 'CHOICE_UNIT' || manualEffect.action.type === 'DESTROY_LANE_LOWEST')) {
+                // Check if valid targets exist (Rule 8.1.3.1.2)
+                let validTargets = 'MY_UNITS'; // Default
+                if (card.id.startsWith('ST02-012')) validTargets = 'MY_UNITS';
+                if (manualEffect.action.type === 'DESTROY_LANE_LOWEST') validTargets = 'SHARED_LANE';
+
+                let hasTarget = false;
+                if (validTargets === 'MY_UNITS') {
+                    hasTarget = this.currentPlayer.unitZones.some(z => z.unit !== null);
+                } else if (validTargets === 'OPP_UNITS') {
+                    hasTarget = this.opponentPlayer.unitZones.some(z => z.unit !== null);
+                } else if (validTargets === 'SHARED_LANE') {
+                    // Check if any lane has BOTH our unit and opponent unit
+                    for (let i = 0; i < 3; i++) {
+                        if (this.currentPlayer.unitZones[i].unit && this.opponentPlayer.unitZones[i].unit) {
+                            hasTarget = true;
+                            break;
+                        }
+                    }
+                } else { // ALL_UNITS
+                    hasTarget = this.currentPlayer.unitZones.some(z => z.unit !== null) || this.opponentPlayer.unitZones.some(z => z.unit !== null);
+                }
+
+                if (!hasTarget) {
+                    console.log("Cannot play skill: No valid targets.");
+                    return;
+                }
+
+                pendingTargetEffect = { manualEffect, validTargets };
+            }
+        }
+
+        // Commit Actions (Move Card)
         this.currentPlayer.hand.splice(cardIndex, 1);
         this.currentPlayer.skillZone.push(card);
 
-        // Trigger Main effects of Skill (usually ENTRY activation)
+        // Execute Effect logic
+        if (pendingTargetEffect) {
+            // Enter Selection Mode
+            this.state.interactionMode = 'SELECT_TARGET';
+            this.state.pendingEffect = {
+                sourceCard: card,
+                sourcePlayerId: this.currentPlayer.id,
+                actionType: pendingTargetEffect.manualEffect.action.type,
+                actionValue: pendingTargetEffect.manualEffect.action.value,
+                validTargets: pendingTargetEffect.validTargets as any
+            };
+            console.log("Entered Selection Mode for " + card.name);
+            return; // Pause here, wait for selection
+        }
+
+        // Trigger Auto-Effects (like Teacher's Grace)
         this.effectManager.processEffects(ActivationCondition.ENTRY, {
             sourceCard: card,
             player: this.currentPlayer,
@@ -433,5 +488,86 @@ export class GameEngine {
         });
 
         return hit;
+    }
+
+
+    public selectTarget(zoneIndex: number, isOpponentZone: boolean) {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+
+        const targetPlayer = isOpponentZone ? this.opponentPlayer : this.currentPlayer;
+        const targetZone = targetPlayer.unitZones[zoneIndex];
+
+        // Validate Target
+        if (!targetZone.unit) {
+            console.log("Invalid Target: Empty Zone");
+            return;
+        }
+
+        // Validate Target Ownership
+        const effect = this.state.pendingEffect;
+        if (effect.validTargets === 'MY_UNITS') {
+            if (isOpponentZone) {
+                console.log("Invalid Target: Must be your unit");
+                return;
+            }
+        } else if (effect.validTargets === 'OPP_UNITS') {
+            if (!isOpponentZone) {
+                console.log("Invalid Target: Must be opponent unit");
+                return;
+            }
+        } else if (effect.validTargets === 'SHARED_LANE') {
+            // For SHARED_LANE, clicking EITHER unit in the lane is fine, but the lane MUST have both.
+            const myUnit = this.currentPlayer.unitZones[zoneIndex].unit;
+            const oppUnit = this.opponentPlayer.unitZones[zoneIndex].unit;
+            if (!myUnit || !oppUnit) {
+                console.log("Invalid Target: Lane must have units from both players.");
+                return;
+            }
+        }
+
+        switch (effect.actionType) {
+            case 'BUFF_TARGET':
+                const buffType = 'POWER'; // Simplified, could be params
+                const duration = 'TURN_END';
+                targetZone.buffs.push({
+                    id: Math.random().toString(36),
+                    sourceCard: effect.sourceCard,
+                    type: buffType,
+                    value: effect.actionValue,
+                    duration: duration
+                });
+                console.log(`Applied Buff: ${effect.actionValue} to ${targetZone.unit.name}`);
+                break;
+            case 'DESTROY_LANE_LOWEST':
+                const myZ = this.currentPlayer.unitZones[zoneIndex];
+                const oppZ = this.opponentPlayer.unitZones[zoneIndex];
+
+                const myPower = this.getUnitPower(myZ, this.currentPlayer);
+                const oppPower = this.getUnitPower(oppZ, this.opponentPlayer);
+
+                console.log(`Comparing Power: My ${myPower} vs Opp ${oppPower}`);
+
+                if (myPower < oppPower) {
+                    this.destroyUnit(this.currentPlayer, myZ);
+                    console.log("Destroyed My Unit (Lower Power)");
+                } else if (oppPower < myPower) {
+                    this.destroyUnit(this.opponentPlayer, oppZ);
+                    console.log("Destroyed Opponent Unit (Lower Power)");
+                } else {
+                    // Equal -> Destroy Both
+                    this.destroyUnit(this.currentPlayer, myZ);
+                    this.destroyUnit(this.opponentPlayer, oppZ);
+                    console.log("Destroyed Both Units (Equal Power)");
+                }
+                break;
+        }
+
+        // Reset State
+        this.state.interactionMode = 'NORMAL';
+        this.state.pendingEffect = null;
+
+        // Trash the Skill Card after use?
+        // Rules 6.6.1.3: Skill cards are trashed in End Phase. So they stay in Skill Zone.
+        // We already pushed it to Skill Zone in playSkill.
     }
 }

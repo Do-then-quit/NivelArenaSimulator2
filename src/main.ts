@@ -23,10 +23,15 @@ function render() {
     <div class="game-container">
       <div class="header">
         <h1>NivelArena</h1>
+        ${game.state.interactionMode === 'SELECT_TARGET' ? `
+            <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; animation: pulse 1s infinite;">
+                SELECT TARGET FOR SKILL
+            </div>
+        ` : ''}
       </div>
 
-      ${renderPlayer(opponent, true)}
-      ${renderPlayer(currentPlayer, false)}
+      ${renderPlayer(opponent, true, isMainPhase)}
+      ${renderPlayer(currentPlayer, false, isMainPhase)}
 
       <div class="game-controls">
         <div class="status-bar">
@@ -50,7 +55,7 @@ function render() {
     attachListeners();
 }
 
-function renderPlayer(player: any, isOpponent: boolean) {
+function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
     return `
       <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
         <!-- Level Zone (1) -->
@@ -89,8 +94,9 @@ function renderPlayer(player: any, isOpponent: boolean) {
                     ${player.damage.map((c: any) => renderCard(c, true)).join('')}
                     ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
                 </div>
-                <div class="skill-zone">
-                    <span style="color: rgba(255,255,255,0.1); font-weight: bold;">SKILL</span>
+                <div class="skill-zone ${!isOpponent && isMainPhase ? 'interactive drop-zone-skill' : ''}">
+                    ${player.skillZone.map((c: any) => renderCard(c, true)).join('')}
+                    ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
                 </div>
             </div>
         </div>
@@ -181,6 +187,35 @@ function attachListeners() {
     });
 
 
+    // Skill Zone Drop Listener
+    const skillZones = document.querySelectorAll('.drop-zone-skill');
+    skillZones.forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const event = e as DragEvent;
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+            zone.classList.add('drag-over');
+        });
+
+        zone.addEventListener('dragleave', () => {
+            zone.classList.remove('drag-over');
+        });
+
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            const event = e as DragEvent;
+            if (event.dataTransfer) {
+                const cardIndex = parseInt(event.dataTransfer.getData('text/plain'));
+                if (!isNaN(cardIndex)) {
+                    game.playSkill(cardIndex);
+                    render();
+                }
+            }
+        });
+    });
+
+
     document.querySelectorAll('.attack-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -205,6 +240,25 @@ function attachListeners() {
             render();
         });
     });
+
+
+    // Zone Selection Listener (for Skills)
+    if (game.state.interactionMode === 'SELECT_TARGET') {
+        const units = document.querySelectorAll('.unit-zone');
+        units.forEach(u => {
+            u.addEventListener('click', (e) => {
+                const el = u as HTMLElement;
+                const zoneIndex = parseInt(el.dataset.index!);
+                const isOpponent = el.dataset.player === 'opponent';
+                // Validation (Simple UI check, handled in logic too)
+                game.selectTarget(zoneIndex, isOpponent);
+                render();
+            });
+            // Add visual cue
+            (u as HTMLElement).style.cursor = 'crosshair';
+            (u as HTMLElement).style.boxShadow = '0 0 10px #ffeaa7';
+        });
+    }
 }
 
 render();

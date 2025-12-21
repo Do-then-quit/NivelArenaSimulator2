@@ -173,7 +173,14 @@ export const DUMMY_CARDS: Card[] = [
         text: "필드에 있는 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
         traits: "-",
         keywords: "-",
-        imageUrl: "/assets/cards/ST02-012.jpg"
+        imageUrl: "/assets/cards/ST02-012.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.ENTRY, // Skill activation treated as Entry for now in engine
+                description: "필드에 있는 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
+                action: { type: 'BUFF_TARGET', value: 3000, target: 'CHOICE_UNIT' }
+            }
+        ]
     },
     {
         id: "ST02-013",
@@ -213,7 +220,14 @@ export const DUMMY_CARDS: Card[] = [
         text: "자신 유닛과 상대 유닛이 모두 있는 레인을 하나 골라, 그 레인에서 파워가 가장 낮은 유닛을 트래시한다. 같다면 모두 트래시한다. 트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
         traits: "-",
         keywords: "-",
-        imageUrl: "/assets/cards/ST02-015.jpg"
+        imageUrl: "/assets/cards/ST02-015.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.ENTRY,
+                description: "자신 유닛과 상대 유닛이 모두 있는 레인을 하나 골라, 그 레인에서 파워가 가장 낮은 유닛을 트래시한다. 같다면 모두 트래시한다.",
+                action: { type: 'DESTROY_LANE_LOWEST', value: 0, target: 'CHOICE_JOB' } // CHOICE_JOB used as placeholder for Lane Selection, will handle in engine
+            }
+        ]
     },
     {
         id: "ST02-016",
@@ -242,7 +256,7 @@ export const DUMMY_CARDS: Card[] = [
 export function createDeck(): Card[] {
     const deck: Card[] = [];
     // Only use Units for the deck as requested
-    const deckPool = DUMMY_CARDS.filter(c => c.type === CardType.UNIT);
+    const deckPool = DUMMY_CARDS;
     for (let i = 0; i < 40; i++) {
         const template = deckPool[i % deckPool.length];
         deck.push({ ...template, id: `${template.id}_${i}` });
