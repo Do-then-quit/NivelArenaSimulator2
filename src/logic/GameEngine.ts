@@ -155,11 +155,6 @@ export class GameEngine {
         }
 
         // Logic check: 3.5.5 - Cannot place if existing unit has higher/equal cost (unless upgrading)
-        // Note: The previous logic allowed placing if ANY unit was there, assuming upgrade.
-        // But rule 3.5.5 says "cannot place... if cost is lower or equal" unless "upgrade" logic applies?
-        // Actually 3.5.5 says: "Cannot place a unit with cost <= existing unit's cost".
-        // 3.5.5.1 says: "If placing a unit with cost > existing, can upgrade."
-        // So strict check:
         if (zone.unit && card.cost <= zone.unit.cost) {
             console.log("Cannot place unit: Cost must be higher than existing unit to upgrade.");
             return;
@@ -223,69 +218,36 @@ export class GameEngine {
             return;
         }
 
-        // Check for Targeted Effects FIRST (Validation Phase)
-        let pendingTargetEffect: { manualEffect: any, validTargets: string } | null = null;
-
-        if (card.effects) {
-            const manualEffect = card.effects.find(e => e.activation === ActivationCondition.ACTIVE || e.activation === ActivationCondition.ENTRY); // Skill usually Entry or Active
-            if (manualEffect && (manualEffect.action.target === 'CHOICE_UNIT' || manualEffect.action.type === 'DESTROY_LANE_LOWEST')) {
-                // Check if valid targets exist (Rule 8.1.3.1.2)
-                let validTargets = 'MY_UNITS'; // Default
-                if (card.id.startsWith('ST02-012')) validTargets = 'MY_UNITS';
-                if (manualEffect.action.type === 'DESTROY_LANE_LOWEST') validTargets = 'SHARED_LANE';
-
-                let hasTarget = false;
-                if (validTargets === 'MY_UNITS') {
-                    hasTarget = this.currentPlayer.unitZones.some(z => z.unit !== null);
-                } else if (validTargets === 'OPP_UNITS') {
-                    hasTarget = this.opponentPlayer.unitZones.some(z => z.unit !== null);
-                } else if (validTargets === 'SHARED_LANE') {
-                    // Check if any lane has BOTH our unit and opponent unit
-                    for (let i = 0; i < 3; i++) {
-                        if (this.currentPlayer.unitZones[i].unit && this.opponentPlayer.unitZones[i].unit) {
-                            hasTarget = true;
-                            break;
-                        }
-                    }
-                } else { // ALL_UNITS
-                    hasTarget = this.currentPlayer.unitZones.some(z => z.unit !== null) || this.opponentPlayer.unitZones.some(z => z.unit !== null);
-                }
-
-                if (!hasTarget) {
-                    console.log("Cannot play skill: No valid targets.");
-                    return;
-                }
-
-                pendingTargetEffect = { manualEffect, validTargets };
-            }
-        }
-
-        // Commit Actions (Move Card)
+        // Move to Skill Zone
         this.currentPlayer.hand.splice(cardIndex, 1);
         this.currentPlayer.skillZone.push(card);
 
-        // Execute Effect logic
-        if (pendingTargetEffect) {
-            // Enter Selection Mode
-            this.state.interactionMode = 'SELECT_TARGET';
-            this.state.pendingEffect = {
-                sourceCard: card,
-                sourcePlayerId: this.currentPlayer.id,
-                actionType: pendingTargetEffect.manualEffect.action.type,
-                actionValue: pendingTargetEffect.manualEffect.action.value,
-                validTargets: pendingTargetEffect.validTargets as any
-            };
-            console.log("Entered Selection Mode for " + card.name);
-            return; // Pause here, wait for selection
-        }
-
-        // Trigger Auto-Effects (like Teacher's Grace)
+        // Process Entry Effects (Skills are treated as Entry effects when played)
         this.effectManager.processEffects(ActivationCondition.ENTRY, {
             sourceCard: card,
             player: this.currentPlayer,
             opponent: this.opponentPlayer,
             machine: this
         });
+    }
+
+    initiateTargetSelection(effect: any, context: any) {
+        this.state.interactionMode = 'SELECT_TARGET';
+        // Create a PendingEffect state to store context until target is selected
+        this.state.pendingEffect = {
+            sourceCard: context.sourceCard,
+            sourcePlayerId: context.player.id,
+            actionType: effect.action.type, // redundant but useful for UI
+            actionValue: effect.action.params,
+            validTargets: effect.targets.scope // specific simplified scope for UI
+        };
+        // We need to store the full effect object to resume execution
+        // But GameState must be serializable. Ideally we store the Effect ID or index.
+        // For prototype, we'll attach the ephemeral effect object to the state instance (bad practice for serialization but ok for now)
+        (this.state.pendingEffect as any)._fullEffect = effect;
+        (this.state.pendingEffect as any)._context = context;
+
+        console.log("Entered Selection Mode for " + context.sourceCard.name);
     }
 
     attack(attackerZoneIndex: number) {
@@ -392,6 +354,14 @@ export class GameEngine {
             }
             const card = player.deck.pop()!;
             player.damage.push(card);
+
+            // Check for Damage Triggers
+            this.effectManager.processEffects(ActivationCondition.DAMAGE_TRIGGER, {
+                sourceCard: card,
+                player: player,
+                opponent: this.state.players.find(p => p.id !== player.id),
+                machine: this
+            });
         }
         if (player.damage.length >= 10) {
             this.state.winner = this.state.turnPlayerIndex === 0 ? this.state.players[0].id : this.state.players[1].id;
@@ -412,51 +382,35 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let power = zone.unit.power || 0;
 
-        // 1. Items
+        // 1. Items (Stats handled via PASSIVE effects now)
         zone.items.forEach(item => {
-            // Check if item has direct power stat (simplified) or effects
-            // Assuming simplified approach where items might have 'power' prop if we modified Card type,
-            // but Card type only has power for Units.
-            // Items stats usually come from text/effects.
-            // For MVP/ST02, we can check basic hardcoded item IDs or parse effects.
-            // However, to follow the plan, we should use the effect system or hardcode for now.
-            // Let's implement a basic check for known items or existing 'power' on items if we allowed it.
-            // actually Card interface 'power' is optional.
             if (item.power) power += item.power;
+            // Check item passive effects
+            if (item.effects) {
+                item.effects.forEach(effect => {
+                    if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_POWER') {
+                        const params = effect.action.params || {};
+                        power += (params.value || 0);
+                    }
+                });
+            }
         });
 
-        // 2. Continuous/Passive Effects
-        // Check Unit's own effects
+        // 2. Continuous/Passive Effects on Unit
         if (zone.unit.effects) {
             zone.unit.effects.forEach(effect => {
-                if (effect.activation === ActivationCondition.PASSIVE) {
-                    // Specific Logic for Diesel (ST02-011)
-                    if (effect.action.type === 'POWER_BUFF_BY_LEVEL') {
-                        power += player.leaderLevel * (effect.action.value || 0);
+                if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_POWER') {
+                    // Logic to check conditions (already done in EffectManager but this is a continuous query)
+                    // Simplified: assume ALWAYS for MVP or simple check
+                    const params = effect.action.params || {};
+                    let value = params.value || 0;
+                    if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
+                        value = player.leaderLevel * value;
                     }
-                    if (effect.action.type === 'POWER_BUFF_CONST') {
-                        power += (effect.action.value || 0);
-                    }
+                    power += value;
                 }
             });
         }
-
-        // Check Items Effects (Armed)
-        zone.items.forEach(item => {
-            if (item.effects) {
-                item.effects.forEach(effect => {
-                    // Items usually have their effects active when equipped (PASSIVE/ARMED)
-                    // Simple check:
-                    if (effect.action.type === 'POWER_BUFF_CONST') {
-                        power += (effect.action.value || 0);
-                    }
-                });
-            } else {
-                // Fallback for ST02 items if effects aren't fully parsed yet
-                if (item.id.startsWith('ST02-016')) power += 2000; // Kevlar
-                // ST02-017 is Helmet (Hit+1), no power
-            }
-        });
 
         // 3. Buffs
         zone.buffs.forEach(buff => {
@@ -475,9 +429,23 @@ export class GameEngine {
         // 1. Items
         zone.items.forEach(item => {
             if (item.hit) hit += item.hit;
+            if (item.effects) {
+                item.effects.forEach(effect => {
+                    if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_HIT') {
+                        const params = effect.action.params || {};
+                        // Check condition if any (e.g. Cost Comparison for Helmet)
+                        let conditionMet = true;
+                        if (effect.condition && effect.condition.type === 'COST_COMPARISON') {
+                            const val = effect.condition.value;
+                            if (val && val.operator === 'GTE' && zone.unit) {
+                                if (zone.unit.cost < val.cost) conditionMet = false;
+                            }
+                        }
 
-            // Fallback/Effect check
-            if (item.id.startsWith('ST02-017')) hit += 1; // Helmet
+                        if (conditionMet) hit += (params.value || 0);
+                    }
+                });
+            }
         });
 
         // 2. Buffs
@@ -494,80 +462,35 @@ export class GameEngine {
     public selectTarget(zoneIndex: number, isOpponentZone: boolean) {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
+        // This logic handles the manual selection input from the UI
+        const pending = this.state.pendingEffect as any;
+        const effect = pending._fullEffect;
+        const context = pending._context;
+
         const targetPlayer = isOpponentZone ? this.opponentPlayer : this.currentPlayer;
         const targetZone = targetPlayer.unitZones[zoneIndex];
 
-        // Validate Target
-        if (!targetZone.unit) {
-            console.log("Invalid Target: Empty Zone");
-            return;
-        }
-
-        // Validate Target Ownership
-        const effect = this.state.pendingEffect;
-        if (effect.validTargets === 'MY_UNITS') {
-            if (isOpponentZone) {
-                console.log("Invalid Target: Must be your unit");
-                return;
-            }
-        } else if (effect.validTargets === 'OPP_UNITS') {
-            if (!isOpponentZone) {
-                console.log("Invalid Target: Must be opponent unit");
-                return;
-            }
-        } else if (effect.validTargets === 'SHARED_LANE') {
-            // For SHARED_LANE, clicking EITHER unit in the lane is fine, but the lane MUST have both.
-            const myUnit = this.currentPlayer.unitZones[zoneIndex].unit;
-            const oppUnit = this.opponentPlayer.unitZones[zoneIndex].unit;
-            if (!myUnit || !oppUnit) {
-                console.log("Invalid Target: Lane must have units from both players.");
+        // Basic Validation (Target Exists?)
+        if (effect.targets?.scope === 'SHARED_LANE' || effect.targets?.type === 'ALL') {
+            // For Shared Lane, we might just need the index, handled below
+        } else {
+            if (!targetZone.unit) {
+                console.log("Invalid Target: Empty Zone (and simple target expected)");
                 return;
             }
         }
 
-        switch (effect.actionType) {
-            case 'BUFF_TARGET':
-                const buffType = 'POWER'; // Simplified, could be params
-                const duration = 'TURN_END';
-                targetZone.buffs.push({
-                    id: Math.random().toString(36),
-                    sourceCard: effect.sourceCard,
-                    type: buffType,
-                    value: effect.actionValue,
-                    duration: duration
-                });
-                console.log(`Applied Buff: ${effect.actionValue} to ${targetZone.unit.name}`);
-                break;
-            case 'DESTROY_LANE_LOWEST':
-                const myZ = this.currentPlayer.unitZones[zoneIndex];
-                const oppZ = this.opponentPlayer.unitZones[zoneIndex];
-
-                const myPower = this.getUnitPower(myZ, this.currentPlayer);
-                const oppPower = this.getUnitPower(oppZ, this.opponentPlayer);
-
-                console.log(`Comparing Power: My ${myPower} vs Opp ${oppPower}`);
-
-                if (myPower < oppPower) {
-                    this.destroyUnit(this.currentPlayer, myZ);
-                    console.log("Destroyed My Unit (Lower Power)");
-                } else if (oppPower < myPower) {
-                    this.destroyUnit(this.opponentPlayer, oppZ);
-                    console.log("Destroyed Opponent Unit (Lower Power)");
-                } else {
-                    // Equal -> Destroy Both
-                    this.destroyUnit(this.currentPlayer, myZ);
-                    this.destroyUnit(this.opponentPlayer, oppZ);
-                    console.log("Destroyed Both Units (Equal Power)");
-                }
-                break;
+        // If everything good, execute
+        // For Shared Lane, we pass the index
+        if (effect.action.type === 'DESTROY_LANE_LOWEST') {
+            context.selectedLaneIndex = zoneIndex;
         }
+
+        // Execute via Manager
+        this.effectManager.executeEffect(effect, context, [targetZone]);
 
         // Reset State
         this.state.interactionMode = 'NORMAL';
         this.state.pendingEffect = null;
-
-        // Trash the Skill Card after use?
-        // Rules 6.6.1.3: Skill cards are trashed in End Phase. So they stay in Skill Zone.
-        // We already pushed it to Skill Zone in playSkill.
     }
 }

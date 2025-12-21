@@ -36,27 +36,59 @@ export enum ActivationCondition {
     TURN_END = 'TURN_END',
 }
 
+export type ActionType =
+    | 'DRAW'
+    | 'GAIN_LEVEL'
+    | 'DAMAGE'
+    | 'BUFF_POWER'
+    | 'BUFF_HIT'
+    | 'DESTROY_UNIT'
+    | 'DESTROY_SELF'
+    | 'RETURN_TO_HAND'
+    | 'MODIFY_PLAYER_SIZE'
+    | 'DESTROY_LANE_LOWEST'; // Special for Acceleration
+
+export interface TargetSchema {
+    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE';
+    type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
+    count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
+    conditions?: {
+        costMin?: number;
+        costMax?: number;
+        powerMin?: number;
+        powerMax?: number;
+        isLeader?: boolean;
+        hasTrait?: string; // e.g., "Base", "Elysion"
+        state?: 'EXHAUSTED' | 'READY';
+    };
+    selectMode: 'MANUAL' | 'RANDOM' | 'LOWEST_POWER' | 'HIGHEST_POWER';
+}
+
 export interface EffectCondition {
-    type: string; // e.g., 'ALWAYS', 'HAS_ITEM', 'LEADER_LEVEL', 'COST_COMPARISON'
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON';
     value?: any;
 }
 
 export interface EffectCost {
-    type: string; // e.g., 'TRASH_HAND', 'RETIRE_UNIT', 'NONE'
-    value?: any;
+    type: 'NONE' | 'TRASH_HAND' | 'RETIRE_UNIT';
+    amount?: number;
+    value?: any; // Legacy support
 }
 
 export interface EffectAction {
-    type: string; // e.g. 'DRAW', 'POWER_BUFF', 'DESTROY', 'DAMAGE', 'GAIN_LEVEL'
-    value?: any;
-    target?: string; // e.g. 'SELF', 'OPPONENT', 'CHOICE_UNIT', 'ALL_MY_UNITS'
+    type: ActionType;
+    params: Record<string, any>; // Flexible param object
+    target?: string; // Legacy field, keeping for now but prefer TargetSchema
 }
 
 export interface Effect {
+    id?: string;
     activation: ActivationCondition;
     condition?: EffectCondition;
     cost?: EffectCost;
+    targets?: TargetSchema;
     action: EffectAction;
+    duration?: 'PERMANENT' | 'TURN_END';
     description: string;
 }
 

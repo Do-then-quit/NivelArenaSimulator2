@@ -41,7 +41,7 @@ export const DUMMY_CARDS: Card[] = [
             {
                 activation: ActivationCondition.EXIT,
                 description: "자신의 리더 레벨+1.",
-                action: { type: 'GAIN_LEVEL', value: 1 }
+                action: { type: 'GAIN_LEVEL', params: { value: 1 } }
             }
         ]
     },
@@ -74,7 +74,7 @@ export const DUMMY_CARDS: Card[] = [
             {
                 activation: ActivationCondition.ENTRY,
                 description: "자신의 리더 레벨+1.",
-                action: { type: 'GAIN_LEVEL', value: 1 }
+                action: { type: 'GAIN_LEVEL', params: { value: 1 } }
             }
         ]
     },
@@ -99,11 +99,26 @@ export const DUMMY_CARDS: Card[] = [
         cost: 3,
         power: 3500,
         hit: 1,
+        // Active Main: Trash 1 card from hand -> All 'Base' units get Hit+1
         text: "엑티브메인 : 자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 《베이스》를 가진 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1. 트리거 / 이 카드를 트래시한다. 자신의 리더 레벨+1.",
         traits: "이펙트 / 엘리시온",
         keywords: "액티브",
-        imageUrl: "/assets/cards/ST02-007.jpg"
-        // Active and Trigger keywords are complex, skipping for now
+        imageUrl: "/assets/cards/ST02-007.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.ACTIVE,
+                description: "자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 《베이스》를 가진 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1.",
+                cost: { type: 'TRASH_HAND', amount: 1 },
+                targets: { scope: 'MY_FIELD', type: 'UNIT', conditions: { hasTrait: '베이스' }, selectMode: 'RANDOM', count: 0 }, // count 0 = ALL
+                action: { type: 'BUFF_HIT', params: { value: 1 } },
+                duration: 'TURN_END'
+            },
+            {
+                activation: ActivationCondition.DAMAGE_TRIGGER,
+                description: "자신의 리더 레벨+1.",
+                action: { type: 'GAIN_LEVEL', params: { value: 1 } }
+            }
+        ]
     },
     {
         id: "ST02-008",
@@ -129,7 +144,15 @@ export const DUMMY_CARDS: Card[] = [
         text: "트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
         traits: "베이스 / 미실리스",
         keywords: "-",
-        imageUrl: "/assets/cards/ST02-009.jpg"
+        imageUrl: "/assets/cards/ST02-009.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.DAMAGE_TRIGGER,
+                description: "필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+                targets: { scope: 'OPP_FIELD', type: 'UNIT', conditions: { costMax: 3 }, selectMode: 'MANUAL', count: 1 },
+                action: { type: 'DESTROY_UNIT', params: {} }
+            }
+        ]
     },
     {
         id: "ST02-010",
@@ -142,7 +165,15 @@ export const DUMMY_CARDS: Card[] = [
         text: "어태커 : 돌파[2코스트 이하] (2코스트 이하인 상대 유닛은 이 유닛의 공격을 방어할 수 없다). 트리거 / 이 카드를 자신의 패에 넣는다.",
         traits: "이펙트 / 필그림",
         keywords: "어태커",
-        imageUrl: "/assets/cards/ST02-010.jpg"
+        imageUrl: "/assets/cards/ST02-010.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.DAMAGE_TRIGGER,
+                description: "이 카드를 자신의 패에 넣는다.",
+                action: { type: 'RETURN_TO_HAND', params: {} }
+            }
+            // Breakthrough logic is usually handled by game rules engine, not typical effect action, but could be specific effect if we want.
+        ]
     },
     {
         id: "ST02-011",
@@ -160,7 +191,8 @@ export const DUMMY_CARDS: Card[] = [
             {
                 activation: ActivationCondition.PASSIVE,
                 description: "이 유닛의 파워가 자신의 리더 레벨×1000만큼 증가한다.",
-                action: { type: 'POWER_BUFF_BY_LEVEL', value: 1000 }
+                condition: { type: 'ALWAYS' },
+                action: { type: 'BUFF_POWER', params: { value: 1000, dynamic: 'LEADER_LEVEL_MULTIPLIER' } }
             }
         ]
     },
@@ -176,9 +208,11 @@ export const DUMMY_CARDS: Card[] = [
         imageUrl: "/assets/cards/ST02-012.jpg",
         effects: [
             {
-                activation: ActivationCondition.ENTRY, // Skill activation treated as Entry for now in engine
+                activation: ActivationCondition.ENTRY,
                 description: "필드에 있는 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
-                action: { type: 'BUFF_TARGET', value: 3000, target: 'CHOICE_UNIT' }
+                targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+                action: { type: 'BUFF_POWER', params: { value: 3000 } },
+                duration: 'TURN_END'
             }
         ]
     },
@@ -196,7 +230,7 @@ export const DUMMY_CARDS: Card[] = [
             {
                 activation: ActivationCondition.ENTRY,
                 description: "자신의 리더 레벨+1.",
-                action: { type: 'GAIN_LEVEL', value: 1 }
+                action: { type: 'GAIN_LEVEL', params: { value: 1 } }
             }
         ]
     },
@@ -209,7 +243,14 @@ export const DUMMY_CARDS: Card[] = [
         text: "자신의 덱 맨 위에서 카드를 3장 공개하고, 그 중 1장을 골라 자신의 패에 넣는다. 나머지 2장은 다시 덱에 넣고 섞는다.",
         traits: "-",
         keywords: "-",
-        imageUrl: "/assets/cards/ST02-014.jpg"
+        imageUrl: "/assets/cards/ST02-014.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.ENTRY,
+                description: "자신의 덱 맨 위에서 3장 공개 -> 1장 패",
+                action: { type: 'DRAW', params: { count: 1, selection: 'LOOK_3_PICK_1' } } // Simplified for now
+            }
+        ]
     },
     {
         id: "ST02-015",
@@ -225,7 +266,8 @@ export const DUMMY_CARDS: Card[] = [
             {
                 activation: ActivationCondition.ENTRY,
                 description: "자신 유닛과 상대 유닛이 모두 있는 레인을 하나 골라, 그 레인에서 파워가 가장 낮은 유닛을 트래시한다. 같다면 모두 트래시한다.",
-                action: { type: 'DESTROY_LANE_LOWEST', value: 0, target: 'CHOICE_JOB' } // CHOICE_JOB used as placeholder for Lane Selection, will handle in engine
+                targets: { scope: 'SHARED_LANE', type: 'ALL', count: 1, selectMode: 'MANUAL' },
+                action: { type: 'DESTROY_LANE_LOWEST', params: {} }
             }
         ]
     },
@@ -238,7 +280,15 @@ export const DUMMY_CARDS: Card[] = [
         text: "장착조건 없음 : 파워+2000.",
         traits: "-",
         keywords: "-",
-        imageUrl: "/assets/cards/ST02-016.jpg"
+        imageUrl: "/assets/cards/ST02-016.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.PASSIVE,
+                description: "파워+2000",
+                condition: { type: 'ALWAYS' },
+                action: { type: 'BUFF_POWER', params: { value: 2000 } }
+            }
+        ]
     },
     {
         id: "ST02-017",
@@ -249,7 +299,15 @@ export const DUMMY_CARDS: Card[] = [
         text: "장착조건 4코스트이상 : 히트+1.",
         traits: "-",
         keywords: "-",
-        imageUrl: "/assets/cards/ST02-017.jpg"
+        imageUrl: "/assets/cards/ST02-017.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.PASSIVE,
+                description: "히트+1",
+                condition: { type: 'COST_COMPARISON', value: { operator: 'GTE', cost: 4 } }, // New logic needed?
+                action: { type: 'BUFF_HIT', params: { value: 1 } }
+            }
+        ]
     }
 ];
 
