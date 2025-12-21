@@ -87,9 +87,18 @@ export interface Card {
 export interface UnitZoneState {
     unit: Card | null;
     items: Card[];
+    buffs: Buff[];
     isExhausted: boolean; // For attack limit (1 attack per turn usually, but rules say "can attack if not attacked yet")
     hasAttacked: boolean;
     hasPlacedUnitThisTurn: boolean; // 6.4.1.1.3
+}
+
+export interface Buff {
+    id: string; // unique id for removal if needed
+    sourceId: string; // card id that created it
+    type: 'POWER' | 'HIT';
+    value: number;
+    duration: 'TURN_END' | 'PERMANENT';
 }
 
 export interface PlayerState {

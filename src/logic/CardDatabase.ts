@@ -155,7 +155,14 @@ export const DUMMY_CARDS: Card[] = [
         text: "패시브 : 이 유닛의 파워가 자신의 리더 레벨×1000만큼 증가한다.",
         traits: "이펙트 / 엘리시온",
         keywords: "패시브",
-        imageUrl: "/assets/cards/ST02-011.jpg"
+        imageUrl: "/assets/cards/ST02-011.jpg",
+        effects: [
+            {
+                activation: ActivationCondition.PASSIVE,
+                description: "이 유닛의 파워가 자신의 리더 레벨×1000만큼 증가한다.",
+                action: { type: 'POWER_BUFF_BY_LEVEL', value: 1000 }
+            }
+        ]
     },
     {
         id: "ST02-012",

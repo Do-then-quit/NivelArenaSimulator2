@@ -70,7 +70,7 @@ function renderPlayer(player: any, isOpponent: boolean) {
         const isBlockingTarget = game.state.phase === Phase.BLOCK && isOpponent && blockerZoneIndex === i;
         return `
                     <div class="zone unit-zone ${!isOpponent ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
-                        ${z.unit ? renderCard(z.unit) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
+                        ${z.unit ? renderCard(z.unit, false, game.getUnitPower(z, player), game.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
                         ${z.unit && !isOpponent && game.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
                         ${isBlockingTarget ? `
                             <div class="block-controls">
@@ -78,7 +78,7 @@ function renderPlayer(player: any, isOpponent: boolean) {
                                 <button class="pass-btn">Pass</button>
                             </div>
                         ` : ''}
-                        ${z.unit ? `<div class="stats">${z.unit.power} / ${z.unit.hit}</div>` : ''}
+                        ${z.unit ? `<div class="stats">${game.getUnitPower(z, player)} / ${game.getUnitHit(z, player)}</div>` : ''}
                     </div>
                 `}).join('')}
             </div>
@@ -109,8 +109,11 @@ function renderPlayer(player: any, isOpponent: boolean) {
     `;
 }
 
-function renderCard(card: Card, isSmall: boolean = false) {
+function renderCard(card: Card, isSmall: boolean = false, calculatedPower?: number, calculatedHit?: number) {
     const isUnit = card.type === CardType.UNIT;
+    const power = calculatedPower !== undefined ? calculatedPower : card.power;
+    const hit = calculatedHit !== undefined ? calculatedHit : card.hit;
+
     return `
         <div class="card ${card.attribute.toLowerCase()} ${isSmall ? 'small-card' : ''}">
             ${card.imageUrl ? `<img src="${card.imageUrl}" class="card-image" alt="${card.name}">` : ''}
@@ -119,8 +122,8 @@ function renderCard(card: Card, isSmall: boolean = false) {
                 <div class="card-name">${card.name}</div>
                 ${isUnit && !isSmall ? `
                     <div class="card-stats-row">
-                        <span class="stat-power">P:${card.power}</span>
-                        <span class="stat-hit">H:${card.hit}</span>
+                        <span class="stat-power" ${calculatedPower !== undefined && calculatedPower !== card.power ? 'style="color:#4ecdc4; font-weight:bold;"' : ''}>P:${power}</span>
+                        <span class="stat-hit" ${calculatedHit !== undefined && calculatedHit !== card.hit ? 'style="color:#ff6b6b; font-weight:bold;"' : ''}>H:${hit}</span>
                     </div>
                 ` : ''}
             </div>

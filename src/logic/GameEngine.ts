@@ -32,9 +32,9 @@ export class GameEngine {
             levelZone: leader,
             leaderLevel: 1,
             unitZones: [
-                { unit: null, items: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
-                { unit: null, items: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
-                { unit: null, items: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
+                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
+                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
+                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
             ],
             skillZone: [],
         };
@@ -112,6 +112,13 @@ export class GameEngine {
         this.currentPlayer.skillZone.forEach(c => this.currentPlayer.trash.push(c));
         this.currentPlayer.skillZone = [];
 
+        // Remove TURN_END buffs
+        [this.currentPlayer, this.opponentPlayer].forEach(p => {
+            p.unitZones.forEach(z => {
+                z.buffs = z.buffs.filter(b => b.duration !== 'TURN_END');
+            });
+        });
+
         // Hand limit 7
         while (this.currentPlayer.hand.length > 7) {
             const discarded = this.currentPlayer.hand.pop()!;
@@ -145,6 +152,17 @@ export class GameEngine {
             return;
         }
 
+        // Logic check: 3.5.5 - Cannot place if existing unit has higher/equal cost (unless upgrading)
+        // Note: The previous logic allowed placing if ANY unit was there, assuming upgrade.
+        // But rule 3.5.5 says "cannot place... if cost is lower or equal" unless "upgrade" logic applies?
+        // Actually 3.5.5 says: "Cannot place a unit with cost <= existing unit's cost".
+        // 3.5.5.1 says: "If placing a unit with cost > existing, can upgrade."
+        // So strict check:
+        if (zone.unit && card.cost <= zone.unit.cost) {
+            console.log("Cannot place unit: Cost must be higher than existing unit to upgrade.");
+            return;
+        }
+
         let costToSubtract = 0;
         let isUpgrade = false;
 
@@ -172,11 +190,14 @@ export class GameEngine {
             this.currentPlayer.trash.push(zone.unit);
             zone.items.forEach(i => this.currentPlayer.trash.push(i));
             zone.items = [];
+            zone.buffs = []; // Clear buffs on old unit
         }
+
 
         this.currentPlayer.hand.splice(cardIndex, 1);
         zone.unit = card;
         zone.hasPlacedUnitThisTurn = true;
+        zone.buffs = []; // Ensure clear state for new unit if not upgrade (though empty zone implies empty buffs)
 
         // Trigger Entry Effects
         this.effectManager.processEffects(ActivationCondition.ENTRY, {
@@ -238,7 +259,7 @@ export class GameEngine {
             this.state.pendingAttackerIndex = attackerZoneIndex;
         } else {
             // Direct Attack
-            this.dealDamage(this.opponentPlayer, attackerZone.unit.hit || 0);
+            this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
         }
     }
 
@@ -265,7 +286,7 @@ export class GameEngine {
             this.resolveCombat(attackerZone, blockerZone);
         } else {
             // Direct Damage
-            this.dealDamage(this.opponentPlayer, attackerZone.unit!.hit || 0);
+            this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
         }
 
         // Return to ATTACK phase
@@ -274,14 +295,17 @@ export class GameEngine {
     }
 
     private resolveCombat(attacker: UnitZoneState, blocker: UnitZoneState) {
-        const attUnit = attacker.unit!;
-        const blkUnit = blocker.unit!;
+        // Use calculated stats
+        const attPower = this.getUnitPower(attacker, this.currentPlayer);
+        const blkPower = this.getUnitPower(blocker, this.opponentPlayer);
 
-        if ((attUnit.power || 0) >= (blkUnit.power || 0)) {
+        console.log(`Combat! Attacker Power: ${attPower}, Blocker Power: ${blkPower}`);
+
+        if (attPower >= blkPower) {
             this.destroyUnit(this.opponentPlayer, blocker);
         }
 
-        if ((blkUnit.power || 0) > (attUnit.power || 0)) {
+        if (blkPower > attPower) {
             this.destroyUnit(this.currentPlayer, attacker);
         }
     }
@@ -301,6 +325,7 @@ export class GameEngine {
             zone.items.forEach(i => player.trash.push(i));
             zone.unit = null;
             zone.items = [];
+            zone.buffs = [];
         }
     }
 
@@ -326,5 +351,87 @@ export class GameEngine {
         });
         player.skillZone.forEach(s => cost += s.cost);
         return cost;
+    }
+
+    public getUnitPower(zone: UnitZoneState, player: PlayerState): number {
+        if (!zone.unit) return 0;
+        let power = zone.unit.power || 0;
+
+        // 1. Items
+        zone.items.forEach(item => {
+            // Check if item has direct power stat (simplified) or effects
+            // Assuming simplified approach where items might have 'power' prop if we modified Card type,
+            // but Card type only has power for Units.
+            // Items stats usually come from text/effects.
+            // For MVP/ST02, we can check basic hardcoded item IDs or parse effects.
+            // However, to follow the plan, we should use the effect system or hardcode for now.
+            // Let's implement a basic check for known items or existing 'power' on items if we allowed it.
+            // actually Card interface 'power' is optional.
+            if (item.power) power += item.power;
+        });
+
+        // 2. Continuous/Passive Effects
+        // Check Unit's own effects
+        if (zone.unit.effects) {
+            zone.unit.effects.forEach(effect => {
+                if (effect.activation === ActivationCondition.PASSIVE) {
+                    // Specific Logic for Diesel (ST02-011)
+                    if (effect.action.type === 'POWER_BUFF_BY_LEVEL') {
+                        power += player.leaderLevel * (effect.action.value || 0);
+                    }
+                    if (effect.action.type === 'POWER_BUFF_CONST') {
+                        power += (effect.action.value || 0);
+                    }
+                }
+            });
+        }
+
+        // Check Items Effects (Armed)
+        zone.items.forEach(item => {
+            if (item.effects) {
+                item.effects.forEach(effect => {
+                    // Items usually have their effects active when equipped (PASSIVE/ARMED)
+                    // Simple check:
+                    if (effect.action.type === 'POWER_BUFF_CONST') {
+                        power += (effect.action.value || 0);
+                    }
+                });
+            } else {
+                // Fallback for ST02 items if effects aren't fully parsed yet
+                if (item.id.startsWith('ST02-016')) power += 2000; // Kevlar
+                // ST02-017 is Helmet (Hit+1), no power
+            }
+        });
+
+        // 3. Buffs
+        zone.buffs.forEach(buff => {
+            if (buff.type === 'POWER') {
+                power += buff.value;
+            }
+        });
+
+        return power;
+    }
+
+    public getUnitHit(zone: UnitZoneState, player: PlayerState): number {
+        if (!zone.unit) return 0;
+        let hit = zone.unit.hit || 0;
+
+        // 1. Items
+        zone.items.forEach(item => {
+            if (item.hit) hit += item.hit;
+
+            // Fallback/Effect check
+            if (item.id.startsWith('ST02-017')) hit += 1; // Helmet
+        });
+
+        // 2. Buffs
+        zone.buffs.forEach(buff => {
+            if (buff.type === 'HIT') {
+                hit += buff.value;
+            }
+        });
+
+        return hit;
     }
 }
