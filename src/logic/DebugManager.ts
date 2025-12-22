@@ -1,6 +1,7 @@
 import { GameEngine } from './GameEngine';
-import { PlayerState, Phase, Card, CardType } from './types';
+import { PlayerState, Phase, Card, CardType, ActivationCondition } from './types';
 import { DUMMY_CARDS } from './CardDatabase';
+import { RuleValidator } from './RuleValidator';
 
 export class DebugManager {
     game: GameEngine;
@@ -108,6 +109,87 @@ export class DebugManager {
         }
     }
 
+    async runRefactoringTests() {
+        console.log("Starting Refactoring Verification Tests...");
+
+        await this.runTest("RuleValidator: canPlayUnit checks", () => {
+            this.game.state.phase = Phase.MAIN;
+            this.setLeaderLevel(0, 1);
+            // Yan (cost 3) should be blocked if level 1 and no damage
+            this.setHand(0, ["얀"]);
+            const val1 = RuleValidator.canPlayUnit(this.game.state, this.getPlayer(0), 0, 0);
+            this.assert(val1.valid === false, "Yan should be too expensive (cost 3) for level 1 (size 1)");
+            this.assert(val1.reason === "Cost exceeds Size limit", "Reason should be Size limit");
+
+            // Should be allowed if level 3
+            this.game.state.players[0].leaderLevel = 3;
+            const val2 = RuleValidator.canPlayUnit(this.game.state, this.getPlayer(0), 0, 0);
+            this.assert(val2.valid === true, "Yan should be playable at level 3 (size 3)");
+        });
+
+        await this.runTest("Action Registry: ENTRY DRAW effect", () => {
+            this.game.state.players[0].leaderLevel = 5;
+            this.setHand(0, ["프라이즈"]); // Prize has Entry: Draw 1 (simplified)
+            const initialHandSize = this.getPlayer(0).hand.length;
+            const initialDeckSize = this.getPlayer(0).deck.length;
+
+            this.game.playSkill(0);
+
+            // Prize is played (hand -1), then draws 1 (hand +1). Total size remains same.
+            this.assert(this.getPlayer(0).hand.length === initialHandSize, "Hand size should remain same after play + draw");
+            this.assert(this.getPlayer(0).deck.length === initialDeckSize - 1, "Deck should have decreased by 1");
+        });
+
+        await this.runTest("Target Selector: BUFF_POWER random", () => {
+            this.setField(0, ["미카", "율리아", null]);
+            // Create a dummy skill with random buff
+            const buffSkill: Card = {
+                id: "test_skill",
+                name: "Test Skill",
+                type: CardType.SKILL,
+                attribute: 'NONE' as any,
+                cost: 0,
+                text: "Buff random unit",
+                effects: [{
+                    activation: ActivationCondition.ENTRY,
+                    description: "Buff random friendly unit",
+                    action: {
+                        type: 'BUFF_POWER',
+                        params: { value: 100 }
+                    },
+                    targets: {
+                        scope: 'MY_FIELD',
+                        type: 'UNIT',
+                        selectMode: 'RANDOM',
+                        count: 1
+                    }
+                }]
+            };
+
+            const zone0 = this.getPlayer(0).unitZones[0];
+            const zone1 = this.getPlayer(0).unitZones[1];
+            const p0Initial = this.game.getUnitPower(zone0, this.getPlayer(0));
+            const p1Initial = this.game.getUnitPower(zone1, this.getPlayer(0));
+
+            // Manually process entry effect for this skill
+            this.game.effectManager.processEffects(ActivationCondition.ENTRY, {
+                sourceCard: buffSkill,
+                player: this.getPlayer(0),
+                opponent: this.getPlayer(1),
+                machine: this.game
+            });
+
+            const p0Final = this.game.getUnitPower(zone0, this.getPlayer(0));
+            const p1Final = this.game.getUnitPower(zone1, this.getPlayer(0));
+
+            const buffed = (p0Final > p0Initial) || (p1Final > p1Initial);
+            this.assert(buffed, "One of the units should have been buffed");
+            this.assert(!(p0Final > p0Initial && p1Final > p1Initial), "Only one unit should have been buffed");
+        });
+
+        console.log("Refactoring Verification Completed.");
+    }
+
     async runAllTests() {
         console.log("Starting Automated Tests...");
 
@@ -128,7 +210,6 @@ export class DebugManager {
             this.assert(zone0.unit !== null && zone0.unit.name === "미카", "Zone 0 should have Mika");
         });
 
-        // Add more complex tests here...
         console.log("All Tests Completed.");
     }
 }

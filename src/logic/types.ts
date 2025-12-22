@@ -48,11 +48,17 @@ export type ActionType =
     | 'MODIFY_PLAYER_SIZE'
     | 'DESTROY_LANE_LOWEST'; // Special for Acceleration
 
+export interface TargetFilter {
+    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'COST_LIMIT' | 'POWER_LIMIT';
+    value?: any;
+}
+
 export interface TargetSchema {
-    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE';
+    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES';
     type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
     count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
-    conditions?: {
+    filters?: TargetFilter[];
+    conditions?: { // Legacy, keeping for compatibility
         costMin?: number;
         costMax?: number;
         powerMin?: number;
@@ -61,7 +67,7 @@ export interface TargetSchema {
         hasTrait?: string; // e.g., "Base", "Elysion"
         state?: 'EXHAUSTED' | 'READY';
     };
-    selectMode: 'MANUAL' | 'RANDOM' | 'LOWEST_POWER' | 'HIGHEST_POWER';
+    selectMode: 'MANUAL' | 'RANDOM' | 'LOWEST_POWER' | 'HIGHEST_POWER' | 'ALL';
 }
 
 export interface EffectCondition {
@@ -80,6 +86,17 @@ export interface EffectAction {
     params: Record<string, any>; // Flexible param object
     target?: string; // Legacy field, keeping for now but prefer TargetSchema
 }
+
+export interface GameContext {
+    player: PlayerState;
+    opponent: PlayerState;
+    sourceCard: Card;
+    unitZone?: UnitZoneState;
+    machine: any; // Ideally GameEngine but avoids circular dependency
+    selectedLaneIndex?: number;
+}
+
+export type ActionImplementation = (context: GameContext, params: any, targets: any[]) => void;
 
 export interface Effect {
     id?: string;

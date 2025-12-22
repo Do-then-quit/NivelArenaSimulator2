@@ -1,5 +1,6 @@
-import { GameState, PlayerState, Phase, Card, CardType, UnitZoneState, ActivationCondition } from './types';
+import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition } from './types';
 import { EffectManager } from './effects';
+import { RuleValidator } from './RuleValidator';
 
 export class GameEngine {
     state: GameState;
@@ -142,44 +143,23 @@ export class GameEngine {
 
     // Actions
     playUnit(cardIndex: number, zoneIndex: number) {
-        if (this.state.phase !== Phase.MAIN) return;
+        const validation = RuleValidator.canPlayUnit(this.state, this.currentPlayer, cardIndex, zoneIndex);
+        if (!validation.valid) {
+            console.log(`Cannot place unit: ${validation.reason}`);
+            return;
+        }
+
         const card = this.currentPlayer.hand[cardIndex];
-        if (!card || card.type !== CardType.UNIT) return;
-
         const zone = this.currentPlayer.unitZones[zoneIndex];
-
-        // 6.4.1.1.3 Check if unit was already placed in this zone this turn
-        if (zone.hasPlacedUnitThisTurn) {
-            console.log("Cannot place unit: Already placed in this zone this turn.");
-            return;
-        }
-
-        // Logic check: 3.5.5 - Cannot place if existing unit has higher/equal cost (unless upgrading)
-        if (zone.unit && card.cost <= zone.unit.cost) {
-            console.log("Cannot place unit: Cost must be higher than existing unit to upgrade.");
-            return;
-        }
-
-        let costToSubtract = 0;
         let isUpgrade = false;
 
         if (zone.unit) {
-            if (card.cost > zone.unit.cost) {
-                isUpgrade = true;
-                // 6.4.1.1.2.1 Subtract cost of existing unit and its items when upgrading
-                costToSubtract = zone.unit.cost + zone.items.reduce((sum, item) => sum + item.cost, 0);
-            } else {
-                console.log("Cannot place unit here (occupied and not upgradeable)");
-                return;
-            }
-        }
-
-        const currentSize = this.currentPlayer.leaderLevel + this.currentPlayer.damage.length;
-        const currentFieldCost = this.calculateFieldCost(this.currentPlayer);
-
-        if (currentFieldCost - costToSubtract + card.cost > currentSize) {
-            console.log("Cost exceeds Size limit");
-            return;
+            isUpgrade = true;
+            // Trash existing unit and items
+            this.currentPlayer.trash.push(zone.unit);
+            zone.items.forEach(i => this.currentPlayer.trash.push(i));
+            zone.items = [];
+            zone.buffs = []; // Clear buffs on old unit
         }
 
         if (isUpgrade && zone.unit) {
@@ -207,29 +187,13 @@ export class GameEngine {
     }
 
     playSkill(cardIndex: number) {
-        if (this.state.phase !== Phase.MAIN) return;
-        const card = this.currentPlayer.hand[cardIndex];
-        if (!card || card.type !== CardType.SKILL) return;
-
-        const currentSize = this.currentPlayer.leaderLevel + this.currentPlayer.damage.length;
-        const currentFieldCost = this.calculateFieldCost(this.currentPlayer);
-        if (currentFieldCost + card.cost > currentSize) {
-            console.log("Cost exceeds Size limit");
+        const validation = RuleValidator.canPlaySkill(this.state, this.currentPlayer, cardIndex);
+        if (!validation.valid) {
+            console.log(`Cannot play skill: ${validation.reason}`);
             return;
         }
 
-        // Validate Targets Existence for Manual Effects
-        if (card.effects) {
-            for (const effect of card.effects) {
-                if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                    const hasValidTargets = this.checkPotentialTargets(effect.targets.scope);
-                    if (!hasValidTargets) {
-                        console.log(`Cannot play ${card.name}: No valid targets for effect.`);
-                        return;
-                    }
-                }
-            }
-        }
+        const card = this.currentPlayer.hand[cardIndex];
 
         // Move to Skill Zone
         this.currentPlayer.hand.splice(cardIndex, 1);
@@ -244,25 +208,7 @@ export class GameEngine {
         });
     }
 
-    private checkPotentialTargets(scope: string): boolean {
-        switch (scope) {
-            case 'MY_FIELD':
-                return this.currentPlayer.unitZones.some(z => z.unit !== null);
-            case 'OPP_FIELD':
-                return this.opponentPlayer.unitZones.some(z => z.unit !== null);
-            case 'SHARED_LANE':
-                // Needs units in BOTH slots of the same lane index
-                for (let i = 0; i < 3; i++) {
-                    if (this.currentPlayer.unitZones[i].unit && this.opponentPlayer.unitZones[i].unit) return true;
-                }
-                return false;
-            case 'ALL':
-            case 'BOTH_FIELDS':
-                return this.currentPlayer.unitZones.some(z => z.unit !== null) || this.opponentPlayer.unitZones.some(z => z.unit !== null);
-            default:
-                return true; // Self or other non-unit targets assumed always valid or checked elsewhere
-        }
-    }
+    // checkPotentialTargets moved to RuleValidator
 
     initiateTargetSelection(effect: any, context: any) {
         this.state.interactionMode = 'SELECT_TARGET';
@@ -284,10 +230,13 @@ export class GameEngine {
     }
 
     attack(attackerZoneIndex: number) {
-        if (this.state.phase !== Phase.ATTACK) return;
-        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
-        if (!attackerZone.unit || attackerZone.hasAttacked) return;
+        const validation = RuleValidator.canAttack(this.state, this.currentPlayer, attackerZoneIndex);
+        if (!validation.valid) {
+            console.log(`Cannot attack: ${validation.reason}`);
+            return;
+        }
 
+        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
         attackerZone.hasAttacked = true;
 
         // Trigger Attacker Effects
@@ -399,16 +348,6 @@ export class GameEngine {
         if (player.damage.length >= 10) {
             this.state.winner = this.state.turnPlayerIndex === 0 ? this.state.players[0].id : this.state.players[1].id;
         }
-    }
-
-    private calculateFieldCost(player: PlayerState): number {
-        let cost = 0;
-        player.unitZones.forEach(z => {
-            if (z.unit) cost += z.unit.cost;
-            z.items.forEach(i => cost += i.cost);
-        });
-        player.skillZone.forEach(s => cost += s.cost);
-        return cost;
     }
 
     public getUnitPower(zone: UnitZoneState, player: PlayerState): number {
