@@ -85,6 +85,60 @@ export class TargetSelector {
         return candidates;
     }
 
+    public static isValidTarget(engine: GameEngine, schema: TargetSchema, context: GameContext, target: any): boolean {
+        const { player, opponent } = context;
+
+        // 1. Scope Check
+        let inScope = false;
+        switch (schema.scope) {
+            case 'SELF': inScope = (target === context.unitZone); break;
+            case 'MY_FIELD': inScope = player.unitZones.includes(target); break;
+            case 'OPP_FIELD': inScope = opponent.unitZones.includes(target); break;
+            case 'BOTH_FIELDS': inScope = player.unitZones.includes(target) || opponent.unitZones.includes(target); break;
+            case 'MY_LEADER': inScope = (target === player.levelZone); break;
+            case 'OPP_LEADER': inScope = (target === opponent.levelZone); break;
+            case 'SHARED_LANE':
+                // For shared lane validation, we usually need the lane index or both zones.
+                // Simplified: check if target is a zone in a shared lane
+                const idx = player.unitZones.indexOf(target);
+                if (idx !== -1) inScope = (player.unitZones[idx].unit !== null && opponent.unitZones[idx].unit !== null);
+                else {
+                    const oppIdx = opponent.unitZones.indexOf(target);
+                    if (oppIdx !== -1) inScope = (player.unitZones[oppIdx].unit !== null && opponent.unitZones[oppIdx].unit !== null);
+                }
+                break;
+        }
+        if (!inScope) return false;
+
+        // 2. Type Check
+        if (schema.type === 'UNIT') {
+            if (!(target as UnitZoneState).unit) return false;
+        }
+
+        // 3. Filter Check
+        if (schema.filters) {
+            for (const filter of schema.filters) {
+                const unit = (target as UnitZoneState).unit;
+                switch (filter.type) {
+                    case 'EXCLUDE_SELF': if (target === context.unitZone) return false; break;
+                    case 'HAS_TRAIT': if (!unit || !unit.traits?.includes(filter.value)) return false; break;
+                    case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
+                    case 'POWER_LIMIT': if (!unit || engine.getUnitPower(target, this.getOwner(engine, target)) > filter.value) return false; break;
+                }
+            }
+        }
+
+        // 4. Legacy Conditions Check
+        if (schema.conditions) {
+            const unit = (target as UnitZoneState).unit;
+            if (schema.conditions.costMax !== undefined && (!unit || unit.cost > schema.conditions.costMax)) return false;
+            if (schema.conditions.costMin !== undefined && (!unit || unit.cost < schema.conditions.costMin)) return false;
+            if (schema.conditions.hasTrait && (!unit || !unit.traits?.includes(schema.conditions.hasTrait))) return false;
+        }
+
+        return true;
+    }
+
     private static getOwner(engine: GameEngine, zone: UnitZoneState): PlayerState {
         if (engine.state.players[0].unitZones.includes(zone)) return engine.state.players[0];
         return engine.state.players[1];

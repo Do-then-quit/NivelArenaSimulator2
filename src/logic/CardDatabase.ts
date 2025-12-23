@@ -115,8 +115,13 @@ export const DUMMY_CARDS: Card[] = [
             },
             {
                 activation: ActivationCondition.DAMAGE_TRIGGER,
-                description: "자신의 리더 레벨+1.",
+                description: "이 카드를 트래시한다. 자신의 리더 레벨+1.",
                 action: { type: 'GAIN_LEVEL', params: { value: 1 } }
+            },
+            {
+                activation: ActivationCondition.DAMAGE_TRIGGER,
+                description: "이 카드를 트래시한다.",
+                action: { type: 'TRASH_SELF', params: {} }
             }
         ]
     },
@@ -148,9 +153,14 @@ export const DUMMY_CARDS: Card[] = [
         effects: [
             {
                 activation: ActivationCondition.DAMAGE_TRIGGER,
-                description: "필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+                description: "이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
                 targets: { scope: 'OPP_FIELD', type: 'UNIT', conditions: { costMax: 3 }, selectMode: 'MANUAL', count: 1 },
-                action: { type: 'DESTROY_UNIT', params: {} }
+                action: { type: 'DESTROY_UNIT', params: { costMax: 3 } }
+            },
+            {
+                activation: ActivationCondition.DAMAGE_TRIGGER,
+                description: "이 카드를 트래시한다.",
+                action: { type: 'TRASH_SELF', params: {} }
             }
         ]
     },
@@ -268,6 +278,17 @@ export const DUMMY_CARDS: Card[] = [
                 description: "자신 유닛과 상대 유닛이 모두 있는 레인을 하나 골라, 그 레인에서 파워가 가장 낮은 유닛을 트래시한다. 같다면 모두 트래시한다.",
                 targets: { scope: 'SHARED_LANE', type: 'ALL', count: 1, selectMode: 'MANUAL' },
                 action: { type: 'DESTROY_LANE_LOWEST', params: {} }
+            },
+            {
+                activation: ActivationCondition.DAMAGE_TRIGGER,
+                description: "이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+                targets: { scope: 'OPP_FIELD', type: 'UNIT', conditions: { costMax: 3 }, selectMode: 'MANUAL', count: 1 },
+                action: { type: 'DESTROY_UNIT', params: { costMax: 3 } }
+            },
+            {
+                activation: ActivationCondition.DAMAGE_TRIGGER,
+                description: "이 카드를 트래시한다.",
+                action: { type: 'TRASH_SELF', params: {} }
             }
         ]
     },

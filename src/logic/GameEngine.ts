@@ -1,6 +1,7 @@
 import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
+import { TargetSelector } from './TargetSelector';
 
 export class GameEngine {
     state: GameState;
@@ -329,24 +330,41 @@ export class GameEngine {
     }
 
     public dealDamage(player: PlayerState, amount: number) {
-        for (let i = 0; i < amount; i++) {
+        console.log(`Dealing ${amount} damage to ${player.name}`);
+        let damageRemaining = amount;
+
+        while (damageRemaining > 0) {
+            // 4.5.4.1. decrement damage
+            damageRemaining--;
+
+            // 4.5.4.3. Check deck
             if (player.deck.length === 0) {
-                this.state.winner = this.state.turnPlayerIndex === 0 ? this.state.players[0].id : this.state.players[1].id;
+                this.state.winner = this.opponentPlayer.id;
                 return;
             }
+
+            // 4.5.4.2. Reveal card and move to damage zone
             const card = player.deck.pop()!;
             player.damage.push(card);
 
-            // Check for Damage Triggers
-            this.effectManager.processEffects(ActivationCondition.DAMAGE_TRIGGER, {
+            // 4.5.4.3. Check for Damage Triggers
+            const wasTriggered = this.effectManager.processEffects(ActivationCondition.DAMAGE_TRIGGER, {
                 sourceCard: card,
                 player: player,
                 opponent: this.state.players.find(p => p.id !== player.id),
                 machine: this
             });
-        }
-        if (player.damage.length >= 10) {
-            this.state.winner = this.state.turnPlayerIndex === 0 ? this.state.players[0].id : this.state.players[1].id;
+
+            if (wasTriggered) {
+                console.log("TRIGGER ACTIVATED! Remaining damage cancelled.");
+                damageRemaining = 0; // 4.5.4.3.1. Set remaining damage to 0
+            }
+
+            // 4.5.4.4. Defeat check
+            if (player.damage.length >= 10) {
+                this.state.winner = this.opponentPlayer.id;
+                return;
+            }
         }
     }
 
@@ -439,43 +457,29 @@ export class GameEngine {
         const effect = pending._fullEffect;
         const context = pending._context;
 
+        // UI renders opponent at the top (isOpponentZone=true) and currentPlayer at the bottom (isOpponentZone=false)
         const targetPlayer = isOpponentZone ? this.opponentPlayer : this.currentPlayer;
         const targetZone = targetPlayer.unitZones[zoneIndex];
         const scope = effect.targets?.scope;
 
-        // 1. Ownership Scope Validation
-        if (scope === 'MY_FIELD' && isOpponentZone) {
-            console.log("Invalid Target: Must pick your own unit.");
-            return;
-        }
-        if (scope === 'OPP_FIELD' && !isOpponentZone) {
-            console.log("Invalid Target: Must pick opponent's unit.");
+        // NEW: Full validation using TargetSelector
+        if (!TargetSelector.isValidTarget(this, effect.targets, context, targetZone)) {
+            console.log("Invalid Target Selected. Mode maintained.");
             return;
         }
 
-        // 2. Unit Existence Validation
-        // For shared lane, we deal with the lane index, but usually user clicks a unit.
-        // We'll trust the checked lane logic.
-        if (scope !== 'SHARED_LANE' && effect.targets?.type === 'UNIT') {
-            if (!targetZone.unit) {
-                console.log("Invalid Target: Empty Zone.");
-                return;
-            }
-        }
-
-        // 3. Shared Lane Validation
+        // Shared Lane validation (extra layer for clarity, though isValidTarget covers it)
         if (scope === 'SHARED_LANE') {
             const myUnit = this.currentPlayer.unitZones[zoneIndex].unit;
             const oppUnit = this.opponentPlayer.unitZones[zoneIndex].unit;
             if (!myUnit || !oppUnit) {
-                console.log("Invalid Target: Lane is not shared (needs units on both sides).");
+                console.log("Invalid Target: Lane is not shared.");
                 return;
             }
         }
 
 
         // If everything good, execute
-        // For Shared Lane, we pass the index
         if (effect.action.type === 'DESTROY_LANE_LOWEST') {
             context.selectedLaneIndex = zoneIndex;
         }

@@ -10,10 +10,11 @@ export class EffectManager {
         this.engine = engine;
     }
 
-    processEffects(activation: ActivationCondition, context: any) {
+    processEffects(activation: ActivationCondition, context: any): boolean {
         const { sourceCard } = context;
+        let triggered = false;
 
-        if (!sourceCard || !sourceCard.effects) return;
+        if (!sourceCard || !sourceCard.effects) return false;
 
         sourceCard.effects.forEach((effect: Effect) => {
             if (effect.activation === activation) {
@@ -21,10 +22,16 @@ export class EffectManager {
                     // Cost payment should happen here or be prompted. 
                     // For now, auto-pay if possible, else fail.
                     if (this.payCost(effect, context)) {
-
+                        triggered = true;
                         // If effect has targets, we might need to go into selection mode via Engine
                         if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                            this.engine.initiateTargetSelection(effect, context);
+                            // NEW: Check if there are any valid targets available before prompting
+                            const candidates = TargetSelector.resolve(this.engine, effect.targets, context);
+                            if (candidates.length > 0) {
+                                this.engine.initiateTargetSelection(effect, context);
+                            } else {
+                                console.log(`No valid targets for ${effect.description}, skipping selection.`);
+                            }
                         } else {
                             // Instant execution (self, random, or auto targets)
                             const targets = this.resolveAutoTargets(effect.targets, context);
@@ -34,6 +41,8 @@ export class EffectManager {
                 }
             }
         });
+
+        return triggered;
     }
 
     public executeEffect(effect: Effect, context: GameContext, targets: any[] = []) {

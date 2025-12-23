@@ -48,9 +48,14 @@ const buffHit: ActionImplementation = (ctx, params, targets) => {
     });
 };
 
-const destroyUnit: ActionImplementation = (ctx, _params, targets) => {
+const destroyUnit: ActionImplementation = (ctx, params, targets) => {
+    // If no targets provided, but action has filter conditions (e.g. Trigger)
+    // Actually EffectManager handles Target selection, so targets should be populated.
     targets.forEach(target => {
         if (target && target.unit) {
+            // Additional check for cost if specified in params (from Trigger description)
+            if (params.costMax !== undefined && (target.unit.cost || 0) > params.costMax) return;
+
             const owner = getOwnerOfZone(ctx.machine, target);
             if (owner) ctx.machine.destroyUnit(owner, target);
         }
@@ -79,8 +84,36 @@ const destroyLaneLowest: ActionImplementation = (ctx, _params, _targets) => {
     }
 };
 
-const returnToHand: ActionImplementation = (_ctx, _params, _targets) => {
-    console.log("Return to hand action not fully implemented yet.");
+const returnToHand: ActionImplementation = (ctx, _params, _targets) => {
+    const card = ctx.sourceCard;
+    const player = ctx.player;
+
+    // Remove from current zone (usually Damage Zone during trigger)
+    const damageIdx = player.damage.findIndex(c => c === card);
+    if (damageIdx !== -1) {
+        player.damage.splice(damageIdx, 1);
+        player.hand.push(card);
+        console.log(`${card.name} returned to hand from Damage Zone.`);
+        return;
+    }
+
+    // Handled general case if needed, but primarily for Trigger now
+    console.log("Return to hand action: only Damage Zone move implemented.");
+};
+
+const trashSelf: ActionImplementation = (ctx, _params, _targets) => {
+    const card = ctx.sourceCard;
+    const player = ctx.player;
+
+    // Remove from Damage Zone
+    const damageIdx = player.damage.findIndex(c => c === card);
+    if (damageIdx !== -1) {
+        player.damage.splice(damageIdx, 1);
+        player.trash.push(card);
+        console.log(`${card.name} trashed from Damage Zone.`);
+        return;
+    }
+    console.log("Trash self action: only Damage Zone move implemented.");
 };
 
 // Helper inside this module
@@ -98,4 +131,5 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DESTROY_UNIT': destroyUnit,
     'DESTROY_LANE_LOWEST': destroyLaneLowest,
     'RETURN_TO_HAND': returnToHand,
+    'TRASH_SELF': trashSelf,
 };

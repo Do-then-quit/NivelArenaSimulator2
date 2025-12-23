@@ -44,6 +44,7 @@ export type ActionType =
     | 'BUFF_HIT'
     | 'DESTROY_UNIT'
     | 'DESTROY_SELF'
+    | 'TRASH_SELF' // New: Move source card to trash (e.g. from damage zone)
     | 'RETURN_TO_HAND'
     | 'MODIFY_PLAYER_SIZE'
     | 'DESTROY_LANE_LOWEST'; // Special for Acceleration
