@@ -303,11 +303,20 @@ export class GameEngine {
 
         if (attPower >= blkPower) {
             this.destroyUnit(this.opponentPlayer, blocker);
+
+            // PENETRATION (Rule 10.2.3.2)
+            if (attacker.unit && this.hasKeyword(attacker.unit, 'PENETRATION')) {
+                this.dealDamage(this.opponentPlayer, this.getUnitHit(attacker, this.currentPlayer));
+            }
         }
 
         if (blkPower > attPower) {
             this.destroyUnit(this.currentPlayer, attacker);
         }
+    }
+
+    private hasKeyword(card: Card, keyword: string): boolean {
+        return card.keywords?.includes(keyword) || false;
     }
 
     public destroyUnit(player: PlayerState, zone: UnitZoneState) {
