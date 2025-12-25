@@ -7,7 +7,7 @@
 
 ## Phase 2: Combat Engine Extension
 - [x] Task: Implement `PENETRATION` logic in `GameEngine.ts` (Damage carry-over) [48bed7a]
-- [ ] Task: Implement `PLUNDER` logic in `GameEngine.ts` (Draw on kill)
+- [x] Task: Implement `PLUNDER` logic in `GameEngine.ts` (Draw on kill) [3162969]
 - [ ] Task: Implement `DUALIST` logic in `GameEngine.ts` (Forced defense)
 - [ ] Task: Conductor - User Manual Verification 'Combat Engine Extension' (Protocol in workflow.md)
 
