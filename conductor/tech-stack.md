@@ -8,6 +8,7 @@
 - **Domain Logic:** Vanilla TypeScript implementation located in `src/logic/`. This ensures the engine is decoupled from the UI, facilitating headless execution for AI training.
 - **State Management:** Centralized state within `GameEngine.ts`, managing phases, resources, and card movements.
 - **Card Database:** Structured [JSON](./ST02.json) format for card definitions, allowing for easy updates and data-driven effect resolution.
+- **Testing Infrastructure:** A custom Scenario-Based Test Framework for data-driven rule validation using JSON-defined game states and actions.
 
 ## Development & Tooling
 - **Package Manager:** [npm](https://www.npmjs.com/)
