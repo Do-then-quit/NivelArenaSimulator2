@@ -28,7 +28,7 @@ const MANUAL_EFFECTS: Record<string, Effect[]> = {
             activation: ActivationCondition.ACTIVE,
             description: "자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 《베이스》를 가진 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1.",
             cost: { type: 'TRASH_HAND', amount: 1 },
-            targets: { scope: 'MY_FIELD', type: 'UNIT', conditions: { hasTrait: '베이스' }, selectMode: 'RANDOM', count: 0 },
+            targets: { scope: 'MY_FIELD', type: 'UNIT', conditions: { hasTrait: '베이스' }, selectMode: 'ALL', count: 0 },
             action: { type: 'BUFF_HIT', params: { value: 1 } },
             duration: 'TURN_END'
         },

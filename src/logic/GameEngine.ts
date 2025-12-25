@@ -244,7 +244,7 @@ export class GameEngine {
     }
 
     attack(attackerZoneIndex: number) {
-        const validation = RuleValidator.canAttack(this.state, this.currentPlayer, attackerZoneIndex);
+        const validation = RuleValidator.canAttack(this, this.currentPlayer, attackerZoneIndex);
         if (!validation.valid) {
             console.log(`Cannot attack: ${validation.reason}`);
             return;

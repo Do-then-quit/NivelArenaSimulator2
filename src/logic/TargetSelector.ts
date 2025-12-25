@@ -3,7 +3,8 @@ import { TargetSchema, GameContext, UnitZoneState, PlayerState } from './types';
 
 export class TargetSelector {
     static resolve(engine: GameEngine, schema: TargetSchema, context: GameContext): any[] {
-        const { player, opponent } = context;
+        const player = context.player;
+        const opponent = context.opponent || engine.state.players.find(p => p !== player);
         let candidates: any[] = [];
 
         // 1. Initial Scope
@@ -15,10 +16,11 @@ export class TargetSelector {
                 candidates = [...player.unitZones];
                 break;
             case 'OPP_FIELD':
-                candidates = [...opponent.unitZones];
+                if (opponent) candidates = [...opponent.unitZones];
                 break;
             case 'BOTH_FIELDS':
-                candidates = [...player.unitZones, ...opponent.unitZones];
+                candidates = [...player.unitZones];
+                if (opponent) candidates.push(...opponent.unitZones);
                 break;
             case 'ADJACENT_LANES':
                 if (context.unitZone) {
@@ -44,7 +46,9 @@ export class TargetSelector {
             schema.filters.forEach(filter => {
                 switch (filter.type) {
                     case 'EXCLUDE_SELF':
-                        candidates = candidates.filter(c => c !== context.unitZone);
+                        if (context.unitZone) {
+                            candidates = candidates.filter(c => c !== context.unitZone);
+                        }
                         break;
                     case 'HAS_TRAIT':
                         candidates = candidates.filter(c => {
@@ -62,7 +66,23 @@ export class TargetSelector {
             });
         }
 
-        // 4. Selection Mode
+        // 4. Legacy Conditions Check
+        if (schema.conditions) {
+            if (schema.conditions.hasTrait) {
+                candidates = candidates.filter(c => {
+                    const unit = (c as UnitZoneState).unit;
+                    return unit && unit.traits?.includes(schema.conditions!.hasTrait!);
+                });
+            }
+            if (schema.conditions.costMax !== undefined) {
+                candidates = candidates.filter(c => {
+                    const unit = (c as UnitZoneState).unit;
+                    return unit && unit.cost <= schema.conditions!.costMax!;
+                });
+            }
+        }
+
+        // 5. Selection Mode
         if (schema.selectMode === 'ALL' || schema.count === 0) {
             return candidates;
         }
@@ -86,29 +106,30 @@ export class TargetSelector {
     }
 
     public static isValidTarget(engine: GameEngine, schema: TargetSchema, context: GameContext, target: any): boolean {
-        const { player, opponent } = context;
+        const player = context.player;
+        const opponent = context.opponent || engine.state.players.find(p => p !== player);
 
         // 1. Scope Check
         let inScope = false;
         switch (schema.scope) {
             case 'SELF': inScope = (target === context.unitZone); break;
             case 'MY_FIELD': inScope = player.unitZones.includes(target); break;
-            case 'OPP_FIELD': inScope = opponent.unitZones.includes(target); break;
-            case 'BOTH_FIELDS': inScope = player.unitZones.includes(target) || opponent.unitZones.includes(target); break;
+            case 'OPP_FIELD': inScope = opponent ? opponent.unitZones.includes(target) : false; break;
+            case 'BOTH_FIELDS': inScope = player.unitZones.includes(target) || (opponent ? opponent.unitZones.includes(target) : false); break;
             case 'MY_LEADER': inScope = (target === player.levelZone); break;
-            case 'OPP_LEADER': inScope = (target === opponent.levelZone); break;
+            case 'OPP_LEADER': inScope = opponent ? (target === opponent.levelZone) : false; break;
             case 'SHARED_LANE':
                 // For shared lane validation, we usually need the lane index or both zones.
                 // Simplified: check if target is a zone in a shared lane
                 const idx = player.unitZones.indexOf(target);
-                if (idx !== -1) inScope = (player.unitZones[idx].unit !== null && opponent.unitZones[idx].unit !== null);
+                if (idx !== -1) inScope = (player.unitZones[idx].unit !== null && (opponent ? opponent.unitZones[idx].unit !== null : false));
                 else {
-                    const oppIdx = opponent.unitZones.indexOf(target);
-                    if (oppIdx !== -1) inScope = (player.unitZones[oppIdx].unit !== null && opponent.unitZones[oppIdx].unit !== null);
+                    const oppIdx = opponent ? opponent.unitZones.indexOf(target) : -1;
+                    if (oppIdx !== -1) inScope = (player.unitZones[oppIdx].unit !== null && (opponent ? opponent.unitZones[oppIdx].unit !== null : false));
                 }
                 break;
         }
-        if (!inScope) return false;
+
 
         // 2. Type Check
         if (schema.type === 'UNIT') {

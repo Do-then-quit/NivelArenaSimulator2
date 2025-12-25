@@ -51,7 +51,7 @@ export class RuleValidator {
         if (checkTargets && card.effects) {
             for (const effect of card.effects) {
                 if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                    const hasValidTargets = this.checkPotentialTargets(engine.state, player, effect.targets.scope);
+                    const hasValidTargets = this.checkPotentialTargets(engine, player, effect.targets);
                     if (!hasValidTargets) {
                         return { valid: false, reason: "No valid targets for effect" };
                     }
@@ -62,8 +62,8 @@ export class RuleValidator {
         return { valid: true };
     }
 
-    static canAttack(state: GameState, player: PlayerState, zoneIndex: number): { valid: boolean; reason?: string } {
-        if (state.phase !== Phase.ATTACK) return { valid: false, reason: "Not in ATTACK phase" };
+    static canAttack(engine: GameEngine, player: PlayerState, zoneIndex: number): { valid: boolean; reason?: string } {
+        if (engine.state.phase !== Phase.ATTACK) return { valid: false, reason: "Not in ATTACK phase" };
 
         const zone = player.unitZones[zoneIndex];
         if (!zone.unit) return { valid: false, reason: "No unit in zone" };
@@ -83,25 +83,18 @@ export class RuleValidator {
         return cost;
     }
 
-    private static checkPotentialTargets(state: GameState, player: PlayerState, scope: string): boolean {
-        const opponent = state.players.find(p => p.id !== player.id);
+    private static checkPotentialTargets(engine: GameEngine, player: PlayerState, schema: TargetSchema): boolean {
+        const opponent = engine.state.players.find(p => p !== player);
         if (!opponent) return false;
 
-        switch (scope) {
-            case 'MY_FIELD':
-                return player.unitZones.some(z => z.unit !== null);
-            case 'OPP_FIELD':
-                return opponent.unitZones.some(z => z.unit !== null);
-            case 'SHARED_LANE':
-                for (let i = 0; i < 3; i++) {
-                    if (player.unitZones[i].unit && opponent.unitZones[i].unit) return true;
-                }
-                return false;
-            case 'ALL':
-            case 'BOTH_FIELDS':
-                return player.unitZones.some(z => z.unit !== null) || opponent.unitZones.some(z => z.unit !== null);
-            default:
-                return true;
-        }
+        const context = {
+            player,
+            opponent,
+            sourceCard: {} as any, // Dummy
+            machine: engine
+        };
+
+        const candidates = TargetSelector.resolve(engine, schema, context);
+        return candidates.length > 0;
     }
 }
