@@ -308,6 +308,11 @@ export class GameEngine {
             if (attacker.unit && this.hasKeyword(attacker.unit, 'PENETRATION')) {
                 this.dealDamage(this.opponentPlayer, this.getUnitHit(attacker, this.currentPlayer));
             }
+
+            // PLUNDER (Rule 10.2.3.3)
+            if (attacker.unit && this.hasKeyword(attacker.unit, 'PLUNDER')) {
+                this.drawCard(this.state.turnPlayerIndex, 1);
+            }
         }
 
         if (blkPower > attPower) {
