@@ -1,0 +1,28 @@
+# Track Plan: Implement ST02 Card Effects
+
+## Phase 1: Data Integration & Types
+- [x] Task: Update `types.ts` to include missing Combat Sub-Keywords (PENETRATION, PLUNDER, DUALIST) [cc40e7a]
+- [ ] Task: Update `CardDatabase.ts` to map raw `ST02.json` fields to the `Card` interface
+- [ ] Task: Conductor - User Manual Verification 'Data Integration & Types' (Protocol in workflow.md)
+
+## Phase 2: Combat Engine Extension
+- [ ] Task: Implement `PENETRATION` logic in `GameEngine.ts` (Damage carry-over)
+- [ ] Task: Implement `PLUNDER` logic in `GameEngine.ts` (Draw on kill)
+- [ ] Task: Implement `DUALIST` logic in `GameEngine.ts` (Forced defense)
+- [ ] Task: Conductor - User Manual Verification 'Combat Engine Extension' (Protocol in workflow.md)
+
+## Phase 3: Card Logic - Group A (ST02-001 to ST02-009)
+- [ ] Task: Implement & Test ST02-001 to ST02-003
+- [ ] Task: Implement & Test ST02-004 to ST02-006
+- [ ] Task: Implement & Test ST02-007 to ST02-009
+- [ ] Task: Conductor - User Manual Verification 'Card Logic - Group A' (Protocol in workflow.md)
+
+## Phase 4: Card Logic - Group B (ST02-010 to ST02-017)
+- [ ] Task: Implement & Test ST02-010 to ST02-012
+- [ ] Task: Implement & Test ST02-013 to ST02-015
+- [ ] Task: Implement & Test ST02-016 to ST02-017
+- [ ] Task: Conductor - User Manual Verification 'Card Logic - Group B' (Protocol in workflow.md)
+
+## Phase 5: Integration & Final Verification
+- [ ] Task: Global regression test for all ST02 cards in a single session
+- [ ] Task: Conductor - User Manual Verification 'Integration & Final Verification' (Protocol in workflow.md)
