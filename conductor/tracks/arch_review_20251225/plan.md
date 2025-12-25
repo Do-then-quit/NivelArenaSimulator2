@@ -6,25 +6,23 @@
     - [ ] Subtask: Check imports to ensure no UI components are imported into the logic layer.
     - [ ] Subtask: Create a "Decoupling Report" listing any violations found.
 
-## Phase 2: AI Readiness Assessment
-- [ ] Task: Evaluate RNG Determinism
-    - [ ] Subtask: Analyze how randomization (shuffling, critical hits) is currently handled.
-    - [ ] Subtask: Propose a strategy for injecting a seeded RNG generator into `GameEngine`.
-- [ ] Task: Assess State Serialization
-    - [ ] Subtask: Review the `GameState` interface.
-    - [ ] Subtask: Prototype a `serializeState()` function to see if all necessary data (including hidden info like decks) can be captured cleanly.
-    - [ ] Subtask: Identify any circular references or non-serializable objects (like function closures) in the state.
+## Phase 2: Rule Engine Fidelity Assessment
+- [ ] Task: Evaluate RNG Determinism (for Reproducible Testing)
+    - [ ] Subtask: Analyze randomization to ensure test cases are reproducible.
+    - [ ] Subtask: Propose a seeded RNG strategy for debugging.
+- [ ] Task: Rule Implementation Gap Analysis
+    - [ ] Subtask: Compare `src/logic` implementation against `NivelArena_Comprehensive_Rules_Ver.1.6.pdf`.
+    - [ ] Subtask: Identify missing core mechanics (e.g., specific timing priorities, complex targeting, interrupt windows).
+    - [ ] Subtask: Create a "Rule Compliance Report".
 
-## Phase 3: Performance and Logging Strategy
-- [ ] Task: Performance Bottleneck Prediction
-    - [ ] Subtask: Analyze the complexity of `processEffects` and main loop execution.
-    - [ ] Subtask: Flag any O(N^2) or expensive operations that might run frequently.
-- [ ] Task: Logging and Observation Design
-    - [ ] Subtask: Draft a schema for `GameActionLog` that is machine-readable (not just human-readable strings).
+## Phase 3: Testing Infrastructure Strategy
+- [ ] Task: Design Scenario-Based Test Framework
+    - [ ] Subtask: Review existing `DebugManager` tests.
+    - [ ] Subtask: Design a standard JSON/Script format for defining game scenarios (Setup -> Action -> Expected Outcome) to allow rapid rule verification.
 
 ## Phase 4: Final Report Generation
 - [ ] Task: Compile "Architecture Alignment Report"
     - [ ] Subtask: Synthesize findings from previous phases.
-    - [ ] Subtask: Create a prioritized list of refactoring tasks (e.g., "Refactor RNG," "Split UI from Logic").
+    - [ ] Subtask: Create a prioritized list of refactoring tasks (e.g., "Refactor RNG," "Rule Gaps").
     - [ ] Subtask: Update `issues.md` or `totaltask.md` with new architectural tasks.
 - [ ] Task: Conductor - User Manual Verification 'Final Report Generation' (Protocol in workflow.md)
