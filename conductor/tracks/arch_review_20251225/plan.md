@@ -10,7 +10,7 @@
 - [x] Task: Evaluate RNG Determinism (for Reproducible Testing) [e5c3381]
     - [ ] Subtask: Analyze randomization to ensure test cases are reproducible.
     - [ ] Subtask: Propose a seeded RNG strategy for debugging.
-- [ ] Task: Rule Implementation Gap Analysis
+- [x] Task: Rule Implementation Gap Analysis [dd47ef2]
     - [ ] Subtask: Compare `src/logic` implementation against `NivelArena_Comprehensive_Rules_Ver.1.6.pdf`.
     - [ ] Subtask: Identify missing core mechanics (e.g., specific timing priorities, complex targeting, interrupt windows).
     - [ ] Subtask: Create a "Rule Compliance Report".
