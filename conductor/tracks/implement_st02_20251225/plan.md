@@ -6,7 +6,7 @@
 - [ ] Task: Conductor - User Manual Verification 'Data Integration & Types' (Protocol in workflow.md)
 
 ## Phase 2: Combat Engine Extension
-- [ ] Task: Implement `PENETRATION` logic in `GameEngine.ts` (Damage carry-over)
+- [x] Task: Implement `PENETRATION` logic in `GameEngine.ts` (Damage carry-over) [48bed7a]
 - [ ] Task: Implement `PLUNDER` logic in `GameEngine.ts` (Draw on kill)
 - [ ] Task: Implement `DUALIST` logic in `GameEngine.ts` (Forced defense)
 - [ ] Task: Conductor - User Manual Verification 'Combat Engine Extension' (Protocol in workflow.md)
