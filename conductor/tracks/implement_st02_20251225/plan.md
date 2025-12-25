@@ -17,7 +17,7 @@
 - [x] Task: Implement & Test ST02-007 to ST02-009 [0563ad1]
 - [ ] Task: Conductor - User Manual Verification 'Card Logic - Group A' (Protocol in workflow.md)
 
-## Phase 4: Card Logic - Group B (ST02-010 to ST02-017)
+## Phase 4: Card Logic - Group B (ST02-010 to ST02-017) [checkpoint: 795de2c]
 - [x] Task: Implement & Test ST02-010 to ST02-012 [01b6fd3]
 - [x] Task: Implement & Test ST02-013 to ST02-015 [6dab654]
 - [x] Task: Implement & Test ST02-016 to ST02-017 [88f8536]
