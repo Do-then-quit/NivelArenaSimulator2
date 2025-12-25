@@ -1,6 +1,6 @@
 # Track Plan: Implement ST02 Card Effects
 
-## Phase 1: Data Integration & Types
+## Phase 1: Data Integration & Types [checkpoint: 9d19a9c]
 - [x] Task: Update `types.ts` to include missing Combat Sub-Keywords (PENETRATION, PLUNDER, DUALIST) [cc40e7a]
 - [x] Task: Update `CardDatabase.ts` to map raw `ST02.json` fields to the `Card` interface [2f3185e]
 - [ ] Task: Conductor - User Manual Verification 'Data Integration & Types' (Protocol in workflow.md)
