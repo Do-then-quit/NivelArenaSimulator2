@@ -11,7 +11,7 @@
 - [x] Task: Implement `DUALIST` logic in `GameEngine.ts` (Forced defense) [f2ae691]
 - [ ] Task: Conductor - User Manual Verification 'Combat Engine Extension' (Protocol in workflow.md)
 
-## Phase 3: Card Logic - Group A (ST02-001 to ST02-009)
+## Phase 3: Card Logic - Group A (ST02-001 to ST02-009) [checkpoint: 62bbfd8]
 - [x] Task: Implement & Test ST02-001 to ST02-003 [0d51bf2]
 - [x] Task: Implement & Test ST02-004 to ST02-006 [a0aa008]
 - [x] Task: Implement & Test ST02-007 to ST02-009 [0563ad1]
