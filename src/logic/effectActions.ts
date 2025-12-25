@@ -7,9 +7,27 @@ const gainLevel: ActionImplementation = (ctx, params) => {
 };
 
 const drawCard: ActionImplementation = (ctx, params) => {
-    const count = params.count || 1;
-    const pIdx = ctx.machine.state.players.indexOf(ctx.player);
-    ctx.machine.drawCard(pIdx, count);
+    if (params.selection === 'LOOK_3_PICK_1') {
+        const player = ctx.player;
+        const deck = player.deck;
+        if (deck.length === 0) return; // Lose condition handled elsewhere or just empty
+
+        // Simplified: Take top 3, pick 1st, rest to bottom
+        const revealed = deck.splice(-3); // Take last 3 (top of deck)
+        if (revealed.length === 0) return;
+
+        // Pick the last one (top-most)
+        const picked = revealed.pop()!;
+        player.hand.push(picked);
+        console.log(`${player.name} picked ${picked.name} from top ${revealed.length + 1} cards.`);
+
+        // Put rest on bottom (start of array)
+        player.deck.unshift(...revealed);
+    } else {
+        const count = params.count || 1;
+        const pIdx = ctx.machine.state.players.indexOf(ctx.player);
+        ctx.machine.drawCard(pIdx, count);
+    }
 };
 
 const buffPower: ActionImplementation = (ctx, params, targets) => {

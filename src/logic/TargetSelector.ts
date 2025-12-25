@@ -31,8 +31,11 @@ export class TargetSelector {
                 }
                 break;
             case 'SHARED_LANE':
-                // For shared lane, we might return the zones in that lane or special handling
-                // Usually it's handled via selectedLaneIndex if MANUAL
+                // Return player's zones that are part of a shared lane (both sides have units)
+                candidates = player.unitZones.filter((myZone, idx) => {
+                    const oppZone = (opponent || engine.state.players.find(p => p !== player))?.unitZones[idx];
+                    return myZone.unit !== null && oppZone?.unit !== null;
+                });
                 break;
         }
 
