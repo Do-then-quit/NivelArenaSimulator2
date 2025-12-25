@@ -7,7 +7,7 @@
     - [ ] Subtask: Create a "Decoupling Report" listing any violations found.
 
 ## Phase 2: Rule Engine Fidelity Assessment
-- [ ] Task: Evaluate RNG Determinism (for Reproducible Testing)
+- [x] Task: Evaluate RNG Determinism (for Reproducible Testing) [e5c3381]
     - [ ] Subtask: Analyze randomization to ensure test cases are reproducible.
     - [ ] Subtask: Propose a seeded RNG strategy for debugging.
 - [ ] Task: Rule Implementation Gap Analysis
