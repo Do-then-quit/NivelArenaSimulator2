@@ -15,7 +15,7 @@
     - [ ] Subtask: Identify missing core mechanics (e.g., specific timing priorities, complex targeting, interrupt windows).
     - [ ] Subtask: Create a "Rule Compliance Report".
 
-## Phase 3: Testing Infrastructure Strategy
+## Phase 3: Testing Infrastructure Strategy [checkpoint: 6f6d44d]
 - [x] Task: Design Scenario-Based Test Framework [b11ae69]
     - [ ] Subtask: Review existing `DebugManager` tests.
     - [ ] Subtask: Design a standard JSON/Script format for defining game scenarios (Setup -> Action -> Expected Outcome) to allow rapid rule verification.
