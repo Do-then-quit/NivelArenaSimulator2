@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Architecture Review and Alignment
+## [~] Track: Architecture Review and Alignment
 *Link: [./conductor/tracks/arch_review_20251225/](./conductor/tracks/arch_review_20251225/)*

@@ -1,7 +1,7 @@
 # Track Plan: Architecture Review and Alignment
 
 ## Phase 1: Core Logic Isolation Analysis
-- [ ] Task: Audit `src/logic` for Browser Dependencies
+- [x] Task: Audit `src/logic` for Browser Dependencies [c8019d6]
     - [ ] Subtask: Scan `GameEngine.ts` and `RuleValidator.ts` for usages of `window`, `document`, or `console.log` (which might slow down training).
     - [ ] Subtask: Check imports to ensure no UI components are imported into the logic layer.
     - [ ] Subtask: Create a "Decoupling Report" listing any violations found.
