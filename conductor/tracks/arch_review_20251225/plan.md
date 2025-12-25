@@ -6,7 +6,7 @@
     - [ ] Subtask: Check imports to ensure no UI components are imported into the logic layer.
     - [ ] Subtask: Create a "Decoupling Report" listing any violations found.
 
-## Phase 2: Rule Engine Fidelity Assessment
+## Phase 2: Rule Engine Fidelity Assessment [checkpoint: 73974c6]
 - [x] Task: Evaluate RNG Determinism (for Reproducible Testing) [e5c3381]
     - [ ] Subtask: Analyze randomization to ensure test cases are reproducible.
     - [ ] Subtask: Propose a seeded RNG strategy for debugging.
