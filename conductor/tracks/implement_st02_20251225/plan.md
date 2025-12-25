@@ -2,7 +2,7 @@
 
 ## Phase 1: Data Integration & Types
 - [x] Task: Update `types.ts` to include missing Combat Sub-Keywords (PENETRATION, PLUNDER, DUALIST) [cc40e7a]
-- [ ] Task: Update `CardDatabase.ts` to map raw `ST02.json` fields to the `Card` interface
+- [x] Task: Update `CardDatabase.ts` to map raw `ST02.json` fields to the `Card` interface [2f3185e]
 - [ ] Task: Conductor - User Manual Verification 'Data Integration & Types' (Protocol in workflow.md)
 
 ## Phase 2: Combat Engine Extension
