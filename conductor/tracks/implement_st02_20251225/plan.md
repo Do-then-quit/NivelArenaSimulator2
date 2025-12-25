@@ -8,7 +8,7 @@
 ## Phase 2: Combat Engine Extension
 - [x] Task: Implement `PENETRATION` logic in `GameEngine.ts` (Damage carry-over) [48bed7a]
 - [x] Task: Implement `PLUNDER` logic in `GameEngine.ts` (Draw on kill) [3162969]
-- [ ] Task: Implement `DUALIST` logic in `GameEngine.ts` (Forced defense)
+- [x] Task: Implement `DUALIST` logic in `GameEngine.ts` (Forced defense) [f2ae691]
 - [ ] Task: Conductor - User Manual Verification 'Combat Engine Extension' (Protocol in workflow.md)
 
 ## Phase 3: Card Logic - Group A (ST02-001 to ST02-009)
