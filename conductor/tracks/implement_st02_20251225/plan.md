@@ -5,7 +5,7 @@
 - [x] Task: Update `CardDatabase.ts` to map raw `ST02.json` fields to the `Card` interface [2f3185e]
 - [ ] Task: Conductor - User Manual Verification 'Data Integration & Types' (Protocol in workflow.md)
 
-## Phase 2: Combat Engine Extension
+## Phase 2: Combat Engine Extension [checkpoint: cf223d9]
 - [x] Task: Implement `PENETRATION` logic in `GameEngine.ts` (Damage carry-over) [48bed7a]
 - [x] Task: Implement `PLUNDER` logic in `GameEngine.ts` (Draw on kill) [3162969]
 - [x] Task: Implement `DUALIST` logic in `GameEngine.ts` (Forced defense) [f2ae691]
