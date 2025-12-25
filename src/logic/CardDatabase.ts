@@ -58,6 +58,11 @@ const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ],
     "ST02-010": [
         {
+            activation: ActivationCondition.ATTACKER,
+            description: "돌파[2코스트 이하]",
+            action: { type: 'BREAKTHROUGH', params: { costMax: 2 } }
+        },
+        {
             activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "이 카드를 자신의 패에 넣는다.",
             action: { type: 'RETURN_TO_HAND', params: {} }

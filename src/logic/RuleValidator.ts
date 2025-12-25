@@ -1,5 +1,6 @@
-import { GameState, PlayerState, Phase, CardType } from './types';
+import { GameState, PlayerState, Phase, CardType, TargetSchema } from './types';
 import { GameEngine } from './GameEngine';
+import { TargetSelector } from './TargetSelector';
 
 export class RuleValidator {
     static canPlayUnit(engine: GameEngine, player: PlayerState, cardIndex: number, zoneIndex: number): { valid: boolean; reason?: string } {

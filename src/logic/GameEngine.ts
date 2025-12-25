@@ -292,6 +292,20 @@ export class GameEngine {
         const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
+        // CHECK BREAKTHROUGH
+        if (shouldBlock && blockerZone.unit && attackerZone.unit && attackerZone.unit.effects) {
+            const breakthroughEffect = attackerZone.unit.effects.find(e => 
+                e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH'
+            );
+            if (breakthroughEffect) {
+                const costMax = breakthroughEffect.action.params.costMax;
+                if (costMax !== undefined && blockerZone.unit.cost <= costMax) {
+                    console.log(`Block prevented by BREAKTHROUGH (Cost ${blockerZone.unit.cost} <= ${costMax})`);
+                    shouldBlock = false; // Force no block
+                }
+            }
+        }
+
         // DUALIST (Rule 10.2.3.5.3): Must defend if encounter unit exists and can defend.
         const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
         let finalShouldBlock = shouldBlock;
