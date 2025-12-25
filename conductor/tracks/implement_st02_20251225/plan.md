@@ -14,7 +14,7 @@
 ## Phase 3: Card Logic - Group A (ST02-001 to ST02-009)
 - [x] Task: Implement & Test ST02-001 to ST02-003 [0d51bf2]
 - [x] Task: Implement & Test ST02-004 to ST02-006 [a0aa008]
-- [ ] Task: Implement & Test ST02-007 to ST02-009
+- [x] Task: Implement & Test ST02-007 to ST02-009 [0563ad1]
 - [ ] Task: Conductor - User Manual Verification 'Card Logic - Group A' (Protocol in workflow.md)
 
 ## Phase 4: Card Logic - Group B (ST02-010 to ST02-017)
