@@ -86,8 +86,13 @@ export class GameEngine {
                 if (this.currentPlayer.leaderLevel < 10) {
                     this.currentPlayer.leaderLevel++;
                 }
+                
+                // Rule 10.2.6.1 Awakening
+                if (this.currentPlayer.leaderLevel >= 6 && this.currentPlayer.levelZone && !this.currentPlayer.levelZone.isAwakened) {
+                    this.awakenLeader(this.state.turnPlayerIndex);
+                }
+
                 this.state.phase = Phase.DRAW;
-                this.nextPhase();
                 break;
             case Phase.DRAW:
                 if (!(this.state.turnCount === 1 && this.state.turnPlayerIndex === 0)) {
@@ -142,9 +147,17 @@ export class GameEngine {
         this.state.phase = Phase.LEVEL_UP;
     }
 
+    private awakenLeader(playerIndex: number) {
+        const player = this.state.players[playerIndex];
+        if (player.levelZone) {
+            player.levelZone.isAwakened = true;
+            console.log(`Leader ${player.levelZone.name} AWAKENED!`);
+        }
+    }
+
     // Actions
     playUnit(cardIndex: number, zoneIndex: number) {
-        const validation = RuleValidator.canPlayUnit(this.state, this.currentPlayer, cardIndex, zoneIndex);
+        const validation = RuleValidator.canPlayUnit(this, this.currentPlayer, cardIndex, zoneIndex);
         if (!validation.valid) {
             console.log(`Cannot place unit: ${validation.reason}`);
             return;
@@ -188,7 +201,7 @@ export class GameEngine {
     }
 
     playSkill(cardIndex: number) {
-        const validation = RuleValidator.canPlaySkill(this.state, this.currentPlayer, cardIndex);
+        const validation = RuleValidator.canPlaySkill(this, this.currentPlayer, cardIndex);
         if (!validation.valid) {
             console.log(`Cannot play skill: ${validation.reason}`);
             return;
@@ -394,6 +407,26 @@ export class GameEngine {
                 return;
             }
         }
+    }
+
+    public getPlayerSize(player: PlayerState): number {
+        let size = player.leaderLevel + player.damage.length;
+
+        // Leader Passive Size Bonus (e.g. ST02-001)
+        if (player.levelZone && player.levelZone.effects) {
+            player.levelZone.effects.forEach(effect => {
+                if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'MODIFY_PLAYER_SIZE') {
+                    // Check awakening condition if applicable
+                    let conditionMet = true;
+                    if (player.levelZone?.isAwakened) {
+                        // For ST02-001, the bonus is on the awakened side
+                        size += (effect.action.params.value || 0);
+                    }
+                }
+            });
+        }
+
+        return size;
     }
 
     public getUnitPower(zone: UnitZoneState, player: PlayerState): number {

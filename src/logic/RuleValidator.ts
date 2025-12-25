@@ -1,8 +1,9 @@
 import { GameState, PlayerState, Phase, CardType } from './types';
+import { GameEngine } from './GameEngine';
 
 export class RuleValidator {
-    static canPlayUnit(state: GameState, player: PlayerState, cardIndex: number, zoneIndex: number): { valid: boolean; reason?: string } {
-        if (state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
+    static canPlayUnit(engine: GameEngine, player: PlayerState, cardIndex: number, zoneIndex: number): { valid: boolean; reason?: string } {
+        if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
 
         const card = player.hand[cardIndex];
         if (!card || card.type !== CardType.UNIT) return { valid: false, reason: "Card is not a unit" };
@@ -25,7 +26,7 @@ export class RuleValidator {
             costToSubtract = zone.unit.cost + zone.items.reduce((sum, item) => sum + item.cost, 0);
         }
 
-        const currentSize = player.leaderLevel + player.damage.length;
+        const currentSize = engine.getPlayerSize(player);
         const currentFieldCost = this.calculateFieldCost(player);
 
         if (currentFieldCost - costToSubtract + card.cost > currentSize) {
@@ -35,13 +36,13 @@ export class RuleValidator {
         return { valid: true };
     }
 
-    static canPlaySkill(state: GameState, player: PlayerState, cardIndex: number, checkTargets: boolean = true): { valid: boolean; reason?: string } {
-        if (state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
+    static canPlaySkill(engine: GameEngine, player: PlayerState, cardIndex: number, checkTargets: boolean = true): { valid: boolean; reason?: string } {
+        if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
 
         const card = player.hand[cardIndex];
         if (!card || card.type !== CardType.SKILL) return { valid: false, reason: "Card is not a skill" };
 
-        const currentSize = player.leaderLevel + player.damage.length;
+        const currentSize = engine.getPlayerSize(player);
         const currentFieldCost = this.calculateFieldCost(player);
         if (currentFieldCost + card.cost > currentSize) {
             return { valid: false, reason: "Cost exceeds Size limit" };
@@ -50,7 +51,7 @@ export class RuleValidator {
         if (checkTargets && card.effects) {
             for (const effect of card.effects) {
                 if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                    const hasValidTargets = this.checkPotentialTargets(state, player, effect.targets.scope);
+                    const hasValidTargets = this.checkPotentialTargets(engine.state, player, effect.targets.scope);
                     if (!hasValidTargets) {
                         return { valid: false, reason: "No valid targets for effect" };
                     }

@@ -137,6 +137,7 @@ export interface Card {
     traits?: string;
     keywords?: string;
     imageUrl?: string;
+    isAwakened?: boolean;
     effects?: Effect[];
 }
 

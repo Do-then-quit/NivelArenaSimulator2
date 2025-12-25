@@ -2,6 +2,13 @@ import { Card, CardType, Attribute, ActivationCondition, Effect } from './types'
 import rawST02 from '../../ST02.json';
 
 const MANUAL_EFFECTS: Record<string, Effect[]> = {
+    "ST02-001": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "각성면 패시브 : 자신의 사이즈+1.",
+            action: { type: 'MODIFY_PLAYER_SIZE', params: { value: 1 } }
+        }
+    ],
     "ST02-003": [
         {
             activation: ActivationCondition.EXIT,
