@@ -31,6 +31,7 @@ export enum ActivationCondition {
     ATTACKER = 'ATTACKER',   // When attacking
     DEFENDER = 'DEFENDER',   // When defending
     EXIT = 'EXIT',           // When leaving play/destroyed
+    ON_KILL = 'ON_KILL',     // When trashing opponent unit in combat
     DAMAGE_TRIGGER = 'DAMAGE_TRIGGER', // Game keyword "TRIGGER" (when dealt as damage)
     TURN_START = 'TURN_START',
     TURN_END = 'TURN_END',
@@ -47,7 +48,12 @@ export type ActionType =
     | 'TRASH_SELF' // New: Move source card to trash (e.g. from damage zone)
     | 'RETURN_TO_HAND'
     | 'MODIFY_PLAYER_SIZE'
-    | 'DESTROY_LANE_LOWEST'; // Special for Acceleration
+    | 'DESTROY_LANE_LOWEST' // Special for Acceleration
+    | 'PENETRATION' // Damage to player on kill
+    | 'PLUNDER'     // Draw on kill
+    | 'DUALIST'      // Forced block by encounter unit
+    | 'BREAKTHROUGH' // Cannot be blocked by certain units
+    | 'INFILTRATION'; // Draw if not blocked
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'COST_LIMIT' | 'POWER_LIMIT';
