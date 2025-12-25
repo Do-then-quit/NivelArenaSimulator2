@@ -12,12 +12,12 @@
 - **원인 추정**: `GameEngine.ts`의 `selectTarget` 또는 `EffectManager`에서 트리거 효과의 `TargetSchema` (scope: OPP_FIELD, costMax: 3) 검증 로직이 수동 선택(`MANUAL`) 시 완벽하게 구속되지 않음.
 - **조치 계획**: `selectTarget` 함수 내에 `TargetSchema.conditions` (costMax 등)에 대한 추가 검증 로직 구현 필요.
 
-## 2. 시스템 공통 이슈 (System Issues)
+## 3. 아키텍처 이슈 (Architectural Issues)
 
-### 수동 타겟 선택(MANUAL) 시 필터 미적용
-- **현상**: 효과 설명에 특정 조건(예: 코스트 제한, 특정 소속 등)이 있어도, UI에서 유닛을 클릭할 때 해당 조건에 맞는 유닛인지 최종 엔진 단계에서 한 번 더 검증하는 로직이 미흡함.
-- **해결 방안**: `GameEngine.selectTarget` 호출 시 `TargetSelector`의 필터 로직을 재사용하여 유효하지 않은 타겟 클릭 시 무시하도록 강화.
+### 비결정론적 로직 (Non-deterministic Logic)
+- **현상**: `Math.random`을 사용하여 덱 셔플 및 랜덤 타겟팅을 수행하므로 동일한 상황 재현 불가.
+- **해결 방안**: 시드 주입이 가능한 PRNG(Pseudo-Random Number Generator) 도입.
 
-### 타겟 시각화 부족
-- **현상**: `SELECT_TARGET` 모드에서 어떤 유닛이 '유효한' 타겟인지 시각적으로 확실히 구분되지 않음 (현재는 커서 모양 및 그림자만 변경).
-- **해결 방안**: 선택 가능한 후보 유닛들에게만 강조 테두리(Highlight)를 적용하도록 UI 업데이트.
+### 전투 단계 구분 미흡
+- **현상**: 공격/방어 선언 단계가 명확히 분리되지 않아 '어태커', '디펜더' 키워드 발동 시점이 모호함.
+- **해결 방안**: 전투 시스템을 룰북 7.2~7.4에 따라 단계별로 리팩토링.

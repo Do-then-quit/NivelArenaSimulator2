@@ -91,3 +91,10 @@
 - [ ] **개별 카드 로직 수정**: ST02-009 길티 등 일부 카드의 트리거 범위/필터 오류 수정 필요
 - [ ] **타겟 선택 검증 강화**: MANUAL 선택 시 필터(코스트 등) 강제 적용 로직 보완
 - [ ] **디테일 이슈 트래커**: [issues.md](file:///c:/Users/MinkyoLee/NivelArenaSimulator2/issues.md)를 통해 세부 버그 관리 시작
+
+## 8. 아키텍처 및 인프라 (Architecture & Infrastructure)
+
+- [ ] **결정론적 시뮬레이션 (RNG)**: `Math.random`을 시드 기반 PRNG로 교체 (P0)
+- [ ] **시나리오 기반 테스트 프레임워크**: JSON 기반 시나리오 파서 및 실행기 구현 (P0)
+- [ ] **전투 로직 리팩토링**: 공격 선언/방어 선언/전투 단계로 세분화하여 트리거 윈도우 확보 (P1)
+- [ ] **로깅 시스템**: `console.log`를 추상화된 `GameLogger`로 교체 (P3)
