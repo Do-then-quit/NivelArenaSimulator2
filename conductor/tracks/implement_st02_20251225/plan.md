@@ -24,5 +24,5 @@
 - [ ] Task: Conductor - User Manual Verification 'Card Logic - Group B' (Protocol in workflow.md)
 
 ## Phase 5: Integration & Final Verification
-- [ ] Task: Global regression test for all ST02 cards in a single session
+- [x] Task: Global regression test for all ST02 cards in a single session [fcd9293]
 - [ ] Task: Conductor - User Manual Verification 'Integration & Final Verification' (Protocol in workflow.md)
