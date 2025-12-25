@@ -253,10 +253,17 @@ export class GameEngine {
         const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
+        // DUALIST logic check (Rule 10.2.3.5)
+        const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
+
         if (blockerZone.unit) {
             // Encounter Unit exists -> Go to BLOCK phase
             this.state.phase = Phase.BLOCK;
             this.state.pendingAttackerIndex = attackerZoneIndex;
+
+            // If Dualist, automatically resolve block if encounter unit exists? 
+            // Rules say "must defend if possible". Usually this means the opponent choice is forced.
+            // For now, let's keep it in BLOCK phase but we could flag it as forced.
         } else {
             // Direct Attack
             this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
@@ -272,7 +279,14 @@ export class GameEngine {
         const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
-        if (shouldBlock && blockerZone.unit) {
+        // DUALIST (Rule 10.2.3.5.3): Must defend if encounter unit exists and can defend.
+        const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
+        let finalShouldBlock = shouldBlock;
+        if (isDualist && blockerZone.unit) {
+            finalShouldBlock = true; // Forced block
+        }
+
+        if (finalShouldBlock && blockerZone.unit) {
             // Trigger Defender Effects
             this.effectManager.processEffects(ActivationCondition.DEFENDER, {
                 sourceCard: blockerZone.unit,
