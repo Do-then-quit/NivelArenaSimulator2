@@ -1,0 +1,8 @@
+{
+  "track_id": "gui_alignment_20251225",
+  "type": "refactor",
+  "status": "new",
+  "created_at": "2025-12-25T08:12:00Z",
+  "updated_at": "2025-12-25T08:12:00Z",
+  "description": "GUI & Rule Alignment Fixes: Active effects, Item drag-and-drop, and Leader placement."
+}
