@@ -74,6 +74,36 @@ function testActiveEffectCostSelection() {
     // ST02-004 is '베이스' (Base), so it SHOULD be buffed
     if (newHit1 !== initialHit1 + 1) throw new Error(`Expected Hit ${initialHit1 + 1}, got ${newHit1} for ST02-004 (Base)`);
 
+    // 7. Try to activate AGAIN in the same turn
+    game.activateEffect(0, effectIndex);
+    
+    // interactionMode should NOT change to SELECT_COST because it should be blocked
+    if (game.state.interactionMode === 'SELECT_COST') {
+        throw new Error("FAIL: Active effect activated twice in the same turn!");
+    }
+
+    // 8. Next turn and check reset
+    game.nextPhase(); // MAIN -> ATTACK
+    game.nextPhase(); // ATTACK -> END
+    game.nextPhase(); // END -> LEVEL_UP (Turn 2, P2 turn)
+    game.nextPhase(); // P2 LEVEL_UP -> DRAW
+    game.nextPhase(); // P2 DRAW -> MAIN
+    game.nextPhase(); // P2 MAIN -> ATTACK
+    game.nextPhase(); // P2 ATTACK -> END
+    game.nextPhase(); // P2 END -> LEVEL_UP (Turn 3, P1 turn)
+    
+    // P1 Turn 3
+    game.nextPhase(); // LEVEL_UP -> DRAW
+    game.nextPhase(); // DRAW -> MAIN
+    
+    // Give p1 a card for cost
+    p1.hand = [getCard('ST02-002')];
+    
+    game.activateEffect(0, effectIndex);
+    if (game.state.interactionMode !== 'SELECT_COST') {
+        throw new Error("FAIL: Active effect did not reset on the next turn!");
+    }
+
     console.log("PASSED: ActiveEffect - ST02-007 Cost & Buff");
 }
 

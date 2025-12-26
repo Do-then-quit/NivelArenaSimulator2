@@ -42,9 +42,9 @@ export class GameEngine {
             levelZone: leaderCopy,
             leaderLevel: 1,
             unitZones: [
-                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
-                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
-                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
+                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
+                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
+                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
             ],
             skillZone: [],
         };
@@ -146,6 +146,7 @@ export class GameEngine {
             z.hasAttacked = false;
             z.isExhausted = false;
             z.hasPlacedUnitThisTurn = false; // Reset placement limit
+            z.hasActivatedEffectThisTurn = false; // Reset activation limit
         });
 
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
@@ -248,7 +249,7 @@ export class GameEngine {
     activateEffect(zoneIndex: number, effectIndex: number) {
         const zone = this.currentPlayer.unitZones[zoneIndex];
         const card = zone.unit;
-        if (!card || !card.effects) return;
+        if (!card || !card.effects || zone.hasActivatedEffectThisTurn) return;
 
         const effect = card.effects[effectIndex];
         if (effect.activation !== ActivationCondition.ACTIVE) return;
@@ -261,7 +262,9 @@ export class GameEngine {
             machine: this
         };
 
-        this.effectManager.processEffect(effect, context);
+        if (this.effectManager.processEffect(effect, context)) {
+            zone.hasActivatedEffectThisTurn = true;
+        }
     }
 
     // checkPotentialTargets moved to RuleValidator
