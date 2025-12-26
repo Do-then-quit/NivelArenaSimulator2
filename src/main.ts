@@ -136,7 +136,7 @@ function renderCard(card: Card, isSmall: boolean = false, calculatedPower?: numb
     const hit = calculatedHit !== undefined ? calculatedHit : card.hit;
 
     return `
-        <div class="card ${card.attribute.toLowerCase()} ${isSmall ? 'small-card' : ''}">
+        <div class="card ${card.attribute.toLowerCase()} ${isSmall ? 'small-card' : ''} ${card.isAwakened ? 'awakened' : ''}">
             ${card.imageUrl ? `<img src="${card.imageUrl}" class="card-image" alt="${card.name}">` : ''}
             <div class="card-overlay">
                 <div class="card-cost">${card.cost}</div>
