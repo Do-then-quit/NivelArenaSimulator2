@@ -2,7 +2,7 @@
 
 ## Phase 1: Leader Loyalty & Level Zone Refactor
 - [x] Task: Update `createDeck` in `CardDatabase.ts` to exclude `LEADER` type cards from the main deck ca7e251
-- [ ] Task: Write Failing Test: Verify Leader card is in Level Zone and NOT in Deck/Hand
+- [x] Task: Write Failing Test: Verify Leader card is in Level Zone and NOT in Deck/Hand fc6c347
 - [ ] Task: Implement fix in `GameEngine.ts` to correctly initialize `levelZone` without leaders in deck
 - [ ] Task: Update `main.ts` UI to display the Leader card at the bottom of the level indicator
 - [ ] Task: Implement Awakening visual (glow/flip) in `renderCard` and `style.css`
