@@ -12,8 +12,8 @@
 - [x] Task: Add `canPlayItem` to `RuleValidator.ts` and `playItem` to `GameEngine.ts` b2cbf93
 - [x] Task: Write Failing Test: Equip `ST02-016` to a unit via `playItem` and verify stat boost b2cbf93
 - [x] Task: Implement Item Equipment logic in `GameEngine.ts` b2cbf93
-- [~] Task: Update `main.ts` drag-and-drop listeners to handle `ITEM` cards and highlight valid `unit-zone` targets
-- [ ] Task: Conductor - User Manual Verification 'Item Equipment Implementation' (Protocol in workflow.md)
+- [x] Task: Update `main.ts` drag-and-drop listeners to handle `ITEM` cards and highlight valid `unit-zone` targets b8c381e
+- [~] Task: Conductor - User Manual Verification 'Item Equipment Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Active Effect & Cost Selection Workflow
 - [ ] Task: Update `types.ts` to include `SELECT_COST` in `interactionMode` and `costSelection` metadata in `PendingEffect`
