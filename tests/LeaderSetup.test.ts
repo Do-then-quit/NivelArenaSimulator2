@@ -70,5 +70,29 @@ function testRobustness() {
     console.log("PASSED: LeaderSetup - Robustness Check");
 }
 
+function testLeaderIndependence() {
+    console.log("Running: LeaderSetup - Leader Independence Check");
+    
+    // Setup: Same leader object passed to both
+    const leaderTemplate = DUMMY_CARDS.find(c => c.type === CardType.LEADER)!;
+    const game = new GameEngine('P1', 'P2', createDeck(), createDeck(), leaderTemplate, leaderTemplate);
+
+    const p1 = game.state.players[0];
+    const p2 = game.state.players[1];
+
+    if (!p1.levelZone || !p2.levelZone) throw new Error("Leaders not initialized");
+
+    // Modify P1 leader
+    p1.levelZone.isAwakened = true;
+
+    // Check P2 leader
+    if (p2.levelZone.isAwakened === true) {
+        throw new Error("FAIL: Awakening Player 1's leader also awakened Player 2's leader! They share the same reference.");
+    }
+
+    console.log("PASSED: LeaderSetup - Leader Independence Check");
+}
+
 runTest();
 testRobustness();
+testLeaderIndependence();

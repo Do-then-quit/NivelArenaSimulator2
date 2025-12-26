@@ -29,6 +29,9 @@ export class GameEngine {
         // Strict Rule: Decks cannot contain Leaders.
         const validDeck = deck.filter(c => c.type !== CardType.LEADER);
 
+        // Deep copy leader to ensure independence
+        const leaderCopy = JSON.parse(JSON.stringify(leader));
+
         return {
             id: Math.random().toString(36).substring(7),
             name,
@@ -36,7 +39,7 @@ export class GameEngine {
             hand: [],
             trash: [],
             damage: [],
-            levelZone: leader,
+            levelZone: leaderCopy,
             leaderLevel: 1,
             unitZones: [
                 { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false },
