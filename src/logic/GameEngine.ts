@@ -245,7 +245,63 @@ export class GameEngine {
         console.log(`Equipped ${card.name} to unit in zone ${zoneIndex}`);
     }
 
+    activateEffect(zoneIndex: number, effectIndex: number) {
+        const zone = this.currentPlayer.unitZones[zoneIndex];
+        const card = zone.unit;
+        if (!card || !card.effects) return;
+
+        const effect = card.effects[effectIndex];
+        if (effect.activation !== ActivationCondition.ACTIVE) return;
+
+        const context = {
+            sourceCard: card,
+            player: this.currentPlayer,
+            opponent: this.opponentPlayer,
+            unitZone: zone,
+            machine: this
+        };
+
+        this.effectManager.processEffect(effect, context);
+    }
+
     // checkPotentialTargets moved to RuleValidator
+
+    initiateCostSelection(effect: any, context: any) {
+        this.state.interactionMode = 'SELECT_COST';
+        this.state.pendingEffect = {
+            sourceCard: context.sourceCard,
+            sourcePlayerId: context.player.id,
+            actionType: effect.action.type,
+            actionValue: effect.action.params,
+            costToPay: effect.cost
+        };
+        (this.state.pendingEffect as any)._fullEffect = effect;
+        (this.state.pendingEffect as any)._context = context;
+
+        console.log("Entered Cost Selection Mode for " + context.sourceCard.name);
+    }
+
+    selectCost(handIndex: number) {
+        if (this.state.interactionMode !== 'SELECT_COST' || !this.state.pendingEffect) return;
+        const pending = this.state.pendingEffect as any;
+
+        // Execute Cost: TRASH_HAND
+        const discarded = this.currentPlayer.hand.splice(handIndex, 1)[0];
+        this.currentPlayer.trash.push(discarded);
+
+        console.log(`Paid cost: Trashed ${discarded.name}`);
+
+        // Resume Effect Execution
+        const effect = pending._fullEffect;
+        const context = pending._context;
+        context.costPaid = true; // Mark as paid to avoid loop
+
+        // Reset State BEFORE processing effect (in case effect enters selection mode)
+        this.state.interactionMode = 'NORMAL';
+        this.state.pendingEffect = null;
+
+        this.effectManager.processEffect(effect, context);
+    }
 
     initiateTargetSelection(effect: any, context: any) {
         this.state.interactionMode = 'SELECT_TARGET';

@@ -568,6 +568,33 @@ body {
     font-weight: bold;
 }
 
+.active-btn {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: #0984e3;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 10;
+}
+
+.cost-candidate {
+    cursor: pointer;
+    border: 2px solid #0984e3;
+    animation: pulse-blue 1.5s infinite;
+}
+
+@keyframes pulse-blue {
+    0% { box-shadow: 0 0 5px rgba(9, 132, 227, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(9, 132, 227, 0.8); }
+    100% { box-shadow: 0 0 5px rgba(9, 132, 227, 0.4); }
+}
+
 .block-controls {
     position: absolute;
     inset: 0;

@@ -18,31 +18,47 @@ export class EffectManager {
 
         sourceCard.effects.forEach((effect: Effect) => {
             if (effect.activation === activation) {
-                if (this.checkCondition(effect, context)) {
-                    // Cost payment should happen here or be prompted. 
-                    // For now, auto-pay if possible, else fail.
-                    if (this.payCost(effect, context)) {
-                        triggered = true;
-                        // If effect has targets, we might need to go into selection mode via Engine
-                        if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                            // NEW: Check if there are any valid targets available before prompting
-                            const candidates = TargetSelector.resolve(this.engine, effect.targets, context);
-                            if (candidates.length > 0) {
-                                this.engine.initiateTargetSelection(effect, context);
-                            } else {
-                                console.log(`No valid targets for ${effect.description}, skipping selection.`);
-                            }
-                        } else {
-                            // Instant execution (self, random, or auto targets)
-                            const targets = this.resolveAutoTargets(effect.targets, context);
-                            this.executeEffect(effect, context, targets);
-                        }
-                    }
+                if (this.processEffect(effect, context)) {
+                    triggered = true;
                 }
             }
         });
 
         return triggered;
+    }
+
+    public processEffect(effect: Effect, context: GameContext): boolean {
+        if (!this.checkCondition(effect, context)) return false;
+
+        // NEW: If cost exists and hasn't been paid yet, initiate cost selection
+        // We add a flag to context if cost is already handled
+        const costAlreadyPaid = (context as any).costPaid === true;
+
+        if (effect.cost && effect.cost.type !== 'NONE' && !costAlreadyPaid) {
+            // Only manual cost if it's ACTIVE or if we want to support it for others
+            // For now, let's keep it consistent: manual cost for everyone if it's TRASH_HAND
+            if (effect.cost.type === 'TRASH_HAND') {
+                this.engine.initiateCostSelection(effect, context);
+                return true;
+            }
+        }
+
+        // If we reach here, either no cost or cost already paid
+        // If effect has targets, we might need to go into selection mode via Engine
+        if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+            const candidates = TargetSelector.resolve(this.engine, effect.targets, context);
+            if (candidates.length > 0) {
+                this.engine.initiateTargetSelection(effect, context);
+            } else {
+                console.log(`No valid targets for ${effect.description}, skipping selection.`);
+                return false;
+            }
+        } else {
+            // Instant execution (self, random, or auto targets)
+            const targets = this.resolveAutoTargets(effect.targets, context);
+            this.executeEffect(effect, context, targets);
+        }
+        return true;
     }
 
     public executeEffect(effect: Effect, context: GameContext, targets: any[] = []) {
@@ -64,26 +80,6 @@ export class EffectManager {
         const { type } = effect.condition;
         // Simple implementation
         if (type === 'ALWAYS') return true;
-        return true;
-    }
-
-    private payCost(effect: Effect, context: any): boolean {
-        if (!effect.cost) return true;
-        const { type, amount } = effect.cost;
-        const { player } = context;
-
-        if (type === 'TRASH_HAND') {
-            if (player.hand.length >= (amount || 1)) {
-                // Simplified: Randomly trash for now or just pop last
-                // In real game, should prompt user.
-                for (let i = 0; i < (amount || 1); i++) {
-                    const card = player.hand.pop();
-                    if (card) player.trash.push(card);
-                }
-                return true;
-            }
-            return false;
-        }
         return true;
     }
 

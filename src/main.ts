@@ -38,6 +38,11 @@ function render() {
                 SELECT TARGET FOR SKILL
             </div>
         ` : ''}
+        ${game.state.interactionMode === 'SELECT_COST' ? `
+            <div style="background: #0984e3; color: white; padding: 10px; border-radius: 4px; animation: pulse 1s infinite;">
+                SELECT CARD TO TRASH (COST)
+            </div>
+        ` : ''}
       </div>
 
       ${renderPlayer(opponent, true, isMainPhase)}
@@ -49,12 +54,12 @@ function render() {
           <div class="status-item"><span>Phase</span> <strong>${game.state.phase}</strong></div>
           <div class="status-item"><span>Active</span> <strong>${game.currentPlayer.name}</strong></div>
         </div>
-        <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK ? 'disabled' : ''}>Next Phase</button>
+        <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' ? 'disabled' : ''}>Next Phase</button>
       </div>
 
       <div class="hand-zone">
           ${currentPlayer.hand.map((c, i) => `
-              <div class="card-in-hand" draggable="${isMainPhase}" data-index="${i}">
+              <div class="card-in-hand ${game.state.interactionMode === 'SELECT_COST' ? 'cost-candidate' : ''}" draggable="${isMainPhase && game.state.interactionMode === 'NORMAL'}" data-index="${i}">
                   ${renderCard(c)}
               </div>
           `).join('')}
@@ -117,6 +122,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                         ` : ''}
 
                         ${z.unit && !isOpponent && game.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
+                        ${z.unit && !isOpponent && game.state.phase === Phase.MAIN && z.unit.effects?.some((e: any) => e.activation === 'ACTIVE') ? '<button class="active-btn">Active</button>' : ''}
                         ${isBlockingTarget ? `
                             <div class="block-controls">
                                 <button class="block-btn">Block</button>
@@ -316,6 +322,34 @@ function attachListeners() {
         });
     });
 
+
+    document.querySelectorAll('.active-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
+            // Assuming we activate the first ACTIVE effect for simplicity in MVP
+            // ST02-007 has only one ACTIVE effect.
+            const zone = game.currentPlayer.unitZones[zoneIndex];
+            const effectIndex = zone.unit?.effects?.findIndex(e => e.activation === 'ACTIVE') ?? -1;
+            
+            if (effectIndex !== -1) {
+                game.activateEffect(zoneIndex, effectIndex);
+                render();
+            }
+        });
+    });
+
+    // Cost Selection Listener
+    if (game.state.interactionMode === 'SELECT_COST') {
+        const handCards = document.querySelectorAll('.card-in-hand');
+        handCards.forEach(card => {
+            card.addEventListener('click', (_e) => {
+                const index = parseInt((card as HTMLElement).dataset.index!);
+                game.selectCost(index);
+                render();
+            });
+        });
+    }
 
     // Zone Selection Listener (for Skills)
     if (game.state.interactionMode === 'SELECT_TARGET') {

@@ -178,7 +178,7 @@ export interface GameState {
     turnCount: number;
     winner: string | null;
     pendingAttackerIndex: number | null; // Track who is attacking during BLOCK phase
-    interactionMode: 'NORMAL' | 'SELECT_TARGET';
+    interactionMode: 'NORMAL' | 'SELECT_TARGET' | 'SELECT_COST';
     pendingEffect: PendingEffect | null;
 }
 
@@ -187,5 +187,6 @@ export interface PendingEffect {
     sourcePlayerId: string;
     actionType: string;
     actionValue: any;
-    validTargets: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE'; // Simplified target constraint
+    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE'; // Simplified target constraint
+    costToPay?: EffectCost;
 }
