@@ -177,7 +177,7 @@ export function createDeck(): Card[] {
 
     const deck: Card[] = [];
     // Only use Units for the deck as requested
-    const deckPool = DUMMY_CARDS;
+    const deckPool = DUMMY_CARDS.filter(c => c.type !== CardType.LEADER);
     for (let i = 0; i < 40; i++) {
         const template = deckPool[i % deckPool.length];
         deck.push({ ...template, id: `${template.id}_${i}` });
