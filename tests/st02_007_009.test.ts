@@ -44,6 +44,11 @@ async function testST02_007_Active() {
         unitZone: player.unitZones[0],
         machine: engine
     });
+
+    // NEW: Handle cost selection mode if triggered
+    if (engine.state.interactionMode === 'SELECT_COST') {
+        engine.selectCost(0); // Select the card in hand
+    }
     
     // N102 (Zone 1) should have Hit +1
     // Breed (Zone 0) also has "Base" trait
