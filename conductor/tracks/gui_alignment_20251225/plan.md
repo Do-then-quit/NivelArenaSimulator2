@@ -15,15 +15,15 @@
 - [x] Task: Update `main.ts` drag-and-drop listeners to handle `ITEM` cards and highlight valid `unit-zone` targets b8c381e
 - [x] Task: Conductor - User Manual Verification 'Item Equipment Implementation' (Protocol in workflow.md) 24980c5
 
-## Phase 3: Active Effect & Cost Selection Workflow
-- [~] Task: Update `types.ts` to include `SELECT_COST` in `interactionMode` and `costSelection` metadata in `PendingEffect`
-- [ ] Task: Update `main.ts` to render an "Active" button on unit cards with `ActivationCondition.ACTIVE`
-- [ ] Task: Implement `GameEngine.initiateCostSelection` and `GameEngine.selectCost` (to trash hand cards)
-- [ ] Task: Write Failing Test: Trigger `ST02-007` effect, pay cost (trash hand), and verify Hit buff on field
-- [ ] Task: Implement logic to resume effect execution after cost payment in `EffectManager.ts`
-- [ ] Task: Conductor - User Manual Verification 'Active Effect & Cost Selection Workflow' (Protocol in workflow.md)
+## Phase 3: Active Effect & Cost Selection Workflow [checkpoint: b8f1ca7]
+- [x] Task: Update `types.ts` to include `SELECT_COST` in `interactionMode` and `costSelection` metadata in `PendingEffect` b8f1ca7
+- [x] Task: Update `main.ts` to render an "Active" button on unit cards with `ActivationCondition.ACTIVE` b8f1ca7
+- [x] Task: Implement `GameEngine.initiateCostSelection` and `GameEngine.selectCost` (to trash hand cards) b8f1ca7
+- [x] Task: Write Failing Test: Trigger `ST02-007` effect, pay cost (trash hand), and verify Hit buff on field b8f1ca7
+- [x] Task: Implement logic to resume effect execution after cost payment in `EffectManager.ts` b8f1ca7
+- [x] Task: Conductor - User Manual Verification 'Active Effect & Cost Selection Workflow' (Protocol in workflow.md) b8f1ca7
 
 ## Phase 4: Final Integration & Regression
-- [ ] Task: Run all automated card tests (`tests/st02_full_regression.test.ts`)
+- [~] Task: Run all automated card tests (`tests/st02_full_regression.test.ts`)
 - [ ] Task: Perform manual GUI walkthrough of all fixed features (Leader flip, Item drop, Active buff)
 - [ ] Task: Conductor - User Manual Verification 'Final Integration & Regression' (Protocol in workflow.md)
