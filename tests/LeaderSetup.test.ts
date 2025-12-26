@@ -42,4 +42,33 @@ function runTest() {
     console.log("PASSED: LeaderSetup - Verify Leader in LevelZone Only");
 }
 
+function testRobustness() {
+    console.log("Running: LeaderSetup - Robustness Check");
+    const leader = DUMMY_CARDS.find(c => c.type === CardType.LEADER)!;
+    
+    // Create a deck WITH a leader in it
+    const dirtyDeck = createDeck();
+    dirtyDeck.push(leader); 
+
+    // We need to provide a valid deck for P2 as well to avoid errors if any
+    const cleanDeck = createDeck();
+
+    const game = new GameEngine('P1', 'P2', dirtyDeck, cleanDeck, leader, leader);
+    
+    // Check if GameEngine cleaned it
+    const p1 = game.currentPlayer;
+    // Note: createPlayer shuffles the deck, so we check both deck and hand/trash just in case
+    // But since the game starts, some cards might be in hand.
+    
+    const allCards = [...p1.deck, ...p1.hand, ...p1.trash];
+    const leaders = allCards.filter(c => c.type === CardType.LEADER);
+
+    if (leaders.length > 0) {
+        throw new Error(`Robustness Fail: GameEngine accepted a deck with ${leaders.length} LEADER cards!`);
+    }
+
+    console.log("PASSED: LeaderSetup - Robustness Check");
+}
+
 runTest();
+testRobustness();

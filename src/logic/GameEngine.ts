@@ -1,4 +1,4 @@
-import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition } from './types';
+import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
@@ -26,10 +26,13 @@ export class GameEngine {
     }
 
     private createPlayer(name: string, deck: Card[], leader: Card): PlayerState {
+        // Strict Rule: Decks cannot contain Leaders.
+        const validDeck = deck.filter(c => c.type !== CardType.LEADER);
+
         return {
             id: Math.random().toString(36).substring(7),
             name,
-            deck: this.shuffle([...deck]),
+            deck: this.shuffle([...validDeck]),
             hand: [],
             trash: [],
             damage: [],
