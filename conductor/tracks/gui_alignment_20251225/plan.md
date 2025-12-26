@@ -10,9 +10,9 @@
 
 ## Phase 2: Item Equipment Implementation
 - [x] Task: Add `canPlayItem` to `RuleValidator.ts` and `playItem` to `GameEngine.ts` b2cbf93
-- [ ] Task: Write Failing Test: Equip `ST02-016` to a unit via `playItem` and verify stat boost
-- [ ] Task: Implement Item Equipment logic in `GameEngine.ts`
-- [ ] Task: Update `main.ts` drag-and-drop listeners to handle `ITEM` cards and highlight valid `unit-zone` targets
+- [x] Task: Write Failing Test: Equip `ST02-016` to a unit via `playItem` and verify stat boost b2cbf93
+- [x] Task: Implement Item Equipment logic in `GameEngine.ts` b2cbf93
+- [~] Task: Update `main.ts` drag-and-drop listeners to handle `ITEM` cards and highlight valid `unit-zone` targets
 - [ ] Task: Conductor - User Manual Verification 'Item Equipment Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Active Effect & Cost Selection Workflow
