@@ -1,6 +1,6 @@
 # Track Plan: GUI & Rule Alignment Fixes
 
-## Phase 1: Leader Loyalty & Level Zone Refactor
+## Phase 1: Leader Loyalty & Level Zone Refactor [checkpoint: 3a92e47]
 - [x] Task: Update `createDeck` in `CardDatabase.ts` to exclude `LEADER` type cards from the main deck ca7e251
 - [x] Task: Write Failing Test: Verify Leader card is in Level Zone and NOT in Deck/Hand fc6c347
 - [x] Task: Implement fix in `GameEngine.ts` to correctly initialize `levelZone` without leaders in deck 659286a
