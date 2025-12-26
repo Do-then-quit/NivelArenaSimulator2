@@ -6,7 +6,7 @@
 - [x] Task: Implement fix in `GameEngine.ts` to correctly initialize `levelZone` without leaders in deck 659286a
 - [x] Task: Update `main.ts` UI to display the Leader card at the bottom of the level indicator 338f15e
 - [x] Task: Implement Awakening visual (glow/flip) in `renderCard` and `style.css` af5e3cc
-- [ ] Task: Conductor - User Manual Verification 'Leader Loyalty & Level Zone Refactor' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Leader Loyalty & Level Zone Refactor' (Protocol in workflow.md) 78b9288
 
 ## Phase 2: Item Equipment Implementation
 - [ ] Task: Add `canPlayItem` to `RuleValidator.ts` and `playItem` to `GameEngine.ts`
