@@ -8,15 +8,15 @@
 - [x] Task: Implement Awakening visual (glow/flip) in `renderCard` and `style.css` af5e3cc
 - [x] Task: Conductor - User Manual Verification 'Leader Loyalty & Level Zone Refactor' (Protocol in workflow.md) 78b9288
 
-## Phase 2: Item Equipment Implementation
+## Phase 2: Item Equipment Implementation [checkpoint: 24980c5]
 - [x] Task: Add `canPlayItem` to `RuleValidator.ts` and `playItem` to `GameEngine.ts` b2cbf93
 - [x] Task: Write Failing Test: Equip `ST02-016` to a unit via `playItem` and verify stat boost b2cbf93
 - [x] Task: Implement Item Equipment logic in `GameEngine.ts` b2cbf93
 - [x] Task: Update `main.ts` drag-and-drop listeners to handle `ITEM` cards and highlight valid `unit-zone` targets b8c381e
-- [~] Task: Conductor - User Manual Verification 'Item Equipment Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Item Equipment Implementation' (Protocol in workflow.md) 24980c5
 
 ## Phase 3: Active Effect & Cost Selection Workflow
-- [ ] Task: Update `types.ts` to include `SELECT_COST` in `interactionMode` and `costSelection` metadata in `PendingEffect`
+- [~] Task: Update `types.ts` to include `SELECT_COST` in `interactionMode` and `costSelection` metadata in `PendingEffect`
 - [ ] Task: Update `main.ts` to render an "Active" button on unit cards with `ActivationCondition.ACTIVE`
 - [ ] Task: Implement `GameEngine.initiateCostSelection` and `GameEngine.selectCost` (to trash hand cards)
 - [ ] Task: Write Failing Test: Trigger `ST02-007` effect, pay cost (trash hand), and verify Hit buff on field
