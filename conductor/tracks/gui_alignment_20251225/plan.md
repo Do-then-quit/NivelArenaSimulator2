@@ -9,7 +9,7 @@
 - [x] Task: Conductor - User Manual Verification 'Leader Loyalty & Level Zone Refactor' (Protocol in workflow.md) 78b9288
 
 ## Phase 2: Item Equipment Implementation
-- [ ] Task: Add `canPlayItem` to `RuleValidator.ts` and `playItem` to `GameEngine.ts`
+- [x] Task: Add `canPlayItem` to `RuleValidator.ts` and `playItem` to `GameEngine.ts` b2cbf93
 - [ ] Task: Write Failing Test: Equip `ST02-016` to a unit via `playItem` and verify stat boost
 - [ ] Task: Implement Item Equipment logic in `GameEngine.ts`
 - [ ] Task: Update `main.ts` drag-and-drop listeners to handle `ITEM` cards and highlight valid `unit-zone` targets
