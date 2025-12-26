@@ -131,6 +131,12 @@ body {
     transform: scale(1.2);
 }
 
+.leader-slot {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
 /* --- Main Central Area --- */
 .field-center {
     grid-column: 2;

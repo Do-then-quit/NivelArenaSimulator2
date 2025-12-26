@@ -70,6 +70,11 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
       <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
         <!-- Level Zone (1) -->
         <div class="level-zone">
+            <!-- Leader Card Slot -->
+            <div class="leader-slot">
+                ${player.levelZone ? renderCard(player.levelZone, true) : ''}
+            </div>
+
             ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
                 <div class="level-indicator ${player.leaderLevel >= lv ? 'active' : ''}">${lv}</div>
             `).join('')}
