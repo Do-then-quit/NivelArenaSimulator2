@@ -170,6 +170,23 @@ body {
     background: rgba(76, 175, 80, 0.1);
 }
 
+.attached-items {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mini-item {
+    width: 8px;
+    height: 8px;
+    background: #FFD700;
+    border-radius: 50%;
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.8);
+}
+
 /* Damage & Skill Area (2, 4) */
 .bottom-center {
     display: flex;
@@ -458,6 +475,17 @@ body {
     background: rgba(255, 255, 255, 0.15);
     border-color: #fff;
     border-style: solid;
+}
+
+.unit-zone.valid-target {
+    border-color: #4CAF50;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+}
+
+.unit-zone.invalid-target {
+    border-color: #f44336;
+    box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+    cursor: not-allowed;
 }
 
 .attack-btn {

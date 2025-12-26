@@ -91,6 +91,14 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
         return `
                     <div class="zone unit-zone ${!isOpponent ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
                         ${z.unit ? renderCard(z.unit, false, game.getUnitPower(z, player), game.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
+                        
+                        <!-- Items -->
+                        ${z.items.length > 0 ? `
+                            <div class="attached-items">
+                                ${z.items.map((item: Card) => `<div class="mini-item" title="${item.name}"></div>`).join('')}
+                            </div>
+                        ` : ''}
+
                         ${z.unit && !isOpponent && game.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
                         ${isBlockingTarget ? `
                             <div class="block-controls">
@@ -152,6 +160,8 @@ function renderCard(card: Card, isSmall: boolean = false, calculatedPower?: numb
     `;
 }
 
+let draggedCardIndex: number | null = null;
+
 function attachListeners() {
     document.getElementById('next-phase')?.addEventListener('click', () => {
         game.nextPhase();
@@ -164,9 +174,15 @@ function attachListeners() {
         card.addEventListener('dragstart', (e) => {
             const event = e as DragEvent;
             if (event.dataTransfer) {
-                event.dataTransfer.setData('text/plain', (card as HTMLElement).dataset.index!);
+                const index = parseInt((card as HTMLElement).dataset.index!);
+                draggedCardIndex = index;
+                event.dataTransfer.setData('text/plain', index.toString());
                 event.dataTransfer.effectAllowed = 'move';
             }
+        });
+        card.addEventListener('dragend', () => {
+            draggedCardIndex = null;
+            document.querySelectorAll('.zone').forEach(z => z.classList.remove('valid-target', 'invalid-target'));
         });
     });
 
@@ -178,11 +194,26 @@ function attachListeners() {
             if (event.dataTransfer) {
                 event.dataTransfer.dropEffect = 'move';
             }
+
+            if (draggedCardIndex !== null) {
+                const zoneIndex = parseInt((zone as HTMLElement).dataset.index!);
+                const card = game.currentPlayer.hand[draggedCardIndex];
+                
+                let isValid = false;
+                if (card.type === CardType.UNIT) {
+                    isValid = RuleValidator.canPlayUnit(game, game.currentPlayer, draggedCardIndex, zoneIndex).valid;
+                } else if (card.type === CardType.ITEM) {
+                    isValid = RuleValidator.canPlayItem(game, game.currentPlayer, draggedCardIndex, zoneIndex).valid;
+                }
+
+                zone.classList.add(isValid ? 'valid-target' : 'invalid-target');
+            }
+            
             zone.classList.add('drag-over');
         });
 
         zone.addEventListener('dragleave', () => {
-            zone.classList.remove('drag-over');
+            zone.classList.remove('drag-over', 'valid-target', 'invalid-target');
         });
 
         zone.addEventListener('drop', (e) => {
@@ -194,7 +225,12 @@ function attachListeners() {
                 const zoneIndex = parseInt((zone as HTMLElement).dataset.index!);
 
                 if (!isNaN(cardIndex) && !isNaN(zoneIndex)) {
-                    game.playUnit(cardIndex, zoneIndex);
+                    const card = game.currentPlayer.hand[cardIndex];
+                    if (card.type === CardType.UNIT) {
+                        game.playUnit(cardIndex, zoneIndex);
+                    } else if (card.type === CardType.ITEM) {
+                        game.playItem(cardIndex, zoneIndex);
+                    }
                     render();
                 }
             }
@@ -209,11 +245,18 @@ function attachListeners() {
             e.preventDefault();
             const event = e as DragEvent;
             if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+            
+            if (draggedCardIndex !== null) {
+                const card = game.currentPlayer.hand[draggedCardIndex];
+                const isValid = RuleValidator.canPlaySkill(game, game.currentPlayer, draggedCardIndex).valid;
+                zone.classList.add(isValid ? 'valid-target' : 'invalid-target');
+            }
+
             zone.classList.add('drag-over');
         });
 
         zone.addEventListener('dragleave', () => {
-            zone.classList.remove('drag-over');
+            zone.classList.remove('drag-over', 'valid-target', 'invalid-target');
         });
 
         zone.addEventListener('drop', (e) => {
