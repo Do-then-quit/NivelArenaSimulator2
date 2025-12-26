@@ -100,9 +100,46 @@ function testItemConstraints() {
     console.log("PASSED: ItemEquipment - Constraints");
 }
 
+function testItemRequirements() {
+    console.log("Running: ItemEquipment - Equipment Requirements");
+    const game = setupGame();
+    const p1 = game.currentPlayer;
+    game.state.phase = Phase.MAIN;
+    p1.leaderLevel = 10;
+
+    const helmet = getCard('ST02-017'); // Req: Cost 4+
+    const lowCostUnit = getCard('ST02-002'); // Cost 1
+    const highCostUnit = getCard('ST02-008'); // Cost 4
+
+    p1.hand = [lowCostUnit, highCostUnit, helmet];
+
+    // 1. Play Units
+    game.playUnit(0, 0); // Cost 1 Unit
+    game.playUnit(0, 1); // Cost 4 Unit
+    
+    // Hand has [Helmet] left at index 0
+
+    // 2. Try to equip Helmet to 1-cost unit
+    // @ts-ignore
+    game.playItem(0, 0);
+    if (p1.unitZones[0].items.length > 0) {
+        throw new Error("FAIL: Helmet equipped to 1-cost unit! Should be blocked.");
+    }
+
+    // 3. Try to equip Helmet to 4-cost unit
+    // @ts-ignore
+    game.playItem(0, 1);
+    if (p1.unitZones[1].items.length === 0) {
+        throw new Error("FAIL: Helmet failed to equip to 4-cost unit!");
+    }
+
+    console.log("PASSED: ItemEquipment - Equipment Requirements");
+}
+
 try {
     testItemEquipment();
     testItemConstraints();
+    testItemRequirements();
 } catch (e: any) {
     console.error(e.message);
     process.exit(1);

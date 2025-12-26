@@ -1,4 +1,4 @@
-import { GameState, PlayerState, Phase, CardType, TargetSchema } from './types';
+import { GameState, PlayerState, Phase, CardType, TargetSchema, ActivationCondition } from './types';
 import { GameEngine } from './GameEngine';
 import { TargetSelector } from './TargetSelector';
 
@@ -78,6 +78,18 @@ export class RuleValidator {
         
         if (currentFieldCost + card.cost > currentSize) {
             return { valid: false, reason: "Cost exceeds Size limit" };
+        }
+
+        // Equipment Requirement Check: Items with COST_COMPARISON passive effects
+        if (card.effects) {
+            for (const effect of card.effects) {
+                if (effect.activation === ActivationCondition.PASSIVE && effect.condition?.type === 'COST_COMPARISON') {
+                    const val = effect.condition.value;
+                    if (val && val.operator === 'GTE' && zone.unit.cost < val.cost) {
+                        return { valid: false, reason: `Requires unit cost ${val.cost} or higher` };
+                    }
+                }
+            }
         }
 
         return { valid: true };
