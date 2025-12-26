@@ -95,7 +95,24 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                         <!-- Items -->
                         ${z.items.length > 0 ? `
                             <div class="attached-items">
-                                ${z.items.map((item: Card) => `<div class="mini-item" title="${item.name}"></div>`).join('')}
+                                ${z.items.map((item: Card) => `
+                                    <div class="mini-item-card">
+                                        <img src="${item.imageUrl}" alt="${item.name}">
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="item-tooltip">
+                                ${z.items.map((item: Card) => `
+                                    <div style="display: flex; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                                        <div class="tooltip-card-preview">
+                                            <img src="${item.imageUrl}" style="width:100%; height:100%; object-fit:cover;">
+                                        </div>
+                                        <div class="tooltip-info">
+                                            <div class="tooltip-item-name">${item.name}</div>
+                                            <div class="tooltip-item-text">${item.text}</div>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
                         ` : ''}
 
