@@ -63,6 +63,26 @@ export class RuleValidator {
         return { valid: true };
     }
 
+    static canPlayItem(engine: GameEngine, player: PlayerState, cardIndex: number, zoneIndex: number): { valid: boolean; reason?: string } {
+        if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
+
+        const card = player.hand[cardIndex];
+        if (!card || card.type !== CardType.ITEM) return { valid: false, reason: "Card is not an item" };
+
+        const zone = player.unitZones[zoneIndex];
+        if (!zone.unit) return { valid: false, reason: "Target zone has no unit" };
+
+        // Size Limit Check
+        const currentSize = engine.getPlayerSize(player);
+        const currentFieldCost = this.calculateFieldCost(player);
+        
+        if (currentFieldCost + card.cost > currentSize) {
+            return { valid: false, reason: "Cost exceeds Size limit" };
+        }
+
+        return { valid: true };
+    }
+
     static canAttack(engine: GameEngine, player: PlayerState, zoneIndex: number): { valid: boolean; reason?: string } {
         if (engine.state.phase !== Phase.ATTACK) return { valid: false, reason: "Not in ATTACK phase" };
 

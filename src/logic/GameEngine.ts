@@ -228,6 +228,23 @@ export class GameEngine {
         });
     }
 
+    playItem(cardIndex: number, zoneIndex: number) {
+        const validation = RuleValidator.canPlayItem(this, this.currentPlayer, cardIndex, zoneIndex);
+        if (!validation.valid) {
+            console.log(`Cannot play item: ${validation.reason}`);
+            return;
+        }
+
+        const card = this.currentPlayer.hand[cardIndex];
+        const zone = this.currentPlayer.unitZones[zoneIndex];
+
+        // Move from Hand to Unit Zone Items
+        this.currentPlayer.hand.splice(cardIndex, 1);
+        zone.items.push(card);
+
+        console.log(`Equipped ${card.name} to unit in zone ${zoneIndex}`);
+    }
+
     // checkPotentialTargets moved to RuleValidator
 
     initiateTargetSelection(effect: any, context: any) {
