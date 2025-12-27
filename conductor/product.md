@@ -14,6 +14,7 @@ A dual-purpose platform delivering a polished, browser-based experience for huma
 ## Key Features
 - **Full Rule Engine:** Comprehensive implementation of NivelArena rules (Phases, Stack Resolution, Unit Combat, Leader/Damage mechanics).
 - **Starter Deck Support:** Full implementation of the ST01 and ST02 card packs, including specific unit effects, skill logic, and item mechanics.
+- **Interactive Card Previews:** Real-time detailed card information and enlarged artwork display on hover to improve accessibility and readability.
 - **Hybrid Architecture:**
   - **Web GUI:** A user-friendly, browser-based interface for interactive play.
   - **Headless Mode:** A Node.js-compatible simulation layer optimized for speed, allowing for thousands of games per second for AI data generation.
