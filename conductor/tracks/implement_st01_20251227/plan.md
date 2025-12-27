@@ -32,5 +32,5 @@ This plan covers the incremental implementation and testing of the 17 cards from
 ## Phase 5: Final Verification
 *Focus: Ensuring set consistency and full regression testing.*
 
-- [ ] Task: Create and run full ST01 regression test suite
+- [~] Task: Create and run full ST01 regression test suite
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: Final Verification' (Protocol in workflow.md)
