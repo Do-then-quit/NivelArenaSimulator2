@@ -19,7 +19,7 @@
 - [x] Task: Ensure preview disappears instantly on `mouseleave`. 887f2ba
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Event Integration (Hand & Unit Zone)' (Protocol in workflow.md)
 
-## Phase 4: Polish and Verification
+## Phase 4: Polish and Verification [checkpoint: a01a406]
 - [x] Task: Refine tooltip positioning to avoid screen edge clipping. 2d0fffb
 - [x] Task: Perform manual verification of tooltip behavior on various screen sizes. 2d0fffb
 - [x] Task: Final regression testing and code cleanup. 2d0fffb
