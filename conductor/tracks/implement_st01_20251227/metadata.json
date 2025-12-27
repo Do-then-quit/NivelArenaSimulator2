@@ -1,0 +1,8 @@
+{
+  "track_id": "implement_st01_20251227",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2025-12-27T00:00:00Z",
+  "updated_at": "2025-12-27T00:00:00Z",
+  "description": "ST01.json에 있는 카드들을 프로젝트에 도입하고 효과들을 구현해보자."
+}

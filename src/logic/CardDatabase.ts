@@ -1,7 +1,42 @@
 import { Card, CardType, Attribute, ActivationCondition, Effect } from './types';
-import rawST02 from '../../ST02.json';
+import rawST01 from '../../packs/ST01.json';
+import rawST02 from '../../packs/ST02.json';
 
 const MANUAL_EFFECTS: Record<string, Effect[]> = {
+    "ST01-001": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "각성면 패시브 : 자신의 턴 동안 필드에 있는 모든 자신 유닛의 파워+1000.",
+            condition: { type: 'ALWAYS' },
+            targets: { scope: 'MY_FIELD', type: 'UNIT', selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: 1000 } }
+        }
+    ],
+    "ST01-003": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 이 공격이 끝날 때까지 파워+1000.",
+            action: { type: 'BUFF_POWER', params: { value: 1000 } },
+            duration: 'TURN_END'
+        }
+    ],
+    "ST01-005": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 이 공격이 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'TURN_END'
+        }
+    ],
+    "ST01-006": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 이 턴이 끝날 때까지 조우 유닛의 파워-3000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' }, // Encounter unit is usually selected
+            action: { type: 'BUFF_POWER', params: { value: -3000 } },
+            duration: 'TURN_END'
+        }
+    ],
     "ST02-001": [
         {
             activation: ActivationCondition.PASSIVE,
@@ -158,7 +193,7 @@ function mapAttribute(rawAttr: string): Attribute {
     }
 }
 
-export const DUMMY_CARDS: Card[] = rawST02.map((raw: any) => ({
+export const DUMMY_CARDS: Card[] = [...rawST01, ...rawST02].map((raw: any) => ({
     id: raw.id,
     name: raw.name,
     type: mapType(raw.type),
