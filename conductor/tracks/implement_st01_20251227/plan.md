@@ -26,7 +26,7 @@ This plan covers the incremental implementation and testing of the 17 cards from
 ## Phase 4: Item Cards (ST01-016 to ST01-017)
 *Focus: Implementing Item attachment logic.*
 
-- [ ] Task: Implement TDD for ST01-016 to ST01-017 (Tactical Vest, High-Caliber Ammo)
+- [~] Task: Implement TDD for ST01-016 to ST01-017 (Tactical Vest, High-Caliber Ammo)
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Item Cards' (Protocol in workflow.md)
 
 ## Phase 5: Final Verification

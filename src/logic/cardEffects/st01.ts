@@ -153,5 +153,20 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
             description: "이 카드를 트래시한다.",
             action: { type: 'TRASH_SELF', params: {} }
         }
+    ],
+    "ST01-016": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 이 공격이 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'TURN_END'
+        }
+    ],
+    "ST01-017": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 약탈[1]",
+            action: { type: 'PLUNDER', params: { value: 1 } }
+        }
     ]
 };
