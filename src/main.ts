@@ -4,6 +4,7 @@ import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
 
 import { DebugManager } from './logic/DebugManager';
+import { HoverPreview } from './HoverPreview';
 
 const deck1 = createDeck();
 const deck2 = createDeck();
@@ -11,6 +12,7 @@ const leader1 = DUMMY_CARDS[0];
 const leader2 = DUMMY_CARDS[0];
 
 const game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2);
+const hoverPreview = new HoverPreview();
 
 // Debug System
 declare global {
@@ -207,6 +209,27 @@ function attachListeners() {
             draggedCardIndex = null;
             document.querySelectorAll('.zone').forEach(z => z.classList.remove('valid-target', 'invalid-target'));
         });
+
+        // Hover Preview Listeners
+        card.addEventListener('mouseenter', (e) => {
+            const index = parseInt((card as HTMLElement).dataset.index!);
+            const cardObj = game.currentPlayer.hand[index];
+            const mouseEvent = e as MouseEvent;
+            hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
+        });
+
+        card.addEventListener('mousemove', (e) => {
+            const mouseEvent = e as MouseEvent;
+            // We need a way to update position without full redraw/re-show if possible
+            // but for now, just calling show again is fine as it updates position
+            const index = parseInt((card as HTMLElement).dataset.index!);
+            const cardObj = game.currentPlayer.hand[index];
+            hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
+        });
+
+        card.addEventListener('mouseleave', () => {
+            hoverPreview.hide();
+        });
     });
 
     const dropZones = document.querySelectorAll('.drop-zone');
@@ -296,6 +319,40 @@ function attachListeners() {
         });
     });
 
+
+    // Unit Zone Hover Listeners
+    const unitZones = document.querySelectorAll('.unit-zone');
+    unitZones.forEach(zone => {
+        zone.addEventListener('mouseenter', (e) => {
+            const el = zone as HTMLElement;
+            const isOpponent = el.dataset.player === 'opponent';
+            const index = parseInt(el.dataset.index!);
+            const player = isOpponent ? game.opponentPlayer : game.currentPlayer;
+            const unit = player.unitZones[index].unit;
+            
+            if (unit) {
+                const mouseEvent = e as MouseEvent;
+                hoverPreview.show(unit, mouseEvent.clientX, mouseEvent.clientY);
+            }
+        });
+
+        zone.addEventListener('mousemove', (e) => {
+            const el = zone as HTMLElement;
+            const isOpponent = el.dataset.player === 'opponent';
+            const index = parseInt(el.dataset.index!);
+            const player = isOpponent ? game.opponentPlayer : game.currentPlayer;
+            const unit = player.unitZones[index].unit;
+
+            if (unit) {
+                const mouseEvent = e as MouseEvent;
+                hoverPreview.show(unit, mouseEvent.clientX, mouseEvent.clientY);
+            }
+        });
+
+        zone.addEventListener('mouseleave', () => {
+            hoverPreview.hide();
+        });
+    });
 
     document.querySelectorAll('.attack-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
