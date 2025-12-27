@@ -12,7 +12,7 @@ This plan covers the incremental implementation and testing of the 17 cards from
 ## Phase 2: Mid-range Units & Passive/Active Effects (ST01-007 to ST01-011)
 *Focus: Implementing Viper, Blanc, Emma, Anis, and Rapi (Unit).*
 
-- [~] Task: Implement TDD for ST01-007 to ST01-009 (Viper, Blanc, Emma)
+- [x] Task: Implement TDD for ST01-007 to ST01-009 (Viper, Blanc, Emma) 6de5240
 - [ ] Task: Implement TDD for ST01-010 to ST01-011 (Anis, Rapi)
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Mid-range Units' (Protocol in workflow.md)
 
