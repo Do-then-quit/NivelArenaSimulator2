@@ -1,0 +1,8 @@
+{
+  "track_id": "st01_logic_fixes_20251227",
+  "type": "bug",
+  "status": "new",
+  "created_at": "2025-12-27T14:30:00Z",
+  "updated_at": "2025-12-27T14:30:00Z",
+  "description": "ST01 card logic and rule processing fixes based on NextTask.md findings"
+}

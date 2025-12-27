@@ -28,6 +28,7 @@ export class DebugManager {
         if (player) {
             player.leaderLevel = level;
             console.log(`Player ${playerIndex} Level set to ${level}`);
+            this.game.checkAwakening(playerIndex); // Ensure immediate awakening if condition met
             this.renderCallback();
         }
     }
@@ -143,12 +144,12 @@ export class DebugManager {
             this.game.state.phase = Phase.MAIN;
             this.setLeaderLevel(0, 1);
             this.setHand(0, ["ST02-005"]); // Yan (ST02-005)
-            const val1 = RuleValidator.canPlayUnit(this.game.state, this.getPlayer(0), 0, 0);
+            const val1 = RuleValidator.canPlayUnit(this.game, this.getPlayer(0), 0, 0);
             this.assert(val1.valid === false, "Yan should be too expensive (cost 3) for level 1 (size 1)");
             this.assert(val1.reason === "Cost exceeds Size limit", "Reason should be Size limit");
 
             this.game.state.players[0].leaderLevel = 3;
-            const val2 = RuleValidator.canPlayUnit(this.game.state, this.getPlayer(0), 0, 0);
+            const val2 = RuleValidator.canPlayUnit(this.game, this.getPlayer(0), 0, 0);
             this.assert(val2.valid === true, "Yan should be playable at level 3 (size 3)");
         });
 
@@ -210,6 +211,27 @@ export class DebugManager {
         });
 
         console.log("Refactoring Verification Completed.");
+    }
+
+    async runImmediateAwakeningTest() {
+        console.log("Starting Immediate Awakening Test...");
+        await this.runTest("Immediate Awakening via GAIN_LEVEL", () => {
+            const player = this.getPlayer(0);
+            this.setLeaderLevel(0, 5);
+            player.levelZone!.isAwakened = false;
+
+            // Trigger Gain Level (Yan ST02-005 has Entry: Level+1)
+            const yan = this.getCard("ST02-005")!;
+            this.game.effectManager.processEffects(ActivationCondition.ENTRY, {
+                sourceCard: yan,
+                player: player,
+                opponent: this.getPlayer(1),
+                machine: this.game
+            });
+
+            this.assert(player.leaderLevel === 6, "Leader level should be 6");
+            this.assert(!!player.levelZone!.isAwakened, "Leader should have awakened immediately");
+        });
     }
 
     async runTriggerTests() {

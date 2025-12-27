@@ -3,9 +3,15 @@ import { Effect, ActivationCondition } from '../types';
 export const ST01_EFFECTS: Record<string, Effect[]> = {
     "ST01-001": [
         {
+            activation: ActivationCondition.AWAKEN,
+            description: "각성 : 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다.",
+            condition: { type: 'LEADER_LEVEL', value: 5 },
+            action: { type: 'AWAKEN' as any, params: {} }
+        },
+        {
             activation: ActivationCondition.PASSIVE,
             description: "각성면 패시브 : 자신의 턴 동안 필드에 있는 모든 자신 유닛의 파워+1000.",
-            condition: { type: 'ALWAYS' },
+            condition: { type: 'YOUR_TURN' },
             targets: { scope: 'MY_FIELD', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'BUFF_POWER', params: { value: 1000 } }
         }
@@ -30,7 +36,7 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ENTRY,
             description: "엔트리 : 이 턴이 끝날 때까지 조우 유닛의 파워-3000.",
-            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            targets: { scope: 'ENCOUNTER_UNIT', type: 'UNIT', count: 1, selectMode: 'ALL' },
             action: { type: 'BUFF_POWER', params: { value: -3000 } },
             duration: 'TURN_END'
         }
@@ -47,12 +53,12 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.PASSIVE,
             description: "패시브 : 자신의 턴 동안 필드에 있는 어태커 : 를 가진 모든 자신 유닛의 파워+1000.",
-            condition: { type: 'ALWAYS' },
+            condition: { type: 'YOUR_TURN' },
             targets: { 
                 scope: 'MY_FIELD', 
                 type: 'UNIT', 
                 selectMode: 'ALL',
-                filters: [{ type: 'HAS_TRAIT', value: '어태커' }]
+                filters: [{ type: 'HAS_KEYWORD', value: '어태커' }]
             },
             action: { type: 'BUFF_POWER', params: { value: 1000 } }
         }
@@ -61,8 +67,8 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ACTIVE,
             description: "엑티브메인 : 자신의 패를 1장 골라 덱에 넣고 섞는다. 그러면 이 턴이 끝날 때까지 조우 유닛의 파워-3000.",
-            cost: { type: 'NONE' }, // Cost selection handled by Action if we want it to be part of effect
-            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            cost: { type: 'SHUFFLE_HAND_TO_DECK', amount: 1 },
+            targets: { scope: 'ENCOUNTER_UNIT', type: 'UNIT', count: 1, selectMode: 'ALL' },
             action: { type: 'BUFF_POWER', params: { value: -3000 } },
             duration: 'TURN_END'
         },
@@ -104,19 +110,25 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
             activation: ActivationCondition.ENTRY,
             description: "자신의 트래시 존에서 2코스트 이하인 유닛을 1장 골라 자신의 패에 넣는다.",
             targets: { 
-                scope: 'SELF', // Scope is usually handled specifically for Trash in TargetSelector if not standard
+                scope: 'MY_TRASH', 
                 type: 'CARD', 
                 count: 1, 
                 selectMode: 'MANUAL', 
-                conditions: { costMax: 2 } 
+                filters: [{ type: 'COST_LIMIT', value: 2 }]
             },
-            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: { costMax: 2 } }
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 2코스트 이하인 유닛을 1장 골라 자신의 패에 넣는다.",
-            targets: { scope: 'SELF', type: 'CARD', count: 1, selectMode: 'MANUAL', conditions: { costMax: 2 } },
-            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: { costMax: 2 } }
+            targets: { 
+                scope: 'MY_TRASH', 
+                type: 'CARD', 
+                count: 1, 
+                selectMode: 'MANUAL', 
+                filters: [{ type: 'COST_LIMIT', value: 2 }]
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,

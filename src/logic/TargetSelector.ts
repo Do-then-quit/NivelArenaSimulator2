@@ -30,6 +30,17 @@ export class TargetSelector {
                     }
                 }
                 break;
+            case 'ENCOUNTER_UNIT':
+                if (context.unitZone) {
+                    const idx = player.unitZones.indexOf(context.unitZone);
+                    if (idx !== -1 && opponent && opponent.unitZones[idx].unit) {
+                        candidates = [opponent.unitZones[idx]];
+                    }
+                }
+                break;
+            case 'MY_TRASH':
+                candidates = [...player.trash];
+                break;
             case 'SHARED_LANE':
                 // Return player's zones that are part of a shared lane (both sides have units)
                 candidates = player.unitZones.filter((myZone, idx) => {
@@ -57,6 +68,12 @@ export class TargetSelector {
                         candidates = candidates.filter(c => {
                             const unit = (c as UnitZoneState).unit;
                             return unit && unit.traits?.includes(filter.value);
+                        });
+                        break;
+                    case 'HAS_KEYWORD':
+                        candidates = candidates.filter(c => {
+                            const unit = (c as UnitZoneState).unit;
+                            return unit && unit.keywords?.includes(filter.value);
                         });
                         break;
                     case 'COST_LIMIT':
@@ -108,19 +125,35 @@ export class TargetSelector {
         return candidates;
     }
 
-    public static isValidTarget(engine: GameEngine, schema: TargetSchema, context: GameContext, target: any): boolean {
+    public static isValidTarget(engine: GameEngine, schema: TargetSchema | undefined, context: GameContext, target: any): boolean {
         const player = context.player;
         const opponent = context.opponent || engine.state.players.find(p => p !== player);
+
+        // Rule 8.3.4: If no schema, default to SELF
+        if (!schema) {
+            return target === context.unitZone || target === context.player.levelZone;
+        }
 
         // 1. Scope Check
         let inScope = false;
         switch (schema.scope) {
             case 'SELF': inScope = (target === context.unitZone); break;
-            case 'MY_FIELD': inScope = player.unitZones.includes(target); break;
+            case 'MY_FIELD': 
+                inScope = player.unitZones.includes(target); 
+                break;
             case 'OPP_FIELD': inScope = opponent ? opponent.unitZones.includes(target) : false; break;
             case 'BOTH_FIELDS': inScope = player.unitZones.includes(target) || (opponent ? opponent.unitZones.includes(target) : false); break;
             case 'MY_LEADER': inScope = (target === player.levelZone); break;
             case 'OPP_LEADER': inScope = opponent ? (target === opponent.levelZone) : false; break;
+            case 'ENCOUNTER_UNIT':
+                if (context.unitZone) {
+                    const idx = player.unitZones.indexOf(context.unitZone);
+                    if (idx !== -1 && opponent) inScope = (target === opponent.unitZones[idx]);
+                }
+                break;
+            case 'MY_TRASH':
+                inScope = player.trash.includes(target);
+                break;
             case 'SHARED_LANE':
                 // For shared lane validation, we usually need the lane index or both zones.
                 // Simplified: check if target is a zone in a shared lane
@@ -133,6 +166,7 @@ export class TargetSelector {
                 break;
         }
 
+        if (!inScope) return false;
 
         // 2. Type Check
         if (schema.type === 'UNIT') {
@@ -146,6 +180,9 @@ export class TargetSelector {
                 switch (filter.type) {
                     case 'EXCLUDE_SELF': if (target === context.unitZone) return false; break;
                     case 'HAS_TRAIT': if (!unit || !unit.traits?.includes(filter.value)) return false; break;
+                    case 'HAS_KEYWORD': 
+                        if (!unit || !unit.keywords?.includes(filter.value)) return false; 
+                        break;
                     case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
                     case 'POWER_LIMIT': if (!unit || engine.getUnitPower(target, this.getOwner(engine, target)) > filter.value) return false; break;
                 }

@@ -2,8 +2,8 @@ import { ActionImplementation, GameContext, UnitZoneState } from './types';
 
 const gainLevel: ActionImplementation = (ctx, params) => {
     const amount = params.value || 1;
-    ctx.player.leaderLevel = Math.min(10, ctx.player.leaderLevel + amount);
-    console.log(`${ctx.player.name} gained ${amount} level(s).`);
+    const pIdx = ctx.machine.state.players.indexOf(ctx.player);
+    ctx.machine.addLeaderLevel(pIdx, amount);
 };
 
 const drawCard: ActionImplementation = (ctx, params) => {
@@ -134,6 +134,46 @@ const trashSelf: ActionImplementation = (ctx, _params, _targets) => {
     console.log("Trash self action: only Damage Zone move implemented.");
 };
 
+const penetration: ActionImplementation = (ctx, params, _targets) => {
+    // Penetration usually applies to the sourceCard's zone if it's an ATTACKER effect
+    if (ctx.unitZone) {
+        ctx.unitZone.buffs.push({
+            id: Math.random().toString(36),
+            sourceCard: ctx.sourceCard,
+            type: 'PENETRATION',
+            value: params.value || 0,
+            duration: 'TURN_END'
+        });
+        console.log(`Granted PENETRATION[${params.value}] to ${ctx.unitZone.unit?.name}`);
+    }
+};
+
+const plunder: ActionImplementation = (ctx, params, _targets) => {
+    if (ctx.unitZone) {
+        ctx.unitZone.buffs.push({
+            id: Math.random().toString(36),
+            sourceCard: ctx.sourceCard,
+            type: 'PLUNDER',
+            value: params.value || 0,
+            duration: 'TURN_END'
+        });
+        console.log(`Granted PLUNDER[${params.value}] to ${ctx.unitZone.unit?.name}`);
+    }
+};
+
+const moveFromTrashToHand: ActionImplementation = (ctx, _params, targets) => {
+    // Targets are cards in trash
+    const player = ctx.player;
+    targets.forEach(targetCard => {
+        const idx = player.trash.indexOf(targetCard);
+        if (idx !== -1) {
+            player.trash.splice(idx, 1);
+            player.hand.push(targetCard);
+            console.log(`Moved ${targetCard.name} from Trash to Hand.`);
+        }
+    });
+};
+
 // Helper inside this module
 function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     if (machine.state.players[0].unitZones.includes(zone)) return machine.state.players[0];
@@ -150,4 +190,7 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DESTROY_LANE_LOWEST': destroyLaneLowest,
     'RETURN_TO_HAND': returnToHand,
     'TRASH_SELF': trashSelf,
+    'PENETRATION': penetration,
+    'PLUNDER': plunder,
+    'MOVE_FROM_TRASH_TO_HAND': moveFromTrashToHand,
 };

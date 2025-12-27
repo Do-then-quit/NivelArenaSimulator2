@@ -35,6 +35,7 @@ export enum ActivationCondition {
     DAMAGE_TRIGGER = 'DAMAGE_TRIGGER', // Game keyword "TRIGGER" (when dealt as damage)
     TURN_START = 'TURN_START',
     TURN_END = 'TURN_END',
+    AWAKEN = 'AWAKEN',
 }
 
 export type ActionType =
@@ -53,15 +54,16 @@ export type ActionType =
     | 'PLUNDER'     // Draw on kill
     | 'DUALIST'      // Forced block by encounter unit
     | 'BREAKTHROUGH' // Cannot be blocked by certain units
-    | 'INFILTRATION'; // Draw if not blocked
+    | 'INFILTRATION' // Draw if not blocked
+    | 'MOVE_FROM_TRASH_TO_HAND';
 
 export interface TargetFilter {
-    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'COST_LIMIT' | 'POWER_LIMIT';
+    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'COST_LIMIT' | 'POWER_LIMIT';
     value?: any;
 }
 
 export interface TargetSchema {
-    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES';
+    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH';
     type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
     count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
     filters?: TargetFilter[];
@@ -78,12 +80,12 @@ export interface TargetSchema {
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON';
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN';
     value?: any;
 }
 
 export interface EffectCost {
-    type: 'NONE' | 'TRASH_HAND' | 'RETIRE_UNIT';
+    type: 'NONE' | 'TRASH_HAND' | 'RETIRE_UNIT' | 'SHUFFLE_HAND_TO_DECK';
     amount?: number;
     value?: any; // Legacy support
 }
@@ -154,7 +156,7 @@ export interface UnitZoneState {
 export interface Buff {
     id: string; // unique id for removal if needed
     sourceCard?: Card; // card that created it (optional for now to be safe, but preferred)
-    type: 'POWER' | 'HIT';
+    type: 'POWER' | 'HIT' | 'PENETRATION' | 'PLUNDER';
     value: number;
     duration: 'TURN_END' | 'PERMANENT';
 }

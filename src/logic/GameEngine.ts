@@ -1,4 +1,4 @@
-import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType } from './types';
+import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
@@ -89,15 +89,7 @@ export class GameEngine {
 
         switch (this.state.phase) {
             case Phase.LEVEL_UP:
-                if (this.currentPlayer.leaderLevel < 10) {
-                    this.currentPlayer.leaderLevel++;
-                }
-                
-                // Rule 10.2.6.1 Awakening
-                if (this.currentPlayer.leaderLevel >= 6 && this.currentPlayer.levelZone && !this.currentPlayer.levelZone.isAwakened) {
-                    this.awakenLeader(this.state.turnPlayerIndex);
-                }
-
+                this.addLeaderLevel(this.state.turnPlayerIndex, 1);
                 this.state.phase = Phase.DRAW;
                 break;
             case Phase.DRAW:
@@ -152,6 +144,36 @@ export class GameEngine {
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
         this.state.turnCount++;
         this.state.phase = Phase.LEVEL_UP;
+    }
+
+    public addLeaderLevel(playerIndex: number, amount: number) {
+        const player = this.state.players[playerIndex];
+        if (player.leaderLevel < 10) {
+            player.leaderLevel = Math.min(10, player.leaderLevel + amount);
+            console.log(`${player.name} level increased to ${player.leaderLevel}`);
+            this.checkAwakening(playerIndex);
+        }
+    }
+
+    public checkAwakening(playerIndex: number) {
+        const player = this.state.players[playerIndex];
+        if (player.levelZone && !player.levelZone.isAwakened) {
+            const leader = player.levelZone;
+            if (leader.effects) {
+                const awakenEffect = leader.effects.find(e => e.activation === ActivationCondition.AWAKEN);
+                if (awakenEffect) {
+                    const context = {
+                        player: player,
+                        opponent: this.state.players[playerIndex === 0 ? 1 : 0],
+                        sourceCard: leader,
+                        machine: this
+                    };
+                    if (this.effectManager.checkCondition(awakenEffect, context)) {
+                        this.awakenLeader(playerIndex);
+                    }
+                }
+            }
+        }
     }
 
     private awakenLeader(playerIndex: number) {
@@ -287,12 +309,19 @@ export class GameEngine {
     selectCost(handIndex: number) {
         if (this.state.interactionMode !== 'SELECT_COST' || !this.state.pendingEffect) return;
         const pending = this.state.pendingEffect as any;
+        const costType = pending.costToPay?.type;
 
-        // Execute Cost: TRASH_HAND
-        const discarded = this.currentPlayer.hand.splice(handIndex, 1)[0];
-        this.currentPlayer.trash.push(discarded);
-
-        console.log(`Paid cost: Trashed ${discarded.name}`);
+        // Execute Cost
+        if (costType === 'TRASH_HAND') {
+            const discarded = this.currentPlayer.hand.splice(handIndex, 1)[0];
+            this.currentPlayer.trash.push(discarded);
+            console.log(`Paid cost: Trashed ${discarded.name}`);
+        } else if (costType === 'SHUFFLE_HAND_TO_DECK') {
+            const card = this.currentPlayer.hand.splice(handIndex, 1)[0];
+            this.currentPlayer.deck.push(card);
+            this.shuffle(this.currentPlayer.deck);
+            console.log(`Paid cost: Shuffled ${card.name} into deck`);
+        }
 
         // Resume Effect Execution
         const effect = pending._fullEffect;
@@ -335,13 +364,23 @@ export class GameEngine {
         const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
         attackerZone.hasAttacked = true;
 
-        // Trigger Attacker Effects
+        // Trigger Attacker Effects (Unit + Items)
         this.effectManager.processEffects(ActivationCondition.ATTACKER, {
             sourceCard: attackerZone.unit,
             player: this.currentPlayer,
             opponent: this.opponentPlayer,
             unitZone: attackerZone,
             machine: this
+        });
+
+        attackerZone.items.forEach(item => {
+            this.effectManager.processEffects(ActivationCondition.ATTACKER, {
+                sourceCard: item,
+                player: this.currentPlayer,
+                opponent: this.opponentPlayer,
+                unitZone: attackerZone,
+                machine: this
+            });
         });
 
         // Lane Alignment: In mirrored layout, Lane 0 faces Lane 0
@@ -376,7 +415,7 @@ export class GameEngine {
 
         // CHECK BREAKTHROUGH
         if (shouldBlock && blockerZone.unit && attackerZone.unit && attackerZone.unit.effects) {
-            const breakthroughEffect = attackerZone.unit.effects.find(e => 
+            const breakthroughEffect = attackerZone.unit.effects.find(e =>
                 e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH'
             );
             if (breakthroughEffect) {
@@ -396,13 +435,23 @@ export class GameEngine {
         }
 
         if (finalShouldBlock && blockerZone.unit) {
-            // Trigger Defender Effects
+            // Trigger Defender Effects (Unit + Items)
             this.effectManager.processEffects(ActivationCondition.DEFENDER, {
                 sourceCard: blockerZone.unit,
                 player: this.opponentPlayer,
                 opponent: this.currentPlayer,
                 unitZone: blockerZone,
                 machine: this
+            });
+
+            blockerZone.items.forEach(item => {
+                this.effectManager.processEffects(ActivationCondition.DEFENDER, {
+                    sourceCard: item,
+                    player: this.opponentPlayer,
+                    opponent: this.currentPlayer,
+                    unitZone: blockerZone,
+                    machine: this
+                });
             });
 
             // Combat
@@ -428,13 +477,15 @@ export class GameEngine {
             this.destroyUnit(this.opponentPlayer, blocker);
 
             // PENETRATION (Rule 10.2.3.2)
-            if (attacker.unit && this.hasKeyword(attacker.unit, 'PENETRATION')) {
-                this.dealDamage(this.opponentPlayer, this.getUnitHit(attacker, this.currentPlayer));
+            const penValue = this.getPenetrationValue(attacker);
+            if (penValue > 0) {
+                this.dealDamage(this.opponentPlayer, penValue);
             }
 
             // PLUNDER (Rule 10.2.3.3)
-            if (attacker.unit && this.hasKeyword(attacker.unit, 'PLUNDER')) {
-                this.drawCard(this.state.turnPlayerIndex, 1);
+            const pluValue = this.getPlunderValue(attacker);
+            if (pluValue > 0) {
+                this.drawCard(this.state.turnPlayerIndex, pluValue);
             }
         }
 
@@ -445,6 +496,39 @@ export class GameEngine {
 
     private hasKeyword(card: Card, keyword: string): boolean {
         return card.keywords?.includes(keyword) || false;
+    }
+
+    private getPenetrationValue(zone: UnitZoneState): number {
+        if (!zone.unit) return 0;
+        let value = 0;
+
+        // 1. Static Keywords (e.g., Penetration[3] in text usually means Hit value damage, but cards like ST01-011 say Penetration[1])
+        // The parser usually puts keywords like "PENETRATION" if it's there.
+        // If it's a keyword from the card JSON, we need to know its value.
+        // For now, let's check buffs first as ST01-011 uses an effect.
+        if (this.hasKeyword(zone.unit, 'PENETRATION')) {
+            value = Math.max(value, zone.unit.hit || 0);
+        }
+
+        // 2. Buffs (from effects)
+        zone.buffs.forEach(b => {
+            if (b.type === 'PENETRATION') value = Math.max(value, b.value);
+        });
+
+        return value;
+    }
+
+    private getPlunderValue(zone: UnitZoneState): number {
+        if (!zone.unit) return 0;
+        let value = 0;
+
+        if (this.hasKeyword(zone.unit, 'PLUNDER')) value = Math.max(value, 1);
+
+        zone.buffs.forEach(b => {
+            if (b.type === 'PLUNDER') value = Math.max(value, b.value);
+        });
+
+        return value;
     }
 
     public destroyUnit(player: PlayerState, zone: UnitZoneState) {
@@ -464,6 +548,20 @@ export class GameEngine {
             zone.items = [];
             zone.buffs = [];
         }
+    }
+
+    public checkRuleProcessing() {
+        this.state.players.forEach(player => {
+            player.unitZones.forEach((zone, idx) => {
+                if (zone.unit) {
+                    const power = this.getUnitPower(zone, player);
+                    if (power <= 0) {
+                        console.log(`Rule Processing: Trashing ${zone.unit.name} due to 0 or less ATK (${power})`);
+                        this.destroyUnit(player, zone);
+                    }
+                }
+            });
+        });
     }
 
     public dealDamage(player: PlayerState, amount: number) {
@@ -529,76 +627,104 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let power = zone.unit.power || 0;
 
-        // 1. Items (Stats handled via PASSIVE effects now)
-        zone.items.forEach(item => {
-            if (item.power) power += item.power;
-            // Check item passive effects
-            if (item.effects) {
-                item.effects.forEach(effect => {
-                    if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_POWER') {
-                        const params = effect.action.params || {};
-                        power += (params.value || 0);
-                    }
-                });
-            }
-        });
-
-        // 2. Continuous/Passive Effects on Unit
-        if (zone.unit.effects) {
-            zone.unit.effects.forEach(effect => {
-                if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_POWER') {
-                    // Logic to check conditions (already done in EffectManager but this is a continuous query)
-                    // Simplified: assume ALWAYS for MVP or simple check
-                    const params = effect.action.params || {};
-                    let value = params.value || 0;
-                    if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
-                        value = player.leaderLevel * value;
-                    }
-                    power += value;
-                }
-            });
-        }
-
-        // 3. Buffs
+        // 1. Buffs (Temporary effects like Noir, Besti, etc.)
         zone.buffs.forEach(buff => {
             if (buff.type === 'POWER') {
                 power += buff.value;
             }
         });
 
-        return power;
-    }
+        // 2. Global Passive Effects (Field-wide or Leader effects)
+        const allPotentialSources: { card: Card, zone?: UnitZoneState, owner: PlayerState }[] = [];
 
-    public getUnitHit(zone: UnitZoneState, _player: PlayerState): number {
-        if (!zone.unit) return 0;
-        let hit = zone.unit.hit || 0;
+        // Add all units on field
+        this.state.players.forEach(p => {
+            p.unitZones.forEach(z => {
+                if (z.unit) allPotentialSources.push({ card: z.unit, zone: z, owner: p });
+                z.items.forEach(item => allPotentialSources.push({ card: item, zone: z, owner: p }));
+            });
+            if (p.levelZone) allPotentialSources.push({ card: p.levelZone, owner: p });
+        });
 
-        // 1. Items
-        zone.items.forEach(item => {
-            if (item.hit) hit += item.hit;
-            if (item.effects) {
-                item.effects.forEach(effect => {
-                    if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_HIT') {
-                        const params = effect.action.params || {};
-                        // Check condition if any (e.g. Cost Comparison for Helmet)
-                        let conditionMet = true;
-                        if (effect.condition && effect.condition.type === 'COST_COMPARISON') {
-                            const val = effect.condition.value;
-                            if (val && val.operator === 'GTE' && zone.unit) {
-                                if (zone.unit.cost < val.cost) conditionMet = false;
-                            }
+        allPotentialSources.forEach(source => {
+            if (source.card.effects) {
+                source.card.effects.forEach(effect => {
+                    if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_POWER') {
+                        const context: GameContext = {
+                            player: source.owner,
+                            opponent: this.state.players.find(p => p !== source.owner)!,
+                            sourceCard: source.card,
+                            unitZone: source.zone,
+                            machine: this
+                        };
+
+                        // Check condition
+                        if (!this.effectManager.checkCondition(effect, context)) return;
+
+                        // NEW: Check if leader passive requires awakening
+                        if (source.card.type === CardType.LEADER && !source.card.isAwakened) {
+                            // If it mentions "각성" in description, it probably requires awakening
+                            if (effect.description.includes('각성')) return;
                         }
 
-                        if (conditionMet) hit += (params.value || 0);
+                        // Check if this effect targets the zone we are calculating power for
+                        if (TargetSelector.isValidTarget(this, effect.targets!, context, zone)) {
+                            const params = effect.action.params || {};
+                            let value = params.value || 0;
+                            if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
+                                value = source.owner.leaderLevel * value;
+                            }
+                            power += value;
+                        }
                     }
                 });
             }
         });
 
-        // 2. Buffs
+        return power;
+    }
+
+    public getUnitHit(zone: UnitZoneState, player: PlayerState): number {
+        if (!zone.unit) return 0;
+        let hit = zone.unit.hit || 0;
+
+        // 1. Buffs
         zone.buffs.forEach(buff => {
             if (buff.type === 'HIT') {
                 hit += buff.value;
+            }
+        });
+
+        // 2. Global Passive Effects
+        const allPotentialSources: { card: Card, zone?: UnitZoneState, owner: PlayerState }[] = [];
+        this.state.players.forEach(p => {
+            p.unitZones.forEach(z => {
+                if (z.unit) allPotentialSources.push({ card: z.unit, zone: z, owner: p });
+                z.items.forEach(item => allPotentialSources.push({ card: item, zone: z, owner: p }));
+            });
+            if (p.levelZone) allPotentialSources.push({ card: p.levelZone, owner: p });
+        });
+
+        allPotentialSources.forEach(source => {
+            if (source.card.effects) {
+                source.card.effects.forEach(effect => {
+                    if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_HIT') {
+                        const context: GameContext = {
+                            player: source.owner,
+                            opponent: this.state.players.find(p => p !== source.owner)!,
+                            sourceCard: source.card,
+                            unitZone: source.zone,
+                            machine: this
+                        };
+
+                        if (!this.effectManager.checkCondition(effect, context)) return;
+
+                        if (TargetSelector.isValidTarget(this, effect.targets!, context, zone)) {
+                            const params = effect.action.params || {};
+                            hit += (params.value || 0);
+                        }
+                    }
+                });
             }
         });
 

@@ -8,6 +8,7 @@
 4. **High Code Coverage:** Aim for >80% code coverage for all modules
 5. **User Experience First:** Every decision should prioritize user experience
 6. **Non-Interactive & CI-Aware:** Prefer non-interactive commands. Use `CI=true` for watch-mode tools (tests, linters) to ensure single execution.
+7. **Rule Documentation Consistency:** Always ensure that any logic changes or feature implementations are strictly consistent with `rules_text.txt` and `NivelArena_Comprehensive_Rules_Ver.1.6.pdf`.
 
 ## Task Workflow
 

@@ -23,8 +23,8 @@ async function testST01_007_009_Database() {
     const passiveEffect = blanc.effects.find(e => e.activation === ActivationCondition.PASSIVE);
     if (!passiveEffect) throw new Error("Blanc should have a PASSIVE effect");
     
-    const traitFilter = passiveEffect.targets?.filters?.find(f => f.type === 'HAS_TRAIT');
-    if (traitFilter?.value !== '어태커') throw new Error("Blanc should filter for '어태커' trait");
+    const traitFilter = passiveEffect.targets?.filters?.find(f => f.type === 'HAS_KEYWORD');
+    if (traitFilter?.value !== '어태커') throw new Error("Blanc should filter for '어태커' keyword");
 
     // ST01-009 Emma
     const emma = getCard('ST01-009');

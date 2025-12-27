@@ -13,3 +13,9 @@
 - **Strict Rule Enforcement:** The engine acts as the final arbiter. Actions that violate the game rules must be blocked at the UI level.
 - **Explicit Error Handling:** When an action is blocked (e.g., playing a card without sufficient Leader Level/Size), provide a concise, non-intrusive tooltip or status message explaining the specific rule violation.
 - **Log Transparency:** Maintain a detailed, scrollable event log that records every action, state change, and effect resolution, aiding both human players and developers debugging AI logic.
+
+## Rule Compliance Principle
+- **Source of Truth:** All game mechanics, card effects, and system behaviors MUST strictly adhere to the official NivelArena TCG rules.
+- **Reference Material:** Always refer to `rules_text.txt` or `NivelArena_Comprehensive_Rules_Ver.1.6.pdf` (whichever is more accessible/readable for the current task) when implementing or debugging game logic.
+- **Priority:** If there is any discrepancy between the current implementation and the rules defined in the reference documents, the reference documents take precedence.
+- **Verification:** Every new feature or logic fix should be verified against the rules to ensure consistency and accuracy.

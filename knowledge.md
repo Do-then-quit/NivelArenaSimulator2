@@ -7,6 +7,11 @@ Core Tech: TypeScript, Vite.
 
 ## 2. Game Rules (Summary of Ver 1.6)
 
+### Source of Truth
+**IMPORTANT:** All implementation must strictly follow the official rules. 
+- Refer to `rules_text.txt` or `NivelArena_Comprehensive_Rules_Ver.1.6.pdf` for the definitive ruleset.
+- In case of conflict, the official documents take precedence over any existing code or summaries.
+
 ### Basic Rules
 - **Players**: 2 players.
 - **Victory**: Opponent reaches 10 damage or deck-out (cannot draw).

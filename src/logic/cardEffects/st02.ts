@@ -3,6 +3,12 @@ import { Effect, ActivationCondition } from '../types';
 export const ST02_EFFECTS: Record<string, Effect[]> = {
     "ST02-001": [
         {
+            activation: ActivationCondition.AWAKEN,
+            description: "각성 : 자신의 리더 레벨이 6 이상이라면 이 카드를 뒤집는다.",
+            condition: { type: 'LEADER_LEVEL', value: 6 },
+            action: { type: 'AWAKEN' as any, params: {} }
+        },
+        {
             activation: ActivationCondition.PASSIVE,
             description: "각성면 패시브 : 자신의 사이즈+1.",
             action: { type: 'MODIFY_PLAYER_SIZE', params: { value: 1 } }
