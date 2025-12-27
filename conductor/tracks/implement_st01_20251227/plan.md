@@ -20,7 +20,7 @@ This plan covers the incremental implementation and testing of the 17 cards from
 *Focus: Implementing Skill card resolution logic.*
 
 - [x] Task: Implement TDD for ST01-012 to ST01-013 (Weakness Insight, Reinforcement) 8937a6e
-- [~] Task: Implement TDD for ST01-014 to ST01-015 (Only Firepower!, Victory Chant)
+- [x] Task: Implement TDD for ST01-014 to ST01-015 (Only Firepower!, Victory Chant) 703fe8e
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Skill Cards' (Protocol in workflow.md)
 
 ## Phase 4: Item Cards (ST01-016 to ST01-017)
