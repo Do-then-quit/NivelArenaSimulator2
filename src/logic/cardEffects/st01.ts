@@ -56,5 +56,39 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
             },
             action: { type: 'BUFF_POWER', params: { value: 1000 } }
         }
+    ],
+    "ST01-010": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "엑티브메인 : 자신의 패를 1장 골라 덱에 넣고 섞는다. 그러면 이 턴이 끝날 때까지 조우 유닛의 파워-3000.",
+            cost: { type: 'NONE' }, // Cost selection handled by Action if we want it to be part of effect
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -3000 } },
+            duration: 'TURN_END'
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -5000 } },
+            duration: 'TURN_END'
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        }
+    ],
+    "ST01-011": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 관통[1]",
+            action: { type: 'PENETRATION', params: { value: 1 } }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} }
+        }
     ]
 };
