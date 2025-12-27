@@ -27,7 +27,7 @@ This plan covers the incremental implementation and testing of the 17 cards from
 *Focus: Implementing Item attachment logic.*
 
 - [x] Task: Implement TDD for ST01-016 to ST01-017 (Rare Metal Boots, Kevlar Gloves) 54ea60a
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Item Cards' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Item Cards' (Protocol in workflow.md) [checkpoint: 3336907]
 
 ## Phase 5: Final Verification
 *Focus: Ensuring set consistency and full regression testing.*
