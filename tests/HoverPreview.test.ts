@@ -26,12 +26,17 @@ describe('HoverPreview', () => {
         expect(tooltip).toBeTruthy();
     });
 
-    it('should show the tooltip with card information', () => {
-        hoverPreview.show(dummyCard, 100, 200);
+    it('should show the tooltip with card information and traits', () => {
+        const traitCard: Card = {
+            ...dummyCard,
+            traits: 'Base / Effect'
+        };
+        hoverPreview.show(traitCard, 100, 200);
         const tooltip = document.querySelector('.hover-preview-tooltip') as HTMLElement;
         expect(tooltip.style.display).toBe('block');
         expect(tooltip.innerHTML).toContain('Test Card');
         expect(tooltip.innerHTML).toContain('3000');
+        expect(tooltip.innerHTML).toContain('Base / Effect');
     });
 
     it('should hide the tooltip', () => {

@@ -22,6 +22,7 @@ export class HoverPreview {
                 ${card.imageUrl ? `<img src="${card.imageUrl}" class="preview-image">` : ''}
                 <div class="preview-info">
                     <div class="preview-name">${card.name}</div>
+                    <div class="preview-traits">${card.traits || ''}</div>
                     <div class="preview-stats">
                         <span>Cost: ${card.cost}</span>
                         ${isUnit ? `<span>ATK: ${card.power}</span> <span>HIT: ${card.hit}</span>` : ''}
