@@ -7,9 +7,9 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure and Basic Component' (Protocol in workflow.md)
 
 ## Phase 2: Data Binding and Content
-- [ ] Task: Implement `CardPreview` component to render enlarged image, stats, effect text, and keywords.
-- [ ] Task: Integrate `CardDatabase` to fetch full card details for a given card ID.
-- [ ] Task: Add keyword parsing logic to highlight traits in the effect text.
+- [x] Task: Implement `CardPreview` component to render enlarged image, stats, effect text, and keywords. c4318e6
+- [x] Task: Integrate `CardDatabase` to fetch full card details for a given card ID. c4318e6
+- [x] Task: Add keyword parsing logic to highlight traits in the effect text. c4318e6
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Data Binding and Content' (Protocol in workflow.md)
 
 ## Phase 3: Event Integration (Hand & Unit Zone)
