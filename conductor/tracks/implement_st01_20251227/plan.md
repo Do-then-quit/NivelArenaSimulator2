@@ -14,7 +14,7 @@ This plan covers the incremental implementation and testing of the 17 cards from
 
 - [x] Task: Implement TDD for ST01-007 to ST01-009 (Viper, Blanc, Emma) 6de5240
 - [x] Task: Implement TDD for ST01-010 to ST01-011 (Anis, Rapi) 67a36aa
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Mid-range Units' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Mid-range Units' (Protocol in workflow.md) [checkpoint: c165971]
 
 ## Phase 3: Skill Cards (ST01-012 to ST01-015)
 *Focus: Implementing Skill card resolution logic.*
