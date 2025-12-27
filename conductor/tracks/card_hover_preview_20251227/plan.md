@@ -1,6 +1,6 @@
 # Plan: Card Hover Preview UI
 
-## Phase 1: Infrastructure and Basic Component
+## Phase 1: Infrastructure and Basic Component [checkpoint: fc7be29]
 - [x] Task: Create `HoverPreview` component structure and styling (Floating Tooltip). 8a505e1
 - [x] Task: Implement logic to calculate tooltip position based on mouse coordinates. 8a505e1
 - [x] Task: Create a mock preview data structure for testing. 8a505e1
