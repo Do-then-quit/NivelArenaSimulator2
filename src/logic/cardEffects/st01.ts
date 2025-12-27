@@ -123,5 +123,35 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
             description: "이 카드를 트래시한다.",
             action: { type: 'TRASH_SELF', params: {} }
         }
+    ],
+    "ST01-014": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "이 턴이 끝날 때까지 필드에 있는 모든 자신 유닛의 파워+2000.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'TURN_END'
+        }
+    ],
+    "ST01-015": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -5000 } },
+            duration: 'TURN_END'
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -5000 } },
+            duration: 'TURN_END'
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        }
     ]
 };
