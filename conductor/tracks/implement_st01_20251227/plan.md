@@ -5,7 +5,7 @@ This plan covers the incremental implementation and testing of the 17 cards from
 ## Phase 1: Basic Units (ST01-001 to ST01-006)
 *Focus: Mapping basic stats and ensuring standard keywords like PENETRATION and PLUNDER are active.*
 
-- [~] Task: Implement TDD for ST01-001 to ST01-003 (Basic Keywords)
+- [x] Task: Implement TDD for ST01-001 to ST01-003 (Basic Keywords) 86b8f2b
 - [ ] Task: Implement TDD for ST01-004 to ST01-006 (Basic Keywords)
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Basic Units' (Protocol in workflow.md)
 
