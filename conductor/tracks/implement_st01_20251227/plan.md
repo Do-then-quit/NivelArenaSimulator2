@@ -7,27 +7,27 @@ This plan covers the incremental implementation and testing of the 17 cards from
 
 - [x] Task: Implement TDD for ST01-001 to ST01-003 (Basic Keywords) 86b8f2b
 - [x] Task: Implement TDD for ST01-004 to ST01-006 (Basic Keywords) 54fa3d9
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Basic Units' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Basic Units' (Protocol in workflow.md) [checkpoint: 74dd538]
 
-## Phase 2: Triggered Effects (ST01-007 to ST01-012)
-*Focus: Implementing ON_PLAY and ON_RETIRE effects.*
+## Phase 2: Mid-range Units & Passive/Active Effects (ST01-007 to ST01-011)
+*Focus: Implementing Viper, Blanc, Emma, Anis, and Rapi (Unit).*
 
-- [ ] Task: Implement TDD for ST01-007 to ST01-009 (Triggered Effects)
-- [ ] Task: Implement TDD for ST01-010 to ST01-012 (Triggered Effects)
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Triggered Effects' (Protocol in workflow.md)
+- [~] Task: Implement TDD for ST01-007 to ST01-009 (Viper, Blanc, Emma)
+- [ ] Task: Implement TDD for ST01-010 to ST01-011 (Anis, Rapi)
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Mid-range Units' (Protocol in workflow.md)
 
-## Phase 3: Continuous & Passive Effects (ST01-013 to ST01-015)
-*Focus: Implementing effects that provide ongoing bonuses or restrictions.*
+## Phase 3: Skill Cards (ST01-012 to ST01-015)
+*Focus: Implementing Skill card resolution logic.*
 
-- [ ] Task: Implement TDD for ST01-013 to ST01-015 (Passive Effects)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Continuous & Passive Effects' (Protocol in workflow.md)
+- [ ] Task: Implement TDD for ST01-012 to ST01-013 (Weakness Insight, Reinforcement)
+- [ ] Task: Implement TDD for ST01-014 to ST01-015 (Only Firepower!, Victory Chant)
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Skill Cards' (Protocol in workflow.md)
 
-## Phase 4: Non-Unit Cards (ST01-016 to ST01-017)
-*Focus: Implementing Skill card resolution and Item attachment logic.*
+## Phase 4: Item Cards (ST01-016 to ST01-017)
+*Focus: Implementing Item attachment logic.*
 
-- [ ] Task: Implement TDD for ST01-016 (Skill Card)
-- [ ] Task: Implement TDD for ST01-017 (Item Card)
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Non-Unit Cards' (Protocol in workflow.md)
+- [ ] Task: Implement TDD for ST01-016 to ST01-017 (Tactical Vest, High-Caliber Ammo)
+- [ ] Task: Conductor - User Manual Verification 'Phase 4: Item Cards' (Protocol in workflow.md)
 
 ## Phase 5: Final Verification
 *Focus: Ensuring set consistency and full regression testing.*

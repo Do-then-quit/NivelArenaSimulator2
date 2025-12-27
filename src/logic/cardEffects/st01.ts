@@ -34,5 +34,27 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
             action: { type: 'BUFF_POWER', params: { value: -3000 } },
             duration: 'TURN_END'
         }
+    ],
+    "ST01-007": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 이 공격이 끝날 때까지 파워+1000.",
+            action: { type: 'BUFF_POWER', params: { value: 1000 } },
+            duration: 'TURN_END'
+        }
+    ],
+    "ST01-008": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 자신의 턴 동안 필드에 있는 어태커 : 를 가진 모든 자신 유닛의 파워+1000.",
+            condition: { type: 'ALWAYS' },
+            targets: { 
+                scope: 'MY_FIELD', 
+                type: 'UNIT', 
+                selectMode: 'ALL',
+                filters: [{ type: 'HAS_TRAIT', value: '어태커' }]
+            },
+            action: { type: 'BUFF_POWER', params: { value: 1000 } }
+        }
     ]
 };
