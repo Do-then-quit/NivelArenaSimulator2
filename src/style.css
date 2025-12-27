@@ -729,12 +729,46 @@ body {
 
 .preview-text {
 
+
+
     font-size: 0.85rem;
+
+
 
     line-height: 1.4;
 
+
+
     color: #e2e8f0;
+
+
 
     white-space: pre-wrap;
 
+
+
 }
+
+
+
+
+
+
+
+.keyword {
+
+
+
+    color: #ffcc00;
+
+
+
+    font-weight: bold;
+
+
+
+}
+
+
+
+

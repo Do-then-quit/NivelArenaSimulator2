@@ -15,6 +15,7 @@ export class HoverPreview {
 
     show(card: Card, x: number, y: number) {
         const isUnit = card.type === CardType.UNIT;
+        const formattedText = this.formatEffectText(card.text);
         
         this.tooltipElement.innerHTML = `
             <div class="preview-content">
@@ -25,7 +26,7 @@ export class HoverPreview {
                         <span>Cost: ${card.cost}</span>
                         ${isUnit ? `<span>ATK: ${card.power}</span> <span>HIT: ${card.hit}</span>` : ''}
                     </div>
-                    <div class="preview-text">${card.text}</div>
+                    <div class="preview-text">${formattedText}</div>
                 </div>
             </div>
         `;
@@ -38,6 +39,12 @@ export class HoverPreview {
 
     hide() {
         this.tooltipElement.style.display = 'none';
+    }
+
+    private formatEffectText(text: string): string {
+        if (!text) return '';
+        // Match words inside square brackets [Keyword]
+        return text.replace(/\[([^\]]+)\]/g, '<span class="keyword">[$1]</span>');
     }
 
     private updatePosition(x: number, y: number) {

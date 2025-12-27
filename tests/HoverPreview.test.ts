@@ -60,4 +60,15 @@ describe('HoverPreview', () => {
         hoverPreview.show(dummyCard, 100, 700);
         expect(parseInt(tooltip.style.top)).toBeLessThan(700); // Should flip to above cursor
     });
+
+    it('should highlight keywords in effect text', () => {
+        const keywordCard: Card = {
+            ...dummyCard,
+            text: 'This card has [Penetration] and [Dualist].'
+        };
+        hoverPreview.show(keywordCard, 100, 200);
+        const tooltip = document.querySelector('.hover-preview-tooltip') as HTMLElement;
+        expect(tooltip.innerHTML).toContain('<span class="keyword">[Penetration]</span>');
+        expect(tooltip.innerHTML).toContain('<span class="keyword">[Dualist]</span>');
+    });
 });
