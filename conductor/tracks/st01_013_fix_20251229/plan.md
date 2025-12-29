@@ -6,11 +6,11 @@
 - [x] Task: Verify ST01-013 Trash logic with tests. ed27e52
 - [x] Task: Conductor - User Manual Verification 'Core Logic Fixes' (Protocol in workflow.md)
 
-## Phase 2: Engine & Interaction Refinement
+## Phase 2: Engine & Interaction Refinement [checkpoint: 3a905c4]
 - [x] Task: Write test for `selectTrashTarget` action in `GameEngine`. b50af14
 - [x] Task: Implement `selectTrashTarget` and update `SELECT_TARGET` handling for Trash. b50af14
 - [x] Task: Refactor `EffectManager` to support Trash target selection flow. b50af14
-- [ ] Task: Conductor - User Manual Verification 'Engine & Interaction Refinement' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Engine & Interaction Refinement' (Protocol in workflow.md)
 
 ## Phase 3: UI Implementation
 - [ ] Task: Create `TrashSelectionModal` component/logic in `main.ts`.
