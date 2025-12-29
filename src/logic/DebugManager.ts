@@ -120,6 +120,33 @@ export class DebugManager {
         console.log("3. Run %cwindow.debug.dealDamage(1, 1)%c to trigger.", 'color: #e17055; font-weight: bold', 'color: inherit');
     }
 
+    setupST01_013_Scenario() {
+        console.log("Setting up ST01-013 (Reinforcement) Scenario...");
+
+        // 1. Reset current player (P0)
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p0.trash = [];
+        p0.hand = [];
+        p0.leaderLevel = 10;
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.MAIN;
+
+        // 2. Add ST01-013 to hand
+        const reinforcement = this.getCard("ST01-013");
+        if (reinforcement) p0.hand.push(reinforcement);
+
+        // 3. Add valid unit to trash (Neon ST01-002, Cost 1)
+        const neon = this.getCard("ST01-002");
+        if (neon) p0.trash.push(neon);
+
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #4CAF50; color: white');
+        console.log("1. Player 0 has 'Reinforcement' (ST01-013) in hand.");
+        console.log("2. Player 0 has 'Neon' (ST01-002) in trash.");
+        console.log("3. Drag 'Reinforcement' to the SKILL zone to activate.");
+    }
+
     private async runTest(name: string, testFn: () => Promise<void> | void) {
         console.group(`RUNNING TEST: ${name}`);
         try {
