@@ -2,6 +2,7 @@ import './style.css'
 import { GameEngine } from './logic/GameEngine';
 import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
+import { RuleValidator } from './logic/RuleValidator'; // Imported RuleValidator
 
 import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
@@ -24,11 +25,8 @@ declare global {
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function render() {
-    const currentPlayer = game.currentPlayer;
-    const opponent = game.opponentPlayer;
-
-
-    // Helper to determine if a zone is a valid drop target
+    // Determine active states for UI feedback
+    const turnPlayerIndex = game.state.turnPlayerIndex;
     const isMainPhase = game.state.phase === Phase.MAIN;
 
     app.innerHTML = `
@@ -45,26 +43,16 @@ function render() {
                 SELECT CARD TO TRASH (COST)
             </div>
         ` : ''}
-      </div>
-
-      ${renderPlayer(opponent, true, isMainPhase)}
-      ${renderPlayer(currentPlayer, false, isMainPhase)}
-
-      <div class="game-controls">
-        <div class="status-bar">
-          <div class="status-item"><span>Turn</span> <strong>${game.state.turnCount}</strong></div>
-          <div class="status-item"><span>Phase</span> <strong>${game.state.phase}</strong></div>
-          <div class="status-item"><span>Active</span> <strong>${game.currentPlayer.name}</strong></div>
+        <div class="game-controls-header">
+             <div class="status-item"><span>Turn</span> <strong>${game.state.turnCount}</strong></div>
+             <div class="status-item"><span>Phase</span> <strong>${game.state.phase}</strong></div>
+             <button id="next-phase" class="primary-btn small-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' ? 'disabled' : ''}>Next Phase</button>
         </div>
-        <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' ? 'disabled' : ''}>Next Phase</button>
       </div>
 
-      <div class="hand-zone">
-          ${currentPlayer.hand.map((c, i) => `
-              <div class="card-in-hand ${game.state.interactionMode === 'SELECT_COST' ? 'cost-candidate' : ''}" draggable="${isMainPhase && game.state.interactionMode === 'NORMAL'}" data-index="${i}">
-                  ${renderCard(c)}
-              </div>
-          `).join('')}
+      <div class="board-layout">
+          ${renderPlayer(0)}
+          ${renderPlayer(1)}
       </div>
 
       ${renderTrashModal()}
@@ -74,118 +62,108 @@ function render() {
     attachListeners();
 }
 
-function renderTrashModal() {
-    if (game.state.interactionMode !== 'SELECT_TARGET') return '';
-    const pending = game.state.pendingEffect as any;
-    if (!pending || pending.validTargets !== 'MY_TRASH') return '';
+function renderPlayer(playerIndex: number) {
+    const player = game.state.players[playerIndex];
+    const isTurnPlayer = game.state.turnPlayerIndex === playerIndex;
+    const isMainPhase = game.state.phase === Phase.MAIN;
+    // We only allow interaction with the Turn Player's zones usually,
+    // but drag targets might be on either side depending on the action (e.g. attacking).
+    // For DROPPING cards from hand, it must be Turn Player's own zone.
 
-    const trash = game.currentPlayer.trash;
-    // We can show all cards or only valid ones. Better to show all but grey out invalid if we had that logic.
-    // For now, let's just show all and rely on selectTrashTarget validation.
+    // Determine if this player's unit zones are valid drop targets for playing cards
+    const canDropUnit = isTurnPlayer && isMainPhase && game.state.interactionMode === 'NORMAL';
 
     return `
-        <div class="modal-overlay">
-            <div class="trash-modal">
-                <h3>Select a card from Trash</h3>
-                <div class="trash-grid">
-                    ${trash.map((c, i) => `
-                        <div class="trash-card-item" data-index="${i}">
-                            ${renderCard(c)}
-                        </div>
+      <div class="player-area ${isTurnPlayer ? 'active-turn' : ''}" data-player-index="${playerIndex}">
+        <div class="player-header">
+            <h2>${player.name} ${isTurnPlayer ? '(Active)' : ''}</h2>
+            <div class="resources-row">
+                 <div class="deck-indicator">Deck: ${player.deck.length}</div>
+                 <div class="trash-indicator">Trash: ${player.trash.length}</div>
+                 <div class="damage-zone-mini">
+                    <span>Damage:</span>
+                    ${player.damage.map(c => `
+                        <div class="mini-card-slice" style="background-color: #f56565;"></div>
                     `).join('')}
+                    <span style="margin-left:5px; font-weight:bold;">${player.damage.length}/10</span>
+                 </div>
+            </div>
+        </div>
+
+        <!-- Upper Section: Special Zones -->
+        <div class="upper-zones">
+             <!-- Skill Zone -->
+             <div class="skill-zone ${canDropUnit ? 'drop-zone-skill' : ''}" data-player-index="${playerIndex}">
+                ${player.skillZone.length > 0 ? player.skillZone.map(c => renderCard(c, true)).join('')
+            : '<div class="empty-zone-label">Skill Zone</div>'}
+             </div>
+             
+             <!-- Level/Leader Zone -->
+             <div class="level-zone-horizontal">
+                <div class="leader-slot">
+                    ${player.levelZone ? renderCard(player.levelZone, true) : ''}
                 </div>
-            </div>
-        </div>
-    `;
-}
-
-function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
-    return `
-      <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
-        <!-- Level Zone (1) -->
-        <div class="level-zone">
-            <!-- Leader Card Slot -->
-            <div class="leader-slot">
-                ${player.levelZone ? renderCard(player.levelZone, true) : ''}
-            </div>
-
-            ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
-                <div class="level-indicator ${player.leaderLevel >= lv ? 'active' : ''}">${lv}</div>
-            `).join('')}
-            <div class="level-indicator" style="color: #fff; font-size: 0.6rem;">LVL</div>
+                <div class="level-tracker">
+                    <div class="level-val">LVL ${player.leaderLevel}</div>
+                    <div class="level-bars">
+                        ${Array.from({ length: 10 }, (_, i) => `
+                            <div class="level-pip ${player.leaderLevel > i ? 'active' : ''}"></div>
+                        `).join('')}
+                    </div>
+                </div>
+             </div>
         </div>
 
-        <!-- Main Field (2, 3, 4) -->
-        <div class="field-center">
-            <!-- Unit Zones (3) -->
-            <div class="units-container">
-                ${player.unitZones.map((z: any, i: number) => {
-        const blockerZoneIndex = (game.state.pendingAttackerIndex ?? -1);
-        const isBlockingTarget = game.state.phase === Phase.BLOCK && isOpponent && blockerZoneIndex === i;
-        return `
-                    <div class="zone unit-zone ${!isOpponent ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
-                        ${z.unit ? renderCard(z.unit, false, game.getUnitPower(z, player), game.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
+        <!-- Main Field: Unit Zones -->
+        <div class="field-row">
+             ${player.unitZones.map((z: any, i: number) => {
+                const blockerZoneIndex = (game.state.pendingAttackerIndex ?? -1);
+                // Highlight blocking target on the defending player's side
+                const isBlockingTarget = game.state.phase === Phase.BLOCK && !isTurnPlayer && blockerZoneIndex === i;
+
+                return `
+                    <div class="zone unit-zone ${canDropUnit ? 'drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''}" 
+                         data-player-index="${playerIndex}" data-index="${i}">
                         
-                        <!-- Items -->
+                        ${z.unit ? renderCard(z.unit, false, game.getUnitPower(z, player), game.getUnitHit(z, player))
+                        : '<div class="empty-zone-label">UNIT</div>'}
+                        
+                        <!-- Attachments -->
                         ${z.items.length > 0 ? `
-                            <div class="attached-items">
-                                ${z.items.map((item: Card) => `
-                                    <div class="mini-item-card">
-                                        <img src="${item.imageUrl}" alt="${item.name}">
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <div class="item-tooltip">
-                                ${z.items.map((item: Card) => `
-                                    <div style="display: flex; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                                        <div class="tooltip-card-preview">
-                                            <img src="${item.imageUrl}" style="width:100%; height:100%; object-fit:cover;">
-                                        </div>
-                                        <div class="tooltip-info">
-                                            <div class="tooltip-item-name">${item.name}</div>
-                                            <div class="tooltip-item-text">${item.text}</div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
+                             <div class="attached-items-indicator">${z.items.length} Items</div>
                         ` : ''}
 
-                        ${z.unit && !isOpponent && game.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${z.unit && !isOpponent && game.state.phase === Phase.MAIN && !z.hasActivatedEffectThisTurn && z.unit.effects?.some((e: any) => e.activation === 'ACTIVE') ? '<button class="active-btn">Active</button>' : ''}
+                        <!-- Actions -->
+                        ${z.unit && isTurnPlayer && game.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
+                        ${z.unit && isTurnPlayer && game.state.phase === Phase.MAIN && !z.hasActivatedEffectThisTurn && z.unit.effects?.some((e: any) => e.activation === 'ACTIVE') ? '<button class="active-btn">Active</button>' : ''}
+                        
                         ${isBlockingTarget ? `
-                            <div class="block-controls">
+                            <div class="block-controls-overlay">
                                 <button class="block-btn">Block</button>
                                 <button class="pass-btn">Pass</button>
                             </div>
                         ` : ''}
-                        ${z.unit ? `<div class="stats">${game.getUnitPower(z, player)} / ${game.getUnitHit(z, player)}</div>` : ''}
                     </div>
-                `}).join('')}
-            </div>
+                `
+            }).join('')}
+        </div>
 
-            <!-- Bottom Field (2, 4) -->
-            <div class="bottom-center">
-                <div class="damage-zone">
-                    ${player.damage.map((c: any) => renderCard(c, true)).join('')}
-                    ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
-                </div>
-                <div class="skill-zone ${!isOpponent && isMainPhase ? 'interactive drop-zone-skill' : ''}">
-                    ${player.skillZone.map((c: any) => renderCard(c, true)).join('')}
-                    ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
-                </div>
+        <!-- Hand Zone (Always visible for now, or just for Turn Player?) -->
+        <!-- User wants side-by-side, so let's show both hands at the bottom of their respective columns -->
+        <div class="hand-zone-container">
+            <h3>Hand (${player.hand.length})</h3>
+            <div class="hand-grid">
+                ${player.hand.map((c, i) => `
+                    <div class="card-in-hand ${game.state.interactionMode === 'SELECT_COST' && isTurnPlayer ? 'cost-candidate' : ''}" 
+                         draggable="${isTurnPlayer && isMainPhase && game.state.interactionMode === 'NORMAL'}" 
+                         data-player-index="${playerIndex}"
+                         data-index="${i}">
+                        ${renderCard(c, true)} 
+                    </div>
+                `).join('')}
             </div>
         </div>
 
-        <!-- Right Side (5, 6) -->
-        <div class="field-right">
-            <div class="deck-zone">
-                <div class="deck-count">${player.deck.length}</div>
-                <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
-            </div>
-            <div class="trash-zone">
-                ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
-            </div>
-        </div>
       </div>
     `;
 }
@@ -212,7 +190,30 @@ function renderCard(card: Card, isSmall: boolean = false, calculatedPower?: numb
     `;
 }
 
+function renderTrashModal() {
+    if (game.state.interactionMode !== 'SELECT_TARGET') return '';
+    const pending = game.state.pendingEffect as any;
+    if (!pending || pending.validTargets !== 'MY_TRASH') return '';
+
+    const trash = game.currentPlayer.trash;
+    return `
+        <div class="modal-overlay">
+            <div class="trash-modal">
+                <h3>Select a card from Trash</h3>
+                <div class="trash-grid">
+                    ${trash.map((c, i) => `
+                        <div class="trash-card-item" data-index="${i}">
+                            ${renderCard(c)}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 let draggedCardIndex: number | null = null;
+let draggedPlayerIndex: number | null = null;
 
 function attachListeners() {
     document.getElementById('next-phase')?.addEventListener('click', () => {
@@ -227,61 +228,66 @@ function attachListeners() {
             const event = e as DragEvent;
             if (event.dataTransfer) {
                 const index = parseInt((card as HTMLElement).dataset.index!);
+                const pIndex = parseInt((card as HTMLElement).dataset.playerIndex!);
+
+                // Only allow dragging if it's that player's turn
+                if (pIndex !== game.state.turnPlayerIndex) {
+                    e.preventDefault();
+                    return;
+                }
+
                 draggedCardIndex = index;
-                event.dataTransfer.setData('text/plain', index.toString());
+                draggedPlayerIndex = pIndex;
+                event.dataTransfer.setData('text/plain', JSON.stringify({ cardIndex: index, playerIndex: pIndex }));
                 event.dataTransfer.effectAllowed = 'move';
             }
         });
         card.addEventListener('dragend', () => {
             draggedCardIndex = null;
+            draggedPlayerIndex = null;
             document.querySelectorAll('.zone').forEach(z => z.classList.remove('valid-target', 'invalid-target'));
         });
 
-        // Hover Preview Listeners
+        // Hover
         card.addEventListener('mouseenter', (e) => {
             const index = parseInt((card as HTMLElement).dataset.index!);
-            const cardObj = game.currentPlayer.hand[index];
+            const pIndex = parseInt((card as HTMLElement).dataset.playerIndex!);
+            const cardObj = game.state.players[pIndex].hand[index];
             const mouseEvent = e as MouseEvent;
             hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
         });
-
+        card.addEventListener('mouseleave', () => hoverPreview.hide());
         card.addEventListener('mousemove', (e) => {
-            const mouseEvent = e as MouseEvent;
-            // We need a way to update position without full redraw/re-show if possible
-            // but for now, just calling show again is fine as it updates position
             const index = parseInt((card as HTMLElement).dataset.index!);
-            const cardObj = game.currentPlayer.hand[index];
+            const pIndex = parseInt((card as HTMLElement).dataset.playerIndex!);
+            const cardObj = game.state.players[pIndex].hand[index];
+            const mouseEvent = e as MouseEvent;
             hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
-        });
-
-        card.addEventListener('mouseleave', () => {
-            hoverPreview.hide();
         });
     });
 
+    // Unit Drops
     const dropZones = document.querySelectorAll('.drop-zone');
     dropZones.forEach(zone => {
         zone.addEventListener('dragover', (e) => {
-            e.preventDefault(); // Necessary to allow dropping
+            e.preventDefault();
             const event = e as DragEvent;
-            if (event.dataTransfer) {
-                event.dataTransfer.dropEffect = 'move';
-            }
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
 
-            if (draggedCardIndex !== null) {
+            const zonePlayerIndex = parseInt((zone as HTMLElement).dataset.playerIndex!);
+
+            if (draggedCardIndex !== null && draggedPlayerIndex === zonePlayerIndex) {
                 const zoneIndex = parseInt((zone as HTMLElement).dataset.index!);
                 const card = game.currentPlayer.hand[draggedCardIndex];
-                
+
                 let isValid = false;
                 if (card.type === CardType.UNIT) {
                     isValid = RuleValidator.canPlayUnit(game, game.currentPlayer, draggedCardIndex, zoneIndex).valid;
                 } else if (card.type === CardType.ITEM) {
                     isValid = RuleValidator.canPlayItem(game, game.currentPlayer, draggedCardIndex, zoneIndex).valid;
                 }
-
                 zone.classList.add(isValid ? 'valid-target' : 'invalid-target');
             }
-            
             zone.classList.add('drag-over');
         });
 
@@ -294,10 +300,13 @@ function attachListeners() {
             zone.classList.remove('drag-over');
             const event = e as DragEvent;
             if (event.dataTransfer) {
-                const cardIndex = parseInt(event.dataTransfer.getData('text/plain'));
+                const data = JSON.parse(event.dataTransfer.getData('text/plain'));
+                const cardIndex = data.cardIndex;
+                const pIndex = data.playerIndex;
                 const zoneIndex = parseInt((zone as HTMLElement).dataset.index!);
+                const zonePlayerIndex = parseInt((zone as HTMLElement).dataset.playerIndex!);
 
-                if (!isNaN(cardIndex) && !isNaN(zoneIndex)) {
+                if (pIndex === zonePlayerIndex && pIndex === game.state.turnPlayerIndex) {
                     const card = game.currentPlayer.hand[cardIndex];
                     if (card.type === CardType.UNIT) {
                         game.playUnit(cardIndex, zoneIndex);
@@ -310,35 +319,32 @@ function attachListeners() {
         });
     });
 
-
-    // Skill Zone Drop Listener
+    // Skill Drops
     const skillZones = document.querySelectorAll('.drop-zone-skill');
     skillZones.forEach(zone => {
         zone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            const event = e as DragEvent;
-            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-            
-            if (draggedCardIndex !== null) {
-                const card = game.currentPlayer.hand[draggedCardIndex];
+            const zonePlayerIndex = parseInt((zone as HTMLElement).dataset.playerIndex!);
+            if (draggedCardIndex !== null && draggedPlayerIndex === zonePlayerIndex) {
                 const isValid = RuleValidator.canPlaySkill(game, game.currentPlayer, draggedCardIndex).valid;
                 zone.classList.add(isValid ? 'valid-target' : 'invalid-target');
             }
-
             zone.classList.add('drag-over');
         });
 
-        zone.addEventListener('dragleave', () => {
-            zone.classList.remove('drag-over', 'valid-target', 'invalid-target');
-        });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over', 'valid-target', 'invalid-target'));
 
         zone.addEventListener('drop', (e) => {
             e.preventDefault();
             zone.classList.remove('drag-over');
             const event = e as DragEvent;
             if (event.dataTransfer) {
-                const cardIndex = parseInt(event.dataTransfer.getData('text/plain'));
-                if (!isNaN(cardIndex)) {
+                const data = JSON.parse(event.dataTransfer.getData('text/plain'));
+                const cardIndex = data.cardIndex;
+                const pIndex = data.playerIndex;
+                const zonePlayerIndex = parseInt((zone as HTMLElement).dataset.playerIndex!);
+
+                if (pIndex === zonePlayerIndex && pIndex === game.state.turnPlayerIndex) {
                     game.playSkill(cardIndex);
                     render();
                 }
@@ -346,41 +352,7 @@ function attachListeners() {
         });
     });
 
-
-    // Unit Zone Hover Listeners
-    const unitZones = document.querySelectorAll('.unit-zone');
-    unitZones.forEach(zone => {
-        zone.addEventListener('mouseenter', (e) => {
-            const el = zone as HTMLElement;
-            const isOpponent = el.dataset.player === 'opponent';
-            const index = parseInt(el.dataset.index!);
-            const player = isOpponent ? game.opponentPlayer : game.currentPlayer;
-            const unit = player.unitZones[index].unit;
-            
-            if (unit) {
-                const mouseEvent = e as MouseEvent;
-                hoverPreview.show(unit, mouseEvent.clientX, mouseEvent.clientY);
-            }
-        });
-
-        zone.addEventListener('mousemove', (e) => {
-            const el = zone as HTMLElement;
-            const isOpponent = el.dataset.player === 'opponent';
-            const index = parseInt(el.dataset.index!);
-            const player = isOpponent ? game.opponentPlayer : game.currentPlayer;
-            const unit = player.unitZones[index].unit;
-
-            if (unit) {
-                const mouseEvent = e as MouseEvent;
-                hoverPreview.show(unit, mouseEvent.clientX, mouseEvent.clientY);
-            }
-        });
-
-        zone.addEventListener('mouseleave', () => {
-            hoverPreview.hide();
-        });
-    });
-
+    // Interaction Listeners (Attack, Block, etc.)
     document.querySelectorAll('.attack-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -406,16 +378,14 @@ function attachListeners() {
         });
     });
 
-
     document.querySelectorAll('.active-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            // Using dataset player-index to confirm ownership if needed, but only current player has btn rendered
             const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
-            // Assuming we activate the first ACTIVE effect for simplicity in MVP
-            // ST02-007 has only one ACTIVE effect.
             const zone = game.currentPlayer.unitZones[zoneIndex];
             const effectIndex = zone.unit?.effects?.findIndex(e => e.activation === 'ACTIVE') ?? -1;
-            
+
             if (effectIndex !== -1) {
                 game.activateEffect(zoneIndex, effectIndex);
                 render();
@@ -423,9 +393,10 @@ function attachListeners() {
         });
     });
 
-    // Cost Selection Listener
+    // Selection Modes
     if (game.state.interactionMode === 'SELECT_COST') {
-        const handCards = document.querySelectorAll('.card-in-hand');
+        // Allow selecting from current player's hand
+        const handCards = document.querySelectorAll(`.card-in-hand[data-player-index="${game.state.turnPlayerIndex}"]`);
         handCards.forEach(card => {
             card.addEventListener('click', (_e) => {
                 const index = parseInt((card as HTMLElement).dataset.index!);
@@ -435,46 +406,36 @@ function attachListeners() {
         });
     }
 
-    // Zone Selection Listener (for Skills)
     if (game.state.interactionMode === 'SELECT_TARGET') {
         const units = document.querySelectorAll('.unit-zone');
         units.forEach(u => {
             u.addEventListener('click', (_e) => {
                 const el = u as HTMLElement;
                 const zoneIndex = parseInt(el.dataset.index!);
-                const isOpponent = el.dataset.player === 'opponent';
-                // Validation (Simple UI check, handled in logic too)
-                game.selectTarget(zoneIndex, isOpponent);
+                const zonePlayerIndex = parseInt(el.dataset.playerIndex!);
+                const isOpponentZone = zonePlayerIndex !== game.state.turnPlayerIndex;
+
+                game.selectTarget(zoneIndex, isOpponentZone);
                 render();
             });
-            // Add visual cue
             (u as HTMLElement).style.cursor = 'crosshair';
-            (u as HTMLElement).style.boxShadow = '0 0 10px #ffeaa7';
         });
     }
 
-    // Trash Selection Listener
-    if (game.state.interactionMode === 'SELECT_TARGET') {
-        const pending = game.state.pendingEffect as any;
-        if (pending && pending.validTargets === 'MY_TRASH') {
-            document.querySelectorAll('.trash-card-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const index = parseInt((item as HTMLElement).dataset.index!);
-                    game.selectTrashTarget(index);
-                    render();
-                });
-                
-                // Hover preview for trash cards too
-                item.addEventListener('mouseenter', (e) => {
-                    const index = parseInt((item as HTMLElement).dataset.index!);
-                    const card = game.currentPlayer.trash[index];
-                    const mouseEvent = e as MouseEvent;
-                    hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
-                });
-                item.addEventListener('mouseleave', () => hoverPreview.hide());
-            });
-        }
-    }
+    // Hover previews for units on field
+    document.querySelectorAll('.unit-zone').forEach(zone => {
+        zone.addEventListener('mouseenter', (e) => {
+            const el = zone as HTMLElement;
+            const pIndex = parseInt(el.dataset.playerIndex!);
+            const zIndex = parseInt(el.dataset.index!);
+            const unit = game.state.players[pIndex].unitZones[zIndex].unit;
+            if (unit) {
+                const mouseEvent = e as MouseEvent;
+                hoverPreview.show(unit, mouseEvent.clientX, mouseEvent.clientY);
+            }
+        });
+        zone.addEventListener('mouseleave', () => hoverPreview.hide());
+    });
 }
 
 const debugManager = new DebugManager(game, render);
