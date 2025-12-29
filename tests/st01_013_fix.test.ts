@@ -63,4 +63,34 @@ describe('ST01-013 Reinforcement Bug Reproduction', () => {
         expect(validation.valid).toBe(false);
         expect(validation.reason).toBe("No valid targets for effect");
     });
+
+    it('should handle trash selection interaction correctly', () => {
+        const trashUnit = getCard('ST01-002'); // Cost 1 Unit
+        engine.currentPlayer.trash = [trashUnit];
+        
+        const reinforcement = getCard('ST01-013');
+        engine.currentPlayer.hand = [reinforcement];
+
+        // 1. Play Skill
+        engine.playSkill(0);
+        
+        // 2. Verify State: Should be in SELECT_TARGET mode with MY_TRASH scope
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        expect(engine.state.pendingEffect).toBeDefined();
+        if (engine.state.pendingEffect) {
+            expect(engine.state.pendingEffect.validTargets).toBe('MY_TRASH');
+        }
+
+        // 3. Select Trash Target (Simulate UI Action)
+        (engine as any).selectTrashTarget(0);
+
+        // 4. Verify Effect Execution: Card moved to hand, effect finished
+        expect(engine.state.interactionMode).toBe('NORMAL');
+        expect(engine.state.pendingEffect).toBeNull();
+        expect(engine.currentPlayer.hand.length).toBe(1); // The retrieved unit
+        expect(engine.currentPlayer.hand[0].id).toBe(trashUnit.id);
+        expect(engine.currentPlayer.trash.length).toBe(0); // The unit moved out, skill is in skill zone
+        expect(engine.currentPlayer.skillZone.length).toBe(1);
+        expect(engine.currentPlayer.skillZone[0].id).toBe(reinforcement.id);
+    });
 });

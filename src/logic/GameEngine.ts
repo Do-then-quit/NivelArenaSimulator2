@@ -774,4 +774,38 @@ export class GameEngine {
         this.state.interactionMode = 'NORMAL';
         this.state.pendingEffect = null;
     }
+
+    public selectTrashTarget(trashIndex: number) {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+        
+        const pending = this.state.pendingEffect as any;
+        // Verify scope is MY_TRASH
+        if (pending.validTargets !== 'MY_TRASH') {
+            console.warn("Attempted to select trash target but scope is " + pending.validTargets);
+            return;
+        }
+
+        const effect = pending._fullEffect;
+        const context = pending._context;
+
+        // Get target card from trash
+        if (trashIndex < 0 || trashIndex >= this.currentPlayer.trash.length) {
+            console.warn("Invalid trash index");
+            return;
+        }
+        const targetCard = this.currentPlayer.trash[trashIndex];
+
+        // Validate
+        if (!TargetSelector.isValidTarget(this, effect.targets, context, targetCard)) {
+            console.log("Invalid Trash Target Selected.");
+            return;
+        }
+
+        // Execute Effect via Manager
+        this.effectManager.executeEffect(effect, context, [targetCard]);
+
+        // Reset State
+        this.state.interactionMode = 'NORMAL';
+        this.state.pendingEffect = null;
+    }
 }
