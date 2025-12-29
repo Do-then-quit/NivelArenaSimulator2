@@ -17,6 +17,6 @@
 - [ ] Task: Conductor - User Manual Verification 'ST02 Scenario Implementation' (Protocol in workflow.md)
 
 ## Phase 4: Final Integration and Quality Gate
-- [ ] Task: Verify accessibility of all scenarios via `window.debug` in the browser environment.
-- [ ] Task: Ensure all `DebugManager` methods follow the naming convention defined in the guidelines.
+- [x] Task: Verify accessibility of all scenarios via `window.debug` in the browser environment. 426b25f
+- [x] Task: Ensure all `DebugManager` methods follow the naming convention defined in the guidelines. 426b25f
 - [ ] Task: Conductor - User Manual Verification 'Final Integration and Quality Gate' (Protocol in workflow.md)
