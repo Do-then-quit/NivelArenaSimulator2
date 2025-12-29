@@ -25,6 +25,6 @@
 - [x] Task: Conductor - User Manual Verification 'UI Implementation' (Protocol in workflow.md)
 
 ## Phase 4: Final Verification & Cleanup
-- [ ] Task: Run full regression tests for ST01.
-- [ ] Task: Perform manual verification of ST01-013 in the browser.
-- [ ] Task: Conductor - User Manual Verification 'Final Verification & Cleanup' (Protocol in workflow.md)
+- [x] Task: Run full regression tests for ST01.
+- [x] Task: Perform manual verification of ST01-013 in the browser.
+- [x] Task: Conductor - User Manual Verification 'Final Verification & Cleanup' (Protocol in workflow.md)
