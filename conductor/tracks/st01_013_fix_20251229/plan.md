@@ -12,12 +12,17 @@
 - [x] Task: Refactor `EffectManager` to support Trash target selection flow. b50af14
 - [x] Task: Conductor - User Manual Verification 'Engine & Interaction Refinement' (Protocol in workflow.md)
 
-## Phase 3: UI Implementation
-- [ ] Task: Create `TrashSelectionModal` component/logic in `main.ts`.
-- [ ] Task: Implement modal display logic when `SELECT_TARGET` mode has `MY_TRASH` scope.
-- [ ] Task: Add CSS styling for the Trash selection modal.
-- [ ] Task: Integrate `selectTrashTarget` call with UI selection.
-- [ ] Task: Conductor - User Manual Verification 'UI Implementation' (Protocol in workflow.md)
+## Phase 3: UI Implementation [checkpoint: 31c039c]
+
+- [x] Task: Create `TrashSelectionModal` component/logic in `main.ts`.
+
+- [x] Task: Implement modal display logic when `SELECT_TARGET` mode has `MY_TRASH` scope.
+
+- [x] Task: Add CSS styling for the Trash selection modal.
+
+- [x] Task: Integrate `selectTrashTarget` call with UI selection.
+
+- [x] Task: Conductor - User Manual Verification 'UI Implementation' (Protocol in workflow.md)
 
 ## Phase 4: Final Verification & Cleanup
 - [ ] Task: Run full regression tests for ST01.
