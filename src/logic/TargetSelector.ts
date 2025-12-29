@@ -52,7 +52,7 @@ export class TargetSelector {
 
         // 2. Type filtering (UNIT, LEADER, etc.)
         if (schema.type === 'UNIT') {
-            candidates = candidates.filter(c => (c as UnitZoneState).unit !== null);
+            candidates = candidates.filter(c => this.getUnitFromTarget(c) !== null);
         }
 
         // 3. Advanced Filters
@@ -66,19 +66,19 @@ export class TargetSelector {
                         break;
                     case 'HAS_TRAIT':
                         candidates = candidates.filter(c => {
-                            const unit = (c as UnitZoneState).unit;
+                            const unit = this.getUnitFromTarget(c);
                             return unit && unit.traits?.includes(filter.value);
                         });
                         break;
                     case 'HAS_KEYWORD':
                         candidates = candidates.filter(c => {
-                            const unit = (c as UnitZoneState).unit;
+                            const unit = this.getUnitFromTarget(c);
                             return unit && unit.keywords?.includes(filter.value);
                         });
                         break;
                     case 'COST_LIMIT':
                         candidates = candidates.filter(c => {
-                            const unit = (c as UnitZoneState).unit;
+                            const unit = this.getUnitFromTarget(c);
                             return unit && unit.cost <= filter.value;
                         });
                         break;
@@ -90,13 +90,13 @@ export class TargetSelector {
         if (schema.conditions) {
             if (schema.conditions.hasTrait) {
                 candidates = candidates.filter(c => {
-                    const unit = (c as UnitZoneState).unit;
+                    const unit = this.getUnitFromTarget(c);
                     return unit && unit.traits?.includes(schema.conditions!.hasTrait!);
                 });
             }
             if (schema.conditions.costMax !== undefined) {
                 candidates = candidates.filter(c => {
-                    const unit = (c as UnitZoneState).unit;
+                    const unit = this.getUnitFromTarget(c);
                     return unit && unit.cost <= schema.conditions!.costMax!;
                 });
             }
@@ -115,6 +115,9 @@ export class TargetSelector {
 
         if (schema.selectMode === 'LOWEST_POWER') {
             candidates.sort((a, b) => {
+                const unitA = this.getUnitFromTarget(a);
+                const unitB = this.getUnitFromTarget(b);
+                if (!unitA || !unitB) return 0;
                 const pA = engine.getUnitPower(a, this.getOwner(engine, a));
                 const pB = engine.getUnitPower(b, this.getOwner(engine, b));
                 return pA - pB;
@@ -170,13 +173,13 @@ export class TargetSelector {
 
         // 2. Type Check
         if (schema.type === 'UNIT') {
-            if (!(target as UnitZoneState).unit) return false;
+            if (this.getUnitFromTarget(target) === null) return false;
         }
 
         // 3. Filter Check
         if (schema.filters) {
             for (const filter of schema.filters) {
-                const unit = (target as UnitZoneState).unit;
+                const unit = this.getUnitFromTarget(target);
                 switch (filter.type) {
                     case 'EXCLUDE_SELF': if (target === context.unitZone) return false; break;
                     case 'HAS_TRAIT': if (!unit || !unit.traits?.includes(filter.value)) return false; break;
@@ -191,13 +194,20 @@ export class TargetSelector {
 
         // 4. Legacy Conditions Check
         if (schema.conditions) {
-            const unit = (target as UnitZoneState).unit;
+            const unit = this.getUnitFromTarget(target);
             if (schema.conditions.costMax !== undefined && (!unit || unit.cost > schema.conditions.costMax)) return false;
             if (schema.conditions.costMin !== undefined && (!unit || unit.cost < schema.conditions.costMin)) return false;
             if (schema.conditions.hasTrait && (!unit || !unit.traits?.includes(schema.conditions.hasTrait))) return false;
         }
 
         return true;
+    }
+
+    private static getUnitFromTarget(target: any): any | null {
+        if (!target) return null;
+        if ('unit' in target) return target.unit; // It's a UnitZoneState
+        if ('type' in target) return target; // It's a Card
+        return null;
     }
 
     private static getOwner(engine: GameEngine, zone: UnitZoneState): PlayerState {
