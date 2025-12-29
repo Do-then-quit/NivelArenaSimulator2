@@ -19,7 +19,7 @@ A dual-purpose platform delivering a polished, browser-based experience for huma
   - **Web GUI:** A user-friendly, browser-based interface for interactive play.
   - **Headless Mode:** A Node.js-compatible simulation layer optimized for speed, allowing for thousands of games per second for AI data generation.
 - **Data-Driven Design:** Architecture supports logging game states and outcomes to facilitate future Machine Learning integrations.
-- **Automated Rule Verification:** A scenario-based testing framework that allows for rapid verification of complex game mechanics against official rules.
+- **Comprehensive Scenario Testing:** An extensive suite of in-browser scenarios via `DebugManager` for manual verification of card effects and game rules.
 
 ## User Experience
 - **Players:** Easy access via a web link or local server, with clear visual feedback on game states.

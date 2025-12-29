@@ -1,0 +1,8 @@
+{
+  "track_id": "scenario_tests_20251229",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2025-12-29T19:36:00Z",
+  "updated_at": "2025-12-29T19:36:00Z",
+  "description": "setupST01_013_Scenario같은 시나리오테스트를 할 수 있는 테스트들을 지금까지 효과가 있는 ST01, ST02카드들에 대해서 다 만들어주고, 앞으로 다른 카드들을 추가적으로 구현시킬때도 이런 테스트들을 만들게 적절한 문서에 적어줘. 앞으로도 너가 볼수 있게"
+}
