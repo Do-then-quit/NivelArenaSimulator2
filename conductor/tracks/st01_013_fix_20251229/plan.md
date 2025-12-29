@@ -1,10 +1,10 @@
 # Plan: Fix ST01-013 Skill Logic and Implement Trash Selection UI
 
-## Phase 1: Core Logic Fixes (TDD)
+## Phase 1: Core Logic Fixes (TDD) [checkpoint: 555a503]
 - [x] Task: Write failing test for ST01-013 Trash selection logic. ed27e52
 - [x] Task: Implement `TargetSelector` fix for `MY_TRASH` scope. ed27e52
 - [x] Task: Verify ST01-013 Trash logic with tests. ed27e52
-- [ ] Task: Conductor - User Manual Verification 'Core Logic Fixes' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Core Logic Fixes' (Protocol in workflow.md)
 
 ## Phase 2: Engine & Interaction Refinement
 - [ ] Task: Write test for `selectTrashTarget` action in `GameEngine`.
