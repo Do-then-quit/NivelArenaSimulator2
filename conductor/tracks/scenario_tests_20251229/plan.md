@@ -1,6 +1,6 @@
 # Plan: Comprehensive Scenario Testing for ST01 & ST02
 
-## Phase 1: Guidelines and Infrastructure
+## Phase 1: Guidelines and Infrastructure [checkpoint: c65f49e]
 - [x] Task: Create `conductor/testing-guidelines.md` defining scenario test standards and templates. 10b10a7
 - [ ] Task: Conductor - User Manual Verification 'Guidelines and Infrastructure' (Protocol in workflow.md)
 
