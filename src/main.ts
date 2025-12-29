@@ -66,10 +66,37 @@ function render() {
               </div>
           `).join('')}
       </div>
+
+      ${renderTrashModal()}
     </div>
   `;
 
     attachListeners();
+}
+
+function renderTrashModal() {
+    if (game.state.interactionMode !== 'SELECT_TARGET') return '';
+    const pending = game.state.pendingEffect as any;
+    if (!pending || pending.validTargets !== 'MY_TRASH') return '';
+
+    const trash = game.currentPlayer.trash;
+    // We can show all cards or only valid ones. Better to show all but grey out invalid if we had that logic.
+    // For now, let's just show all and rely on selectTrashTarget validation.
+
+    return `
+        <div class="modal-overlay">
+            <div class="trash-modal">
+                <h3>Select a card from Trash</h3>
+                <div class="trash-grid">
+                    ${trash.map((c, i) => `
+                        <div class="trash-card-item" data-index="${i}">
+                            ${renderCard(c)}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
@@ -424,6 +451,29 @@ function attachListeners() {
             (u as HTMLElement).style.cursor = 'crosshair';
             (u as HTMLElement).style.boxShadow = '0 0 10px #ffeaa7';
         });
+    }
+
+    // Trash Selection Listener
+    if (game.state.interactionMode === 'SELECT_TARGET') {
+        const pending = game.state.pendingEffect as any;
+        if (pending && pending.validTargets === 'MY_TRASH') {
+            document.querySelectorAll('.trash-card-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const index = parseInt((item as HTMLElement).dataset.index!);
+                    game.selectTrashTarget(index);
+                    render();
+                });
+                
+                // Hover preview for trash cards too
+                item.addEventListener('mouseenter', (e) => {
+                    const index = parseInt((item as HTMLElement).dataset.index!);
+                    const card = game.currentPlayer.trash[index];
+                    const mouseEvent = e as MouseEvent;
+                    hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+                });
+                item.addEventListener('mouseleave', () => hoverPreview.hide());
+            });
+        }
     }
 }
 
