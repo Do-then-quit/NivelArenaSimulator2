@@ -10,10 +10,10 @@
 - [x] Task: Implement scenario tests for ST01 Items (ST01-016 to ST01-017). 58219dd
 - [ ] Task: Conductor - User Manual Verification 'ST01 Scenario Implementation' (Protocol in workflow.md)
 
-## Phase 3: ST02 Scenario Implementation
-- [ ] Task: Implement scenario tests for ST02 Units (ST02-001 to ST02-012).
-- [ ] Task: Implement scenario tests for ST02 Skills (ST02-013 to ST02-015).
-- [ ] Task: Implement scenario tests for ST02 Items (ST02-016 to ST02-017).
+## Phase 3: ST02 Scenario Implementation [checkpoint: 426b25f]
+- [x] Task: Implement scenario tests for ST02 Units (ST02-001 to ST02-012). 58219dd
+- [x] Task: Implement scenario tests for ST02 Skills (ST02-013 to ST02-015). 58219dd
+- [x] Task: Implement scenario tests for ST02 Items (ST02-016 to ST02-017). 58219dd
 - [ ] Task: Conductor - User Manual Verification 'ST02 Scenario Implementation' (Protocol in workflow.md)
 
 ## Phase 4: Final Integration and Quality Gate
