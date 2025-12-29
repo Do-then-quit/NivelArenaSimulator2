@@ -4,10 +4,10 @@
 - [x] Task: Create `conductor/testing-guidelines.md` defining scenario test standards and templates. 10b10a7
 - [ ] Task: Conductor - User Manual Verification 'Guidelines and Infrastructure' (Protocol in workflow.md)
 
-## Phase 2: ST01 Scenario Implementation
-- [ ] Task: Implement scenario tests for ST01 Units (ST01-001 to ST01-011).
-- [ ] Task: Implement scenario tests for ST01 Skills (ST01-012 to ST01-015).
-- [ ] Task: Implement scenario tests for ST01 Items (ST01-016 to ST01-017).
+## Phase 2: ST01 Scenario Implementation [checkpoint: 742ce59]
+- [x] Task: Implement scenario tests for ST01 Units (ST01-001 to ST01-011). 58219dd
+- [x] Task: Implement scenario tests for ST01 Skills (ST01-012 to ST01-015). 58219dd
+- [x] Task: Implement scenario tests for ST01 Items (ST01-016 to ST01-017). 58219dd
 - [ ] Task: Conductor - User Manual Verification 'ST01 Scenario Implementation' (Protocol in workflow.md)
 
 ## Phase 3: ST02 Scenario Implementation
