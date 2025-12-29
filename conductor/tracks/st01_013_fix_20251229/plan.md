@@ -7,9 +7,9 @@
 - [x] Task: Conductor - User Manual Verification 'Core Logic Fixes' (Protocol in workflow.md)
 
 ## Phase 2: Engine & Interaction Refinement
-- [ ] Task: Write test for `selectTrashTarget` action in `GameEngine`.
-- [ ] Task: Implement `selectTrashTarget` and update `SELECT_TARGET` handling for Trash.
-- [ ] Task: Refactor `EffectManager` to support Trash target selection flow.
+- [x] Task: Write test for `selectTrashTarget` action in `GameEngine`. b50af14
+- [x] Task: Implement `selectTrashTarget` and update `SELECT_TARGET` handling for Trash. b50af14
+- [x] Task: Refactor `EffectManager` to support Trash target selection flow. b50af14
 - [ ] Task: Conductor - User Manual Verification 'Engine & Interaction Refinement' (Protocol in workflow.md)
 
 ## Phase 3: UI Implementation
