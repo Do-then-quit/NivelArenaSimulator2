@@ -24,16 +24,16 @@ Implement the core logic for the new keywords `공멸` (Mutual Destruction) and 
 - [x] Task: Create `tests/st03_006_010.test.ts` and verify effects. 779d547
 - [x] Task: Conductor - User Manual Verification 'ST03-006 to ST03-010' (Protocol in workflow.md)
 
-## Phase 4: ST03-011 to ST03-017 (High Cost & Support)
-- [~] Task: Implement `ST03-011` (Modernia Unit) - Entry (Hand Trash for Kill).
-- [ ] Task: Implement `ST03-012` (Surprise Attack) - Skill (Hand Trash).
-- [ ] Task: Implement `ST03-013` (Blackening) - Skill (Hand Trash to Field Trash).
-- [ ] Task: Implement `ST03-014` (Sense Sharing) - Skill (Field Trash to Draw).
-- [ ] Task: Implement `ST03-015` (Come On!) - Skill (Field Trash to Encounter Trash).
-- [ ] Task: Implement `ST03-016` (Kevlar Vest) - Item (Power & Termination).
-- [ ] Task: Implement `ST03-017` (Rare Metal Amguard) - Item (Exit Mutual Destruction).
-- [ ] Task: Create `tests/st03_011_017.test.ts` and verify effects.
-- [ ] Task: Conductor - User Manual Verification 'ST03-011 to ST03-017' (Protocol in workflow.md)
+## Phase 4: ST03-011 to ST03-017 (High Cost & Support) [checkpoint: e1b8d84]
+- [x] Task: Implement `ST03-011` (Modernia Unit) - Entry (Hand Trash for Kill). e1b8d84
+- [x] Task: Implement `ST03-012` (Surprise Attack) - Skill (Hand Trash). e1b8d84
+- [x] Task: Implement `ST03-013` (Blackening) - Skill (Hand Trash to Field Trash). e1b8d84
+- [x] Task: Implement `ST03-014` (Sense Sharing) - Skill (Field Trash to Draw). e1b8d84
+- [x] Task: Implement `ST03-015` (Come On!) - Skill (Field Trash to Encounter Trash). e1b8d84
+- [x] Task: Implement `ST03-016` (Kevlar Vest) - Item (Power & Termination). e1b8d84
+- [x] Task: Implement `ST03-017` (Rare Metal Amguard) - Item (Exit Mutual Destruction). e1b8d84
+- [x] Task: Create `tests/st03_011_017.test.ts` and verify effects. e1b8d84
+- [x] Task: Conductor - User Manual Verification 'ST03-011 to ST03-017' (Protocol in workflow.md)
 
 ## Phase 4: ST03-011 to ST03-017 (High Cost & Support)
 - [ ] Task: Implement `ST03-011` (Modernia Unit) - Entry (Hand Trash for Kill).
