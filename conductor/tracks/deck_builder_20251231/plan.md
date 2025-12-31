@@ -4,7 +4,8 @@ Implement a deck builder interface to allow users to create and save custom deck
 
 ## Phase 1: Foundation & Data Layer
 - [x] Task: Update `CardDatabase.ts` to comprehensively load all available card packs from `packs/*.json`. [d8bb95a]
-- [ ] Task: Create `DeckPersistence` service in `src/logic/DeckPersistence.ts` to manage `localStorage` saving/loading.
+- [x] Task: Create `DeckPersistence` service in `src/logic/DeckPersistence.ts` to manage `localStorage` saving/loading. [968ab7c]
+- [ ] Task: Conductor - User Manual Verification 'Foundation & Data Layer' (Protocol in workflow.md)
 - [ ] Task: Conductor - User Manual Verification 'Foundation & Data Layer' (Protocol in workflow.md)
 
 ## Phase 2: Deck Builder Logic & State
