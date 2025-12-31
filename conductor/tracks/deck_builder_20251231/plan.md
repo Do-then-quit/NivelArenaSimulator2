@@ -22,7 +22,8 @@ Implement a deck builder interface to allow users to create and save custom deck
 - [ ] Task: Conductor - User Manual Verification 'Deck Builder UI Implementation' (Protocol in workflow.md)
 
 ## Phase 4: Game Integration & Main Menu
-- [ ] Task: Refactor `main.ts` to support screen switching (Main Menu, Deck Builder, Game).
-- [ ] Task: Implement "Main Menu" with "Deck Builder" and "Start Game" buttons.
-- [ ] Task: Update Game Initialization logic to use the deck selected/built in the UI.
+- [x] Task: Refactor `main.ts` to support screen switching (Main Menu, Deck Builder, Game). [6d9c251]
+- [x] Task: Implement "Main Menu" with "Deck Builder" and "Start Game" buttons. [6d9c251]
+- [x] Task: Update Game Initialization logic to use the deck selected/built in the UI. [6d9c251]
+- [ ] Task: Conductor - User Manual Verification 'Game Integration & Main Menu' (Protocol in workflow.md)
 - [ ] Task: Conductor - User Manual Verification 'Game Integration & Main Menu' (Protocol in workflow.md)
