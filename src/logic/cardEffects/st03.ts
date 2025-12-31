@@ -24,12 +24,14 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.EXIT,
             description: "엑시트 : 상대는 상대의 패를 1장 골라 트래시한다.",
+            targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시한다.",
             condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
+            targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } }
         },
         {

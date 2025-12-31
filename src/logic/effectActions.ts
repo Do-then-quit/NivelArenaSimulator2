@@ -206,14 +206,26 @@ const terminateAttack: ActionImplementation = (ctx, _params, _targets) => {
     }
 };
 
-const discard: ActionImplementation = (ctx, params) => {
+const discard: ActionImplementation = (ctx, params, targets) => {
     const targetPlayer = params.target === 'OPPONENT' ? ctx.opponent : ctx.player;
-    const count = params.count || 1;
-    for (let i = 0; i < count; i++) {
-        if (targetPlayer.hand.length > 0) {
-            const card = targetPlayer.hand.shift()!;
-            targetPlayer.trash.push(card);
-            console.log(`${targetPlayer.name} discarded ${card.name} from hand.`);
+    
+    if (targets && targets.length > 0) {
+        targets.forEach(card => {
+            const idx = targetPlayer.hand.indexOf(card);
+            if (idx !== -1) {
+                targetPlayer.hand.splice(idx, 1);
+                targetPlayer.trash.push(card);
+                console.log(`${targetPlayer.name} discarded chosen card: ${card.name}`);
+            }
+        });
+    } else {
+        const count = params.count || 1;
+        for (let i = 0; i < count; i++) {
+            if (targetPlayer.hand.length > 0) {
+                const card = targetPlayer.hand.shift()!;
+                targetPlayer.trash.push(card);
+                console.log(`${targetPlayer.name} discarded ${card.name} from hand (auto).`);
+            }
         }
     }
 };

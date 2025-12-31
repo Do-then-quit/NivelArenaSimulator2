@@ -59,36 +59,49 @@ describe('ST03-001 to ST03-005 Card Effects', () => {
     });
 
     describe('ST03-003 Privaty (Unit)', () => {
-        it('should trigger EXIT effect to make opponent trash a card', () => {
+        it('should trigger EXIT effect and require opponent to MANUAL select a card to trash', () => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
             
-            p2.hand = Array(3).fill(DUMMY_CARDS.find(c => c.id === 'ST03-002')!);
+            const cardToKeep = { ...DUMMY_CARDS.find(c => c.id === 'ST03-002')!, name: 'KEEP' };
+            const cardToTrash = { ...DUMMY_CARDS.find(c => c.id === 'ST03-002')!, name: 'TRASH' };
+            p2.hand = [cardToKeep, cardToTrash];
+            
             const privaty = DUMMY_CARDS.find(c => c.id === 'ST03-003')!;
             p1.unitZones[0].unit = { ...privaty };
 
             // Destroy Privaty
             engine.destroyUnit(p1, p1.unitZones[0]);
 
-            expect(p2.hand.length).toBe(2);
-            expect(p2.trash.length).toBe(1);
+            // Should be in SELECT_TARGET mode
+            expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+            expect(engine.state.pendingEffect?.validTargets).toBe('OPP_HAND');
+
+            // Opponent selects index 1 ('TRASH')
+            engine.selectHandTarget(1, true);
+
+            expect(p2.hand).toHaveLength(1);
+            expect(p2.hand[0].name).toBe('KEEP');
+            expect(p2.trash).toHaveLength(1);
+            expect(p2.trash[0].name).toBe('TRASH');
+            expect(engine.state.interactionMode).toBe('NORMAL');
         });
 
-        it('should trigger DAMAGE_TRIGGER effect to make opponent trash a card if hand >= 3', () => {
+        it('should trigger DAMAGE_TRIGGER effect and require manual selection if hand >= 3', () => {
             const p1 = engine.state.players[0]; // Player taking damage
             const p2 = engine.state.players[1]; // Opponent
 
-            p2.hand = Array(3).fill(DUMMY_CARDS.find(c => c.id === 'ST03-002')!);
+            p2.hand = Array(3).fill({ ...DUMMY_CARDS.find(c => c.id === 'ST03-002')!, name: 'OPP_CARD' });
             const privaty = DUMMY_CARDS.find(c => c.id === 'ST03-003')!;
-            // Add to top of deck
             p1.deck.push({ ...privaty });
 
             // Deal 1 damage
             engine.dealDamage(p1, 1);
 
-            // Trigger should activate because p2 hand is 3
+            expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+            engine.selectHandTarget(0, true);
+
             expect(p2.hand.length).toBe(2);
-            expect(p2.trash.length).toBe(1);
             expect(p1.trash).toContainEqual(expect.objectContaining({ id: privaty.id }));
         });
 

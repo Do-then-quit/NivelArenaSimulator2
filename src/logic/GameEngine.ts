@@ -198,19 +198,13 @@ export class GameEngine {
 
         if (zone.unit) {
             isUpgrade = true;
-            // Trash existing unit and items
-            this.currentPlayer.trash.push(zone.unit);
-            zone.items.forEach(i => this.currentPlayer.trash.push(i));
-            zone.items = [];
-            zone.buffs = []; // Clear buffs on old unit
+            // Trash existing unit and items using destroyUnit to trigger Exit effects
+            this.destroyUnit(this.currentPlayer, zone);
         }
 
         if (isUpgrade && zone.unit) {
-            // Trash existing unit and items
-            this.currentPlayer.trash.push(zone.unit);
-            zone.items.forEach(i => this.currentPlayer.trash.push(i));
-            zone.items = [];
-            zone.buffs = []; // Clear buffs on old unit
+             // Should not happen if destroyUnit worked, but just safety
+             this.destroyUnit(this.currentPlayer, zone);
         }
 
 
@@ -361,6 +355,8 @@ export class GameEngine {
             return;
         }
 
+        this.state.attackTerminated = false;
+
         const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
         attackerZone.hasAttacked = true;
 
@@ -454,6 +450,14 @@ export class GameEngine {
                 });
             });
 
+            // Check if attack was terminated (e.g. by TERMINATE_ATTACK effect)
+            if (this.state.attackTerminated) {
+                console.log("Attack Terminated. Skipping Combat.");
+                this.state.phase = Phase.ATTACK;
+                this.state.pendingAttackerIndex = null;
+                return;
+            }
+
             // Combat
             this.resolveCombat(attackerZone, blockerZone);
         } else {
@@ -474,7 +478,7 @@ export class GameEngine {
         console.log(`Combat! Attacker Power: ${attPower}, Blocker Power: ${blkPower}`);
 
         if (attPower >= blkPower) {
-            this.destroyUnit(this.opponentPlayer, blocker);
+            this.destroyUnit(this.opponentPlayer, blocker, attacker.unit || undefined);
 
             // PENETRATION (Rule 10.2.3.2)
             const penValue = this.getPenetrationValue(attacker);
@@ -490,7 +494,7 @@ export class GameEngine {
         }
 
         if (blkPower > attPower) {
-            this.destroyUnit(this.currentPlayer, attacker);
+            this.destroyUnit(this.currentPlayer, attacker, blocker.unit || undefined);
         }
     }
 
@@ -531,7 +535,7 @@ export class GameEngine {
         return value;
     }
 
-    public destroyUnit(player: PlayerState, zone: UnitZoneState) {
+    public destroyUnit(player: PlayerState, zone: UnitZoneState, killerCard?: Card) {
         if (zone.unit) {
             // Trigger Exit Effects
             this.effectManager.processEffects(ActivationCondition.EXIT, {
@@ -539,7 +543,8 @@ export class GameEngine {
                 player: player,
                 opponent: player === this.state.players[0] ? this.state.players[1] : this.state.players[0], // simplified check for opponent
                 unitZone: zone,
-                machine: this
+                machine: this,
+                destroyedBy: killerCard
             });
 
             player.trash.push(zone.unit);
@@ -798,6 +803,32 @@ export class GameEngine {
         // Validate
         if (!TargetSelector.isValidTarget(this, effect.targets, context, targetCard)) {
             console.log("Invalid Trash Target Selected.");
+            return;
+        }
+
+        // Execute Effect via Manager
+        this.effectManager.executeEffect(effect, context, [targetCard]);
+
+        // Reset State
+        this.state.interactionMode = 'NORMAL';
+        this.state.pendingEffect = null;
+    }
+
+    public selectHandTarget(handIndex: number, isOpponentHand: boolean) {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+
+        const pending = this.state.pendingEffect as any;
+        const effect = pending._fullEffect;
+        const context = pending._context;
+
+        const targetPlayer = isOpponentHand ? this.opponentPlayer : this.currentPlayer;
+        if (handIndex < 0 || handIndex >= targetPlayer.hand.length) return;
+
+        const targetCard = targetPlayer.hand[handIndex];
+
+        // Validate
+        if (!TargetSelector.isValidTarget(this, effect.targets, context, targetCard)) {
+            console.log("Invalid Hand Target Selected.");
             return;
         }
 

@@ -67,7 +67,7 @@ export interface TargetFilter {
 }
 
 export interface TargetSchema {
-    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH';
+    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND';
     type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
     count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
     filters?: TargetFilter[];

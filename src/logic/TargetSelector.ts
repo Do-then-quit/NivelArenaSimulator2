@@ -41,6 +41,12 @@ export class TargetSelector {
             case 'MY_TRASH':
                 candidates = [...player.trash];
                 break;
+            case 'MY_HAND':
+                candidates = [...player.hand];
+                break;
+            case 'OPP_HAND':
+                if (opponent) candidates = [...opponent.hand];
+                break;
             case 'SHARED_LANE':
                 // Return player's zones that are part of a shared lane (both sides have units)
                 candidates = player.unitZones.filter((myZone, idx) => {
@@ -156,6 +162,12 @@ export class TargetSelector {
                 break;
             case 'MY_TRASH':
                 inScope = player.trash.includes(target);
+                break;
+            case 'MY_HAND':
+                inScope = player.hand.includes(target);
+                break;
+            case 'OPP_HAND':
+                inScope = opponent ? opponent.hand.includes(target) : false;
                 break;
             case 'SHARED_LANE':
                 // For shared lane validation, we usually need the lane index or both zones.
