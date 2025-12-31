@@ -1056,16 +1056,18 @@ export class DebugManager {
         console.log("Setting up ST03-014 (Sense Sharing) Scenario...");
         const p0 = this.game.state.players[0];
         p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
-        p0.hand = []; p0.leaderLevel = 3;
+        p0.hand = []; p0.leaderLevel = 8;
         this.setLeader(0, "ST03-001");
 
         const skill = this.getCard("ST03-014");
         if (skill) p0.hand.push(skill);
 
-        const fodder = this.getCard("ST03-002");
+        const fodder = this.getCard("ST03-006");
         if (fodder) p0.unitZones[0].unit = fodder;
 
         // Ensure deck has cards
+        p0.deck.push(this.getCard("ST03-002")!);
+        p0.deck.push(this.getCard("ST03-002")!);
         p0.deck.push(this.getCard("ST03-002")!);
         p0.deck.push(this.getCard("ST03-002")!);
 
