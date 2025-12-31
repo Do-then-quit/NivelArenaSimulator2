@@ -10,7 +10,8 @@ Implement a deck builder interface to allow users to create and save custom deck
 
 ## Phase 2: Deck Builder Logic & State
 - [x] Task: Implement `DeckBuilderLogic` in `src/logic/DeckBuilderLogic.ts` for filtering, searching, and managing the current deck state. [85012b5]
-- [ ] Task: Implement Deck Validation logic (1 Leader, 50 cards, max 4 copies) with warning outputs.
+- [x] Task: Implement Deck Validation logic (1 Leader, 40 cards, max 3 copies) with warning outputs. [4d8f82e]
+- [ ] Task: Conductor - User Manual Verification 'Deck Builder Logic & State' (Protocol in workflow.md)
 - [ ] Task: Conductor - User Manual Verification 'Deck Builder Logic & State' (Protocol in workflow.md)
 
 ## Phase 3: Deck Builder UI Implementation
