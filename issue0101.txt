@@ -1,0 +1,49 @@
+현재 ST03의 카드들중에서 상대가 카드를 1장 골라트래시하는 효과들의 경우, 동작하지 않고있다.
+아마 현재 p0의 턴인데 p1의 핸드의 카드를 보고 그중에서 1장 골라서 트래시하는 그런 로직이 잘 작동하지 않는것같다.
+또는 그런 UI가 아직 없던가. 
+
+또 유닛 모더니아의 경우 자신의 패를 모두 트래시할 수 있다. 2장 이상 트래시했다면 조우 유닛을 트래시한다. 
+인데 플레이어가 모두 트래시 할지 말지를 선택할 수 있어야한다.
+
+또 트래시존에서 카드를 골라오는 로산나의 엑시트 같은 것도 플레이어의 턴때 엑시트 효과로 나올때는 잘 동작하는데 상대턴에
+공격방어로 엑시트효과가 나올때 트래시존의 카드가 나오지 않는다. 
+
+전체적으로 자신턴이 진행중이더라도 효과의 처리를 상대가 지정하거나 해야하는 것들에 대해서 동작에 문제가 있는듯하다.
+이런 문제가 더 커지기 전에 대전시 턴마다, 효과의 처리를 상대가 해야하는 경우들을 어떻게 처리할지 정리해보는 것도 좋을 것 같다.
+(간단하게는 주도권의 개념을 넣어서 자신의 턴이더라도 어떤 효과를 처리하기 위해 상대가 지정해야하는경우 주도권이 상대에게 가고
+주도권이 넘어가면 UI가 변하고 상대가 효과를 다 처리하면 다시 주도권이 돌아가는 식으로. 턴이 끝나면 또 주도권이 넘어가고.)
+
+1. 상대방에게 선택 강요하기 (Opponent Interaction)
+ST03-003 프리바티, ST03-012 기습 등은 **"상대는 자신의 패를 1장 골라 트래시한다"**는 효과를 가집니다. 지금까지의 타겟팅은 모두 "나(현재 턴 플레이어)" 기준이었습니다.
+
+문제점: 현재 TargetSelector와 Interaction 시스템은 턴 플레이어의 입력만 기다립니다. 상대방에게 제어권을 넘기는 로직이 없습니다.
+
+해결 방안 (GameEngine & ActionRegistry): 액션 실행 도중 "제어권 위임(Delegate Control)" 개념을 추가해야 합니다.
+
+TypeScript
+
+// effectActions.ts
+
+const opponentSelectTrash: ActionImplementation = (ctx, params) => {
+    // 1. 상대방 패가 비었는지 확인
+    if (ctx.opponent.hand.length === 0) return;
+
+    // 2. 엔진의 상태를 '상대방 선택 대기'로 전환
+    // (상대방 화면에 "패를 1장 버리세요" 팝업이 뜨게 됨)
+    ctx.machine.initiateTargetSelection({
+        player: ctx.opponent,       // 선택 주체가 상대방임
+        targetSchema: {
+            scope: 'SELF_HAND',     // 상대 기준 자신의 패
+            count: 1,
+            selectMode: 'MANUAL'
+        },
+        onSelect: (selectedCards) => {
+            // 선택된 카드를 트래시하는 콜백
+            const card = selectedCards[0];
+            const idx = ctx.opponent.hand.indexOf(card);
+            ctx.opponent.hand.splice(idx, 1);
+            ctx.opponent.trash.push(card);
+            ctx.machine.resumeGame(); // 게임 재개
+        }
+    });
+};

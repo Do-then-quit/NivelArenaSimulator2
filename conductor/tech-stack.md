@@ -6,7 +6,7 @@
 
 ## Game Engine Architecture
 - **Domain Logic:** Vanilla TypeScript implementation located in `src/logic/`. This ensures the engine is decoupled from the UI, facilitating headless execution for AI training.
-- **Keyword Support:** Built-in logic for core NivelArena keywords like PENETRATION, PLUNDER, DUALIST, and BREAKTHROUGH.
+- **Keyword Support:** Built-in logic for core NivelArena keywords like PENETRATION, PLUNDER, DUALIST, BREAKTHROUGH, MUTUAL_DESTRUCTION (공멸), and TERMINATION (종결).
 - **State Management:** Centralized state within `GameEngine.ts`, managing phases, resources, and card movements.
 - **Card Database:** Modularized database loading multiple [JSON packs](./packs/) with set-specific effect logic organized in `src/logic/cardEffects/`.
 - **Testing Infrastructure:** 

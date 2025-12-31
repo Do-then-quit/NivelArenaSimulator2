@@ -324,9 +324,15 @@ export class GameEngine {
 
         // Reset State BEFORE processing effect (in case effect enters selection mode)
         this.state.interactionMode = 'NORMAL';
+        const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
         this.state.pendingEffect = null;
 
         this.effectManager.processEffect(effect, context);
+
+        // Resume remaining effects if any
+        if (remainingEffects && remainingEffects.length > 0) {
+            this.effectManager.resumeEffects(remainingEffects, context);
+        }
     }
 
     initiateTargetSelection(effect: any, context: any) {
@@ -777,7 +783,13 @@ export class GameEngine {
 
         // Reset State
         this.state.interactionMode = 'NORMAL';
+        const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
         this.state.pendingEffect = null;
+
+        // Resume remaining effects if any
+        if (remainingEffects && remainingEffects.length > 0) {
+            this.effectManager.resumeEffects(remainingEffects, context);
+        }
     }
 
     public selectTrashTarget(trashIndex: number) {
@@ -837,6 +849,12 @@ export class GameEngine {
 
         // Reset State
         this.state.interactionMode = 'NORMAL';
+        const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
         this.state.pendingEffect = null;
+
+        // Resume remaining effects if any
+        if (remainingEffects && remainingEffects.length > 0) {
+            this.effectManager.resumeEffects(remainingEffects, context);
+        }
     }
 }
