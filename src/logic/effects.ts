@@ -16,13 +16,21 @@ export class EffectManager {
 
         if (!sourceCard || !sourceCard.effects) return false;
 
-        sourceCard.effects.forEach((effect: Effect) => {
-            if (effect.activation === activation) {
-                if (this.processEffect(effect, context)) {
-                    triggered = true;
+        const effectsToProcess = sourceCard.effects.filter((e: Effect) => e.activation === activation);
+        
+        for (let i = 0; i < effectsToProcess.length; i++) {
+            const effect = effectsToProcess[i];
+            
+            if (this.processEffect(effect, context)) {
+                triggered = true;
+                if (this.engine.state.interactionMode !== 'NORMAL') {
+                    if (i < effectsToProcess.length - 1) {
+                        (this.engine.state.pendingEffect as any)._remainingEffects = effectsToProcess.slice(i + 1);
+                    }
+                    break; 
                 }
             }
-        });
+        }
 
         return triggered;
     }
@@ -30,21 +38,17 @@ export class EffectManager {
     public processEffect(effect: Effect, context: GameContext): boolean {
         if (!this.checkCondition(effect, context)) return false;
 
-        // NEW: If cost exists and hasn't been paid yet, initiate cost selection
-        // We add a flag to context if cost is already handled
+        if ((context as any).discardedCount === undefined) (context as any).discardedCount = 0;
+
         const costAlreadyPaid = (context as any).costPaid === true;
 
         if (effect.cost && effect.cost.type !== 'NONE' && !costAlreadyPaid) {
-            // Only manual cost if it's ACTIVE or if we want to support it for others
-            // For now, let's keep it consistent: manual cost for everyone if it's TRASH_HAND or SHUFFLE_HAND_TO_DECK
             if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
                 this.engine.initiateCostSelection(effect, context);
                 return true;
             }
         }
 
-        // If we reach here, either no cost or cost already paid
-        // If effect has targets, we might need to go into selection mode via Engine
         if (effect.targets && effect.targets.selectMode === 'MANUAL') {
             const candidates = TargetSelector.resolve(this.engine, effect.targets, context);
             if (candidates.length > 0) {
@@ -54,20 +58,31 @@ export class EffectManager {
                 return false;
             }
         } else {
-            // Instant execution (self, random, or auto targets)
             let targets = this.resolveAutoTargets(effect.targets, context);
             
-            // Rule 8.3.4: Default to SELF if no target schema is specified
             if (!effect.targets && context.unitZone) {
                 targets = [context.unitZone];
             } else if (!effect.targets && !context.unitZone) {
-                // If it's a player effect without a zone (like leader size)
-                targets = []; // Actions handle context.player directly
+                targets = [];
             }
             
             this.executeEffect(effect, context, targets);
         }
         return true;
+    }
+
+    public resumeEffects(effects: Effect[], context: GameContext) {
+        for (let i = 0; i < effects.length; i++) {
+            const effect = effects[i];
+            if (this.processEffect(effect, context)) {
+                if (this.engine.state.interactionMode !== 'NORMAL') {
+                    if (i < effects.length - 1) {
+                        (this.engine.state.pendingEffect as any)._remainingEffects = effects.slice(i + 1);
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     public executeEffect(effect: Effect, context: GameContext, targets: any[] = []) {
@@ -76,11 +91,8 @@ export class EffectManager {
 
         if (actionImpl) {
             console.log(`Executing Effect: ${effect.description} [Action: ${action.type}]`);
-            // Add duration to params for registry if needed
             const params = { ...action.params, duration: effect.duration };
             actionImpl(context, params, targets);
-            
-            // Rule 1.3.7.3: Check for 0 power units after effect resolution
             this.engine.checkRuleProcessing();
         } else {
             console.warn(`Unknown or unimplemented action type: ${action.type}`);
@@ -95,7 +107,6 @@ export class EffectManager {
             case 'ALWAYS':
                 return true;
             case 'LEADER_LEVEL':
-                // For Awakening, usually just a min level
                 if (typeof value === 'number') {
                     return context.player.leaderLevel >= value;
                 }
@@ -118,6 +129,11 @@ export class EffectManager {
                 if (value.min !== undefined && context.opponent.hand.length < value.min) return false;
                 if (value.max !== undefined && context.opponent.hand.length > value.max) return false;
                 return true;
+            case 'DISCARDED_COUNT':
+                const count = (context as any).discardedCount || 0;
+                if (typeof value === 'number') return count >= value;
+                if (value.min !== undefined && count < value.min) return false;
+                return true;
             default:
                 return true;
         }
@@ -129,4 +145,3 @@ export class EffectManager {
     }
 
 }
-

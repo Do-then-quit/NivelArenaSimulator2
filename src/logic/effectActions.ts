@@ -75,7 +75,20 @@ const destroyUnit: ActionImplementation = (ctx, params, targets) => {
             if (params.costMax !== undefined && (target.unit.cost || 0) > params.costMax) return;
 
             const owner = getOwnerOfZone(ctx.machine, target);
-            if (owner) ctx.machine.destroyUnit(owner, target);
+            if (owner) {
+                // If alsoDestroyEncounter is set, find and destroy encounter unit before trashing target
+                if (params.alsoDestroyEncounter) {
+                    const idx = owner.unitZones.indexOf(target);
+                    if (idx !== -1) {
+                        const opponent = ctx.machine.state.players.find((p: any) => p !== owner);
+                        const oppZone = opponent.unitZones[idx];
+                        if (oppZone.unit) {
+                            ctx.machine.destroyUnit(opponent, oppZone);
+                        }
+                    }
+                }
+                ctx.machine.destroyUnit(owner, target);
+            }
         }
     });
 };
@@ -240,6 +253,28 @@ const discardAll: ActionImplementation = (ctx, _params) => {
     (ctx as any).discardedCount = count;
 };
 
+const destroyEncounter: ActionImplementation = (ctx, _params, targets) => {
+    targets.forEach(targetZone => {
+        const idx = ctx.player.unitZones.indexOf(targetZone);
+        if (idx !== -1) {
+             const oppZone = ctx.opponent.unitZones[idx];
+             if (oppZone.unit) {
+                 const unitName = oppZone.unit.name;
+                 ctx.machine.destroyUnit(ctx.opponent, oppZone);
+                 console.log(`Trashed encounter unit ${unitName} in lane ${idx}`);
+             }
+        } else {
+             const oppIdx = ctx.opponent.unitZones.indexOf(targetZone);
+             if (oppIdx !== -1) {
+                 const myZone = ctx.player.unitZones[oppIdx];
+                 if (myZone.unit) {
+                     ctx.machine.destroyUnit(ctx.player, myZone);
+                 }
+             }
+        }
+    });
+};
+
 // Helper inside this module
 function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     if (machine.state.players[0].unitZones.includes(zone)) return machine.state.players[0];
@@ -263,4 +298,5 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'TERMINATE_ATTACK': terminateAttack,
     'DISCARD': discard,
     'DISCARD_ALL': discardAll,
+    'DESTROY_ENCOUNTER': destroyEncounter,
 };

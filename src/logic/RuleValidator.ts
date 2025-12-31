@@ -37,29 +37,10 @@ export class RuleValidator {
         return { valid: true };
     }
 
-    static canPlaySkill(engine: GameEngine, player: PlayerState, cardIndex: number, checkTargets: boolean = true): { valid: boolean; reason?: string } {
+    static canPlaySkill(engine: GameEngine, player: PlayerState, cardIndex: number): ValidationResult {
         if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
-
         const card = player.hand[cardIndex];
-        if (!card || card.type !== CardType.SKILL) return { valid: false, reason: "Card is not a skill" };
-
-        const currentSize = engine.getPlayerSize(player);
-        const currentFieldCost = this.calculateFieldCost(player);
-        if (currentFieldCost + card.cost > currentSize) {
-            return { valid: false, reason: "Cost exceeds Size limit" };
-        }
-
-        if (checkTargets && card.effects) {
-            for (const effect of card.effects) {
-                if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                    const hasValidTargets = this.checkPotentialTargets(engine, player, effect.targets);
-                    if (!hasValidTargets) {
-                        return { valid: false, reason: "No valid targets for effect" };
-                    }
-                }
-            }
-        }
-
+        if (player.leaderLevel < card.cost) return { valid: false, reason: `Leader Level too low (Required: ${card.cost}, Current: ${player.leaderLevel})` };
         return { valid: true };
     }
 

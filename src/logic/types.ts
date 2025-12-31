@@ -59,7 +59,8 @@ export type ActionType =
     | 'MUTUAL_DESTRUCTION'
     | 'TERMINATE_ATTACK'
     | 'DISCARD'
-    | 'DISCARD_ALL';
+    | 'DISCARD_ALL'
+    | 'DESTROY_ENCOUNTER';
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'COST_LIMIT' | 'POWER_LIMIT';
