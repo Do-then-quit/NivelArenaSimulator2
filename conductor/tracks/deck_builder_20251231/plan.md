@@ -16,8 +16,9 @@ Implement a deck builder interface to allow users to create and save custom deck
 
 ## Phase 3: Deck Builder UI Implementation
 - [x] Task: Create `DeckBuilderUI` component/renderer in `src/DeckBuilderUI.ts`. [5bcce8f]
-- [~] Task: Implement Card Library grid with filtering and search controls, integrating `HoverPreview`.
-- [ ] Task: Implement "Current Deck" side panel with add/remove functionality.
+- [x] Task: Implement Card Library grid with filtering and search controls, integrating `HoverPreview`. [5bcce8f]
+- [x] Task: Implement "Current Deck" side panel with add/remove functionality. [5bcce8f]
+- [ ] Task: Conductor - User Manual Verification 'Deck Builder UI Implementation' (Protocol in workflow.md)
 - [ ] Task: Conductor - User Manual Verification 'Deck Builder UI Implementation' (Protocol in workflow.md)
 
 ## Phase 4: Game Integration & Main Menu
