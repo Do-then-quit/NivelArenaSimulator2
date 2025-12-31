@@ -35,8 +35,8 @@ export class DeckBuilderUI {
     }
 
     render() {
-        this.container.innerHTML = "`
-            <div class=\"deck-builder\">
+        this.container.innerHTML = `
+            <div class="deck-builder">
                 <div class=\"deck-builder-header\">
                     <button id=\"db-back\" class=\"secondary-btn\">Back to Menu</button>
                     <h1>Deck Builder</h1>
@@ -81,7 +81,7 @@ export class DeckBuilderUI {
                     </div>
                 </div>
             </div>
-        `";
+        `;
 
         this.attachListeners();
         this.updateLibrary();
