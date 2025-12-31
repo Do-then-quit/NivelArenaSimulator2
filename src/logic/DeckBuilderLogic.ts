@@ -105,6 +105,15 @@ export class DeckBuilderLogic {
             }
         }
 
+        // Leader-specific deck rules (Pact/서약)
+        if (this.currentLeader && this.currentLeader.text.includes('서약')) {
+            const requiredAttr = this.currentLeader.attribute;
+            const nonMatching = this.currentDeck.filter(c => c.attribute !== requiredAttr);
+            if (nonMatching.length > 0) {
+                errors.push(`${this.currentLeader.name} requires all cards in deck to be ${requiredAttr} attribute.`);
+            }
+        }
+
         return {
             valid: errors.length === 0,
             errors

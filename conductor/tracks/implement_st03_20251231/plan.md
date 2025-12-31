@@ -46,8 +46,8 @@ Implement the core logic for the new keywords `공멸` (Mutual Destruction) and 
 - [ ] Task: Create `tests/st03_011_017.test.ts` and verify effects.
 - [ ] Task: Conductor - User Manual Verification 'ST03-011 to ST03-017' (Protocol in workflow.md)
 
-## Phase 5: Final Integration & Regression
-- [ ] Task: Create `tests/st03_full_regression.test.ts` with comprehensive scenarios.
-- [ ] Task: Run all ST03 tests and ensure 100% pass rate.
-- [ ] Task: Verify deck validation rules for ST03-001 (Storm cards only).
-- [ ] Task: Conductor - User Manual Verification 'Final Integration & Regression' (Protocol in workflow.md)
+## Phase 5: Final Integration & Regression [checkpoint: 5618805]
+- [x] Task: Create `tests/st03_full_regression.test.ts` with comprehensive scenarios. e1b8d84
+- [x] Task: Run all ST03 tests and ensure 100% pass rate. e1b8d84
+- [x] Task: Verify deck validation rules for ST03-001 (Storm cards only). e1b8d84
+- [x] Task: Conductor - User Manual Verification 'Final Integration & Regression' (Protocol in workflow.md)
