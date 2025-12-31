@@ -17,6 +17,7 @@
 - **Package Manager:** [npm](https://www.npmjs.com/)
 - **Compiler:** `tsc` for static type checking.
 - **Utilities:** `axios` for potential remote data fetching, `ts-node` for running scripts/simulations in Node.js.
+- **Persistence:** Browser `localStorage` used for saving user-created decks.
 
 ### Dated Notes
 - **2025-12-27:** Added `vitest` and `jsdom` to support UI component testing, which was previously difficult with the custom script-based testing approach.

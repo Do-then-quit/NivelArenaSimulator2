@@ -13,7 +13,8 @@ A dual-purpose platform delivering a polished, browser-based experience for huma
 
 ## Key Features
 - **Full Rule Engine:** Comprehensive implementation of NivelArena rules (Phases, Stack Resolution, Unit Combat, Leader/Damage mechanics).
-- **Starter Deck Support:** Full implementation of the ST01 and ST02 card packs, including specific unit effects, skill logic, and item mechanics.
+- **Universal Card Database:** Support for loading and using cards from all released packs (BT01-05, ST01-09, SB01).
+- **Custom Deck Builder:** A dedicated interface for users to browse the library, create custom decks, and save them for future play.
 - **Interactive Card Previews:** Real-time detailed card information and enlarged artwork display on hover to improve accessibility and readability.
 - **Hybrid Architecture:**
   - **Web GUI:** A user-friendly, browser-based interface for interactive play.
