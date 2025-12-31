@@ -55,7 +55,11 @@ export type ActionType =
     | 'DUALIST'      // Forced block by encounter unit
     | 'BREAKTHROUGH' // Cannot be blocked by certain units
     | 'INFILTRATION' // Draw if not blocked
-    | 'MOVE_FROM_TRASH_TO_HAND';
+    | 'MOVE_FROM_TRASH_TO_HAND'
+    | 'MUTUAL_DESTRUCTION'
+    | 'TERMINATE_ATTACK'
+    | 'DISCARD'
+    | 'DISCARD_ALL';
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'COST_LIMIT' | 'POWER_LIMIT';
@@ -80,7 +84,7 @@ export interface TargetSchema {
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN';
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT';
     value?: any;
 }
 
@@ -103,6 +107,7 @@ export interface GameContext {
     unitZone?: UnitZoneState;
     machine: any; // Ideally GameEngine but avoids circular dependency
     selectedLaneIndex?: number;
+    destroyedBy?: Card;
 }
 
 export type ActionImplementation = (context: GameContext, params: any, targets: any[]) => void;
@@ -183,6 +188,7 @@ export interface GameState {
     pendingAttackerIndex: number | null; // Track who is attacking during BLOCK phase
     interactionMode: 'NORMAL' | 'SELECT_TARGET' | 'SELECT_COST';
     pendingEffect: PendingEffect | null;
+    attackTerminated?: boolean;
 }
 
 export interface PendingEffect {

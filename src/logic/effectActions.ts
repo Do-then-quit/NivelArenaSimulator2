@@ -174,6 +174,60 @@ const moveFromTrashToHand: ActionImplementation = (ctx, _params, targets) => {
     });
 };
 
+const mutualDestruction: ActionImplementation = (ctx, _params, _targets) => {
+    if (!ctx.destroyedBy || !ctx.sourceCard) return;
+
+    const killerCost = ctx.destroyedBy.cost;
+    const myCost = ctx.sourceCard.cost;
+
+    if (killerCost <= myCost) {
+        console.log(`Mutual Destruction triggered! Trash killer ${ctx.destroyedBy.name} (Cost ${killerCost} <= ${myCost})`);
+        
+        // Find killer zone
+        const allZones = [...ctx.player.unitZones, ...ctx.opponent.unitZones];
+        const killerZone = allZones.find(z => z.unit === ctx.destroyedBy);
+
+        if (killerZone) {
+             const owner = getOwnerOfZone(ctx.machine, killerZone);
+             if (owner) {
+                 ctx.machine.destroyUnit(owner, killerZone);
+             }
+        }
+    }
+};
+
+const terminateAttack: ActionImplementation = (ctx, _params, _targets) => {
+    console.log("Attack Terminated by effect.");
+    ctx.machine.state.attackTerminated = true;
+
+    // Trash self (Defender)
+    if (ctx.unitZone) {
+        ctx.machine.destroyUnit(ctx.player, ctx.unitZone);
+    }
+};
+
+const discard: ActionImplementation = (ctx, params) => {
+    const targetPlayer = params.target === 'OPPONENT' ? ctx.opponent : ctx.player;
+    const count = params.count || 1;
+    for (let i = 0; i < count; i++) {
+        if (targetPlayer.hand.length > 0) {
+            const card = targetPlayer.hand.shift()!;
+            targetPlayer.trash.push(card);
+            console.log(`${targetPlayer.name} discarded ${card.name} from hand.`);
+        }
+    }
+};
+
+const discardAll: ActionImplementation = (ctx, _params) => {
+    const player = ctx.player;
+    const count = player.hand.length;
+    while (player.hand.length > 0) {
+        player.trash.push(player.hand.pop()!);
+    }
+    console.log(`${player.name} discarded all cards from hand (${count} cards).`);
+    (ctx as any).discardedCount = count;
+};
+
 // Helper inside this module
 function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     if (machine.state.players[0].unitZones.includes(zone)) return machine.state.players[0];
@@ -193,4 +247,8 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'PENETRATION': penetration,
     'PLUNDER': plunder,
     'MOVE_FROM_TRASH_TO_HAND': moveFromTrashToHand,
+    'MUTUAL_DESTRUCTION': mutualDestruction,
+    'TERMINATE_ATTACK': terminateAttack,
+    'DISCARD': discard,
+    'DISCARD_ALL': discardAll,
 };

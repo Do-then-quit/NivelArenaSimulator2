@@ -111,6 +111,13 @@ export class EffectManager {
                 return false;
             case 'YOUR_TURN':
                 return context.machine.currentPlayer === context.player;
+            case 'OPPONENT_HAND_COUNT':
+                if (typeof value === 'number') {
+                    return context.opponent.hand.length >= value;
+                }
+                if (value.min !== undefined && context.opponent.hand.length < value.min) return false;
+                if (value.max !== undefined && context.opponent.hand.length > value.max) return false;
+                return true;
             default:
                 return true;
         }
