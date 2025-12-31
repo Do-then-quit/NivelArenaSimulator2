@@ -15,8 +15,8 @@ Implement a deck builder interface to allow users to create and save custom deck
 - [ ] Task: Conductor - User Manual Verification 'Deck Builder Logic & State' (Protocol in workflow.md)
 
 ## Phase 3: Deck Builder UI Implementation
-- [ ] Task: Create `DeckBuilderUI` component/renderer in `src/DeckBuilderUI.ts`.
-- [ ] Task: Implement Card Library grid with filtering and search controls, integrating `HoverPreview`.
+- [x] Task: Create `DeckBuilderUI` component/renderer in `src/DeckBuilderUI.ts`. [5bcce8f]
+- [~] Task: Implement Card Library grid with filtering and search controls, integrating `HoverPreview`.
 - [ ] Task: Implement "Current Deck" side panel with add/remove functionality.
 - [ ] Task: Conductor - User Manual Verification 'Deck Builder UI Implementation' (Protocol in workflow.md)
 
