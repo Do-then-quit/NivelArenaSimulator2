@@ -8,21 +8,32 @@ Implement the core logic for the new keywords `공멸` (Mutual Destruction) and 
 - [x] Task: Verify `EXIT` activation triggers correctly for all unit removal scenarios (combat, effects).
 - [x] Task: Conductor - User Manual Verification 'Infrastructure & Keyword Support' (Protocol in workflow.md)
 
-## Phase 2: ST03-001 to ST03-005 (Leaders & Low Cost Units)
-- [ ] Task: Create `src/logic/cardEffects/st03.ts` and register it in `CardDatabase.ts`.
-- [ ] Task: Implement `ST03-001` (Modernia Leader) - Awakening and Passive.
-- [ ] Task: Implement `ST03-003` (Privaty) - Exit and Trigger (Hand Trash).
-- [ ] Task: Implement `ST03-005` (Novel) - Entry (Encounter Trash).
-- [ ] Task: Create `tests/st03_001_005.test.ts` and verify effects.
-- [ ] Task: Conductor - User Manual Verification 'ST03-001 to ST03-005' (Protocol in workflow.md)
+## Phase 2: ST03-001 to ST03-005 (Leaders & Low Cost Units) [checkpoint: d7abe7a]
+- [x] Task: Create `src/logic/cardEffects/st03.ts` and register it in `CardDatabase.ts`. a3e15d0
+- [x] Task: Implement `ST03-001` (Modernia Leader) - Awakening and Passive. d7abe7a
+- [x] Task: Implement `ST03-003` (Privaty) - Exit and Trigger (Hand Trash). d7abe7a
+- [x] Task: Implement `ST03-005` (Novel) - Entry (Encounter Trash). d7abe7a
+- [x] Task: Create `tests/st03_001_005.test.ts` and verify effects. d7abe7a
+- [x] Task: Conductor - User Manual Verification 'ST03-001 to ST03-005' (Protocol in workflow.md)
 
-## Phase 3: ST03-006 to ST03-010 (Mid Cost Units)
-- [ ] Task: Implement `ST03-006` (Sakura) - Exit (Draw).
-- [ ] Task: Implement `ST03-007` (D) - Exit (Mutual Destruction).
-- [ ] Task: Implement `ST03-008` (Exia) - Passive (Exit Power Buff).
-- [ ] Task: Implement `ST03-010` (Rosanna) - Exit (Trash to Hand) and Trigger.
-- [ ] Task: Create `tests/st03_006_010.test.ts` and verify effects.
-- [ ] Task: Conductor - User Manual Verification 'ST03-006 to ST03-010' (Protocol in workflow.md)
+## Phase 3: ST03-006 to ST03-010 (Mid Cost Units) [checkpoint: 779d547]
+- [x] Task: Implement `ST03-006` (Sakura) - Exit (Draw). 779d547
+- [x] Task: Implement `ST03-007` (D) - Exit (Mutual Destruction). 779d547
+- [x] Task: Implement `ST03-008` (Exia) - Passive (Exit Power Buff). 779d547
+- [x] Task: Implement `ST03-010` (Rosanna) - Exit (Trash to Hand) and Trigger. 779d547
+- [x] Task: Create `tests/st03_006_010.test.ts` and verify effects. 779d547
+- [x] Task: Conductor - User Manual Verification 'ST03-006 to ST03-010' (Protocol in workflow.md)
+
+## Phase 4: ST03-011 to ST03-017 (High Cost & Support)
+- [~] Task: Implement `ST03-011` (Modernia Unit) - Entry (Hand Trash for Kill).
+- [ ] Task: Implement `ST03-012` (Surprise Attack) - Skill (Hand Trash).
+- [ ] Task: Implement `ST03-013` (Blackening) - Skill (Hand Trash to Field Trash).
+- [ ] Task: Implement `ST03-014` (Sense Sharing) - Skill (Field Trash to Draw).
+- [ ] Task: Implement `ST03-015` (Come On!) - Skill (Field Trash to Encounter Trash).
+- [ ] Task: Implement `ST03-016` (Kevlar Vest) - Item (Power & Termination).
+- [ ] Task: Implement `ST03-017` (Rare Metal Amguard) - Item (Exit Mutual Destruction).
+- [ ] Task: Create `tests/st03_011_017.test.ts` and verify effects.
+- [ ] Task: Conductor - User Manual Verification 'ST03-011 to ST03-017' (Protocol in workflow.md)
 
 ## Phase 4: ST03-011 to ST03-017 (High Cost & Support)
 - [ ] Task: Implement `ST03-011` (Modernia Unit) - Entry (Hand Trash for Kill).
