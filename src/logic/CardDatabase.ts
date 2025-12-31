@@ -1,6 +1,20 @@
 import { Card, CardType, Attribute, Effect } from './types';
 import rawST01 from '../../packs/ST01.json';
 import rawST02 from '../../packs/ST02.json';
+import rawST03 from '../../packs/ST03.json';
+import rawST04 from '../../packs/ST04.json';
+import rawST05 from '../../packs/ST05.json';
+import rawST06 from '../../packs/ST06.json';
+import rawST07 from '../../packs/ST07.json';
+import rawST08 from '../../packs/ST08.json';
+import rawST09 from '../../packs/ST09.json';
+import rawBT01 from '../../packs/BT01.json';
+import rawBT02 from '../../packs/BT02.json';
+import rawBT03 from '../../packs/BT03.json';
+import rawBT04 from '../../packs/BT04.json';
+import rawBT05 from '../../packs/BT05.json';
+import rawSB01 from '../../packs/SB01.json';
+
 import { ST01_EFFECTS } from './cardEffects/st01';
 import { ST02_EFFECTS } from './cardEffects/st02';
 
@@ -31,7 +45,12 @@ function mapAttribute(rawAttr: string): Attribute {
     }
 }
 
-export const DUMMY_CARDS: Card[] = [...rawST01, ...rawST02].map((raw: any) => ({
+export const DUMMY_CARDS: Card[] = [
+    ...rawST01, ...rawST02, ...rawST03, ...rawST04, ...rawST05,
+    ...rawST06, ...rawST07, ...rawST08, ...rawST09,
+    ...rawBT01, ...rawBT02, ...rawBT03, ...rawBT04, ...rawBT05,
+    ...rawSB01
+].map((raw: any) => ({
     id: raw.id,
     name: raw.name,
     type: mapType(raw.type),
