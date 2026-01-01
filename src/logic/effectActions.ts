@@ -1,4 +1,4 @@
-import { ActionImplementation, GameContext, UnitZoneState } from './types';
+import { ActionImplementation, UnitZoneState } from './types';
 
 const gainLevel: ActionImplementation = (ctx, params) => {
     const amount = params.value || 1;

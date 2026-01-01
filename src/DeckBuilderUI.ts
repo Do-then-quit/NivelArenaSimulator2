@@ -1,5 +1,5 @@
 import { DeckBuilderLogic } from './logic/DeckBuilderLogic';
-import { Card, CardType, Attribute } from './logic/types';
+import { Card, CardType } from './logic/types';
 import { HoverPreview } from './HoverPreview';
 import { DeckPersistence } from './logic/DeckPersistence';
 

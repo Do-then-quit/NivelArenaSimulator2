@@ -1374,7 +1374,7 @@ export class DebugManager {
 
         // 1. Reset Game
         const p1 = this.game.currentPlayer; // Player 1
-        const p2 = this.game.opponentPlayer; // Player 2 (Opponent)
+        // const p2 = this.game.opponentPlayer; // Player 2 (Opponent)
 
         // 2. Setup Hands
         // P1 has nothing relevant

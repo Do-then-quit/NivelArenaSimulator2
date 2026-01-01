@@ -2,6 +2,7 @@ import './style.css'
 import { GameEngine } from './logic/GameEngine';
 import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
+import { RuleValidator } from './logic/RuleValidator';
 
 import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
@@ -147,7 +148,7 @@ function renderGame() {
 
       <div class="hand-zone">
           ${currentPlayer.hand.map((c, i) => `
-              <div class="card-in-hand ${game.state.interactionMode === 'SELECT_COST' ? 'cost-candidate' : ''}" draggable="${isMainPhase && game.state.interactionMode === 'NORMAL'}" data-index="${i}">
+              <div class="card-in-hand ${game!.state.interactionMode === 'SELECT_COST' ? 'cost-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
                   ${renderCard(c)}
               </div>
           `).join('')}
@@ -448,7 +449,6 @@ function attachListeners() {
             if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
 
             if (draggedCardIndex !== null) {
-                const card = game!.currentPlayer.hand[draggedCardIndex];
                 const isValid = RuleValidator.canPlaySkill(game!, game!.currentPlayer, draggedCardIndex).valid;
                 zone.classList.add(isValid ? 'valid-target' : 'invalid-target');
             }
@@ -673,7 +673,7 @@ function attachListeners() {
 
 }
 
-const debugManager = new DebugManager(game, render);
-window.debug = debugManager;
+const debugManager = new DebugManager(game!, render);
+(window as any).debug = debugManager;
 
 render();

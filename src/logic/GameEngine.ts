@@ -435,7 +435,7 @@ export class GameEngine {
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
         // DUALIST logic check (Rule 10.2.3.5)
-        const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
+        // const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
 
         if (blockerZone.unit) {
             // Encounter Unit exists -> Go to BLOCK phase
@@ -622,7 +622,7 @@ export class GameEngine {
 
     public checkRuleProcessing() {
         this.state.players.forEach(player => {
-            player.unitZones.forEach((zone, idx) => {
+            player.unitZones.forEach((zone) => {
                 if (zone.unit) {
                     const power = this.getUnitPower(zone, player);
                     if (power <= 0) {
@@ -681,7 +681,7 @@ export class GameEngine {
             player.levelZone.effects.forEach(effect => {
                 if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'MODIFY_PLAYER_SIZE') {
                     // Check awakening condition if applicable
-                    let conditionMet = true;
+                    // let conditionMet = true;
                     if (player.levelZone?.isAwakened) {
                         // For ST02-001, the bonus is on the awakened side
                         size += (effect.action.params.value || 0);
@@ -693,7 +693,7 @@ export class GameEngine {
         return size;
     }
 
-    public getUnitPower(zone: UnitZoneState, player: PlayerState): number {
+    public getUnitPower(zone: UnitZoneState, _player: PlayerState): number {
         if (!zone.unit) return 0;
         let power = zone.unit.power || 0;
 
@@ -754,7 +754,7 @@ export class GameEngine {
         return power;
     }
 
-    public getUnitHit(zone: UnitZoneState, player: PlayerState): number {
+    public getUnitHit(zone: UnitZoneState, _player: PlayerState): number {
         if (!zone.unit) return 0;
         let hit = zone.unit.hit || 0;
 

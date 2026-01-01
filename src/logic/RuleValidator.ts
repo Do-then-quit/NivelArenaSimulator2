@@ -1,6 +1,5 @@
-import { PlayerState, Phase, CardType, TargetSchema, ActivationCondition } from './types';
+import { PlayerState, Phase, CardType, ActivationCondition } from './types';
 import { GameEngine } from './GameEngine';
-import { TargetSelector } from './TargetSelector';
 
 type ValidationResult = { valid: boolean; reason?: string };
 
@@ -112,20 +111,5 @@ export class RuleValidator {
         });
         player.skillZone.forEach(s => cost += s.cost);
         return cost;
-    }
-
-    private static checkPotentialTargets(engine: GameEngine, player: PlayerState, schema: TargetSchema): boolean {
-        const opponent = engine.state.players.find(p => p !== player);
-        if (!opponent) return false;
-
-        const context = {
-            player,
-            opponent,
-            sourceCard: {} as any, // Dummy
-            machine: engine
-        };
-
-        const candidates = TargetSelector.resolve(engine, schema, context);
-        return candidates.length > 0;
     }
 }
