@@ -66,11 +66,25 @@ export class DeckBuilderLogic {
         return this.currentDeck.filter(c => c.id === cardId).length;
     }
 
-    loadDeck(cards: Card[]) {
+    loadDeck(cards: Card[], leader?: Card) {
         this.currentDeck = [...cards];
+        if (leader) {
+            this.currentLeader = { ...leader };
+        } else {
+            this.currentLeader = null;
+        }
     }
 
-    setLeader(cardId: string) {
+    resetDeck() {
+        this.currentDeck = [];
+        this.currentLeader = null;
+    }
+
+    setLeader(cardId: string | null) {
+        if (cardId === null) {
+            this.currentLeader = null;
+            return;
+        }
         const card = this.cards.find(c => c.id === cardId);
         if (card && card.type === CardType.LEADER) {
             this.currentLeader = { ...card };
@@ -83,7 +97,7 @@ export class DeckBuilderLogic {
 
     validateDeck(): ValidationResult {
         const errors: string[] = [];
-        
+
         if (!this.currentLeader) {
             errors.push('Deck must have a Leader.');
         }

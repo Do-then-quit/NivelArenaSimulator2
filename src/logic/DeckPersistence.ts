@@ -1,6 +1,7 @@
 export interface SavedDeck {
     id: string;
     name: string;
+    leaderId: string | null;
     cardIds: string[];
 }
 
@@ -10,13 +11,13 @@ export class DeckPersistence {
     static saveDeck(deck: SavedDeck): void {
         const decks = this.getAllDecks();
         const index = decks.findIndex(d => d.id === deck.id);
-        
+
         if (index >= 0) {
             decks[index] = deck;
         } else {
             decks.push(deck);
         }
-        
+
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(decks));
     }
 

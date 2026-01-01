@@ -7,9 +7,12 @@ import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
 import { DeckBuilderUI } from './DeckBuilderUI';
 
+import { SetupUI } from './SetupUI';
+
 enum Screen {
     MENU,
     DECK_BUILDER,
+    SETUP,
     GAME
 }
 
@@ -23,7 +26,8 @@ function renderMenu() {
         <div class="main-menu">
             <h1>NivelArena</h1>
             <div class="menu-buttons">
-                <button id="start-game-btn" class="primary-btn">Start Game (ST01 vs ST01)</button>
+                <button id="start-game-btn" class="primary-btn">Quick Play (ST01 vs ST01)</button>
+                <button id="custom-sim-btn" class="primary-btn">Custom Simulation</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
             </div>
         </div>
@@ -35,6 +39,11 @@ function renderMenu() {
         const leader1 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
         const leader2 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
         startGame(deck1, deck2, leader1, leader2);
+    });
+
+    document.getElementById('custom-sim-btn')?.addEventListener('click', () => {
+        currentScreen = Screen.SETUP;
+        render();
     });
 
     document.getElementById('deck-builder-btn')?.addEventListener('click', () => {
@@ -57,7 +66,8 @@ function renderDeckBuilder() {
         app,
         hoverPreview,
         (deck, leader) => {
-            // For MVP, Player 2 still uses ST01
+            // After building a deck, we can offer to start a game or go back
+            // For simplicity, let's keep the one-player play behavior as a quick test
             const deck2 = createDeck();
             const leader2 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
             startGame(deck, deck2, leader, leader2);
@@ -70,11 +80,28 @@ function renderDeckBuilder() {
     dbUI.render();
 }
 
+function renderSetup() {
+    const setupUI = new SetupUI(
+        app,
+        DUMMY_CARDS,
+        (deck1, deck2, leader1, leader2) => {
+            startGame(deck1, deck2, leader1, leader2);
+        },
+        () => {
+            currentScreen = Screen.MENU;
+            render();
+        }
+    );
+    setupUI.render();
+}
+
 function render() {
     if (currentScreen === Screen.MENU) {
         renderMenu();
     } else if (currentScreen === Screen.DECK_BUILDER) {
         renderDeckBuilder();
+    } else if (currentScreen === Screen.SETUP) {
+        renderSetup();
     } else if (currentScreen === Screen.GAME && game) {
         renderGame();
     }
