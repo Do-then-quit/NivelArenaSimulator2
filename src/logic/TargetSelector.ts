@@ -88,6 +88,13 @@ export class TargetSelector {
                             return unit && unit.cost <= filter.value;
                         });
                         break;
+                    case 'COST_LOWER_THAN_COST_PAYMENT':
+                        candidates = candidates.filter(c => {
+                            const unit = this.getUnitFromTarget(c);
+                            if (!unit || !context.costPaymentCard) return false;
+                            return unit.cost < context.costPaymentCard.cost;
+                        });
+                        break;
                 }
             });
         }
@@ -147,8 +154,8 @@ export class TargetSelector {
         let inScope = false;
         switch (schema.scope) {
             case 'SELF': inScope = (target === context.unitZone); break;
-            case 'MY_FIELD': 
-                inScope = player.unitZones.includes(target); 
+            case 'MY_FIELD':
+                inScope = player.unitZones.includes(target);
                 break;
             case 'OPP_FIELD': inScope = opponent ? opponent.unitZones.includes(target) : false; break;
             case 'BOTH_FIELDS': inScope = player.unitZones.includes(target) || (opponent ? opponent.unitZones.includes(target) : false); break;
@@ -195,11 +202,15 @@ export class TargetSelector {
                 switch (filter.type) {
                     case 'EXCLUDE_SELF': if (target === context.unitZone) return false; break;
                     case 'HAS_TRAIT': if (!unit || !unit.traits?.includes(filter.value)) return false; break;
-                    case 'HAS_KEYWORD': 
-                        if (!unit || !unit.keywords?.includes(filter.value)) return false; 
+                    case 'HAS_KEYWORD':
+                        if (!unit || !unit.keywords?.includes(filter.value)) return false;
                         break;
                     case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
                     case 'POWER_LIMIT': if (!unit || engine.getUnitPower(target, this.getOwner(engine, target)) > filter.value) return false; break;
+                    case 'COST_LOWER_THAN_COST_PAYMENT':
+                        if (!unit || !context.costPaymentCard) return false;
+                        if (unit.cost >= context.costPaymentCard.cost) return false;
+                        break;
                 }
             }
         }

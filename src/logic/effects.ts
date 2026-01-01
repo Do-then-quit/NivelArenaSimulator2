@@ -17,17 +17,17 @@ export class EffectManager {
         if (!sourceCard || !sourceCard.effects) return false;
 
         const effectsToProcess = sourceCard.effects.filter((e: Effect) => e.activation === activation);
-        
+
         for (let i = 0; i < effectsToProcess.length; i++) {
             const effect = effectsToProcess[i];
-            
+
             if (this.processEffect(effect, context)) {
                 triggered = true;
                 if (this.engine.state.interactionMode !== 'NORMAL') {
                     if (i < effectsToProcess.length - 1) {
                         (this.engine.state.pendingEffect as any)._remainingEffects = effectsToProcess.slice(i + 1);
                     }
-                    break; 
+                    break;
                 }
             }
         }
@@ -37,6 +37,12 @@ export class EffectManager {
 
     public processEffect(effect: Effect, context: GameContext): boolean {
         if (!this.checkCondition(effect, context)) return false;
+
+        // NEW: Check Optional
+        if (effect.optional && !(context as any)._optionalConfirmed) {
+            this.engine.initiateOptionalSelection(effect, context);
+            return true; // Return true to pause execution flow (handled by loop break in processEffects)
+        }
 
         if ((context as any).discardedCount === undefined) (context as any).discardedCount = 0;
 
@@ -59,13 +65,13 @@ export class EffectManager {
             }
         } else {
             let targets = this.resolveAutoTargets(effect.targets, context);
-            
+
             if (!effect.targets && context.unitZone) {
                 targets = [context.unitZone];
             } else if (!effect.targets && !context.unitZone) {
                 targets = [];
             }
-            
+
             this.executeEffect(effect, context, targets);
         }
         return true;
@@ -102,7 +108,7 @@ export class EffectManager {
     public checkCondition(effect: Effect, context: GameContext): boolean {
         if (!effect.condition) return true;
         const { type, value } = effect.condition;
-        
+
         switch (type) {
             case 'ALWAYS':
                 return true;

@@ -1035,8 +1035,10 @@ export class DebugManager {
 
         const skill = this.getCard("ST03-013");
         if (skill) p0.hand.push(skill);
+        if (skill) p0.hand.push(skill);
 
         const handCostUnit = this.getCard("ST03-008"); // Exia (Cost 4) in hand
+
         if (handCostUnit) p0.hand.push(handCostUnit);
 
         const targetLow = this.getCard("ST03-007"); // D (Cost 3) < 4 -> Valid
@@ -1139,12 +1141,9 @@ export class DebugManager {
         if (unit) p0.unitZones[0].unit = unit;
 
         // Opponent attacker
-        const attacker = this.getCard("ST03-011"); // Modernia 6500
+        const attacker = this.getCard("ST02-010"); // rafi 
         if (attacker) p1.unitZones[0].unit = attacker;
 
-        // Give opponent turn to attack
-        this.game.state.turnPlayerIndex = 1;
-        this.game.state.phase = Phase.MAIN;
 
         this.renderCallback();
         console.log("%c SCENARIO READY ", 'background: #4CAF50; color: white');
@@ -1154,9 +1153,6 @@ export class DebugManager {
         console.log("   Actually, safer to setup: P0 Turn, Equip Vest, Pass Turn, Opp Attack.");
         console.log("   --> ACTION: Equip Vest to Delta. End Turn. Opponent Attack with Modernia.");
         console.log("4. Block with Delta. Confirm Attack Terminates immediately and Delta is Trashed.");
-
-        // Let's reset to P0 turn so user can equip first
-        this.game.state.turnPlayerIndex = 0;
     }
 
     setupST03_017_Scenario() {
@@ -1373,6 +1369,41 @@ export class DebugManager {
         console.log("Trigger Verification Completed.");
     }
 
+    setupST03_Battle_Scenario() {
+        console.log("Setting up ST03-003 (Privaty) Battle Exit Scenario...");
+
+        // 1. Reset Game
+        const p1 = this.game.currentPlayer; // Player 1
+        const p2 = this.game.opponentPlayer; // Player 2 (Opponent)
+
+        // 2. Setup Hands
+        // P1 has nothing relevant
+        p1.hand = [];
+        // P2 has cards to discard (at least 2 to have a choice)
+        this.setHand(1, ['ST01-013', 'ST01-014']);
+
+        // 3. Setup Field
+        // P1: Privaty (Power 3000) in Center (Index 1)
+        this.setField(0, [null, 'ST03-003', null]);
+        // P2: Something strong in Center (Index 1). ST02-001 is a Leader, so use ST02-003 (Unit)
+        this.setField(1, [null, 'ST02-003', null]);
+
+        // 4. Force Phase to Attack Phase
+        // Player 1 turn, Attack Phase
+        this.game.state.turnCount = 1;
+        this.game.state.turnPlayerIndex = 0;
+        this.forcePhase(Phase.ATTACK);
+
+        console.log("Scenario Ready:");
+        console.log("1. Privaty (P1 Center) has 3000 Power.");
+        console.log("2. Eunhwa (P2 Center) has 5000 Power.");
+        console.log("3. Instructions: Click Privaty -> Attack -> Click Eunhwa (Target Unit).");
+        console.log("4. Result: Privaty destroyed by battle. Exit effect triggers.");
+        console.log("5. Verify: Opponent MUST select a card from their hand to trash.");
+        this.renderCallback();
+    }
+
+
     async runAllTests() {
         console.log("Starting Automated Tests...");
 
@@ -1395,4 +1426,6 @@ export class DebugManager {
 
         console.log("All Tests Completed.");
     }
+
 }
+

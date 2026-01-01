@@ -188,23 +188,27 @@ const moveFromTrashToHand: ActionImplementation = (ctx, _params, targets) => {
 };
 
 const mutualDestruction: ActionImplementation = (ctx, _params, _targets) => {
-    if (!ctx.destroyedBy || !ctx.sourceCard) return;
+    if (!ctx.destroyedBy) return;
 
     const killerCost = ctx.destroyedBy.cost;
-    const myCost = ctx.sourceCard.cost;
+    // Use unitZone's unit cost for items, otherwise use sourceCard cost for unit effects
+    // This is because the effect text says "이 유닛의 코스트" not "이 아이템의 코스트"
+    const myCost = ctx.unitZone?.unit?.cost ?? ctx.sourceCard?.cost;
+
+    if (myCost === undefined) return;
 
     if (killerCost <= myCost) {
         console.log(`Mutual Destruction triggered! Trash killer ${ctx.destroyedBy.name} (Cost ${killerCost} <= ${myCost})`);
-        
+
         // Find killer zone
         const allZones = [...ctx.player.unitZones, ...ctx.opponent.unitZones];
         const killerZone = allZones.find(z => z.unit === ctx.destroyedBy);
 
         if (killerZone) {
-             const owner = getOwnerOfZone(ctx.machine, killerZone);
-             if (owner) {
-                 ctx.machine.destroyUnit(owner, killerZone);
-             }
+            const owner = getOwnerOfZone(ctx.machine, killerZone);
+            if (owner) {
+                ctx.machine.destroyUnit(owner, killerZone);
+            }
         }
     }
 };
@@ -221,7 +225,7 @@ const terminateAttack: ActionImplementation = (ctx, _params, _targets) => {
 
 const discard: ActionImplementation = (ctx, params, targets) => {
     const targetPlayer = params.target === 'OPPONENT' ? ctx.opponent : ctx.player;
-    
+
     if (targets && targets.length > 0) {
         targets.forEach(card => {
             const idx = targetPlayer.hand.indexOf(card);
@@ -257,20 +261,20 @@ const destroyEncounter: ActionImplementation = (ctx, _params, targets) => {
     targets.forEach(targetZone => {
         const idx = ctx.player.unitZones.indexOf(targetZone);
         if (idx !== -1) {
-             const oppZone = ctx.opponent.unitZones[idx];
-             if (oppZone.unit) {
-                 const unitName = oppZone.unit.name;
-                 ctx.machine.destroyUnit(ctx.opponent, oppZone);
-                 console.log(`Trashed encounter unit ${unitName} in lane ${idx}`);
-             }
+            const oppZone = ctx.opponent.unitZones[idx];
+            if (oppZone.unit) {
+                const unitName = oppZone.unit.name;
+                ctx.machine.destroyUnit(ctx.opponent, oppZone);
+                console.log(`Trashed encounter unit ${unitName} in lane ${idx}`);
+            }
         } else {
-             const oppIdx = ctx.opponent.unitZones.indexOf(targetZone);
-             if (oppIdx !== -1) {
-                 const myZone = ctx.player.unitZones[oppIdx];
-                 if (myZone.unit) {
-                     ctx.machine.destroyUnit(ctx.player, myZone);
-                 }
-             }
+            const oppIdx = ctx.opponent.unitZones.indexOf(targetZone);
+            if (oppIdx !== -1) {
+                const myZone = ctx.player.unitZones[oppIdx];
+                if (myZone.unit) {
+                    ctx.machine.destroyUnit(ctx.player, myZone);
+                }
+            }
         }
     });
 };

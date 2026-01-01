@@ -188,7 +188,7 @@ body {
     border-radius: 4px;
     border: 1px solid rgba(255, 215, 0, 0.6);
     background: #1a1a1a;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     margin: 0 -15px;
     overflow: hidden;
 }
@@ -215,7 +215,7 @@ body {
     opacity: 0;
     transition: all 0.3s ease;
     z-index: 2000;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
     width: max-content;
     max-width: 400px;
 }
@@ -421,6 +421,27 @@ body {
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
 }
 
+.opponent-hand-zone {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) rotate(180deg);
+    width: fit-content;
+    max-width: 90vw;
+    background: rgba(20, 22, 35, 0.9);
+    backdrop-filter: blur(20px);
+    padding: 20px 40px;
+    border-radius: 20px 20px 0 0;
+    /* Rounded at 'top' (which is visual bottom due to rotation) */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    /* Shadow will also rotate */
+    /* pointer-events: none; REMOVED to allow interaction during selection effects */
+}
+
 .card-in-hand {
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -590,9 +611,17 @@ body {
 }
 
 @keyframes pulse-blue {
-    0% { box-shadow: 0 0 5px rgba(9, 132, 227, 0.4); }
-    50% { box-shadow: 0 0 20px rgba(9, 132, 227, 0.8); }
-    100% { box-shadow: 0 0 5px rgba(9, 132, 227, 0.4); }
+    0% {
+        box-shadow: 0 0 5px rgba(9, 132, 227, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(9, 132, 227, 0.8);
+    }
+
+    100% {
+        box-shadow: 0 0 5px rgba(9, 132, 227, 0.4);
+    }
 }
 
 .block-controls {
@@ -934,9 +963,10 @@ body {
     margin-bottom: 20px;
 }
 
-.db-controls input, .db-controls select {
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
+.db-controls input,
+.db-controls select {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
     padding: 10px;
     border-radius: 8px;
@@ -958,7 +988,7 @@ body {
 .db-card-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1023,7 +1053,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(0,0,0,0.2);
+    background: rgba(0, 0, 0, 0.2);
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 0.9rem;
@@ -1089,7 +1119,3 @@ body {
 .menu-buttons button {
     width: 100%;
 }
-
-
-
-

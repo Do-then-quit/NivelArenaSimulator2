@@ -11,9 +11,9 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.PASSIVE,
             description: "각성면 패시브 : 필드에 있는 엑시트 : 를 가진 모든 자신 유닛의 파워+1000.",
-            targets: { 
-                scope: 'MY_FIELD', 
-                type: 'UNIT', 
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
                 selectMode: 'ALL',
                 filters: [{ type: 'HAS_KEYWORD', value: '엑시트' }]
             },
@@ -66,9 +66,9 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.PASSIVE,
             description: "패시브 : 필드에 있는 엑시트 : 를 가진 모든 자신 유닛의 파워+1000.",
-            targets: { 
-                scope: 'MY_FIELD', 
-                type: 'UNIT', 
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
                 selectMode: 'ALL',
                 filters: [{ type: 'HAS_KEYWORD', value: '엑시트' }]
             },
@@ -79,11 +79,11 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.EXIT,
             description: "엑시트 : 자신의 트래시 존에서 엑시트 : 를 가진 2코스트 이하인 유닛을 1장 골라 자신의 패에 넣는다.",
-            targets: { 
-                scope: 'MY_TRASH', 
-                type: 'CARD', 
-                count: 1, 
-                selectMode: 'MANUAL', 
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
                 filters: [
                     { type: 'HAS_KEYWORD', value: '엑시트' },
                     { type: 'COST_LIMIT', value: 2 }
@@ -108,6 +108,7 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ENTRY,
             description: "엔트리 : 자신의 패를 모두 트래시할 수 있다. 2장 이상 트래시했다면 조우 유닛을 트래시한다.",
+            optional: true,
             action: { type: 'DISCARD_ALL', params: {} }
         },
         {
@@ -141,8 +142,14 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ENTRY,
             description: "자신의 패에서 유닛을 1장 골라 트래시한다. 그 유닛보다 코스트가 낮은 유닛을 필드에서 1장 골라 트래시한다.",
-            cost: { type: 'TRASH_HAND', amount: 1 },
-            targets: { scope: 'BOTH_FIELDS', type: 'UNIT', selectMode: 'MANUAL', count: 1 }, // Logic for lower cost handled in TargetSelector? No, I'll need a filter or manual implementation
+            cost: { type: 'TRASH_HAND', amount: 1, cardTypeFilter: 'UNIT' as any },
+            targets: {
+                scope: 'BOTH_FIELDS',
+                type: 'UNIT',
+                selectMode: 'MANUAL',
+                count: 1,
+                filters: [{ type: 'COST_LOWER_THAN_COST_PAYMENT' }]
+            },
             action: { type: 'DESTROY_UNIT', params: {} }
         }
     ],
@@ -169,11 +176,11 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 엑시트 : 를 가진 유닛을 1장 골라 자신의 패에 넣는다.",
-            targets: { 
-                scope: 'MY_TRASH', 
-                type: 'CARD', 
-                count: 1, 
-                selectMode: 'MANUAL', 
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
                 filters: [{ type: 'HAS_KEYWORD', value: '엑시트' }]
             },
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }

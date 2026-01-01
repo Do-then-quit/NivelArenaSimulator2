@@ -203,8 +203,8 @@ export class GameEngine {
         }
 
         if (isUpgrade && zone.unit) {
-             // Should not happen if destroyUnit worked, but just safety
-             this.destroyUnit(this.currentPlayer, zone);
+            // Should not happen if destroyUnit worked, but just safety
+            this.destroyUnit(this.currentPlayer, zone);
         }
 
 
@@ -300,6 +300,46 @@ export class GameEngine {
         console.log("Entered Cost Selection Mode for " + context.sourceCard.name);
     }
 
+    initiateOptionalSelection(effect: any, context: any) {
+        this.state.interactionMode = 'SELECT_OPTIONAL';
+        this.state.pendingEffect = {
+            sourceCard: context.sourceCard,
+            sourcePlayerId: context.player.id,
+            actionType: effect.action.type,
+            actionValue: effect.action.params
+        };
+        (this.state.pendingEffect as any)._fullEffect = effect;
+        (this.state.pendingEffect as any)._context = context;
+        console.log("Entered Optional Selection Mode for " + context.sourceCard.name);
+    }
+
+    resolveOptionalEffect(confirm: boolean) {
+        if (this.state.interactionMode !== 'SELECT_OPTIONAL' || !this.state.pendingEffect) return;
+
+        const pending = this.state.pendingEffect as any;
+        const effect = pending._fullEffect;
+        const context = pending._context;
+
+        // Reset Mode
+        this.state.interactionMode = 'NORMAL';
+        const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
+        this.state.pendingEffect = null;
+
+        if (confirm) {
+            console.log("Optional Effect confirmed.");
+            // Proceed with effect processing (mark as confirmed to avoid re-looping)
+            context._optionalConfirmed = true;
+            this.effectManager.processEffect(effect, context);
+        } else {
+            console.log("Optional Effect skipped.");
+        }
+
+        // Resume remaining effects
+        if (remainingEffects && remainingEffects.length > 0) {
+            this.effectManager.resumeEffects(remainingEffects, context);
+        }
+    }
+
     selectCost(handIndex: number) {
         if (this.state.interactionMode !== 'SELECT_COST' || !this.state.pendingEffect) return;
         const pending = this.state.pendingEffect as any;
@@ -310,6 +350,11 @@ export class GameEngine {
             const discarded = this.currentPlayer.hand.splice(handIndex, 1)[0];
             this.currentPlayer.trash.push(discarded);
             console.log(`Paid cost: Trashed ${discarded.name}`);
+
+            // Store discarded card for effect context (e.g. for ST03-013 comparison)
+            const context = (this.state.pendingEffect as any)._context;
+            context.costPaymentCard = discarded;
+
         } else if (costType === 'SHUFFLE_HAND_TO_DECK') {
             const card = this.currentPlayer.hand.splice(handIndex, 1)[0];
             this.currentPlayer.deck.push(card);
@@ -543,14 +588,28 @@ export class GameEngine {
 
     public destroyUnit(player: PlayerState, zone: UnitZoneState, killerCard?: Card) {
         if (zone.unit) {
-            // Trigger Exit Effects
+            const opponent = player === this.state.players[0] ? this.state.players[1] : this.state.players[0];
+
+            // Trigger Exit Effects for Unit
             this.effectManager.processEffects(ActivationCondition.EXIT, {
                 sourceCard: zone.unit,
                 player: player,
-                opponent: player === this.state.players[0] ? this.state.players[1] : this.state.players[0], // simplified check for opponent
+                opponent: opponent,
                 unitZone: zone,
                 machine: this,
                 destroyedBy: killerCard
+            });
+
+            // Trigger Exit Effects for Equipped Items (e.g., ST03-017 공멸)
+            zone.items.forEach(item => {
+                this.effectManager.processEffects(ActivationCondition.EXIT, {
+                    sourceCard: item,
+                    player: player,
+                    opponent: opponent,
+                    unitZone: zone, // Include unitZone so effect can reference the unit's cost
+                    machine: this,
+                    destroyedBy: killerCard
+                });
             });
 
             player.trash.push(zone.unit);
@@ -794,36 +853,35 @@ export class GameEngine {
 
     public selectTrashTarget(trashIndex: number) {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
-        
+
         const pending = this.state.pendingEffect as any;
         // Verify scope is MY_TRASH
         if (pending.validTargets !== 'MY_TRASH') {
-            console.warn("Attempted to select trash target but scope is " + pending.validTargets);
+            console.log("Invalid Target: Expected Trash selection.");
             return;
         }
 
-        const effect = pending._fullEffect;
-        const context = pending._context;
-
-        // Get target card from trash
-        if (trashIndex < 0 || trashIndex >= this.currentPlayer.trash.length) {
-            console.warn("Invalid trash index");
+        // Use the effect source player's trash, not the current turn player's trash
+        // This is important for trigger effects that activate on opponent's turn
+        const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+        if (!player) {
+            console.log("Source player not found for trash selection.");
             return;
         }
-        const targetCard = this.currentPlayer.trash[trashIndex];
+        if (trashIndex < 0 || trashIndex >= player.trash.length) return;
+        const card = player.trash[trashIndex];
 
-        // Validate
-        if (!TargetSelector.isValidTarget(this, effect.targets, context, targetCard)) {
+        // Validate with TargetSelector
+        if (!TargetSelector.isValidTarget(this, pending._fullEffect.targets, pending._context, card)) {
             console.log("Invalid Trash Target Selected.");
             return;
         }
 
-        // Execute Effect via Manager
-        this.effectManager.executeEffect(effect, context, [targetCard]);
+        // Execute
+        this.effectManager.executeEffect(pending._fullEffect, pending._context, [card]);
 
-        // Reset State
-        this.state.interactionMode = 'NORMAL';
-        this.state.pendingEffect = null;
+        // Reset
+        this.resetInteractionMode(pending._context);
     }
 
     public selectHandTarget(handIndex: number, isOpponentHand: boolean) {
@@ -848,6 +906,10 @@ export class GameEngine {
         this.effectManager.executeEffect(effect, context, [targetCard]);
 
         // Reset State
+        this.resetInteractionMode(context);
+    }
+
+    private resetInteractionMode(context: any) {
         this.state.interactionMode = 'NORMAL';
         const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
         this.state.pendingEffect = null;

@@ -1,6 +1,8 @@
-import { GameState, PlayerState, Phase, CardType, TargetSchema, ActivationCondition } from './types';
+import { PlayerState, Phase, CardType, TargetSchema, ActivationCondition } from './types';
 import { GameEngine } from './GameEngine';
 import { TargetSelector } from './TargetSelector';
+
+type ValidationResult = { valid: boolean; reason?: string };
 
 export class RuleValidator {
     static canPlayUnit(engine: GameEngine, player: PlayerState, cardIndex: number, zoneIndex: number): { valid: boolean; reason?: string } {
@@ -41,6 +43,21 @@ export class RuleValidator {
         if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
         const card = player.hand[cardIndex];
         if (player.leaderLevel < card.cost) return { valid: false, reason: `Leader Level too low (Required: ${card.cost}, Current: ${player.leaderLevel})` };
+
+        // Check if effect requires a specific card type for cost payment
+        if (card.effects) {
+            for (const effect of card.effects) {
+                if (effect.cost?.type === 'TRASH_HAND' && effect.cost.cardTypeFilter) {
+                    const requiredType = effect.cost.cardTypeFilter;
+                    // Exclude the skill card itself from the search (it's about to be played)
+                    const validCostCards = player.hand.filter((c, idx) => idx !== cardIndex && c.type === requiredType);
+                    if (validCostCards.length === 0) {
+                        return { valid: false, reason: `No ${requiredType} card in hand to pay cost` };
+                    }
+                }
+            }
+        }
+
         return { valid: true };
     }
 
@@ -56,7 +73,7 @@ export class RuleValidator {
         // Size Limit Check
         const currentSize = engine.getPlayerSize(player);
         const currentFieldCost = this.calculateFieldCost(player);
-        
+
         if (currentFieldCost + card.cost > currentSize) {
             return { valid: false, reason: "Cost exceeds Size limit" };
         }

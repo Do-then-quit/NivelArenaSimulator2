@@ -63,7 +63,7 @@ export type ActionType =
     | 'DESTROY_ENCOUNTER';
 
 export interface TargetFilter {
-    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'COST_LIMIT' | 'POWER_LIMIT';
+    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT';
     value?: any;
 }
 
@@ -85,7 +85,7 @@ export interface TargetSchema {
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT';
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT';
     value?: any;
 }
 
@@ -93,6 +93,7 @@ export interface EffectCost {
     type: 'NONE' | 'TRASH_HAND' | 'RETIRE_UNIT' | 'SHUFFLE_HAND_TO_DECK';
     amount?: number;
     value?: any; // Legacy support
+    cardTypeFilter?: CardType; // Restricts cost payment to a specific card type (e.g., UNIT only)
 }
 
 export interface EffectAction {
@@ -109,6 +110,7 @@ export interface GameContext {
     machine: any; // Ideally GameEngine but avoids circular dependency
     selectedLaneIndex?: number;
     destroyedBy?: Card;
+    costPaymentCard?: Card;
 }
 
 export type ActionImplementation = (context: GameContext, params: any, targets: any[]) => void;
@@ -122,6 +124,7 @@ export interface Effect {
     action: EffectAction;
     duration?: 'PERMANENT' | 'TURN_END';
     description: string;
+    optional?: boolean;
 }
 
 export enum Phase {
@@ -187,7 +190,7 @@ export interface GameState {
     turnCount: number;
     winner: string | null;
     pendingAttackerIndex: number | null; // Track who is attacking during BLOCK phase
-    interactionMode: 'NORMAL' | 'SELECT_TARGET' | 'SELECT_COST';
+    interactionMode: 'NORMAL' | 'SELECT_TARGET' | 'SELECT_COST' | 'SELECT_OPTIONAL';
     pendingEffect: PendingEffect | null;
     attackTerminated?: boolean;
 }

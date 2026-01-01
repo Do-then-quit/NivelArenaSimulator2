@@ -126,11 +126,44 @@ function renderGame() {
           `).join('')}
       </div>
 
+      <div class="opponent-hand-zone">
+          ${opponent.hand.map((c, i) => `
+              <div class="card-in-hand" data-index="${i}">
+                  ${renderCard(c)}
+              </div>
+          `).join('')}
+      </div>
+
+
+      ${renderOptionalEffectModal()}
       ${renderTrashModal()}
     </div>
   `;
 
     attachListeners();
+}
+
+function renderOptionalEffectModal() {
+    if (!game) return '';
+    if (game.state.interactionMode !== 'SELECT_OPTIONAL') return '';
+    const pending = game.state.pendingEffect as any;
+    if (!pending) return '';
+
+    // Attempt to get description from full effect if available
+    const description = pending._fullEffect ? pending._fullEffect.description : 'Activate optional effect?';
+
+    return `
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <h3>Optional Effect</h3>
+                <p>${description}</p>
+                <div class="modal-actions">
+                    <button id="opt-confirm" class="primary-btn">Activate</button>
+                    <button id="opt-skip" class="secondary-btn">Skip</button>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function renderTrashModal() {
@@ -139,9 +172,11 @@ function renderTrashModal() {
     const pending = game.state.pendingEffect as any;
     if (!pending || pending.validTargets !== 'MY_TRASH') return '';
 
-    const trash = game.currentPlayer.trash;
-    // We can show all cards or only valid ones. Better to show all but grey out invalid if we had that logic.
-    // For now, let's just show all and rely on selectTrashTarget validation.
+    // Use the effect source player's trash, not the current turn player's trash
+    // This is important for trigger effects that activate on opponent's turn
+    const sourcePlayer = game.state.players.find(p => p.id === pending.sourcePlayerId);
+    if (!sourcePlayer) return '';
+    const trash = sourcePlayer.trash;
 
     return `
         <div class="modal-overlay">
@@ -337,7 +372,7 @@ function attachListeners() {
             if (draggedCardIndex !== null) {
                 const zoneIndex = parseInt((zone as HTMLElement).dataset.index!);
                 const card = game!.currentPlayer.hand[draggedCardIndex];
-                
+
                 let isValid = false;
                 if (card.type === CardType.UNIT) {
                     isValid = RuleValidator.canPlayUnit(game!, game!.currentPlayer, draggedCardIndex, zoneIndex).valid;
@@ -347,7 +382,7 @@ function attachListeners() {
 
                 zone.classList.add(isValid ? 'valid-target' : 'invalid-target');
             }
-            
+
             zone.classList.add('drag-over');
         });
 
@@ -384,7 +419,7 @@ function attachListeners() {
             e.preventDefault();
             const event = e as DragEvent;
             if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-            
+
             if (draggedCardIndex !== null) {
                 const card = game!.currentPlayer.hand[draggedCardIndex];
                 const isValid = RuleValidator.canPlaySkill(game!, game!.currentPlayer, draggedCardIndex).valid;
@@ -422,7 +457,7 @@ function attachListeners() {
             const index = parseInt(el.dataset.index!);
             const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;
             const unit = player.unitZones[index].unit;
-            
+
             if (unit) {
                 const mouseEvent = e as MouseEvent;
                 hoverPreview.show(unit, mouseEvent.clientX, mouseEvent.clientY);
@@ -479,7 +514,7 @@ function attachListeners() {
             const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
             const zone = game!.currentPlayer.unitZones[zoneIndex];
             const effectIndex = zone.unit?.effects?.findIndex(e => e.activation === 'ACTIVE') ?? -1;
-            
+
             if (effectIndex !== -1) {
                 game!.activateEffect(zoneIndex, effectIndex);
                 render();
@@ -489,13 +524,30 @@ function attachListeners() {
 
     // Cost Selection Listener
     if (game.state.interactionMode === 'SELECT_COST') {
-        const handCards = document.querySelectorAll('.card-in-hand');
-        handCards.forEach(card => {
-            card.addEventListener('click', (_e) => {
-                const index = parseInt((card as HTMLElement).dataset.index!);
-                game!.selectCost(index);
-                render();
-            });
+        const handCards = document.querySelectorAll('.hand-zone .card-in-hand');
+        const pending = game.state.pendingEffect as any;
+        const costFilter = pending?._fullEffect?.cost?.cardTypeFilter;
+
+        handCards.forEach((card, i) => {
+            const el = card as HTMLElement;
+            const handCard = game!.currentPlayer.hand[i];
+
+            // Check if this card matches the required type for cost payment
+            const isValidCostCard = !costFilter || handCard.type === costFilter;
+
+            if (isValidCostCard) {
+                el.style.cursor = 'pointer';
+                el.style.boxShadow = '0 0 10px #0984e3';
+                el.addEventListener('click', (_e) => {
+                    const index = parseInt(el.dataset.index!);
+                    game!.selectCost(index);
+                    render();
+                });
+            } else {
+                // Dim invalid cards
+                el.style.opacity = '0.4';
+                el.style.cursor = 'not-allowed';
+            }
         });
     }
 
@@ -526,18 +578,72 @@ function attachListeners() {
                     game!.selectTrashTarget(index);
                     render();
                 });
-                
+
                 // Hover preview for trash cards too
                 item.addEventListener('mouseenter', (e) => {
                     const index = parseInt((item as HTMLElement).dataset.index!);
-                    const card = game!.currentPlayer.trash[index];
+                    // Use the effect source player's trash for preview
+                    const sourcePlayer = game!.state.players.find(p => p.id === pending.sourcePlayerId);
+                    if (!sourcePlayer) return;
+                    const card = sourcePlayer.trash[index];
                     const mouseEvent = e as MouseEvent;
                     hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
                 });
                 item.addEventListener('mouseleave', () => hoverPreview.hide());
             });
         }
+
+        // Hand Selection Listener
+        if (pending && (pending.validTargets === 'OPP_HAND' || pending.validTargets === 'MY_HAND')) {
+            const sourceIsMe = pending.sourcePlayerId === game!.currentPlayer.id;
+
+            // Effective Target relative to ME (the client user)
+            // If Source is Me: MY_HAND -> My Hand, OPP_HAND -> Opponent Hand
+            // If Source is Opponent: MY_HAND -> Opponent Hand (Their Hand), OPP_HAND -> My Hand (Their Opponent's Hand)
+
+            let targetIsOpponentHand = false;
+
+            if (sourceIsMe) {
+                if (pending.validTargets === 'OPP_HAND') targetIsOpponentHand = true;
+            } else {
+                // Source is Opponent
+                if (pending.validTargets === 'MY_HAND') targetIsOpponentHand = true; // They target "My Hand" = Their Hand = Opponent Hand for me
+                // if OPP_HAND -> They target "Opponent Hand" = Me -> My Hand (targetIsOpponentHand = false)
+            }
+
+            // Select appropriate cards
+            const handSelector = targetIsOpponentHand ? '.opponent-hand-zone .card-in-hand' : '.hand-zone .card-in-hand';
+            const handCards = document.querySelectorAll(handSelector);
+
+            handCards.forEach(card => {
+                const el = card as HTMLElement;
+                // Add visual cue
+                el.style.cursor = 'crosshair';
+                el.style.boxShadow = '0 0 10px #ffeaa7';
+                el.style.border = '2px solid #e17055';
+
+                el.addEventListener('click', () => {
+                    const index = parseInt(el.dataset.index!);
+                    // We need to pass if we are clicking Opponent's hand or My Hand
+                    game!.selectHandTarget(index, targetIsOpponentHand);
+                    render();
+                });
+            });
+        }
     }
+
+    // Optional Effect Listeners
+    if (game.state.interactionMode === 'SELECT_OPTIONAL') {
+        document.getElementById('opt-confirm')?.addEventListener('click', () => {
+            game!.resolveOptionalEffect(true);
+            render();
+        });
+        document.getElementById('opt-skip')?.addEventListener('click', () => {
+            game!.resolveOptionalEffect(false);
+            render();
+        });
+    }
+
 }
 
 const debugManager = new DebugManager(game, render);
