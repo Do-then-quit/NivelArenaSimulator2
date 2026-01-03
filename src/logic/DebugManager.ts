@@ -1192,6 +1192,38 @@ export class DebugManager {
         console.log("   Privaty dies. Check if Delta is ALSO trashed (Cost 1 <= 1).");
     }
 
+    setupSCENARIO_BT01_OPP_DISCARD() {
+        console.log("Setting up BT01-066 (Nobel) Opponent Discard Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        [p0, p1].forEach(p => { p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; z.grantedEffects = []; }); p.hand = []; });
+        
+        // 1. Place Nobel on P0 Field
+        const nobel = this.getCard("BT01-066");
+        if (nobel) p0.unitZones[0].unit = nobel;
+
+        // 2. Give Opponent (P1) 3 cards
+        const fodder = this.getCard("ST02-002");
+        if (fodder) {
+            p1.hand.push({ ...fodder, id: "opp_c1" });
+            p1.hand.push({ ...fodder, id: "opp_c2" });
+            p1.hand.push({ ...fodder, id: "opp_c3" });
+        }
+
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.MAIN;
+        
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #0984e3; color: white');
+        console.log("1. Nobel is in P0 Lane 0. Opponent (P1) has 3 cards in hand.");
+        console.log("2. INSTRUCTIONS:");
+        console.log("   a. Use console `window.debug.game.destroyUnit(window.debug.game.state.players[0], window.debug.game.state.players[0].unitZones[0])` to trash Nobel.");
+        console.log("   b. The game should enter 'SELECT_TARGET' mode.");
+        console.log("   c. YOU (as Player 0) cannot click your own hand.");
+        console.log("   d. Click on one of the OPPONENT'S hand cards (the top hand in GUI).");
+        console.log("   e. The opponent's card should be trashed.");
+    }
+
     setupSCENARIO_BT01_KEYWORDS() {
         console.log("Setting up BT01 Keywords (Frontline & Level Link) Scenario...");
         const p0 = this.game.state.players[0];
