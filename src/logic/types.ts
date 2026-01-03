@@ -200,8 +200,9 @@ export interface GameState {
 export interface PendingEffect {
     sourceCard: Card;
     sourcePlayerId: string;
+    selectorPlayerId?: string; // The player who needs to make the choice
     actionType: string;
     actionValue: any;
-    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE'; // Simplified target constraint
+    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH'; // Added MY_TRASH for completeness
     costToPay?: EffectCost;
 }

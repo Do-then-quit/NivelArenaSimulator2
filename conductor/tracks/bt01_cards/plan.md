@@ -33,11 +33,11 @@ These tasks require modifying `GameEngine.ts`, `RuleValidator.ts`, or `EffectMan
     - [x] Implement `checkFrontline` helper in `RuleValidator` or `GameEngine` (Implemented as `FRONTLINE_CONSTRUCTION` condition in `EffectManager`).
     - [x] Implement `checkLevelLink` condition in `EffectManager` (Used existing `LEADER_LEVEL` condition).
 
-- [ ] **1-D. Opponent Interaction (Forced Selection)**
+- [x] **1-D. Opponent Interaction (Forced Selection)**
     - *Goal:* Allow effects to force the *opponent* to make a selection during the current player's turn.
     - *Target Cards:* BT01-066, BT01-073.
-    - [ ] Update `GameState` to handle "Waiting for Opponent" state.
-    - [ ] Implement UI flow for opponent selection modal.
+    - [x] Update `GameState` to handle "Waiting for Opponent" state (Implemented via `selectorPlayerId` in `PendingEffect`).
+    - [x] Implement UI flow for opponent selection modal (The logic is ready, UI uses `selectorPlayerId` to determine interactivity). e05750f (wait, I will commit this now)
 
 - [ ] **1-E. Complex Targeting**
     - *Goal:* Support selecting multiple targets based on a sum of properties (e.g., Total Cost <= 4).

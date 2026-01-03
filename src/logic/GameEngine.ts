@@ -430,10 +430,20 @@ export class GameEngine {
 
     initiateTargetSelection(effect: any, context: any) {
         this.state.interactionMode = 'SELECT_TARGET';
+        
+        // Determine who selects. 
+        // Default is the player who triggered the effect (context.player).
+        // If the effect text says "Opponent chooses", the scope is usually OPP_HAND or OPP_FIELD.
+        let selectorId = context.player.id;
+        if (effect.targets?.scope === 'OPP_HAND' || effect.targets?.scope === 'OPP_FIELD') {
+            selectorId = context.opponent.id;
+        }
+
         // Create a PendingEffect state to store context until target is selected
         this.state.pendingEffect = {
             sourceCard: context.sourceCard,
             sourcePlayerId: context.player.id,
+            selectorPlayerId: selectorId,
             actionType: effect.action.type, // redundant but useful for UI
             actionValue: effect.action.params,
             validTargets: effect.targets.scope // specific simplified scope for UI

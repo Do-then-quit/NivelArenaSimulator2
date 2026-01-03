@@ -28,6 +28,28 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             }
         }
     ],
+    'BT01-073': [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 패에 조우 유닛보다 코스트가 높은 유닛을 1장 골라 트래시할 수 있다. 트래시했다면 조우 유닛을 트래시한다.",
+            optional: true,
+            cost: { type: 'TRASH_HAND', cardTypeFilter: CardType.UNIT },
+            targets: { scope: 'ENCOUNTER_UNIT', selectMode: 'ALL', type: 'UNIT' },
+            action: { type: 'DESTROY_UNIT', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다. 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다. 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시한다. (상대 트래시 부분)",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
+            targets: { scope: 'OPP_HAND', type: 'CARD', selectMode: 'MANUAL', count: 1 },
+            action: { type: 'DISCARD', params: { target: 'OPPONENT' } }
+        }
+    ],
     'BT01-019': [
         {
             activation: ActivationCondition.ENTRY,
@@ -103,6 +125,23 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             activation: ActivationCondition.PASSIVE,
             description: "패시브 : 이 유닛으로 공격하려면 자신의 패를 1장 골라 트래시해야 한다.",
             action: { type: 'NONE', params: {} }
+        }
+    ],
+    'BT01-066': [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시해야 한다.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
+            targets: {
+                scope: 'OPP_HAND',
+                type: 'CARD',
+                selectMode: 'MANUAL',
+                count: 1
+            },
+            action: {
+                type: 'DISCARD',
+                params: { target: 'OPPONENT' }
+            }
         }
     ],
     'BT01-030': [
