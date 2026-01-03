@@ -14,9 +14,17 @@ export class EffectManager {
         const { sourceCard } = context;
         let triggered = false;
 
-        if (!sourceCard || !sourceCard.effects) return false;
+        // Collect Native Effects
+        const nativeEffects = (sourceCard && sourceCard.effects) ? sourceCard.effects : [];
 
-        const effectsToProcess = sourceCard.effects.filter((e: Effect) => e.activation === activation);
+        // Collect Granted Effects (Dynamically from other units/items)
+        const grantedEffects = this.getGrantedEffects(context);
+
+        const allEffects = [...nativeEffects, ...grantedEffects];
+
+        if (allEffects.length === 0) return false;
+
+        const effectsToProcess = allEffects.filter((e: Effect) => e.activation === activation);
 
         for (let i = 0; i < effectsToProcess.length; i++) {
             const effect = effectsToProcess[i];
@@ -33,6 +41,66 @@ export class EffectManager {
         }
 
         return triggered;
+    }
+
+    private getGrantedEffects(context: GameContext): Effect[] {
+        // Can only grant effects to cards in a Unit Zone (for now)
+        if (!context.unitZone) return [];
+        
+        const granted: Effect[] = [];
+        const beneficiaryZone = context.unitZone;
+
+        // Iterate all players to find Grantors (Units/Items)
+        this.engine.state.players.forEach(player => {
+            player.unitZones.forEach(grantorZone => {
+                const grantorCard = grantorZone.unit;
+                if (!grantorCard || !grantorCard.effects) return;
+
+                // Check Grantor Unit Effects
+                grantorCard.effects.forEach(effect => {
+                    // console.log(`Checking effect on ${grantorCard.name}:`, effect);
+                    this.checkAndCollectGrantedEffect(effect, player, grantorCard, grantorZone, beneficiaryZone, granted);
+                });
+
+                // Check Grantor Item Effects
+                grantorZone.items.forEach(item => {
+                    if (item.effects) {
+                        item.effects.forEach(effect => {
+                             this.checkAndCollectGrantedEffect(effect, player, item, grantorZone, beneficiaryZone, granted);
+                        });
+                    }
+                });
+            });
+        });
+        
+        return granted;
+    }
+
+    private checkAndCollectGrantedEffect(effect: Effect, player: any, sourceCard: any, grantorZone: any, beneficiaryZone: any, grantedList: Effect[]) {
+        if (effect.activation === ActivationCondition.PASSIVE && 
+            effect.action.type === 'GRANT_EFFECT') {
+            
+            // Create context for the GRANTOR
+            const grantorContext: GameContext = {
+                player: player,
+                opponent: this.engine.state.players.find(p => p !== player)!,
+                sourceCard: sourceCard,
+                unitZone: grantorZone,
+                machine: this.engine
+            };
+
+            // Check if Grantor's condition is met
+            if (!this.checkCondition(effect, grantorContext)) return;
+
+            // Check if Beneficiary is a valid target
+            // Use the GRANTOR's target schema to check the BENEFICIARY zone
+            if (TargetSelector.isValidTarget(this.engine, effect.targets, grantorContext, beneficiaryZone)) {
+                 const grantedEffect = effect.action.params.effect;
+                 if (grantedEffect) {
+                     grantedList.push(grantedEffect);
+                 }
+            }
+        }
     }
 
     public processEffect(effect: Effect, context: GameContext): boolean {
