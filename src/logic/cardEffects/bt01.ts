@@ -144,6 +144,20 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             }
         }
     ],
+    'BT01-058': [
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 종결 (방어 선언 즉시 상대의 이번 공격을 종료하고 이 유닛을 트래시한다).",
+            action: { type: 'TERMINATE_ATTACK', params: {} }
+        }
+    ],
+    'BT01-070': [
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 종결 (방어 선언 즉시 상대의 이번 공격을 종료하고 이 유닛을 트래시한다).",
+            action: { type: 'TERMINATE_ATTACK', params: {} }
+        }
+    ],
     'BT01-030': [
         {
             activation: ActivationCondition.PASSIVE,

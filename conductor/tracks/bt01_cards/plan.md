@@ -44,11 +44,11 @@ These tasks require modifying `GameEngine.ts`, `RuleValidator.ts`, or `EffectMan
     - *Target Cards:* BT01-078.
     - [x] Enhance `TargetSelector` to support `SUM_CONSTRAINT` logic (Added `sumConstraint` to `TargetSchema` and implemented selection logic in `GameEngine.selectTarget`). e05750f (will commit now)
 
-- [ ] **1-F. Special Combat Logic: Termination**
+- [x] **1-F. Special Combat Logic: Termination**
     - *Goal:* Implement "Termination" (종결) logic where combat ends immediately.
     - *Target Cards:* BT01-058, BT01-070.
-    - [ ] Update `GameEngine` combat resolution to check for `TERMINATION` keyword on defender.
-    - [ ] Ensure attack is effectively cancelled/ended and defender is trashed.
+    - [x] Update `GameEngine` combat resolution to check for `TERMINATION` keyword on defender (Implemented via `TERMINATE_ATTACK` action and flag check in `resolveBlock`).
+    - [x] Ensure attack is effectively cancelled/ended and defender is trashed. e05750f (will commit now)
 
 ## 🟢 Phase 2: Data Entry (Existing Mechanics)
 
