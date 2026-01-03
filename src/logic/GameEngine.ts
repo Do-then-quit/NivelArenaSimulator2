@@ -916,49 +916,89 @@ export class GameEngine {
     public selectTarget(zoneIndex: number, isOpponentZone: boolean) {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
-        // This logic handles the manual selection input from the UI
         const pending = this.state.pendingEffect as any;
         const effect = pending._fullEffect;
         const context = pending._context;
+        const schema = effect.targets;
 
-        // UI renders opponent at the top (isOpponentZone=true) and currentPlayer at the bottom (isOpponentZone=false)
         const targetPlayer = isOpponentZone ? this.opponentPlayer : this.currentPlayer;
         const targetZone = targetPlayer.unitZones[zoneIndex];
-        const scope = effect.targets?.scope;
 
-        // NEW: Full validation using TargetSelector
-        if (!TargetSelector.isValidTarget(this, effect.targets, context, targetZone)) {
-            console.log("Invalid Target Selected. Mode maintained.");
+        // 1. Basic Validation
+        if (!TargetSelector.isValidTarget(this, schema, context, targetZone)) {
+            console.log("Invalid Target Selected.");
             return;
         }
 
-        // Shared Lane validation (extra layer for clarity, though isValidTarget covers it)
-        if (scope === 'SHARED_LANE') {
-            const myUnit = this.currentPlayer.unitZones[zoneIndex].unit;
-            const oppUnit = this.opponentPlayer.unitZones[zoneIndex].unit;
-            if (!myUnit || !oppUnit) {
-                console.log("Invalid Target: Lane is not shared.");
-                return;
+        // 2. Multi-selection logic
+        if (schema.count > 1 || schema.sumConstraint) {
+            if (!pending.selectedTargets) pending.selectedTargets = [];
+            
+            // Prevent double selection
+            if (pending.selectedTargets.includes(targetZone)) return;
+
+            // Check constraints
+            if (schema.sumConstraint) {
+                let currentSum = 0;
+                pending.selectedTargets.forEach((t: any) => {
+                    const unit = t.unit;
+                    if (unit) {
+                        currentSum += (schema.sumConstraint.property === 'COST' ? unit.cost : this.getUnitPower(t, this.state.players[0])); // Owner check simplified
+                    }
+                });
+
+                const newVal = (schema.sumConstraint.property === 'COST' ? targetZone.unit!.cost : this.getUnitPower(targetZone, targetPlayer));
+                if (currentSum + newVal > schema.sumConstraint.value) {
+                    console.log("Cannot select target: Sum constraint exceeded.");
+                    return;
+                }
             }
+
+            pending.selectedTargets.push(targetZone);
+            console.log(`Target selected (${pending.selectedTargets.length}/${schema.count || '?'}). Current Sum: ...`);
+
+            // If max count reached, auto-execute
+            if (schema.count && pending.selectedTargets.length >= schema.count) {
+                this.executeMultiTargetEffect(effect, context, pending.selectedTargets);
+            }
+            // Otherwise, wait for more clicks or a "Done" action (which we'll simulate if next click is same or via specific UI)
+            return;
         }
 
+        // 3. Single target logic (Existing)
+        this.executeSingleTargetEffect(effect, context, targetZone, zoneIndex);
+    }
 
-        // If everything good, execute
+    private executeSingleTargetEffect(effect: any, context: any, targetZone: any, zoneIndex: number) {
         if (effect.action.type === 'DESTROY_LANE_LOWEST') {
             context.selectedLaneIndex = zoneIndex;
         }
-
-        // Execute via Manager
         this.effectManager.executeEffect(effect, context, [targetZone]);
+        this.finishInteractionMode(context);
+    }
 
-        // Reset State
+    private executeMultiTargetEffect(effect: any, context: any, targets: any[]) {
+        this.effectManager.executeEffect(effect, context, targets);
+        this.finishInteractionMode(context);
+    }
+
+    private finishInteractionMode(context: any) {
         this.state.interactionMode = 'NORMAL';
         const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
         this.state.pendingEffect = null;
 
-        // Resume remaining effects if any
         if (remainingEffects && remainingEffects.length > 0) {
             this.effectManager.resumeEffects(remainingEffects, context);
+        }
+    }
+
+    public confirmSelection() {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+        const pending = this.state.pendingEffect as any;
+        if (pending.selectedTargets && pending.selectedTargets.length > 0) {
+            this.executeMultiTargetEffect(pending._fullEffect, pending._context, pending.selectedTargets);
+        } else {
+            console.log("No targets selected to confirm.");
         }
     }
 

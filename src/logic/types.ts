@@ -72,6 +72,10 @@ export interface TargetSchema {
     scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND';
     type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
     count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
+    sumConstraint?: {
+        property: 'COST' | 'POWER';
+        value: number;
+    };
     filters?: TargetFilter[];
     conditions?: { // Legacy, keeping for compatibility
         costMin?: number;
@@ -203,6 +207,7 @@ export interface PendingEffect {
     selectorPlayerId?: string; // The player who needs to make the choice
     actionType: string;
     actionValue: any;
-    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH'; // Added MY_TRASH for completeness
+    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'OPP_FIELD' | 'OPP_HAND'; // Added more explicit scopes
+    selectedTargets?: any[]; // Track multi-selection
     costToPay?: EffectCost;
 }

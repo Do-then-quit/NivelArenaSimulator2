@@ -39,10 +39,10 @@ These tasks require modifying `GameEngine.ts`, `RuleValidator.ts`, or `EffectMan
     - [x] Update `GameState` to handle "Waiting for Opponent" state (Implemented via `selectorPlayerId` in `PendingEffect`).
     - [x] Implement UI flow for opponent selection modal (The logic is ready, UI uses `selectorPlayerId` to determine interactivity). e05750f (wait, I will commit this now)
 
-- [ ] **1-E. Complex Targeting**
+- [x] **1-E. Complex Targeting**
     - *Goal:* Support selecting multiple targets based on a sum of properties (e.g., Total Cost <= 4).
     - *Target Cards:* BT01-078.
-    - [ ] Enhance `TargetSelector` to support `SUM_CONSTRAINT` logic.
+    - [x] Enhance `TargetSelector` to support `SUM_CONSTRAINT` logic (Added `sumConstraint` to `TargetSchema` and implemented selection logic in `GameEngine.selectTarget`). e05750f (will commit now)
 
 - [ ] **1-F. Special Combat Logic: Termination**
     - *Goal:* Implement "Termination" (종결) logic where combat ends immediately.

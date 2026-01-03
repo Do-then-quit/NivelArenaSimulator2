@@ -175,5 +175,42 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             condition: { type: 'LEADER_LEVEL', value: 10 },
             action: { type: 'BUFF_HIT', params: { value: 1 } }
         }
+    ],
+    'BT01-078': [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "고른 유닛의 코스트 합이 4코스트 이하가 되도록 필드에 있는 상대 유닛을 2장까지 골라 트래시한다.",
+            targets: {
+                scope: 'OPP_FIELD',
+                type: 'UNIT',
+                count: 2,
+                sumConstraint: { property: 'COST', value: 4 },
+                selectMode: 'MANUAL'
+            },
+            action: { type: 'DESTROY_UNIT', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 엑시트 : 를 가진 유닛을 1장 골라 자신의 패에 넣는다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 엑시트 : 를 가진 유닛을 1장 골라 자신의 패에 넣는다. (샐비지 부분)",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'UNIT',
+                filters: [{ type: 'HAS_KEYWORD', value: '엑시트' }],
+                selectMode: 'MANUAL'
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }
+        }
+    ],
+    'BT01-081': [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 귀환 (이 턴이 끝날 때 이 유닛을 자신의 트래시 존에서 자신의 패로 되돌린다).",
+            action: { type: 'NONE', params: {} }
+        }
     ]
 };
