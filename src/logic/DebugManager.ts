@@ -1192,6 +1192,66 @@ export class DebugManager {
         console.log("   Privaty dies. Check if Delta is ALSO trashed (Cost 1 <= 1).");
     }
 
+    setupSCENARIO_BT01_TERMINATION() {
+        console.log("Setting up BT01-058 (Maiden) Termination Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        [p0, p1].forEach(p => { p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; z.grantedEffects = []; }); p.hand = []; });
+        
+        // 1. Place Attacker on P0 Field
+        const attacker = this.getCard("ST02-002");
+        if (attacker) p0.unitZones[0].unit = { ...attacker, power: 5000 };
+
+        // 2. Place Maiden (Termination) on P1 Field
+        const maiden = this.getCard("BT01-058");
+        if (maiden) p1.unitZones[0].unit = maiden;
+
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.ATTACK;
+        
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #636e72; color: white');
+        console.log("1. Attacker (5000) in P0 Lane 0. Maiden (Termination) in P1 Lane 0.");
+        console.log("2. INSTRUCTIONS:");
+        console.log("   a. Click Attacker to attack Lane 0.");
+        console.log("   b. When prompted to block, click 'YES'.");
+        console.log("   c. EXPECTED: Maiden is trashed immediately, and you return to ATTACK phase.");
+        console.log("   d. IMPORTANT: Attacker should NOT be trashed, and Opponent should take NO damage.");
+    }
+
+    setupSCENARIO_BT01_SUM_TARGET() {
+        console.log("Setting up BT01-078 (Beautiful Shot) Sum Constraint Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        [p0, p1].forEach(p => { p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; z.grantedEffects = []; }); p.hand = []; });
+        
+        p0.leaderLevel = 10;
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.MAIN;
+
+        // 1. Give Beautiful Shot to hand
+        const shot = this.getCard("BT01-078");
+        if (shot) p0.hand.push(shot);
+
+        // 2. Setup Opponent Board with various costs
+        const soldier = this.getCard("ST02-002");
+        if (soldier) {
+            p1.unitZones[0].unit = { ...soldier, id: "opp_c2", cost: 2 };
+            p1.unitZones[1].unit = { ...soldier, id: "opp_c3", cost: 3 };
+            p1.unitZones[2].unit = { ...soldier, id: "opp_c1", cost: 1 };
+        }
+
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #00b894; color: white');
+        console.log("1. Beautiful Shot in Hand. Opponent has units with costs 2, 3, 1.");
+        console.log("2. INSTRUCTIONS:");
+        console.log("   a. Play Beautiful Shot (drag to Skill Zone).");
+        console.log("   b. Try selecting units 0 (Cost 2) and 1 (Cost 3). Sum is 5 (>4), so it should fail.");
+        console.log("   c. Select unit 0 (Cost 2) and unit 2 (Cost 1). Sum is 3 (<=4).");
+        console.log("   d. Since count 2 is reached, they should both be trashed automatically.");
+        console.log("   e. OR select only unit 1 (Cost 3) and run `window.debug.game.confirmSelection()` to trash just that one.");
+    }
+
     setupSCENARIO_BT01_OPP_DISCARD() {
         console.log("Setting up BT01-066 (Nobel) Opponent Discard Scenario...");
         const p0 = this.game.state.players[0];
