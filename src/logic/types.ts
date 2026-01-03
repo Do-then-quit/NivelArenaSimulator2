@@ -60,7 +60,8 @@ export type ActionType =
     | 'TERMINATE_ATTACK'
     | 'DISCARD'
     | 'DISCARD_ALL'
-    | 'DESTROY_ENCOUNTER';
+    | 'DESTROY_ENCOUNTER'
+    | 'GRANT_EFFECT';
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT';

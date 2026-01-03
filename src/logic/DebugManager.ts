@@ -1192,6 +1192,124 @@ export class DebugManager {
         console.log("   Privaty dies. Check if Delta is ALSO trashed (Cost 1 <= 1).");
     }
 
+    setupSCENARIO_BT01_BERSERK() {
+        console.log("Setting up BT01-005 (Rapi) Berserk Scenario...");
+        const p0 = this.game.state.players[0];
+        this.game.state.players.forEach(p => { p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; z.grantedEffects = []; }); p.hand = []; });
+        
+        const rapi = this.getCard("BT01-005");
+        if (rapi) p0.unitZones[0].unit = rapi;
+        
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.ATTACK;
+        
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #d63031; color: white');
+        console.log("1. Rapi (Berserk) is in Lane 0.");
+        console.log("2. Current Phase: ATTACK.");
+        console.log("3. INSTRUCTIONS:");
+        console.log("   a. Try clicking 'Next Phase'. It should fail with a warning in console.");
+        console.log("   b. Attack with Rapi (you can attack an empty lane or opponent unit).");
+        console.log("   c. Now click 'Next Phase'. It should proceed to END phase.");
+    }
+
+    setupSCENARIO_BT01_ATTACK_COST() {
+        console.log("Setting up BT01-060 (Admi) Attack Cost Scenario...");
+        const p0 = this.game.state.players[0];
+        this.game.state.players.forEach(p => { p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; z.grantedEffects = []; }); p.hand = []; });
+        
+        const admi = this.getCard("BT01-060");
+        if (admi) p0.unitZones[0].unit = admi;
+        
+        // Add fodder to hand
+        const fodder = this.getCard("ST02-002");
+        if (fodder) p0.hand.push(fodder);
+        
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.ATTACK;
+        
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #fdcb6e; color: black');
+        console.log("1. Admi (Attack Cost) is in Lane 0.");
+        console.log("2. You have 1 card in hand.");
+        console.log("3. INSTRUCTIONS:");
+        console.log("   a. Click Admi to attack.");
+        console.log("   b. UI should enter 'SELECT_COST' mode (Hand cards highlighted).");
+        console.log("   c. Select the card in your hand to discard.");
+        console.log("   d. The attack should then proceed normally.");
+    }
+
+    setupSCENARIO_BT01_REDHOOD() {
+        console.log("Setting up BT01-019 (Red Hood) Active Granting Scenario...");
+
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        [p0, p1].forEach(p => { p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; z.grantedEffects = []; }); p.hand = []; p.damage = []; });
+        p0.leaderLevel = 10;
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.MAIN;
+
+        // 1. Place Generic Unit (N102, 2000 Power) in Lane 1
+        const n102 = this.getCard("ST02-002");
+        if (n102) p0.unitZones[1].unit = n102;
+
+        // 2. Add Red Hood to Hand
+        const redHood = this.getCard("BT01-019");
+        if (redHood) p0.hand.push(redHood);
+
+        // 3. Place Weak Opponent in Lane 1 to kill
+        const weak = this.getCard("ST02-002"); // N102 (2000 Power) - Same power, both die
+        // Need weaker unit for clean win? Or just equal power is fine (Penetration triggers on kill)
+        // Let's use something small or just modify stats
+        if (weak) {
+            const weakMock = { ...weak, power: 1000, id: "weak_opp" };
+            p1.unitZones[1].unit = weakMock;
+        }
+
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #e17055; color: white');
+        console.log("1. N102 (2000) in Lane 1. Red Hood in Hand.");
+        console.log("2. Opponent has Weak Unit (1000) in Lane 1.");
+        console.log("3. INSTRUCTIONS:");
+        console.log("   a. Play Red Hood to any lane.");
+        console.log("   b. Go to ATTACK Phase.");
+        console.log("   c. Attack with N102.");
+        console.log("4. EXPECTED:");
+        console.log("   - Combat: Weak Unit dies.");
+        console.log("   - Penetration: Opponent takes 1 Damage (because N102 gained 'Attacker: Penetration[1]').");
+    }
+
+    setupSCENARIO_BT01_MODERNIA() {
+        console.log("Setting up BT01-072 (Modernia) Dynamic Effect Granting Scenario...");
+
+        // 1. Reset P0 Field and Hand
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p0.hand = [];
+        p0.leaderLevel = 1;
+
+        // 2. Set Leader to verify passives
+        this.setLeader(0, "BT01-055"); // Cinderella (Wind Leader)
+
+        // 3. Place Modernia (BT01-072) in Lane 0
+        const modernia = this.getCard("BT01-072");
+        if (modernia) p0.unitZones[0].unit = modernia;
+
+        // 4. Place Generic Unit (Soldier/Vanilla) in Lane 1
+        // Using ST02-002 (N102) as a vanilla unit
+        const soldier = this.getCard("ST02-002");
+        if (soldier) p0.unitZones[1].unit = soldier;
+
+        const initialHandSize = p0.hand.length;
+
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #6c5ce7; color: white');
+        console.log("1. Modernia (BT01-072) in Lane 0. N102 in Lane 1.");
+        console.log(`2. Current Hand Size: ${initialHandSize}`);
+        console.log("3. Instructions: Use console `window.debug.game.destroyUnit(window.debug.game.state.players[0], window.debug.game.state.players[0].unitZones[1])` OR just attack with N102 into a stronger unit.");
+        console.log("4. Expected Result: You Draw 1 card because N102 gained 'Exit: Draw 1' from Modernia.");
+    }
+
     private async runTest(name: string, testFn: () => Promise<void> | void) {
         console.group(`RUNNING TEST: ${name}`);
         try {

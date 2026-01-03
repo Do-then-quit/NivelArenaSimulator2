@@ -286,6 +286,34 @@ function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     return null;
 }
 
+const grantEffect: ActionImplementation = (ctx, params, targets) => {
+    const effectToGrant = params.effect;
+    const duration = params.duration || 'TURN_END';
+
+    if (!effectToGrant) {
+        console.warn("GRANT_EFFECT action missing 'effect' param");
+        return;
+    }
+
+    targets.forEach(target => {
+        if (target && target.unit) { // Target is a UnitZoneState
+            if (!target.grantedEffects) {
+                target.grantedEffects = [];
+            }
+
+            // Clone the effect to avoid reference issues and attach duration metadata
+            const granted = { 
+                ...effectToGrant, 
+                _grantedId: Math.random().toString(36),
+                duration: duration // Override internal duration with grant duration if needed
+            };
+            
+            target.grantedEffects.push(granted);
+            console.log(`Granted effect [${granted.description}] to ${target.unit.name} (Duration: ${duration})`);
+        }
+    });
+};
+
 export const ActionRegistry: Record<string, ActionImplementation> = {
     'GAIN_LEVEL': gainLevel,
     'DRAW': drawCard,
@@ -303,4 +331,5 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DISCARD': discard,
     'DISCARD_ALL': discardAll,
     'DESTROY_ENCOUNTER': destroyEncounter,
+    'GRANT_EFFECT': grantEffect,
 };
