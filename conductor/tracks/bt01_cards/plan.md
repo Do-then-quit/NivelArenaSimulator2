@@ -10,10 +10,10 @@ These tasks require modifying `GameEngine.ts`, `RuleValidator.ts`, or `EffectMan
     - **1-A-1. Golden Sample: BT01-072 (Modernia)**
         - *Goal:* Implement the architecture for one unit granting a functional effect to another.
         - *Card Logic:* Passive: All other friendly units gain "Exit: Draw 1".
-        - [~] **Test:** Create `tests/BT01_072_Modernia.test.ts`. Verify Unit B draws a card when trashed *only if* Modernia is on field.
-        - [~] **Engine:** Update `UnitZoneState` to include `grantedEffects: Effect[]`.
-        - [~] **Engine:** Update `GameEngine` or `EffectManager` to recalculate `grantedEffects` when the board state changes (or check dynamically).
-        - [~] **Engine:** Update `EffectManager.processEffects` to include `grantedEffects` when searching for triggers.
+        - [x] **Test:** Create `tests/BT01_072_Modernia.test.ts`. Verify Unit B draws a card when trashed *only if* Modernia is on field. e05750f
+        - [x] **Engine:** Update `UnitZoneState` to include `grantedEffects: Effect[]`. e05750f
+        - [x] **Engine:** Update `GameEngine` or `EffectManager` to recalculate `grantedEffects` when the board state changes (or check dynamically). e05750f
+        - [x] **Engine:** Update `EffectManager.processEffects` to include `grantedEffects` when searching for triggers. e05750f
     - **1-A-2. System Rollout**
         - *Goal:* Apply the system to the rest of the group.
         - [ ] **Keywords:** Implement granting of Keywords (e.g., Penetration) for BT01-019, BT01-046, BT01-020.
