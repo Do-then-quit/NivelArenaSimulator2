@@ -14,17 +14,18 @@ These tasks require modifying `GameEngine.ts`, `RuleValidator.ts`, or `EffectMan
         - [x] **Engine:** Update `UnitZoneState` to include `grantedEffects: Effect[]`. e05750f
         - [x] **Engine:** Update `GameEngine` or `EffectManager` to recalculate `grantedEffects` when the board state changes (or check dynamically). e05750f
         - [x] **Engine:** Update `EffectManager.processEffects` to include `grantedEffects` when searching for triggers. e05750f
+        - [x] **Manual Test** Manual GUI Test Confirm.
     - **1-A-2. System Rollout**
         - *Goal:* Apply the system to the rest of the group.
-        - [ ] **Keywords:** Implement granting of Keywords (e.g., Penetration) for BT01-019, BT01-046, BT01-020.
-        - [ ] **Temporary Granting:** Implement "Entry: Gain X until end of turn" for BT01-012, BT01-019.
-        - [ ] **Items:** Implement Items granting effects to their holder (BT01-026, etc.).
+        - [x] **Keywords:** Implement granting of Keywords (e.g., Penetration) for BT01-019, BT01-046, BT01-020.
+        - [x] **Temporary Granting:** Implement "Entry: Gain X until end of turn" for BT01-012, BT01-019.
+        - [x] **Items:** Implement Items granting effects to their holder (BT01-026, etc.).
 
-- [ ] **1-B. Mandatory & Restricted Actions**
+- [x] **1-B. Mandatory & Restricted Actions**
     - *Goal:* Enforce rules for "Must Attack" and "Cost to Attack".
     - *Target Cards:* BT01-005, BT01-014 (Berserk), BT01-060, BT01-065 (Attack Cost).
-    - [ ] Implement `mustAttack` validation in `RuleValidator`.
-    - [ ] Implement `attackCost` payment logic in `GameEngine` (handle UI selection for discard).
+    - [x] Implement `mustAttack` validation in `RuleValidator` (actually handled in `GameEngine.nextPhase`).
+    - [x] Implement `attackCost` payment logic in `GameEngine` (handle UI selection for discard).
 
 - [ ] **1-C. Specific Condition Keywords**
     - *Goal:* Implement state-check logic for specific keywords.

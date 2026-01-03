@@ -17,10 +17,13 @@ export class EffectManager {
         // Collect Native Effects
         const nativeEffects = (sourceCard && sourceCard.effects) ? sourceCard.effects : [];
 
-        // Collect Granted Effects (Dynamically from other units/items)
-        const grantedEffects = this.getGrantedEffects(context);
+        // Collect Dynamic Granted Effects (Passives from other cards)
+        const dynamicGrantedEffects = this.getGrantedEffects(context);
 
-        const allEffects = [...nativeEffects, ...grantedEffects];
+        // Collect Applied Granted Effects (Stored in Zone state, e.g. from Entry effects)
+        const appliedGrantedEffects = (context.unitZone && context.unitZone.grantedEffects) ? context.unitZone.grantedEffects : [];
+
+        const allEffects = [...nativeEffects, ...dynamicGrantedEffects, ...appliedGrantedEffects];
 
         if (allEffects.length === 0) return false;
 
@@ -77,6 +80,8 @@ export class EffectManager {
     }
 
     private checkAndCollectGrantedEffect(effect: Effect, player: any, sourceCard: any, grantorZone: any, beneficiaryZone: any, grantedList: Effect[]) {
+        if (!effect.action) return;
+        
         if (effect.activation === ActivationCondition.PASSIVE && 
             effect.action.type === 'GRANT_EFFECT') {
             

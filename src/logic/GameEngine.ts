@@ -102,6 +102,10 @@ export class GameEngine {
                 this.state.phase = Phase.ATTACK;
                 break;
             case Phase.ATTACK:
+                if (this.checkBerserkConstraint()) {
+                    console.warn("Cannot end ATTACK phase: Berserk unit must attack.");
+                    return;
+                }
                 this.state.phase = Phase.END;
                 this.endPhase();
                 break;
@@ -114,15 +118,48 @@ export class GameEngine {
         }
     }
 
+    private checkBerserkConstraint(): boolean {
+        // Returns true if there is a Berserk unit that MUST attack but hasn't.
+        return this.currentPlayer.unitZones.some((zone, index) => {
+            if (!zone.unit) return false;
+            
+            // Check for BERSERK keyword
+            // Note: Parser usually puts keywords in 'keywords' string or as an Effect.
+            // For now assuming 'keywords' string check or Effect check.
+            const isBerserk = (zone.unit.keywords?.includes('BERSERK') || zone.unit.keywords?.includes('광전사')) || 
+                              (zone.unit.effects?.some(e => e.activation === ActivationCondition.PASSIVE && e.description.includes('광전사')));
+
+            if (!isBerserk) return false;
+
+            // Check if unit CAN attack
+            // 1. Not exhausted
+            // 2. Has not attacked (covered by canAttack usually, but specific to this phase flow)
+            // 3. RuleValidator.canAttack returns valid? 
+            //    Caution: RuleValidator checks if it's Main/Attack phase. We are IN Attack phase.
+            //    It checks Exhausted/Attacked.
+            
+            if (zone.hasAttacked || zone.isExhausted) return false;
+
+            // Basic check: If ready, it must attack.
+            return true;
+        });
+    }
+
     private endPhase() {
         // Trash skills
         this.currentPlayer.skillZone.forEach(c => this.currentPlayer.trash.push(c));
         this.currentPlayer.skillZone = [];
 
-        // Remove TURN_END buffs
+        // Remove TURN_END buffs and granted effects
         [this.currentPlayer, this.opponentPlayer].forEach(p => {
             p.unitZones.forEach(z => {
+                // Clear buffs
                 z.buffs = z.buffs.filter(b => b.duration !== 'TURN_END');
+
+                // Clear temporary granted effects
+                if (z.grantedEffects) {
+                    z.grantedEffects = z.grantedEffects.filter(e => e.duration !== 'TURN_END');
+                }
             });
         });
 
@@ -353,7 +390,9 @@ export class GameEngine {
 
             // Store discarded card for effect context (e.g. for ST03-013 comparison)
             const context = (this.state.pendingEffect as any)._context;
-            context.costPaymentCard = discarded;
+            if (context) {
+                context.costPaymentCard = discarded;
+            }
 
         } else if (costType === 'SHUFFLE_HAND_TO_DECK') {
             const card = this.currentPlayer.hand.splice(handIndex, 1)[0];
@@ -365,18 +404,27 @@ export class GameEngine {
         // Resume Effect Execution
         const effect = pending._fullEffect;
         const context = pending._context;
-        context.costPaid = true; // Mark as paid to avoid loop
-
-        // Reset State BEFORE processing effect (in case effect enters selection mode)
+        
+        // Reset State BEFORE processing (to allow next flow)
         this.state.interactionMode = 'NORMAL';
         const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
         this.state.pendingEffect = null;
 
-        this.effectManager.processEffect(effect, context);
+        // NEW: Handle Attack Resume
+        if (pending.actionType === 'ATTACK_EXECUTION') {
+            const zoneIndex = pending.actionValue.zoneIndex;
+            this.executeAttack(zoneIndex);
+            return;
+        }
 
-        // Resume remaining effects if any
-        if (remainingEffects && remainingEffects.length > 0) {
-            this.effectManager.resumeEffects(remainingEffects, context);
+        if (context) {
+            context.costPaid = true; // Mark as paid
+            this.effectManager.processEffect(effect, context);
+            
+            // Resume remaining effects if any
+            if (remainingEffects && remainingEffects.length > 0) {
+                this.effectManager.resumeEffects(remainingEffects, context);
+            }
         }
     }
 
@@ -406,9 +454,59 @@ export class GameEngine {
             return;
         }
 
-        this.state.attackTerminated = false;
-
         const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
+
+        // NEW: Check Attack Cost (e.g. Admi, Yulha)
+        const attackCost = this.getAttackCost(attackerZone.unit!);
+        if (attackCost) {
+            if (this.currentPlayer.hand.length < (attackCost.amount || 1)) {
+                console.log("Cannot attack: Insufficient hand for cost.");
+                return;
+            }
+            this.initiateAttackCostPayment(attackerZoneIndex, attackCost);
+            return;
+        }
+
+        this.executeAttack(attackerZoneIndex);
+    }
+
+    private getAttackCost(unit: Card): any | null {
+        // Check for specific Passive effects defining attack cost
+        // Simplified check for prototype: Look for description text or explicit keyword
+        if (unit.effects) {
+            const costEffect = unit.effects.find(e => 
+                e.activation === ActivationCondition.PASSIVE && 
+                (e.description.includes('공격하려면 자신의 패를') || e.description.includes('discard 1 card from hand'))
+            );
+            if (costEffect) {
+                return { type: 'TRASH_HAND', amount: 1 };
+            }
+            // Check top-level or effect-level keyword
+            if (unit.keywords?.includes('ATTACK_COST')) {
+                return { type: 'TRASH_HAND', amount: 1 };
+            }
+            if (unit.effects.some((e: any) => e.keywords?.includes('ATTACK_COST'))) {
+                return { type: 'TRASH_HAND', amount: 1 };
+            }
+        }
+        return null;
+    }
+
+    private initiateAttackCostPayment(zoneIndex: number, cost: any) {
+        this.state.interactionMode = 'SELECT_COST';
+        this.state.pendingEffect = {
+            sourceCard: this.currentPlayer.unitZones[zoneIndex].unit!,
+            sourcePlayerId: this.currentPlayer.id,
+            actionType: 'ATTACK_EXECUTION', // Special pseudo-action
+            actionValue: { zoneIndex: zoneIndex },
+            costToPay: cost
+        };
+        console.log(`Initiating Attack Cost Payment for ${this.state.pendingEffect.sourceCard.name}`);
+    }
+
+    private executeAttack(attackerZoneIndex: number) {
+        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
+        this.state.attackTerminated = false;
         attackerZone.hasAttacked = true;
 
         // Trigger Attacker Effects (Unit + Items)
@@ -679,6 +777,7 @@ export class GameEngine {
         // Leader Passive Size Bonus (e.g. ST02-001)
         if (player.levelZone && player.levelZone.effects) {
             player.levelZone.effects.forEach(effect => {
+                if (!effect.action) return;
                 if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'MODIFY_PLAYER_SIZE') {
                     // Check awakening condition if applicable
                     // let conditionMet = true;
@@ -719,6 +818,7 @@ export class GameEngine {
         allPotentialSources.forEach(source => {
             if (source.card.effects) {
                 source.card.effects.forEach(effect => {
+                    if (!effect.action) return;
                     if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_POWER') {
                         const context: GameContext = {
                             player: source.owner,
@@ -778,6 +878,7 @@ export class GameEngine {
         allPotentialSources.forEach(source => {
             if (source.card.effects) {
                 source.card.effects.forEach(effect => {
+                    if (!effect.action) return;
                     if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'BUFF_HIT') {
                         const context: GameContext = {
                             player: source.owner,
