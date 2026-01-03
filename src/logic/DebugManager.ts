@@ -1192,6 +1192,44 @@ export class DebugManager {
         console.log("   Privaty dies. Check if Delta is ALSO trashed (Cost 1 <= 1).");
     }
 
+    setupSCENARIO_BT01_KEYWORDS() {
+        console.log("Setting up BT01 Keywords (Frontline & Level Link) Scenario...");
+        const p0 = this.game.state.players[0];
+        this.game.state.players.forEach(p => { p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; z.grantedEffects = []; }); p.hand = []; });
+        
+        p0.leaderLevel = 1;
+        
+        // 1. Place Mica (Frontline Construction: Power+3000)
+        const mica = this.getCard("BT01-030");
+        if (mica) p0.unitZones[0].unit = mica;
+
+        // 2. Place Rupee (Level Link 10: Hit+1, Power scaling)
+        const rupee = this.getCard("BT01-040");
+        if (rupee) p0.unitZones[1].unit = rupee;
+
+        // 3. Give dummy cards to hand to fill field
+        const fodder = this.getCard("ST02-002");
+        if (fodder) {
+            p0.hand.push({ ...fodder, id: "fodder_1" });
+            p0.hand.push({ ...fodder, id: "fodder_2" });
+        }
+
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.MAIN;
+        
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #00b894; color: white');
+        console.log("1. Mica (Zone 0): Base 2000. Rupee (Zone 1): Base 4000 + (1*500) = 4500.");
+        console.log("2. INSTRUCTIONS - Frontline:");
+        console.log("   a. Observe Mica's Power (2000).");
+        console.log("   b. Play a unit into Zone 2 (the empty zone).");
+        console.log("   c. Once all 3 zones are full, Mica's Power should jump to 5000.");
+        console.log("3. INSTRUCTIONS - Level Link:");
+        console.log("   a. Observe Rupee's Hit (2).");
+        console.log("   b. Run `window.debug.setLeaderLevel(0, 10)` in console.");
+        console.log("   c. Rupee's Power should become 9000 (4000 + 10*500) and Hit should become 3.");
+    }
+
     setupSCENARIO_BT01_BERSERK() {
         console.log("Setting up BT01-005 (Rapi) Berserk Scenario...");
         const p0 = this.game.state.players[0];
