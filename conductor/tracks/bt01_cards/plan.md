@@ -27,11 +27,11 @@ These tasks require modifying `GameEngine.ts`, `RuleValidator.ts`, or `EffectMan
     - [x] Implement `mustAttack` validation in `RuleValidator` (actually handled in `GameEngine.nextPhase`).
     - [x] Implement `attackCost` payment logic in `GameEngine` (handle UI selection for discard).
 
-- [ ] **1-C. Specific Condition Keywords**
+- [x] **1-C. Specific Condition Keywords**
     - *Goal:* Implement state-check logic for specific keywords.
     - *Target Cards:* BT01-030, 037 (Frontline Construction), BT01-040 (Level Link).
-    - [ ] Implement `checkFrontline` helper in `RuleValidator` or `GameEngine`.
-    - [ ] Implement `checkLevelLink` condition in `EffectManager`.
+    - [x] Implement `checkFrontline` helper in `RuleValidator` or `GameEngine` (Implemented as `FRONTLINE_CONSTRUCTION` condition in `EffectManager`).
+    - [x] Implement `checkLevelLink` condition in `EffectManager` (Used existing `LEADER_LEVEL` condition).
 
 - [ ] **1-D. Opponent Interaction (Forced Selection)**
     - *Goal:* Allow effects to force the *opponent* to make a selection during the current player's turn.

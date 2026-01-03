@@ -104,5 +104,37 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             description: "패시브 : 이 유닛으로 공격하려면 자신의 패를 1장 골라 트래시해야 한다.",
             action: { type: 'NONE', params: {} }
         }
+    ],
+    'BT01-030': [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 전선구축[파워+3000] (자신의 모든 유닛 존에 유닛이 존재한다면 파워+3000).",
+            condition: { type: 'FRONTLINE_CONSTRUCTION', value: {} },
+            action: { type: 'BUFF_POWER', params: { value: 3000 } }
+        }
+    ],
+    'BT01-037': [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 전선구축[히트+1] (자신의 모든 유닛 존에 유닛이 존재한다면 히트+1).",
+            condition: { type: 'FRONTLINE_CONSTRUCTION', value: {} },
+            action: { type: 'BUFF_HIT', params: { value: 1 } }
+        }
+    ],
+    'BT01-040': [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 이 유닛의 파워가 자신의 리더 레벨×500만큼 증가한다.",
+            action: { 
+                type: 'BUFF_POWER', 
+                params: { value: 500, dynamic: 'LEADER_LEVEL_MULTIPLIER' } 
+            }
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 레벨링크[10: 히트+1] (자신의 리더 레벨이 10 이상이라면 히트+1).",
+            condition: { type: 'LEADER_LEVEL', value: 10 },
+            action: { type: 'BUFF_HIT', params: { value: 1 } }
+        }
     ]
 };

@@ -86,7 +86,7 @@ export interface TargetSchema {
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT';
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE_CONSTRUCTION';
     value?: any;
 }
 

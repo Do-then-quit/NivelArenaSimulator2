@@ -213,6 +213,9 @@ export class EffectManager {
                 if (typeof value === 'number') return count >= value;
                 if (value.min !== undefined && count < value.min) return false;
                 return true;
+            case 'FRONTLINE_CONSTRUCTION':
+                // All 3 unit zones of the owner must have a unit
+                return context.player.unitZones.every(z => z.unit !== null);
             default:
                 return true;
         }
