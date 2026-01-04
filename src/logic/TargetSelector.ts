@@ -79,7 +79,9 @@ export class TargetSelector {
                     case 'HAS_KEYWORD':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
-                            return unit && unit.keywords?.includes(filter.value);
+                            if (!unit) return false;
+                            const zone = ('unit' in c) ? c as UnitZoneState : null;
+                            return unit && this.hasDynamicKeyword(unit, filter.value, zone);
                         });
                         break;
                     case 'COST_LIMIT':
@@ -209,7 +211,7 @@ export class TargetSelector {
                     case 'EXCLUDE_SELF': if (target === context.unitZone) return false; break;
                     case 'HAS_TRAIT': if (!unit || !unit.traits?.includes(filter.value)) return false; break;
                     case 'HAS_KEYWORD':
-                        if (!unit || !unit.keywords?.includes(filter.value)) return false;
+                        if (!unit || !this.hasDynamicKeyword(unit, filter.value, target as UnitZoneState)) return false;
                         break;
                     case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
                     case 'POWER_LIMIT': if (!unit || engine.getUnitPower(target, this.getOwner(engine, target)) > filter.value) return false; break;
@@ -245,5 +247,57 @@ export class TargetSelector {
     private static getOwner(engine: GameEngine, zone: UnitZoneState): PlayerState {
         if (engine.state.players[0].unitZones.includes(zone)) return engine.state.players[0];
         return engine.state.players[1];
+    }
+
+    private static hasDynamicKeyword(card: any, keyword: string, zone: UnitZoneState | null): boolean {
+        // 1. Check base keywords (CardDatabase already extracts ability keywords here)
+        if (card.keywords?.includes(keyword)) return true;
+
+        // 2. Map Korean keyword to ActivationCondition
+        const keywordMap: Record<string, string> = {
+            '어태커': 'ATTACKER',
+            '디펜더': 'DEFENDER',
+            '액티브': 'ACTIVE',
+            '엔트리': 'ENTRY',
+            '엑시트': 'EXIT',
+            '트리거': 'DAMAGE_TRIGGER',
+            '각성': 'AWAKEN'
+        };
+        const mappedCondition = keywordMap[keyword];
+        const isActivationKeyword = !!mappedCondition;
+
+        // Helper to check an effect
+        const effectHasKeyword = (effect: any) => {
+            if (isActivationKeyword) {
+                return effect.activation === mappedCondition;
+            } else {
+                // For ability keywords (Penetration, etc.)
+                return effect.description.includes(keyword);
+            }
+        };
+
+        // 3. Check effects on the card itself
+        if (card.effects) {
+            for (const effect of card.effects) {
+                if (effectHasKeyword(effect)) return true;
+            }
+        }
+
+        // 4. Check Zone (Items and Temporary Effects)
+        if (zone) {
+            for (const item of zone.items) {
+                if (item.keywords?.includes(keyword)) return true;
+                if (item.effects) {
+                    for (const effect of item.effects) {
+                        if (effectHasKeyword(effect)) return true;
+                    }
+                }
+            }
+            for (const effect of zone.temporaryEffects) {
+                if (effectHasKeyword(effect)) return true;
+            }
+        }
+
+        return false;
     }
 }

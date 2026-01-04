@@ -310,6 +310,35 @@ const setPower: ActionImplementation = (ctx, params, targets) => {
     });
 };
 
+const buffPowerAndDrawIfTrashed: ActionImplementation = (ctx, params, targets) => {
+    targets.forEach(target => {
+        if (target && target.unit) {
+            const oldValue = ctx.machine.getUnitPower(target, getOwnerOfZone(ctx.machine, target));
+            const buffValue = params.value || 0;
+
+            target.buffs.push({
+                id: Math.random().toString(36),
+                sourceCard: ctx.sourceCard,
+                type: 'POWER',
+                value: buffValue,
+                duration: params.duration || 'TURN_END'
+            });
+
+            console.log(`Buffed ${target.unit.name} by ${buffValue} Power.`);
+
+            // Check if it should be trashed immediately
+            const newValue = ctx.machine.getUnitPower(target, getOwnerOfZone(ctx.machine, target));
+            if (oldValue > 0 && newValue <= 0) {
+                console.log(`Effect caused ${target.unit.name} to have 0 or less power. Trashing and drawing.`);
+                const owner = getOwnerOfZone(ctx.machine, target);
+                ctx.machine.destroyUnit(owner, target);
+                const pIdx = ctx.machine.state.players.indexOf(ctx.player);
+                ctx.machine.drawCard(pIdx, params.drawCount || 1);
+            }
+        }
+    });
+};
+
 // Helper inside this module
 function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     if (machine.state.players[0].unitZones.includes(zone)) return machine.state.players[0];
@@ -336,4 +365,5 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DESTROY_ENCOUNTER': destroyEncounter,
     'GRANT_EFFECT': grantEffect,
     'SET_POWER': setPower,
+    'BUFF_POWER_AND_DRAW_IF_TRASHED': buffPowerAndDrawIfTrashed,
 };

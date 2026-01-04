@@ -62,7 +62,8 @@ export type ActionType =
     | 'DISCARD_ALL'
     | 'DESTROY_ENCOUNTER'
     | 'GRANT_EFFECT'
-    | 'SET_POWER';
+    | 'SET_POWER'
+    | 'BUFF_POWER_AND_DRAW_IF_TRASHED';
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT';
@@ -204,6 +205,7 @@ export interface PendingEffect {
     sourcePlayerId: string;
     actionType: string;
     actionValue: any;
-    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE'; // Simplified target constraint
+    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND'; // Simplified target constraint
     costToPay?: EffectCost;
+    selectedTargets?: any[];
 }

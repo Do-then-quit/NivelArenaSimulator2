@@ -64,7 +64,17 @@ export const DUMMY_CARDS: Card[] = [
     hit: raw.hit === '-' ? undefined : parseInt(raw.hit),
     text: raw.text,
     traits: raw.traits,
-    keywords: raw.text.includes('광전사') ? `${raw.keywords}, 광전사` : raw.keywords,
+    keywords: (() => {
+        let k = raw.keywords || "";
+        const abilityKeywords = ['관통', '약탈', '광전사', '전선구축', '레벨링크', '돌파'];
+        abilityKeywords.forEach(kw => {
+            const regex = new RegExp(`${kw}\\s*[:\\[\\(]`);
+            if (regex.test(raw.text) && !k.includes(kw)) {
+                k = k === "-" ? kw : `${k}, ${kw}`;
+            }
+        });
+        return k;
+    })(),
     imageUrl: `/assets/cards/${raw.id}.jpg`,
     effects: MANUAL_EFFECTS[raw.id] || []
 }));

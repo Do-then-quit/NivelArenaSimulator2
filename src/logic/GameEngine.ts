@@ -395,7 +395,8 @@ export class GameEngine {
             sourcePlayerId: context.player.id,
             actionType: effect.action.type, // redundant but useful for UI
             actionValue: effect.action.params,
-            validTargets: effect.targets.scope // specific simplified scope for UI
+            validTargets: effect.targets.scope, // specific simplified scope for UI
+            selectedTargets: []
         };
         // We need to store the full effect object to resume execution
         // But GameState must be serializable. Ideally we store the Effect ID or index.
@@ -564,15 +565,12 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let value = 0;
 
-        // 1. Static Keywords (e.g., Penetration[3] in text usually means Hit value damage, but cards like ST01-011 say Penetration[1])
-        // The parser usually puts keywords like "PENETRATION" if it's there.
-        // If it's a keyword from the card JSON, we need to know its value.
-        // For now, let's check buffs first as ST01-011 uses an effect.
-        if (this.hasKeyword(zone.unit, 'PENETRATION')) {
+        // 1. Static Keywords on Unit, Items, or Temporary Effects
+        if (this.hasKeywordInZone(zone, '관통')) {
             value = Math.max(value, zone.unit.hit || 0);
         }
 
-        // 2. Buffs (from effects)
+        // 2. Buffs (from explicitly called PENETRATION actions)
         zone.buffs.forEach(b => {
             if (b.type === 'PENETRATION') value = Math.max(value, b.value);
         });
@@ -584,13 +582,30 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let value = 0;
 
-        if (this.hasKeyword(zone.unit, 'PLUNDER')) value = Math.max(value, 1);
+        if (this.hasKeywordInZone(zone, '약탈')) {
+            value = Math.max(value, 1);
+        }
 
         zone.buffs.forEach(b => {
             if (b.type === 'PLUNDER') value = Math.max(value, b.value);
         });
 
         return value;
+    }
+
+    private hasKeywordInZone(zone: UnitZoneState, keyword: string): boolean {
+        if (!zone.unit) return false;
+
+        // Check Unit
+        if (this.hasKeyword(zone.unit, keyword)) return true;
+
+        // Check Items
+        if (zone.items.some(item => this.hasKeyword(item, keyword))) return true;
+
+        // Check Temporary Effects (which might grant the keyword)
+        if (zone.temporaryEffects.some(effect => effect.description.includes(keyword))) return true;
+
+        return false;
     }
 
     public destroyUnit(player: PlayerState, zone: UnitZoneState, killerCard?: Card) {
@@ -854,15 +869,53 @@ export class GameEngine {
             context.selectedLaneIndex = zoneIndex;
         }
 
-        // Execute via Manager
-        this.effectManager.executeEffect(effect, context, [targetZone]);
+        // Multi-target logic
+        const maxCount = effect.targets?.count || 1;
+        if (maxCount > 1) {
+            if (!pending.selectedTargets.includes(targetZone)) {
+                pending.selectedTargets.push(targetZone);
+                console.log(`Target added. ${pending.selectedTargets.length}/${maxCount}`);
+            } else {
+                // Toggle off if already selected? Or just ignore. Let's toggle for better UX.
+                pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== targetZone);
+                console.log(`Target removed. ${pending.selectedTargets.length}/${maxCount}`);
+            }
 
-        // Reset State
+            if (pending.selectedTargets.length === maxCount) {
+                this.confirmTargets();
+            }
+        } else {
+            // Legacy/Single target behavior: Execute via Manager
+            this.effectManager.executeEffect(effect, context, [targetZone]);
+            this.state.interactionMode = 'NORMAL';
+            const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
+            this.state.pendingEffect = null;
+
+            if (remainingEffects && remainingEffects.length > 0) {
+                this.effectManager.resumeEffects(remainingEffects, context);
+            }
+        }
+    }
+
+    public confirmTargets() {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+        const pending = this.state.pendingEffect as any;
+        const effect = pending._fullEffect;
+        const context = pending._context;
+
+        if (pending.selectedTargets.length === 0) {
+            console.log("No targets selected.");
+            // Should we allow confirm with 0? "Up to X" usually implies 0 is valid.
+            // But let's check if the user wants at least one or if 0 is fine.
+            // For now, let's allow it but log it.
+        }
+
+        this.effectManager.executeEffect(effect, context, pending.selectedTargets);
+
         this.state.interactionMode = 'NORMAL';
-        const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
+        const remainingEffects = pending._remainingEffects;
         this.state.pendingEffect = null;
 
-        // Resume remaining effects if any
         if (remainingEffects && remainingEffects.length > 0) {
             this.effectManager.resumeEffects(remainingEffects, context);
         }
@@ -894,11 +947,23 @@ export class GameEngine {
             return;
         }
 
-        // Execute
-        this.effectManager.executeEffect(pending._fullEffect, pending._context, [card]);
-
-        // Reset
-        this.resetInteractionMode(pending._context);
+        // Multi-target logic for trash
+        const maxCount = pending._fullEffect.targets?.count || 1;
+        if (maxCount > 1) {
+            if (!pending.selectedTargets.includes(card)) {
+                pending.selectedTargets.push(card);
+            } else {
+                pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== card);
+            }
+            if (pending.selectedTargets.length === maxCount) {
+                this.confirmTargets();
+            }
+        } else {
+            // Execute
+            this.effectManager.executeEffect(pending._fullEffect, pending._context, [card]);
+            // Reset
+            this.resetInteractionMode(pending._context);
+        }
     }
 
     public selectHandTarget(handIndex: number, isOpponentHand: boolean) {
@@ -919,11 +984,23 @@ export class GameEngine {
             return;
         }
 
-        // Execute Effect via Manager
-        this.effectManager.executeEffect(effect, context, [targetCard]);
-
-        // Reset State
-        this.resetInteractionMode(context);
+        // Multi-target logic for hand
+        const maxCount = effect.targets?.count || 1;
+        if (maxCount > 1) {
+            if (!pending.selectedTargets.includes(targetCard)) {
+                pending.selectedTargets.push(targetCard);
+            } else {
+                pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== targetCard);
+            }
+            if (pending.selectedTargets.length === maxCount) {
+                this.confirmTargets();
+            }
+        } else {
+            // Execute Effect via Manager
+            this.effectManager.executeEffect(effect, context, [targetCard]);
+            // Reset State
+            this.resetInteractionMode(context);
+        }
     }
 
     private resetInteractionMode(context: any) {

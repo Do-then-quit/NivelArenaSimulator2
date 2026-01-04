@@ -122,8 +122,9 @@ function renderGame() {
       <div class="header">
         <h1>NivelArena</h1>
         ${game.state.interactionMode === 'SELECT_TARGET' ? `
-            <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; animation: pulse 1s infinite;">
-                SELECT TARGET FOR SKILL
+            <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
+                <span style="animation: pulse 1s infinite;">SELECT TARGETS (${(game.state.pendingEffect as any).selectedTargets?.length || 0}/${(game.state.pendingEffect as any)._fullEffect?.targets?.count || 1})</span>
+                <button id="confirm-targets-btn" class="primary-btn" style="background: #2ecc71; border: none; padding: 5px 15px;">Confirm</button>
             </div>
         ` : ''}
         ${game.state.interactionMode === 'SELECT_COST' ? `
@@ -211,11 +212,13 @@ function renderTrashModal() {
             <div class="trash-modal">
                 <h3>Select a card from Trash</h3>
                 <div class="trash-grid">
-                    ${trash.map((c, i) => `
-                        <div class="trash-card-item" data-index="${i}">
+                    ${trash.map((c, i) => {
+        const isSelected = pending.selectedTargets?.includes(c);
+        return `
+                        <div class="trash-card-item ${isSelected ? 'selected-target' : ''}" data-index="${i}">
                             ${renderCard(c)}
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             </div>
         </div>
@@ -246,8 +249,10 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                 ${player.unitZones.map((z: any, i: number) => {
         const blockerZoneIndex = (game!.state.pendingAttackerIndex ?? -1);
         const isBlockingTarget = game!.state.phase === Phase.BLOCK && isOpponent && blockerZoneIndex === i;
+        const isSelected = game!.state.pendingEffect?.selectedTargets?.includes(z);
+
         return `
-                    <div class="zone unit-zone ${!isOpponent ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
+                    <div class="zone unit-zone ${!isOpponent ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
                         ${z.unit ? renderCard(z.unit, false, game!.getUnitPower(z, player), game!.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
                         
                         <!-- Items -->
@@ -657,6 +662,11 @@ function attachListeners() {
                 });
             });
         }
+
+        document.getElementById('confirm-targets-btn')?.addEventListener('click', () => {
+            game!.confirmTargets();
+            render();
+        });
     }
 
     // Optional Effect Listeners

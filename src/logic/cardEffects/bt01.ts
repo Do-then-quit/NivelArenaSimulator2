@@ -62,7 +62,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.PASSIVE,
             description: "패시브 : 필드에 있는 어태커 : 관통 을 가진 모든 자신 유닛의 파워+1500.",
-            targets: { scope: 'MY_FIELD', type: 'UNIT', filters: [{ type: 'HAS_KEYWORD', value: '관통' }], selectMode: 'ALL', count: 0 },
+            targets: { scope: 'MY_FIELD', type: 'UNIT', filters: [{ type: 'HAS_KEYWORD', value: '어태커' }, { type: 'HAS_KEYWORD', value: '관통' }], selectMode: 'ALL', count: 0 },
             action: { type: 'BUFF_POWER', params: { value: 1500 } }
         }
     ],
@@ -230,9 +230,9 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     "BT01-024": [
         {
             activation: ActivationCondition.ENTRY,
-            description: "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-3000.",
+            description: "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-3000. 이 효과로 그 유닛을 트래시했다면 카드를 1장 드로우한다.",
             targets: { scope: 'OPP_FIELD', type: 'UNIT', selectMode: 'MANUAL', count: 1 },
-            action: { type: 'BUFF_POWER', params: { value: -3000 } },
+            action: { type: 'BUFF_POWER_AND_DRAW_IF_TRASHED', params: { value: -3000, drawCount: 1 } },
             duration: 'TURN_END'
         }
     ],
@@ -246,7 +246,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-026": [
         {
-            activation: ActivationCondition.PASSIVE,
+            activation: ActivationCondition.ATTACKER,
             description: "어태커 : 관통[1]",
             action: { type: 'PENETRATION', params: { value: 1 } }
         },

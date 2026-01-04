@@ -808,7 +808,6 @@ export class DebugManager {
 
     setupBT01_014_Trigger_Scenario() {
         console.log("Setting up BT01-014 (Scarlet) Trigger Scenario...");
-        const p0 = this.game.state.players[0];
         const p1 = this.game.state.players[1];
         p1.deck = [];
         p1.trash = [];
@@ -875,21 +874,26 @@ export class DebugManager {
         if (neon) p0.unitZones[1].unit = neon;
         this.renderCallback();
         console.log("1. Blanc and Neon (Attacker) on field.");
-        console.log("2. Confirm Neon power increases by 2000.");
+        console.log("2. Confirm Neon power increases by 2000, but Blanc does NOT (Blanc is Passive, not Attacker).");
     }
 
     setupBT01_019_Scenario() {
         console.log("Setting up BT01-019 (Red Hood Unit) Scenario...");
         const p0 = this.game.state.players[0];
         p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p0.hand = [];
+        this.setLeader(0, "BT01-001");
+        p0.levelZone!.isAwakened = true; // Force Awakened for passive check
         const redhood = this.getCard("BT01-019");
-        const crow = this.getCard("BT01-003");
-        if (redhood) p0.hand = [redhood];
-        if (crow) p0.unitZones[0].unit = crow;
+        const neon = this.getCard("BT01-003");
+        if (redhood) p0.hand.push(redhood);
+        if (neon) p0.unitZones[0].unit = neon;
         this.renderCallback();
-        console.log("1. Red Hood unit in hand, Crow on field.");
-        console.log("2. Play Red Hood.");
-        console.log("3. Confirm all 자신 유닛 gain 'Attacker: Penetration[1]'.");
+        console.log("1. Awakened Red Hood Leader (BT01-001) on field.");
+        console.log("2. Neon (Attacker) on field (Power 3000 + 2000 from Leader = 5000).");
+        console.log("3. Play Red Hood Unit.");
+        console.log("4. Confirm Neon and Red Hood gain Attacker/Penetration.");
+        console.log("5. Confirm Red Hood (which just gained Attacker) also receives +2000 Power from Leader.");
     }
 
     setupBT01_019_Trigger_Scenario() {
@@ -910,7 +914,7 @@ export class DebugManager {
         const p0 = this.game.state.players[0];
         p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
         const skill = this.getCard("BT01-020");
-        const neon = this.getCard("BT01-002"); // Attacker
+        const neon = this.getCard("BT01-003"); // Attacker
         if (skill) p0.hand = [skill];
         if (neon) p0.unitZones[0].unit = neon;
         this.renderCallback();
@@ -997,20 +1001,6 @@ export class DebugManager {
         console.log("3. Confirm Attacker returns to hand.");
     }
 
-    setupBT01_026_Scenario() {
-        console.log("Setting up BT01-026 (Goddesium Glove) Scenario...");
-        const p0 = this.game.state.players[0];
-        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
-        const item = this.getCard("BT01-026");
-        const unit = this.getCard("BT01-003");
-        if (item) p0.hand = [item];
-        if (unit) p0.unitZones[0].unit = unit;
-        this.renderCallback();
-        console.log("1. Glove in hand, Crow on field.");
-        console.log("2. Equip Glove to Crow.");
-        console.log("3. Attack and confirm 'Attacker: Penetration[1]'.");
-    }
-
     setupBT01_026_Trigger_Scenario() {
         console.log("Setting up BT01-026 (Glove) Trigger Scenario...");
         const p1 = this.game.state.players[1];
@@ -1021,6 +1011,28 @@ export class DebugManager {
         console.log("1. Glove on top of P1 deck.");
         console.log("2. Run window.debug.dealDamage(1, 1).");
         console.log("3. Confirm Glove added to hand.");
+    }
+
+    setupBT01_026_Scenario() {
+        console.log("Setting up BT01-026 (Goddessium Glove) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const unit = this.getCard("ST02-002"); // N102
+        const item = this.getCard("BT01-026");
+        const enemy = this.getCard("BT01-002"); // 2000 Power
+
+        if (unit) p0.unitZones[0].unit = unit;
+        if (item) p0.hand = [item];
+        if (enemy) p1.unitZones[0].unit = enemy;
+
+        this.renderCallback();
+        console.log("1. N102 on field, Goddessium Glove in hand, enemy on field.");
+        console.log("2. Equip Glove to N102.");
+        console.log("3. Attack enemy with N102.");
+        console.log("4. Confirm opponent takes 1 Penetration damage when enemy is trashed.");
     }
 
     setupBT01_027_Scenario() {
