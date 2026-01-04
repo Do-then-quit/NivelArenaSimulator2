@@ -95,6 +95,12 @@ export class TargetSelector {
                             return unit.cost < context.costPaymentCard.cost;
                         });
                         break;
+                    case 'HAS_NAME':
+                        candidates = candidates.filter(c => {
+                            const unit = this.getUnitFromTarget(c);
+                            return unit && unit.name.includes(filter.value);
+                        });
+                        break;
                 }
             });
         }
@@ -210,6 +216,9 @@ export class TargetSelector {
                     case 'COST_LOWER_THAN_COST_PAYMENT':
                         if (!unit || !context.costPaymentCard) return false;
                         if (unit.cost >= context.costPaymentCard.cost) return false;
+                        break;
+                    case 'HAS_NAME':
+                        if (!unit || !unit.name.includes(filter.value)) return false;
                         break;
                 }
             }

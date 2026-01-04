@@ -103,6 +103,21 @@ export class RuleValidator {
         return { valid: true };
     }
 
+    static canEndPhase(engine: GameEngine, player: PlayerState): ValidationResult {
+        if (engine.state.phase === Phase.ATTACK) {
+            const hasReadyBerserker = player.unitZones.some(z => {
+                if (z.unit && z.unit.keywords?.includes('광전사') && !z.hasAttacked && !z.isExhausted) {
+                    return true;
+                }
+                return false;
+            });
+            if (hasReadyBerserker) {
+                return { valid: false, reason: "Must attack with Berserker units first" };
+            }
+        }
+        return { valid: true };
+    }
+
     private static calculateFieldCost(player: PlayerState): number {
         let cost = 0;
         player.unitZones.forEach(z => {

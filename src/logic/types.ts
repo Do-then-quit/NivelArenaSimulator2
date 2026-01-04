@@ -60,10 +60,12 @@ export type ActionType =
     | 'TERMINATE_ATTACK'
     | 'DISCARD'
     | 'DISCARD_ALL'
-    | 'DESTROY_ENCOUNTER';
+    | 'DESTROY_ENCOUNTER'
+    | 'GRANT_EFFECT'
+    | 'SET_POWER';
 
 export interface TargetFilter {
-    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT';
+    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT';
     value?: any;
 }
 
@@ -160,6 +162,7 @@ export interface UnitZoneState {
     hasAttacked: boolean;
     hasPlacedUnitThisTurn: boolean; // 6.4.1.1.3
     hasActivatedEffectThisTurn: boolean;
+    temporaryEffects: Effect[];
 }
 
 export interface Buff {
@@ -168,6 +171,7 @@ export interface Buff {
     type: 'POWER' | 'HIT' | 'PENETRATION' | 'PLUNDER';
     value: number;
     duration: 'TURN_END' | 'PERMANENT';
+    mode?: 'ADD' | 'SET';
 }
 
 export interface PlayerState {

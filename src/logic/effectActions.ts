@@ -279,6 +279,37 @@ const destroyEncounter: ActionImplementation = (ctx, _params, targets) => {
     });
 };
 
+const grantEffect: ActionImplementation = (_ctx, params, targets) => {
+    targets.forEach(target => {
+        if (target && 'temporaryEffects' in target) {
+            const effect = params.effect;
+            if (effect) {
+                target.temporaryEffects.push({
+                    ...effect,
+                    duration: params.duration || 'TURN_END'
+                });
+                console.log(`Granted effect to ${target.unit?.name}: ${effect.description}`);
+            }
+        }
+    });
+};
+
+const setPower: ActionImplementation = (ctx, params, targets) => {
+    targets.forEach(target => {
+        if (target && target.unit) {
+            target.buffs.push({
+                id: Math.random().toString(36),
+                sourceCard: ctx.sourceCard,
+                type: 'POWER',
+                value: params.value,
+                mode: 'SET',
+                duration: params.duration || 'TURN_END'
+            });
+            console.log(`Set ${target.unit.name} Power to ${params.value}.`);
+        }
+    });
+};
+
 // Helper inside this module
 function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     if (machine.state.players[0].unitZones.includes(zone)) return machine.state.players[0];
@@ -303,4 +334,6 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DISCARD': discard,
     'DISCARD_ALL': discardAll,
     'DESTROY_ENCOUNTER': destroyEncounter,
+    'GRANT_EFFECT': grantEffect,
+    'SET_POWER': setPower,
 };

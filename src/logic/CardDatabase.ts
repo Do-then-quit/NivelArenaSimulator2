@@ -18,11 +18,13 @@ import rawSB01 from '../../packs/SB01.json';
 import { ST01_EFFECTS } from './cardEffects/st01';
 import { ST02_EFFECTS } from './cardEffects/st02';
 import { ST03_EFFECTS } from './cardEffects/st03';
+import { BT01_EFFECTS } from './cardEffects/bt01';
 
 const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...ST01_EFFECTS,
     ...ST02_EFFECTS,
-    ...ST03_EFFECTS
+    ...ST03_EFFECTS,
+    ...BT01_EFFECTS
 };
 
 function mapType(rawType: string): CardType {
@@ -62,7 +64,7 @@ export const DUMMY_CARDS: Card[] = [
     hit: raw.hit === '-' ? undefined : parseInt(raw.hit),
     text: raw.text,
     traits: raw.traits,
-    keywords: raw.keywords,
+    keywords: raw.text.includes('광전사') ? `${raw.keywords}, 광전사` : raw.keywords,
     imageUrl: `/assets/cards/${raw.id}.jpg`,
     effects: MANUAL_EFFECTS[raw.id] || []
 }));

@@ -16,7 +16,12 @@ export class EffectManager {
 
         if (!sourceCard || !sourceCard.effects) return false;
 
-        const effectsToProcess = sourceCard.effects.filter((e: Effect) => e.activation === activation);
+        const effectsToProcess = [...(sourceCard.effects || [])].filter((e: Effect) => e.activation === activation);
+
+        // Add temporary effects from unitZone if applicable
+        if (context.unitZone && context.unitZone.temporaryEffects) {
+            effectsToProcess.push(...context.unitZone.temporaryEffects.filter((e: Effect) => e.activation === activation));
+        }
 
         for (let i = 0; i < effectsToProcess.length; i++) {
             const effect = effectsToProcess[i];

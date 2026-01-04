@@ -42,9 +42,9 @@ export class GameEngine {
             levelZone: leaderCopy,
             leaderLevel: 1,
             unitZones: [
-                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
-                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
-                { unit: null, items: [], buffs: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
             ],
             skillZone: [],
         };
@@ -87,6 +87,12 @@ export class GameEngine {
     nextPhase() {
         if (this.state.winner) return;
 
+        const endValidation = RuleValidator.canEndPhase(this, this.currentPlayer);
+        if (!endValidation.valid) {
+            console.log(`Cannot end phase: ${endValidation.reason}`);
+            return;
+        }
+
         switch (this.state.phase) {
             case Phase.LEVEL_UP:
                 this.addLeaderLevel(this.state.turnPlayerIndex, 1);
@@ -123,6 +129,7 @@ export class GameEngine {
         [this.currentPlayer, this.opponentPlayer].forEach(p => {
             p.unitZones.forEach(z => {
                 z.buffs = z.buffs.filter(b => b.duration !== 'TURN_END');
+                z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'TURN_END');
             });
         });
 
@@ -617,6 +624,7 @@ export class GameEngine {
             zone.unit = null;
             zone.items = [];
             zone.buffs = [];
+            zone.temporaryEffects = [];
         }
     }
 
@@ -700,7 +708,11 @@ export class GameEngine {
         // 1. Buffs (Temporary effects like Noir, Besti, etc.)
         zone.buffs.forEach(buff => {
             if (buff.type === 'POWER') {
-                power += buff.value;
+                if (buff.mode === 'SET') {
+                    power = buff.value;
+                } else {
+                    power += buff.value;
+                }
             }
         });
 
@@ -712,6 +724,11 @@ export class GameEngine {
             p.unitZones.forEach(z => {
                 if (z.unit) allPotentialSources.push({ card: z.unit, zone: z, owner: p });
                 z.items.forEach(item => allPotentialSources.push({ card: item, zone: z, owner: p }));
+                z.temporaryEffects.forEach(effect => {
+                    // For temporary effects, we wrap them in a pseudo-card if they don't have one
+                    // Or we just add the sourceCard if it exists
+                    allPotentialSources.push({ card: { ...z.unit!, effects: [effect] }, zone: z, owner: p });
+                });
             });
             if (p.levelZone) allPotentialSources.push({ card: p.levelZone, owner: p });
         });

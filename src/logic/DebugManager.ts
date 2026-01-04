@@ -615,6 +615,428 @@ export class DebugManager {
         console.log("3. Confirm N102 power increases by 3000.");
     }
 
+    setupBT01_001_Scenario() {
+        console.log("Setting up BT01-001 (Red Hood Leader) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p0.hand = []; p0.leaderLevel = 5;
+        this.setLeader(0, "BT01-001");
+        const unit = this.getCard("BT01-002"); // Attacker
+        if (unit) p0.unitZones[0].unit = unit;
+        this.game.state.turnPlayerIndex = 0;
+        this.game.state.phase = Phase.MAIN;
+        this.renderCallback();
+        console.log("%c SCENARIO READY ", 'background: #4CAF50; color: white');
+        console.log("1. Player 0 Leader Level 5, Red Hood assigned.");
+        console.log("2. Neon (Attacker) on field.");
+        console.log("3. Increase Level to 6 (window.debug.setLeaderLevel(0, 6)).");
+        console.log("4. Confirm Leader AWAKENS and Neon power increases by 2000 (Passive).");
+    }
+
+    setupBT01_002_Scenario() {
+        console.log("Setting up BT01-002 (Neon) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const card = this.getCard("BT01-002");
+        if (card) p0.hand = [card];
+        this.renderCallback();
+        console.log("1. Neon (Attacker) in hand.");
+        console.log("2. Play Neon and attack. Confirm power increases by 2000.");
+    }
+
+    setupBT01_003_Scenario() {
+        console.log("Setting up BT01-003 (Crow) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const card = this.getCard("BT01-003");
+        if (card) p0.hand = [card];
+        this.renderCallback();
+        console.log("1. Crow (Vanilla) in hand.");
+    }
+
+    setupBT01_004_Scenario() {
+        console.log("Setting up BT01-004 (Noise) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const noise = this.getCard("BT01-004");
+        const target = this.getCard("BT01-004");
+        if (noise) p0.unitZones[0].unit = noise;
+        if (target) p1.unitZones[0].unit = target;
+        this.renderCallback();
+        console.log("1. Noise (Penetration) vs Crow.");
+        console.log("2. Attack Crow. Confirm Penetration damage [1] deals to opponent.");
+    }
+
+    setupBT01_005_Scenario() {
+        console.log("Setting up BT01-005 (Rapi) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const rapi = this.getCard("BT01-005");
+        if (rapi) p0.unitZones[0].unit = rapi;
+        this.renderCallback();
+        console.log("1. Rapi (Berserker) on field.");
+        console.log("2. Verify if 'Skip Phase' is restricted or mandatory attack logic works.");
+    }
+
+    setupBT01_006_Scenario() {
+        console.log("Setting up BT01-006 (Anis) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const anis = this.getCard("BT01-006");
+        const target = this.getCard("BT01-003");
+        if (anis) p0.unitZones[0].unit = anis;
+        if (target) p1.unitZones[0].unit = target;
+        this.renderCallback();
+        console.log("1. Anis on field vs Crow.");
+        console.log("2. Attack with Anis. Confirm power buff (+2000) and draw card on trash (Plunder).");
+    }
+
+    setupBT01_006_Trigger_Scenario() {
+        console.log("Setting up BT01-006 (Anis) Trigger Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.deck = [];
+        const anis = this.getCard("BT01-006");
+        const target = this.getCard("BT01-010"); // High power unit to see reduction
+        if (anis) p1.deck.push(anis);
+        if (target) p0.unitZones[0].unit = target;
+        this.renderCallback();
+        console.log("1. Anis on top of P1 deck. Enemy unit on field.");
+        console.log("2. Run window.debug.dealDamage(1, 1).");
+        console.log("3. Confirm Anis trashed and enemy power reduced by 5000.");
+    }
+
+    setupBT01_007_Scenario() {
+        console.log("Setting up BT01-007 (Clay) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const card = this.getCard("BT01-007");
+        if (card) p0.hand = [card];
+        this.renderCallback();
+        console.log("1. Clay (Vanilla) in hand.");
+    }
+
+    setupBT01_008_Scenario() {
+        console.log("Setting up BT01-008 (Volume) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const volume = this.getCard("BT01-008");
+        const noise = this.getCard("BT01-004"); // Penetration
+        if (volume) p0.unitZones[0].unit = volume;
+        if (noise) p0.unitZones[1].unit = noise;
+        this.renderCallback();
+        console.log("1. Volume and Noise (Penetration) on field.");
+        console.log("2. Confirm Noise power increases by 1500.");
+    }
+
+    setupBT01_009_Scenario() {
+        console.log("Setting up BT01-009 (Bay) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const card = this.getCard("BT01-009");
+        if (card) p0.unitZones[0].unit = card;
+        this.renderCallback();
+        console.log("1. Bay (Attacker) on field.");
+        console.log("2. Attack and confirm power increases by 1000.");
+    }
+
+    setupBT01_010_Scenario() {
+        console.log("Setting up BT01-010 (Aria) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const card = this.getCard("BT01-010");
+        if (card) p0.hand = [card];
+        this.renderCallback();
+        console.log("1. Aria (Vanilla) in hand.");
+    }
+
+    setupBT01_011_Scenario() {
+        console.log("Setting up BT01-011 (Neon Blue) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const neon = this.getCard("BT01-011");
+        const target = this.getCard("BT01-010");
+        if (neon) p0.unitZones[0].unit = neon;
+        if (target) p1.unitZones[0].unit = target;
+        this.renderCallback();
+        console.log("1. Neon Blue Ocean on field. Enemy unit on field.");
+        console.log("2. Click 'Active' on Neon, select enemy.");
+        console.log("3. Confirm enemy power reduced by 1500.");
+    }
+
+    setupBT01_012_Scenario() {
+        console.log("Setting up BT01-012 (Emma) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const emma = this.getCard("BT01-012");
+        const crow = this.getCard("BT01-003");
+        if (emma) p0.hand = [emma];
+        if (crow) p0.unitZones[0].unit = crow;
+        this.renderCallback();
+        console.log("1. Emma in hand, Crow on field.");
+        console.log("2. Play Emma.");
+        console.log("3. Confirm Crow (and Emma) gain 'Attacker: +1000 power'.");
+    }
+
+    setupBT01_013_Scenario() {
+        console.log("Setting up BT01-013 (Jackal) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const card = this.getCard("BT01-013");
+        if (card) p0.unitZones[0].unit = card;
+        this.renderCallback();
+        console.log("1. Jackal on field.");
+        console.log("2. Attack and confirm power increases by 1000.");
+    }
+
+    setupBT01_014_Scenario() {
+        console.log("Setting up BT01-014 (Scarlet) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const scarlet = this.getCard("BT01-014");
+        if (scarlet) p0.unitZones[0].unit = scarlet;
+        this.renderCallback();
+        console.log("1. Scarlet (Berserker) on field.");
+    }
+
+    setupBT01_014_Trigger_Scenario() {
+        console.log("Setting up BT01-014 (Scarlet) Trigger Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p1.deck = [];
+        p1.trash = [];
+        const scarlet = this.getCard("BT01-014");
+        const fodder = this.getCard("BT01-003"); // Cost 1
+        if (scarlet) p1.deck.push(scarlet);
+        if (fodder) p1.trash.push(fodder);
+        this.renderCallback();
+        console.log("1. Scarlet on top of P1 deck. 1-cost unit in P1 trash.");
+        console.log("2. Run window.debug.dealDamage(1, 1).");
+        console.log("3. Confirm Scarlet trashed and fodder returns to hand.");
+    }
+
+    setupBT01_015_Scenario() {
+        console.log("Setting up BT01-015 (Noir) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const noir = this.getCard("BT01-015");
+        const enemy = this.getCard("BT01-010");
+        if (noir) p0.hand = [noir];
+        if (enemy) p1.unitZones[0].unit = enemy;
+        this.renderCallback();
+        console.log("1. Noir in hand. Enemy unit in Lane 0.");
+        console.log("2. Play Noir in Lane 0 (Encounter).");
+        console.log("3. Confirm enemy power reduced by 4000.");
+    }
+
+    setupBT01_016_Scenario() {
+        console.log("Setting up BT01-016 (Snow White) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const card = this.getCard("BT01-016");
+        if (card) p0.unitZones[0].unit = card;
+        this.renderCallback();
+        console.log("1. Snow White on field.");
+        console.log("2. Attack and confirm power increases by 2000.");
+    }
+
+    setupBT01_017_Scenario() {
+        console.log("Setting up BT01-017 (Viper) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const viper = this.getCard("BT01-017");
+        const enemy = this.getCard("BT01-010");
+        if (viper) p0.hand = [viper];
+        if (enemy) p1.unitZones[0].unit = enemy;
+        this.renderCallback();
+        console.log("1. Viper in hand. Enemy unit in Lane 0.");
+        console.log("2. Play Viper in Lane 0 (Encounter).");
+        console.log("3. Confirm enemy power becomes 1000.");
+    }
+
+    setupBT01_018_Scenario() {
+        console.log("Setting up BT01-018 (Blanc) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const blanc = this.getCard("BT01-018");
+        const neon = this.getCard("BT01-002"); // Attacker
+        if (blanc) p0.unitZones[0].unit = blanc;
+        if (neon) p0.unitZones[1].unit = neon;
+        this.renderCallback();
+        console.log("1. Blanc and Neon (Attacker) on field.");
+        console.log("2. Confirm Neon power increases by 2000.");
+    }
+
+    setupBT01_019_Scenario() {
+        console.log("Setting up BT01-019 (Red Hood Unit) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const redhood = this.getCard("BT01-019");
+        const crow = this.getCard("BT01-003");
+        if (redhood) p0.hand = [redhood];
+        if (crow) p0.unitZones[0].unit = crow;
+        this.renderCallback();
+        console.log("1. Red Hood unit in hand, Crow on field.");
+        console.log("2. Play Red Hood.");
+        console.log("3. Confirm all 자신 유닛 gain 'Attacker: Penetration[1]'.");
+    }
+
+    setupBT01_019_Trigger_Scenario() {
+        console.log("Setting up BT01-019 (Red Hood Unit) Trigger Scenario...");
+        const p1 = this.game.state.players[1];
+        p1.deck = [];
+        p1.hand = [];
+        const redhood = this.getCard("BT01-019");
+        if (redhood) p1.deck.push(redhood);
+        this.renderCallback();
+        console.log("1. Red Hood unit on top of P1 deck.");
+        console.log("2. Run window.debug.dealDamage(1, 1).");
+        console.log("3. Confirm Red Hood added to hand.");
+    }
+
+    setupBT01_020_Scenario() {
+        console.log("Setting up BT01-020 (Wild Tooth) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const skill = this.getCard("BT01-020");
+        const neon = this.getCard("BT01-002"); // Attacker
+        if (skill) p0.hand = [skill];
+        if (neon) p0.unitZones[0].unit = neon;
+        this.renderCallback();
+        console.log("1. Wild Tooth in hand, Neon (Attacker) on field.");
+        console.log("2. Play Wild Tooth on Neon.");
+        console.log("3. Confirm Neon gains 'Attacker: Penetration[1]'.");
+    }
+
+    setupBT01_021_Scenario() {
+        console.log("Setting up BT01-021 (Formation F.F) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const skill = this.getCard("BT01-021");
+        const enemy = this.getCard("BT01-010");
+        if (skill) p0.hand = [skill];
+        if (enemy) p1.unitZones[0].unit = enemy;
+        this.renderCallback();
+        console.log("1. Formation F.F in hand, enemy unit on field.");
+        console.log("2. Play Formation F.F.");
+        console.log("3. Confirm all enemy unit power reduced by 1000.");
+    }
+
+    setupBT01_022_Scenario() {
+        console.log("Setting up BT01-022 (Overwhelm) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const skill = this.getCard("BT01-022");
+        const e1 = this.getCard("BT01-010");
+        const e2 = this.getCard("BT01-010");
+        if (skill) p0.hand = [skill];
+        if (e1) p1.unitZones[0].unit = e1;
+        if (e2) p1.unitZones[1].unit = e2;
+        this.renderCallback();
+        console.log("1. Overwhelm in hand, 2 enemy units on field.");
+        console.log("2. Play Overwhelm, select 2 enemies.");
+        console.log("3. Confirm enemies power reduced by 2000.");
+    }
+
+    setupBT01_023_Scenario() {
+        console.log("Setting up BT01-023 (Cheer Up Together) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const skill = this.getCard("BT01-023");
+        const n1 = this.getCard("BT01-002"); // Attacker
+        const n2 = this.getCard("BT01-002"); // Attacker
+        if (skill) p0.hand = [skill];
+        if (n1) p0.unitZones[0].unit = n1;
+        if (n2) p0.unitZones[1].unit = n2;
+        this.renderCallback();
+        console.log("1. Skill in hand, 2 Attackers on field.");
+        console.log("2. Play skill.");
+        console.log("3. Confirm all Attackers power increased by 2500.");
+    }
+
+    setupBT01_024_Scenario() {
+        console.log("Setting up BT01-024 (Finale) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const skill = this.getCard("BT01-024");
+        const enemy = this.getCard("BT01-003"); // 3000 power
+        if (skill) p0.hand = [skill];
+        if (enemy) p1.unitZones[0].unit = enemy;
+        this.renderCallback();
+        console.log("1. Finale in hand, enemy (3000 power) on field.");
+        console.log("2. Play Finale on enemy.");
+        console.log("3. Confirm enemy trashed (due to 0 power) and CARD DRAWN.");
+    }
+
+    setupBT01_025_Scenario() {
+        console.log("Setting up BT01-025 (Reinforcement) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.trash = [];
+        p0.hand = [];
+        const skill = this.getCard("BT01-025");
+        const attacker = this.getCard("BT01-002");
+        if (skill) p0.hand.push(skill);
+        if (attacker) p0.trash.push(attacker);
+        this.renderCallback();
+        console.log("1. Skill in hand, Attacker in trash.");
+        console.log("2. Play skill, select Attacker.");
+        console.log("3. Confirm Attacker returns to hand.");
+    }
+
+    setupBT01_026_Scenario() {
+        console.log("Setting up BT01-026 (Goddesium Glove) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const item = this.getCard("BT01-026");
+        const unit = this.getCard("BT01-003");
+        if (item) p0.hand = [item];
+        if (unit) p0.unitZones[0].unit = unit;
+        this.renderCallback();
+        console.log("1. Glove in hand, Crow on field.");
+        console.log("2. Equip Glove to Crow.");
+        console.log("3. Attack and confirm 'Attacker: Penetration[1]'.");
+    }
+
+    setupBT01_026_Trigger_Scenario() {
+        console.log("Setting up BT01-026 (Glove) Trigger Scenario...");
+        const p1 = this.game.state.players[1];
+        p1.deck = [];
+        const item = this.getCard("BT01-026");
+        if (item) p1.deck.push(item);
+        this.renderCallback();
+        console.log("1. Glove on top of P1 deck.");
+        console.log("2. Run window.debug.dealDamage(1, 1).");
+        console.log("3. Confirm Glove added to hand.");
+    }
+
+    setupBT01_027_Scenario() {
+        console.log("Setting up BT01-027 (Norn Goggle) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        const item = this.getCard("BT01-027");
+        const unit = this.getCard("BT01-003");
+        if (item) p0.hand = [item];
+        if (unit) p0.unitZones[0].unit = unit;
+        this.renderCallback();
+        console.log("1. Goggle in hand, Crow on field.");
+        console.log("2. Equip Goggle to Crow.");
+        console.log("3. Attack and confirm 'Attacker: +2000 power & Plunder[1]'.");
+    }
+
     setupST02_013_Scenario() {
         console.log("Setting up ST02-013 (Master's Grace) Scenario...");
         const p0 = this.game.state.players[0];
@@ -1427,5 +1849,63 @@ export class DebugManager {
         console.log("All Tests Completed.");
     }
 
+    setupBT01_Fire_Scenarios() {
+        console.log("Setting up BT01 Fire Cards Verification Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        [p0, p1].forEach(p => {
+            p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; z.temporaryEffects = []; });
+            p.trash = []; p.hand = []; p.damage = [];
+        });
+
+        // 1. Red Hood Leader (BT01-001)
+        this.setLeader(0, "BT01-001");
+        this.setLeaderLevel(0, 6); // Awakened
+
+        // 2. Berserker Rapi (BT01-005)
+        const rapi = this.getCard("BT01-005");
+        if (rapi) p0.unitZones[0].unit = rapi;
+
+        // 3. Neon (BT01-002) for Attacker test
+        const neon = this.getCard("BT01-002");
+        if (neon) p0.unitZones[1].unit = neon;
+
+        // 4. Emma (BT01-012) and Viper (BT01-017) in hand
+        const emma = this.getCard("BT01-012");
+        const viper = this.getCard("BT01-017");
+        if (emma) p0.hand.push(emma);
+        if (viper) p0.hand.push(viper);
+
+        // 5. Opponent Target for Viper
+        const target = this.getCard("BT01-003"); // Crow (3000)
+        if (target) p1.unitZones[2].unit = target;
+
+        this.renderCallback();
+        console.group("BT01 Fire Scenario Ready");
+        console.log("1. P0 has Red Hood Awakened. Rapi (Berserker) in Lane 0, Neon in Lane 1.");
+        console.log("2. Units power should be buffed by Red Hood (+2000).");
+        console.log("3. Play Emma to grant 'Attacker: Power+1000' to all units.");
+        console.log("4. Play Viper in Lane 2 to set opponent Crow power to 1000.");
+        console.log("5. Go to ATTACK phase. Try to skip - confirm you MUST attack with Rapi.");
+        console.groupEnd();
+    }
+
+    setupBT01_Recursion_Scenario() {
+        console.log("Setting up BT01 Recursion (Scarlet BT01-014) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.trash = []; p0.deck = []; p0.damage = [];
+
+        // 1. Put a 2-cost unit in trash
+        const neon = this.getCard("BT01-002");
+        if (neon) p0.trash.push(neon);
+
+        // 2. Put Scarlet on top of deck
+        const scarlet = this.getCard("BT01-014");
+        if (scarlet) p0.deck.push(scarlet);
+
+        this.renderCallback();
+        console.log("Scenario Ready. Run window.debug.dealDamage(0, 1) to trigger Scarlet.");
+        console.log("Confirm you can pick Neon from trash to hand.");
+    }
 }
 
