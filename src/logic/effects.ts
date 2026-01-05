@@ -145,6 +145,10 @@ export class EffectManager {
                 if (typeof value === 'number') return count >= value;
                 if (value.min !== undefined && count < value.min) return false;
                 return true;
+            case 'FRONTLINE':
+                return context.player.unitZones.every(z => z.unit !== null);
+            case 'LEVEL_LINK':
+                return context.player.leaderLevel >= value;
             default:
                 return true;
         }

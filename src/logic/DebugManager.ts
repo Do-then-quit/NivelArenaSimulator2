@@ -1919,5 +1919,128 @@ export class DebugManager {
         console.log("Scenario Ready. Run window.debug.dealDamage(0, 1) to trigger Scarlet.");
         console.log("Confirm you can pick Neon from trash to hand.");
     }
+
+    setupBT01_Earth_Passive_Scenario() {
+        console.log("Setting up BT01 Earth Passive Scenario...");
+        const p0 = this.game.state.players[0];
+        this.setLeader(0, "BT01-028"); // Scarlet Leader
+        this.setLeaderLevel(0, 5); // Awakened
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const brid = this.getCard("BT01-045"); // Brid (Passive: 1-cost +2000)
+        const quency = this.getCard("BT01-036"); // Quency (Passive: Base +2000)
+        const neon = this.getCard("BT01-031"); // Anne (1-cost, Base)
+        const diesel = this.getCard("BT01-037"); // Diesel (4-cost, Base)
+
+        if (brid) p0.unitZones[0].unit = brid;
+        if (quency) p0.unitZones[1].unit = quency;
+        if (neon) p0.unitZones[2].unit = neon;
+
+        this.renderCallback();
+        console.group("Earth Passive Verification");
+        console.log("1. Scarlet Leader (Awakened) gives all Base units +1000.");
+        console.log("2. Quency gives all Base units +2000.");
+        console.log("3. Brid gives all 1-cost units +2000.");
+        console.log("4. Result for Neon (Base, 1-cost): 2000(base) + 1000(Leader) + 2000(Quency) + 2000(Brid) = 7000 Power.");
+        console.log("   Check neon power.");
+        console.groupEnd();
+    }
+
+    setupBT01_Earth_Frontline_Scenario() {
+        console.log("Setting up BT01 Earth Frontline Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const mica = this.getCard("BT01-030"); // Mica (Frontline: +3000)
+        const diesel = this.getCard("BT01-037"); // Diesel (Frontline: Hit+1)
+        const fodder = this.getCard("BT01-031"); // Anne
+
+        if (mica) p0.unitZones[0].unit = mica;
+        if (diesel) p0.unitZones[1].unit = diesel;
+
+        this.renderCallback();
+        console.log("1. Lane 2 is empty. Mica and Diesel should NOT have frontline buffs.");
+        console.log("2. Running: window.debug.placeUnit(0, 2, 'BT01-031')");
+        this.renderCallback(); // Wait for interaction instruction
+        console.log("3. Now all 3 lanes are full. Confirm Mica power +3000 and Diesel Hit +1.");
+    }
+
+    setupBT01_Earth_Dynamic_Scenario() {
+        console.log("Setting up BT01 Earth Dynamic power Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        this.setLeaderLevel(0, 6);
+
+        const sin = this.getCard("BT01-032"); // Sin (+500 per Base unit)
+        const ruppe = this.getCard("BT01-040"); // Rupee (+500 per Leader Level)
+        const base1 = this.getCard("BT01-031"); // Anne (Base)
+
+        if (sin) p0.unitZones[0].unit = sin;
+        if (ruppe) p0.unitZones[1].unit = ruppe;
+        if (base1) p0.unitZones[2].unit = base1;
+
+        this.renderCallback();
+        console.log("1. Leader Level 6. Rupee should have 4000(base) + 6*500 = 7000 Power.");
+        console.log("2. 2 Base units on field (Anne and Rupee/Sin?). Sin has Base trait? Let me check.");
+        console.log("   Sin (BT01-032) traits: '이펙트 / 미실리스'. NOT Base.");
+        console.log("   Rupee (BT01-040) traits: '이펙트 / 테트라'. NOT Base.");
+        console.log("   Anne (BT01-031) traits: '베이스 / 엘리시온'. YES Base.");
+        console.log("3. Sin should have 4000(base) + 1*500(Anne) = 4500 Power.");
+    }
+
+    setupBT01_Earth_Search_Scenario() {
+        console.log("Setting up BT01 Earth Search Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.hand = []; p0.deck = [];
+
+        const rapunzel = this.getCard("BT01-044");
+        const baseUnit = this.getCard("BT01-031");
+        const nonBase = this.getCard("BT01-035");
+
+        if (rapunzel) p0.hand.push(rapunzel);
+        if (baseUnit) p0.deck.push(baseUnit);
+        if (nonBase) { p0.deck.push(nonBase); p0.deck.push(nonBase); }
+
+        this.renderCallback();
+        console.log("1. Rapunzel in hand. Deck has 1 Base unit and 2 non-base.");
+        console.log("2. Play Rapunzel. Confirm it picks the Base unit and shuffles others back.");
+    }
+
+    setupBT01_Earth_Duration_Scenario() {
+        console.log("Setting up BT01 Earth Duration Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const belorta = this.getCard("BT01-029"); // +1000 till end of opp turn
+        if (belorta) p0.hand = [belorta];
+
+        this.renderCallback();
+        console.log("1. Play Belorta. Note its power (3000 -> 4000).");
+        console.log("2. Pass turn. (Now Opponent turn). Power should still be 4000.");
+        console.log("3. Pass turn again. (Back to My turn). Power should return to 3000.");
+    }
+
+    setupBT01_Earth_Skill_Scenario() {
+        console.log("Setting up BT01 Earth Skill Scenario (VIP Gift & Dessert Time)...");
+        const p0 = this.game.state.players[0];
+        p0.hand = []; p0.deck = []; p0.unitZones.forEach(z => { z.unit = null; });
+
+        const vipGift = this.getCard("BT01-051");
+        const lowCost = this.getCard("BT01-031"); // 1-cost
+        const highCost = this.getCard("BT01-040"); // 6-cost
+        const baseUnit = this.getCard("BT01-031");
+
+        if (vipGift) p0.hand.push(vipGift);
+        if (lowCost) { p0.deck.push(lowCost); p0.deck.push(lowCost); }
+        if (highCost) p0.deck.push(highCost);
+        if (baseUnit) p0.unitZones[0].unit = baseUnit;
+
+        const dessertTime = this.getCard("BT01-049");
+        if (dessertTime) p0.hand.push(dessertTime);
+
+        this.renderCallback();
+        console.log("1. Play VIP Gift. Confirm it takes 2 low-cost cards, shuffles high-cost back.");
+        console.log("2. Play Dessert Time. Confirm it draws 1 card (1 Base unit on field).");
+    }
 }
 

@@ -339,6 +339,75 @@ const buffPowerAndDrawIfTrashed: ActionImplementation = (ctx, params, targets) =
     });
 };
 
+const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
+    const player = ctx.player;
+    const deck = player.deck;
+    const count = params.count || 3;
+    if (deck.length === 0) return;
+
+    const revealed = deck.splice(-count);
+    let chosen: any = null;
+
+    // Filter logic: e.g., { trait: '베이스' }
+    if (params.filter) {
+        if (params.filter.trait) {
+            chosen = revealed.find(c => c.traits?.includes(params.filter.trait));
+        }
+    }
+
+    if (chosen) {
+        // Remove chosen from revealed
+        const idx = revealed.indexOf(chosen);
+        revealed.splice(idx, 1);
+        player.hand.push(chosen);
+        console.log(`${player.name} chose ${chosen.name} from revealed cards.`);
+    }
+
+    // Shuffle rest back
+    player.deck.push(...revealed);
+    ctx.machine.shuffle(player.deck);
+    console.log(`Shuffled remaining ${revealed.length} cards back into deck.`);
+};
+
+const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
+    const player = ctx.player;
+    const deck = player.deck;
+    const count = params.count || 3;
+    if (deck.length === 0) return;
+
+    const revealed = deck.splice(-count);
+    const toHand: any[] = [];
+    const rest: any[] = [];
+
+    revealed.forEach(card => {
+        let match = false;
+        if (params.filter) {
+            if (params.filter.costMax !== undefined && card.cost <= params.filter.costMax) match = true;
+        }
+        if (match) toHand.push(card);
+        else rest.push(card);
+    });
+
+    player.hand.push(...toHand);
+    player.deck.push(...rest);
+    ctx.machine.shuffle(player.deck);
+    console.log(`${player.name} took ${toHand.length} cards to hand, shuffled ${rest.length} back.`);
+};
+
+const drawDynamic: ActionImplementation = (ctx, params) => {
+    const player = ctx.player;
+    let count = 0;
+    if (params.multiplier === 'BASE_UNIT_COUNT') {
+        count = player.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
+    }
+
+    if (count > 0) {
+        const pIdx = ctx.machine.state.players.indexOf(player);
+        ctx.machine.drawCard(pIdx, count);
+        console.log(`Drew ${count} cards dynamically.`);
+    }
+};
+
 // Helper inside this module
 function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     if (machine.state.players[0].unitZones.includes(zone)) return machine.state.players[0];
@@ -366,4 +435,7 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'GRANT_EFFECT': grantEffect,
     'SET_POWER': setPower,
     'BUFF_POWER_AND_DRAW_IF_TRASHED': buffPowerAndDrawIfTrashed,
+    'REVEAL_TOP_AND_CHOOSE_TO_HAND': revealTopAndChooseToHand,
+    'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER': revealTopAndTakeAllByFilter,
+    'DRAW_DYNAMIC': drawDynamic,
 };

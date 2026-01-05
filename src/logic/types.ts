@@ -63,7 +63,10 @@ export type ActionType =
     | 'DESTROY_ENCOUNTER'
     | 'GRANT_EFFECT'
     | 'SET_POWER'
-    | 'BUFF_POWER_AND_DRAW_IF_TRASHED';
+    | 'BUFF_POWER_AND_DRAW_IF_TRASHED'
+    | 'REVEAL_TOP_AND_CHOOSE_TO_HAND'
+    | 'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER'
+    | 'DRAW_DYNAMIC';
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT';
@@ -88,7 +91,7 @@ export interface TargetSchema {
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT';
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE' | 'LEVEL_LINK';
     value?: any;
 }
 
@@ -125,7 +128,7 @@ export interface Effect {
     cost?: EffectCost;
     targets?: TargetSchema;
     action: EffectAction;
-    duration?: 'PERMANENT' | 'TURN_END';
+    duration?: 'PERMANENT' | 'TURN_END' | 'OPP_TURN_END';
     description: string;
     optional?: boolean;
 }
@@ -171,7 +174,7 @@ export interface Buff {
     sourceCard?: Card; // card that created it (optional for now to be safe, but preferred)
     type: 'POWER' | 'HIT' | 'PENETRATION' | 'PLUNDER';
     value: number;
-    duration: 'TURN_END' | 'PERMANENT';
+    duration: 'TURN_END' | 'PERMANENT' | 'OPP_TURN_END';
     mode?: 'ADD' | 'SET';
 }
 

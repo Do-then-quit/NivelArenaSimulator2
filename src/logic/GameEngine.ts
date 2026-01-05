@@ -125,13 +125,13 @@ export class GameEngine {
         this.currentPlayer.skillZone.forEach(c => this.currentPlayer.trash.push(c));
         this.currentPlayer.skillZone = [];
 
-        // Remove TURN_END buffs
-        [this.currentPlayer, this.opponentPlayer].forEach(p => {
-            p.unitZones.forEach(z => {
-                z.buffs = z.buffs.filter(b => b.duration !== 'TURN_END');
-                z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'TURN_END');
-            });
-        });
+        // Remove TURN_END buffs (this is now handled in nextPhase END case for all players)
+        // [this.currentPlayer, this.opponentPlayer].forEach(p => {
+        //     p.unitZones.forEach(z => {
+        //         z.buffs = z.buffs.filter(b => b.duration !== 'TURN_END');
+        //         z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'TURN_END');
+        //     });
+        // });
 
         // Hand limit 7
         while (this.currentPlayer.hand.length > 7) {
@@ -141,11 +141,30 @@ export class GameEngine {
     }
 
     private endTurn() {
+        // 1. Clear TURN_END for everyone (though usually only matters for current player)
+        this.state.players.forEach(p => {
+            p.unitZones.forEach(z => {
+                z.buffs = z.buffs.filter(b => b.duration !== 'TURN_END');
+                z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'TURN_END');
+            });
+        });
+
+        // 2. Clear OPP_TURN_END for the player whose turn it WAS (since they were the opponent when the effect was played)
+        // If it's Player A's TURN END, and Player B has a "Until end of opponent's turn" buff, it clears now.
+        // Wait, if I play it on My turn (A), and I am the source player. My opponent is B.
+        // "Until end of opponent's turn" means end of B's turn.
+        // So when B's turn ends, A's OPP_TURN_END clears.
+        this.currentPlayer.unitZones.forEach(z => {
+            z.buffs = z.buffs.filter(b => b.duration !== 'OPP_TURN_END');
+            z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'OPP_TURN_END');
+        });
+
+        // 3. Reset per-turn flags
         this.currentPlayer.unitZones.forEach(z => {
             z.hasAttacked = false;
             z.isExhausted = false;
-            z.hasPlacedUnitThisTurn = false; // Reset placement limit
-            z.hasActivatedEffectThisTurn = false; // Reset activation limit
+            z.hasPlacedUnitThisTurn = false;
+            z.hasActivatedEffectThisTurn = false;
         });
 
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
@@ -775,6 +794,9 @@ export class GameEngine {
                             let value = params.value || 0;
                             if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
                                 value = source.owner.leaderLevel * value;
+                            } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
+                                const baseUnitCount = source.owner.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
+                                value = baseUnitCount * value;
                             }
                             power += value;
                         }
