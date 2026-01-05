@@ -1930,7 +1930,6 @@ export class DebugManager {
         const brid = this.getCard("BT01-045"); // Brid (Passive: 1-cost +2000)
         const quency = this.getCard("BT01-036"); // Quency (Passive: Base +2000)
         const neon = this.getCard("BT01-031"); // Anne (1-cost, Base)
-        const diesel = this.getCard("BT01-037"); // Diesel (4-cost, Base)
 
         if (brid) p0.unitZones[0].unit = brid;
         if (quency) p0.unitZones[1].unit = quency;
@@ -1953,8 +1952,6 @@ export class DebugManager {
 
         const mica = this.getCard("BT01-030"); // Mica (Frontline: +3000)
         const diesel = this.getCard("BT01-037"); // Diesel (Frontline: Hit+1)
-        const fodder = this.getCard("BT01-031"); // Anne
-
         if (mica) p0.unitZones[0].unit = mica;
         if (diesel) p0.unitZones[1].unit = diesel;
 
@@ -2041,6 +2038,243 @@ export class DebugManager {
         this.renderCallback();
         console.log("1. Play VIP Gift. Confirm it takes 2 low-cost cards, shuffles high-cost back.");
         console.log("2. Play Dessert Time. Confirm it draws 1 card (1 Base unit on field).");
+    }
+
+    setupBT01_035_Scenario() {
+        console.log("Setting up BT01-035 (Soline) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const soline = this.getCard("BT01-035");
+        const targetLow = this.getCard("BT01-031"); // 1-cost
+        const targetHigh = this.getCard("BT01-040"); // 6-cost
+
+        if (soline) p0.unitZones[0].unit = soline;
+        if (targetLow) p1.unitZones[0].unit = targetLow;
+        if (targetHigh) p1.unitZones[1].unit = targetHigh;
+
+        this.renderCallback();
+        console.log("1. Soline in Lane 0. Opponent has 1-cost in Lane 0, 6-cost in Lane 1.");
+        console.log("2. Attack Lane 0: Confirm Breakthrough prevents blocking (Damage to Leader).");
+        console.log("3. Attack Lane 1: Confirm blocking IS allowed.");
+    }
+
+    setupBT01_038_Scenario() {
+        console.log("Setting up BT01-038 (Rupee) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.hand = [];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const rupee = this.getCard("BT01-038");
+        const fodder = this.getCard("BT01-031");
+        const target = this.getCard("BT01-031");
+
+        if (rupee) p0.unitZones[0].unit = rupee;
+        if (fodder) p0.hand.push(fodder);
+        if (target) p0.unitZones[1].unit = target;
+
+        this.renderCallback();
+        console.log("1. Rupee (Unit) on field. 1 fodder in hand. Another unit on field.");
+        console.log("2. Activate Rupee Active effect. Confirm fodder trashed and target buffed +4000.");
+    }
+
+    setupBT01_041_Scenario() {
+        console.log("Setting up BT01-041 (Admi) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.hand = [];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const admi = this.getCard("BT01-041");
+        const target = this.getCard("BT01-031");
+
+        if (admi) p0.hand.push(admi);
+        if (target) p0.unitZones[0].unit = target;
+
+        this.renderCallback();
+        console.log("1. Admi in hand, Unit on field.");
+        console.log("2. Play Admi, select Unit.");
+        console.log("3. Confirm Unit buffed +2000.");
+    }
+
+    setupBT01_044_Scenario() {
+        console.log("Setting up BT01-044 (Rapunzel) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.hand = []; p0.deck = [];
+        const rapunzel = this.getCard("BT01-044");
+        const base = this.getCard("BT01-031");
+        if (rapunzel) p0.hand.push(rapunzel);
+        if (rapunzel && base) { p0.deck.push(base); p0.deck.push(rapunzel); p0.deck.push(base); }
+        this.renderCallback();
+        console.log("1. Rapunzel in hand. Deck has Base units.");
+        console.log("2. Play Rapunzel. Confirm search works.");
+    }
+
+    setupBT01_044_Trigger_Scenario() {
+        console.log("Setting up BT01-044 (Rapunzel) Trigger Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.leaderLevel = 1; p0.deck = [];
+        const rapunzel = this.getCard("BT01-044");
+        if (rapunzel) p0.deck.push(rapunzel);
+        this.renderCallback();
+        console.log("1. Rapunzel on top of P0 deck. Leader Level 1.");
+        console.log("2. Run window.debug.dealDamage(0, 1).");
+        console.log("3. Confirm Leader Level increases to 2 and Rapunzel is trashed.");
+    }
+
+    setupBT01_046_Scenario() {
+        console.log("Setting up BT01-046 (Scarlet Unit) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.hand = []; p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+        p1.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const scarlet = this.getCard("BT01-046");
+        const base = this.getCard("BT01-031"); // Base
+        const target3 = this.getCard("ST03-007"); // 3-cost enemy
+
+        if (scarlet) p0.hand.push(scarlet);
+        if (base) p0.unitZones[0].unit = base;
+        if (target3) p1.unitZones[0].unit = target3;
+
+        this.renderCallback();
+        console.log("1. Scarlet in hand, Base unit in Lane 0, 3-cost enemy in Lane 0.");
+        console.log("2. Play Scarlet, select Base unit.");
+        console.log("3. Confirm Base unit gains Breakthrough [3-cost or less].");
+        console.log("4. Attack Lane 0: Confirm damage goes to Leader.");
+    }
+
+    setupBT01_047_Scenario() {
+        console.log("Setting up BT01-047 (Overfield) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.hand = []; p0.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+
+        const skill = this.getCard("BT01-047");
+        const anne = this.getCard("BT01-031"); // 1-cost, Base
+
+        if (skill) p0.hand.push(skill);
+        if (anne) p0.unitZones[0].unit = anne;
+
+        this.renderCallback();
+        console.log("1. Skill in hand, Anne (1-cost Base) on field.");
+        console.log("2. Play skill, select Anne.");
+        console.log("3. Confirm Anne Hit becomes 2.");
+    }
+
+    setupBT01_048_Scenario() {
+        console.log("Setting up BT01-048 (Companions) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.hand = []; p0.unitZones.forEach(z => { z.unit = (z.unit ? z.unit : this.getCard("BT01-031") || null) });
+
+        const skill = this.getCard("BT01-048");
+        if (skill) p0.hand.push(skill);
+
+        this.renderCallback();
+        console.log("1. Skill in hand, some units on field.");
+        console.log("2. Play skill. Confirm all units power +500.");
+        console.log("3. Verify buff lasts until end of opponent's turn.");
+    }
+
+    setupBT01_049_Scenario() {
+        console.log("Setting up BT01-049 (Dessert Time) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.hand = []; p0.unitZones.forEach(z => { z.unit = null; });
+        const skill = this.getCard("BT01-049");
+        const b1 = this.getCard("BT01-031");
+        const b2 = this.getCard("BT01-031");
+        if (skill) p0.hand.push(skill);
+        if (b1) p0.unitZones[0].unit = b1;
+        if (b2) p0.unitZones[1].unit = b2;
+        this.renderCallback();
+        console.log("1. Skill in hand, 2 Base units on field.");
+        console.log("2. Play skill. Confirm you draw 2 cards.");
+    }
+
+    setupBT01_050_Scenario() {
+        console.log("Setting up BT01-050 (Ice Festival) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = this.getCard("BT01-031") || null; });
+        const skill = this.getCard("BT01-050");
+        if (skill) p0.hand = [skill];
+        this.renderCallback();
+        console.log("1. Skill in hand, 3 units on field (Frontline active).");
+        console.log("2. Play skill. Confirm all units power +1500.");
+    }
+
+    setupBT01_051_Scenario() {
+        console.log("Setting up BT01-051 (VIP Gift) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.deck = []; p0.hand = [];
+        const skill = this.getCard("BT01-051");
+        const low = this.getCard("BT01-031"); // 1-cost
+        const high = this.getCard("BT01-040"); // 6-cost
+        if (skill) p0.hand.push(skill);
+        if (low) { p0.deck.push(low); p0.deck.push(low); }
+        if (high) p0.deck.push(high);
+        this.renderCallback();
+        console.log("1. Play VIP Gift. Takes low-cost cards, shuffles high back.");
+    }
+
+    setupBT01_051_Trigger_Scenario() {
+        console.log("Setting up BT01-051 Trigger Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.deck = []; p1.unitZones[0].unit = this.getCard("BT01-031") || null; // 1-cost
+        const skill = this.getCard("BT01-051");
+        if (skill) p0.deck.push(skill);
+        this.renderCallback();
+        console.log("1. Skill on top of P0 deck. Opponent has 1-cost unit.");
+        console.log("2. Run window.debug.dealDamage(0, 1).");
+        console.log("3. Confirm opponent unit is trashed.");
+    }
+
+    setupBT01_052_Scenario() {
+        console.log("Setting up BT01-052 (Prayer) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; });
+        const skill = this.getCard("BT01-052");
+        const base = this.getCard("BT01-031");
+        if (skill) p0.hand = [skill];
+        if (base) { p0.unitZones[0].unit = base; p0.unitZones[1].unit = base; }
+        this.renderCallback();
+        console.log("1. Skill in hand, 2 Base units on field.");
+        console.log("2. Play skill. Confirm both Base units Hit+1.");
+    }
+
+    setupBT01_053_Scenario() {
+        console.log("Setting up BT01-053 (Protector) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; });
+        p1.unitZones.forEach(z => { z.unit = null; });
+
+        const unit = this.getCard("BT01-031");
+        const item = this.getCard("BT01-053");
+        const low = this.getCard("BT01-031"); // 1-cost
+        const high = this.getCard("ST03-011"); // 7-cost
+
+        if (unit) p0.unitZones[0].unit = unit;
+        if (item) p0.hand = [item];
+        if (low) p1.unitZones[0].unit = low;
+        if (high) p1.unitZones[1].unit = high;
+
+        this.renderCallback();
+        console.log("1. Unit on field, Protector in hand. Enemy has 1-cost and 7-cost.");
+        console.log("2. Equip Protector. Attack Lane 0: Breakthrough (Damage to Leader).");
+        console.log("3. Attack Lane 1: Block allowed.");
+    }
+
+    setupBT01_054_Scenario() {
+        console.log("Setting up BT01-054 (Sword) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => { z.unit = null; z.items = []; });
+        const unit = this.getCard("BT01-031");
+        const item = this.getCard("BT01-054");
+        if (unit) p0.unitZones[0].unit = unit;
+        if (item) p0.hand = [item];
+        this.renderCallback();
+        console.log("1. Equip Sword. Confirm power +5000.");
     }
 }
 

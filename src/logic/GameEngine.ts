@@ -21,6 +21,7 @@ export class GameEngine {
             pendingAttackerIndex: null,
             interactionMode: 'NORMAL',
             pendingEffect: null,
+            revealedCards: []
         };
         this.startGame();
     }
@@ -149,15 +150,15 @@ export class GameEngine {
             });
         });
 
-        // 2. Clear OPP_TURN_END for the player whose turn it WAS (since they were the opponent when the effect was played)
+        // 2. Clear OPP_TURN_END for the player whose opponent's turn it was.
         // If it's Player A's TURN END, and Player B has a "Until end of opponent's turn" buff, it clears now.
-        // Wait, if I play it on My turn (A), and I am the source player. My opponent is B.
-        // "Until end of opponent's turn" means end of B's turn.
-        // So when B's turn ends, A's OPP_TURN_END clears.
-        this.currentPlayer.unitZones.forEach(z => {
-            z.buffs = z.buffs.filter(b => b.duration !== 'OPP_TURN_END');
-            z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'OPP_TURN_END');
-        });
+        const opponent = this.state.players.find(p => p !== this.currentPlayer);
+        if (opponent) {
+            opponent.unitZones.forEach(z => {
+                z.buffs = z.buffs.filter(b => b.duration !== 'OPP_TURN_END');
+                z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'OPP_TURN_END');
+            });
+        }
 
         // 3. Reset per-turn flags
         this.currentPlayer.unitZones.forEach(z => {
@@ -461,17 +462,18 @@ export class GameEngine {
         const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
-        // DUALIST logic check (Rule 10.2.3.5)
-        // const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
-
         if (blockerZone.unit) {
+            // CHECK BREAKTHROUGH before entering BLOCK phase
+            const limit = this.getBreakthroughLimit(attackerZone);
+            if (limit !== null && blockerZone.unit.cost <= limit) {
+                console.log(`BREAKTHROUGH active (Cost ${blockerZone.unit.cost} <= ${limit}). Skipping Block phase.`);
+                this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
+                return;
+            }
+
             // Encounter Unit exists -> Go to BLOCK phase
             this.state.phase = Phase.BLOCK;
             this.state.pendingAttackerIndex = attackerZoneIndex;
-
-            // If Dualist, automatically resolve block if encounter unit exists? 
-            // Rules say "must defend if possible". Usually this means the opponent choice is forced.
-            // For now, let's keep it in BLOCK phase but we could flag it as forced.
         } else {
             // Direct Attack
             this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
@@ -487,17 +489,12 @@ export class GameEngine {
         const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
-        // CHECK BREAKTHROUGH
-        if (shouldBlock && blockerZone.unit && attackerZone.unit && attackerZone.unit.effects) {
-            const breakthroughEffect = attackerZone.unit.effects.find(e =>
-                e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH'
-            );
-            if (breakthroughEffect) {
-                const costMax = breakthroughEffect.action.params.costMax;
-                if (costMax !== undefined && blockerZone.unit.cost <= costMax) {
-                    console.log(`Block prevented by BREAKTHROUGH (Cost ${blockerZone.unit.cost} <= ${costMax})`);
-                    shouldBlock = false; // Force no block
-                }
+        // CHECK BREAKTHROUGH (Fallback check if resolveBlock is called directly)
+        if (shouldBlock && blockerZone.unit) {
+            const limit = this.getBreakthroughLimit(attackerZone);
+            if (limit !== null && blockerZone.unit.cost <= limit) {
+                console.log(`Block prevented by BREAKTHROUGH (Cost ${blockerZone.unit.cost} <= ${limit})`);
+                shouldBlock = false; // Force no block
             }
         }
 
@@ -578,6 +575,49 @@ export class GameEngine {
 
     private hasKeyword(card: Card, keyword: string): boolean {
         return card.keywords?.includes(keyword) || false;
+    }
+
+    private getBreakthroughLimit(zone: UnitZoneState): number | null {
+        if (!zone.unit) return null;
+        let maxLimit: number | null = null;
+
+        // 1. Check Unit Effects
+        if (zone.unit.effects) {
+            zone.unit.effects.forEach(e => {
+                if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
+                    const limit = e.action.params.costMax;
+                    if (limit !== undefined) {
+                        if (maxLimit === null || limit > maxLimit) maxLimit = limit;
+                    }
+                }
+            });
+        }
+
+        // 2. Check Item Effects
+        zone.items.forEach(item => {
+            if (item.effects) {
+                item.effects.forEach(e => {
+                    if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
+                        const limit = e.action.params.costMax;
+                        if (limit !== undefined) {
+                            if (maxLimit === null || limit > maxLimit) maxLimit = limit;
+                        }
+                    }
+                });
+            }
+        });
+
+        // 3. Check Temporary Effects
+        zone.temporaryEffects.forEach(effect => {
+            if (effect.action && effect.action.type === 'BREAKTHROUGH') {
+                const limit = effect.action.params.costMax;
+                if (limit !== undefined) {
+                    if (maxLimit === null || limit > maxLimit) maxLimit = limit;
+                }
+            }
+        });
+
+        return maxLimit;
     }
 
     private getPenetrationValue(zone: UnitZoneState): number {
@@ -815,7 +855,11 @@ export class GameEngine {
         // 1. Buffs
         zone.buffs.forEach(buff => {
             if (buff.type === 'HIT') {
-                hit += buff.value;
+                if (buff.mode === 'SET') {
+                    hit = buff.value;
+                } else {
+                    hit += buff.value;
+                }
             }
         });
 
@@ -921,26 +965,59 @@ export class GameEngine {
 
     public confirmTargets() {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+
         const pending = this.state.pendingEffect as any;
         const effect = pending._fullEffect;
         const context = pending._context;
 
-        if (pending.selectedTargets.length === 0) {
-            console.log("No targets selected.");
-            // Should we allow confirm with 0? "Up to X" usually implies 0 is valid.
-            // But let's check if the user wants at least one or if 0 is fine.
-            // For now, let's allow it but log it.
+        // Validation - can be empty if no valid targets were found among revealed
+
+        // Special logic for PICK_REVEALED
+        if (pending.actionType === 'PICK_REVEALED') {
+            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+            if (player) {
+                pending.selectedTargets.forEach((card: any) => {
+                    const idx = this.state.revealedCards.indexOf(card);
+                    if (idx !== -1) {
+                        player.hand.push(card);
+                        this.state.revealedCards.splice(idx, 1);
+                    }
+                });
+                // Shuffle rest back
+                if (this.state.revealedCards.length > 0) {
+                    player.deck.push(...this.state.revealedCards);
+                    this.shuffle(player.deck);
+                }
+            }
+            this.state.revealedCards = [];
         }
 
+        // SPECIAL LOGIC for TAKE_ALL_REVEALED (VIP Gift)
+        if (pending.actionType === 'TAKE_ALL_REVEALED') {
+            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+            if (player) {
+                const candidates = TargetSelector.resolve(this, effect.targets, context);
+                candidates.forEach(card => {
+                    const idx = this.state.revealedCards.indexOf(card);
+                    if (idx !== -1) {
+                        player.hand.push(card);
+                        this.state.revealedCards.splice(idx, 1);
+                    }
+                });
+                // Shuffle rest back
+                if (this.state.revealedCards.length > 0) {
+                    player.deck.push(...this.state.revealedCards);
+                    this.shuffle(player.deck);
+                }
+            }
+            this.state.revealedCards = [];
+        }
+
+        // Execute Effect via Manager
         this.effectManager.executeEffect(effect, context, pending.selectedTargets);
 
-        this.state.interactionMode = 'NORMAL';
-        const remainingEffects = pending._remainingEffects;
-        this.state.pendingEffect = null;
-
-        if (remainingEffects && remainingEffects.length > 0) {
-            this.effectManager.resumeEffects(remainingEffects, context);
-        }
+        // Reset Interaction Mode
+        this.resetInteractionMode(context);
     }
 
     public selectTrashTarget(trashIndex: number) {
@@ -1021,6 +1098,58 @@ export class GameEngine {
             // Execute Effect via Manager
             this.effectManager.executeEffect(effect, context, [targetCard]);
             // Reset State
+            this.resetInteractionMode(context);
+        }
+    }
+
+    public selectRevealedTarget(index: number) {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+        if (index < 0 || index >= this.state.revealedCards.length) return;
+
+        const pending = this.state.pendingEffect as any;
+        if (pending.validTargets !== 'REVEALED') return;
+
+        const card = this.state.revealedCards[index];
+        const effect = pending._fullEffect;
+        const context = pending._context;
+
+        // Validate
+        if (!TargetSelector.isValidTarget(this, effect.targets, context, card)) {
+            console.log("Invalid Revealed Target Selected.");
+            return;
+        }
+
+        const maxCount = effect.targets?.count || 1;
+        if (maxCount > 1) {
+            if (!pending.selectedTargets.includes(card)) {
+                pending.selectedTargets.push(card);
+            } else {
+                pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== card);
+            }
+            if (pending.selectedTargets.length === maxCount) {
+                this.confirmTargets();
+            }
+        } else {
+            // Execute
+            this.effectManager.executeEffect(effect, context, [card]);
+            // Move card to hand (if required by the specific action type)
+            if (pending.actionType === 'PICK_REVEALED') {
+                const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+                if (player) {
+                    player.hand.push(card);
+                    this.state.revealedCards.splice(index, 1);
+                }
+            }
+            // Shuffle rest back
+            if (this.state.revealedCards.length > 0) {
+                const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+                if (player) {
+                    player.deck.push(...this.state.revealedCards);
+                    this.shuffle(player.deck);
+                    this.state.revealedCards = [];
+                }
+            }
+            // Reset
             this.resetInteractionMode(context);
         }
     }

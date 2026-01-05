@@ -166,6 +166,7 @@ function renderGame() {
 
       ${renderOptionalEffectModal()}
       ${renderTrashModal()}
+      ${renderRevealedCardsModal()}
     </div>
   `;
 
@@ -216,6 +217,43 @@ function renderTrashModal() {
         const isSelected = pending.selectedTargets?.includes(c);
         return `
                         <div class="trash-card-item ${isSelected ? 'selected-target' : ''}" data-index="${i}">
+                            ${renderCard(c)}
+                        </div>
+                    `}).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderRevealedCardsModal() {
+    if (!game) return '';
+    if (game.state.revealedCards.length === 0) return '';
+
+    const pending = game.state.pendingEffect as any;
+    const isSelecting = game.state.interactionMode === 'SELECT_TARGET' && pending?.validTargets === 'REVEALED';
+    const isTakeAll = pending?.actionType === 'TAKE_ALL_REVEALED';
+    const filter = pending?._fullEffect?.targets?.filters?.[0];
+
+    return `
+        <div class="modal-overlay">
+            <div class="trash-modal">
+                <h3>Revealed Cards</h3>
+                <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
+                    ${isTakeAll ? 'Cards matching the filter will be added to hand' : (isSelecting ? 'Select a card to add to hand' : 'Cards revealed by effect')}
+                </p>
+                <div class="trash-grid">
+                    ${game.state.revealedCards.map((c, i) => {
+        const isSelected = isSelecting && !isTakeAll && pending.selectedTargets?.includes(c);
+
+        let matchesFilter = true;
+        if (isTakeAll && filter) {
+            if (filter.type === 'COST_LIMIT' && c.cost > filter.value) matchesFilter = false;
+            if (filter.type === 'HAS_TRAIT' && !c.traits?.includes(filter.value)) matchesFilter = false;
+        }
+
+        return `
+                        <div class="revealed-card-item ${isSelected ? 'selected-target' : ''} ${!matchesFilter ? 'grayscale' : ''}" data-index="${i}" style="${isSelecting && !isTakeAll ? 'cursor: pointer;' : ''}">
                             ${renderCard(c)}
                         </div>
                     `}).join('')}
@@ -662,6 +700,25 @@ function attachListeners() {
                 });
             });
         }
+
+        document.querySelectorAll('.revealed-card-item').forEach(item => {
+            if (pending && pending.validTargets === 'REVEALED') {
+                item.addEventListener('click', () => {
+                    const index = parseInt((item as HTMLElement).dataset.index!);
+                    game!.selectRevealedTarget(index);
+                    render();
+                });
+            }
+
+            // Hover preview
+            item.addEventListener('mouseenter', (e) => {
+                const index = parseInt((item as HTMLElement).dataset.index!);
+                const card = game!.state.revealedCards[index];
+                const mouseEvent = e as MouseEvent;
+                hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+            });
+            item.addEventListener('mouseleave', () => hoverPreview.hide());
+        });
 
         document.getElementById('confirm-targets-btn')?.addEventListener('click', () => {
             game!.confirmTargets();

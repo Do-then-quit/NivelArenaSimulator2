@@ -74,7 +74,7 @@ export interface TargetFilter {
 }
 
 export interface TargetSchema {
-    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND';
+    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED';
     type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
     count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
     filters?: TargetFilter[];
@@ -201,6 +201,7 @@ export interface GameState {
     interactionMode: 'NORMAL' | 'SELECT_TARGET' | 'SELECT_COST' | 'SELECT_OPTIONAL';
     pendingEffect: PendingEffect | null;
     attackTerminated?: boolean;
+    revealedCards: Card[];
 }
 
 export interface PendingEffect {
@@ -208,7 +209,8 @@ export interface PendingEffect {
     sourcePlayerId: string;
     actionType: string;
     actionValue: any;
-    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND'; // Simplified target constraint
+    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED'; // Simplified target constraint
     costToPay?: EffectCost;
     selectedTargets?: any[];
+    revealedCards?: Card[];
 }

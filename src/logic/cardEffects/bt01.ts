@@ -390,7 +390,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ENTRY,
             description: "엔트리 : 자신의 덱 맨 위에서 카드를 3장 공개하고, 그 중 《베이스》를 가진 유닛을 1장 골라 자신의 패에 넣는다.",
-            action: { type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND', params: { count: 3, filter: { trait: '베이스' } } }
+            action: { type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND', params: { count: 3, filter: { type: 'HAS_TRAIT', value: '베이스' } } }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
@@ -474,7 +474,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ENTRY,
             description: "자신의 덱 맨 위에서 카드를 3장 공개하고, 그 중 3코스트 이하인 카드를 모두 자신의 패에 넣는다.",
-            action: { type: 'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER', params: { count: 3, filter: { costMax: 3 } } }
+            action: { type: 'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER', params: { count: 3, filter: { type: 'COST_LIMIT', value: 3 } } }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,

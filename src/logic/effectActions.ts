@@ -1,4 +1,4 @@
-import { ActionImplementation, UnitZoneState } from './types';
+import { ActionImplementation, UnitZoneState, ActivationCondition } from './types';
 
 const gainLevel: ActionImplementation = (ctx, params) => {
     const amount = params.value || 1;
@@ -43,9 +43,10 @@ const buffPower: ActionImplementation = (ctx, params, targets) => {
                 sourceCard: ctx.sourceCard,
                 type: 'POWER',
                 value: value,
+                mode: params.mode || 'ADD',
                 duration: params.duration || 'TURN_END'
             });
-            console.log(`Buffed ${target.unit.name} by ${value} Power.`);
+            console.log(`Buffed ${target.unit.name} to ${value} Power (Mode: ${params.mode || 'ADD'}).`);
         }
     });
 };
@@ -59,9 +60,10 @@ const buffHit: ActionImplementation = (ctx, params, targets) => {
                 sourceCard: ctx.sourceCard,
                 type: 'HIT',
                 value: value,
+                mode: params.mode || 'ADD',
                 duration: params.duration || 'TURN_END'
             });
-            console.log(`Buffed ${target.unit.name} by ${value} Hit.`);
+            console.log(`Buffed ${target.unit.name} to ${value} Hit (Mode: ${params.mode || 'ADD'}).`);
         }
     });
 };
@@ -345,28 +347,37 @@ const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
     const count = params.count || 3;
     if (deck.length === 0) return;
 
+    // Move to revealed state
     const revealed = deck.splice(-count);
-    let chosen: any = null;
+    ctx.machine.state.revealedCards = revealed;
 
-    // Filter logic: e.g., { trait: '베이스' }
-    if (params.filter) {
-        if (params.filter.trait) {
-            chosen = revealed.find(c => c.traits?.includes(params.filter.trait));
+    // Transition to interactive selection
+    ctx.machine.state.interactionMode = 'SELECT_TARGET';
+    ctx.machine.state.pendingEffect = {
+        sourceCard: ctx.sourceCard,
+        sourcePlayerId: player.id,
+        actionType: 'PICK_REVEALED',
+        actionValue: params,
+        validTargets: 'REVEALED',
+        selectedTargets: []
+    } as any;
+
+    // Attach full effect for validation and execution
+    (ctx.machine.state.pendingEffect as any)._fullEffect = {
+        activation: ActivationCondition.ACTIVE, // pseudo
+        description: "Choose card to hand",
+        action: { type: 'NONE', params: {} }, // The actual move is handled in GameEngine.confirmTargets
+        targets: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: 1,
+            filters: params.filter ? [params.filter] : [],
+            selectMode: 'MANUAL'
         }
-    }
+    };
+    (ctx.machine.state.pendingEffect as any)._context = ctx;
 
-    if (chosen) {
-        // Remove chosen from revealed
-        const idx = revealed.indexOf(chosen);
-        revealed.splice(idx, 1);
-        player.hand.push(chosen);
-        console.log(`${player.name} chose ${chosen.name} from revealed cards.`);
-    }
-
-    // Shuffle rest back
-    player.deck.push(...revealed);
-    ctx.machine.shuffle(player.deck);
-    console.log(`Shuffled remaining ${revealed.length} cards back into deck.`);
+    console.log(`Revealed top ${revealed.length} cards. Waiting for selection.`);
 };
 
 const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
@@ -375,23 +386,37 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
     const count = params.count || 3;
     if (deck.length === 0) return;
 
+    // Move to revealed state
     const revealed = deck.splice(-count);
-    const toHand: any[] = [];
-    const rest: any[] = [];
+    ctx.machine.state.revealedCards = revealed;
 
-    revealed.forEach(card => {
-        let match = false;
-        if (params.filter) {
-            if (params.filter.costMax !== undefined && card.cost <= params.filter.costMax) match = true;
+    // Transition to interactive selection (Review mode)
+    ctx.machine.state.interactionMode = 'SELECT_TARGET';
+    ctx.machine.state.pendingEffect = {
+        sourceCard: ctx.sourceCard,
+        sourcePlayerId: player.id,
+        actionType: 'TAKE_ALL_REVEALED',
+        actionValue: params,
+        validTargets: 'REVEALED',
+        selectedTargets: [] // Not used for selection, but for consistency
+    } as any;
+
+    // Attach full effect for UI filtering and execution
+    (ctx.machine.state.pendingEffect as any)._fullEffect = {
+        activation: ActivationCondition.ACTIVE,
+        description: "Review revealed cards",
+        action: { type: 'NONE', params: {} },
+        targets: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: 0, // 0 = All (for UI display purposes)
+            filters: params.filter ? [params.filter] : [],
+            selectMode: 'ALL'
         }
-        if (match) toHand.push(card);
-        else rest.push(card);
-    });
+    };
+    (ctx.machine.state.pendingEffect as any)._context = ctx;
 
-    player.hand.push(...toHand);
-    player.deck.push(...rest);
-    ctx.machine.shuffle(player.deck);
-    console.log(`${player.name} took ${toHand.length} cards to hand, shuffled ${rest.length} back.`);
+    console.log(`Revealed top ${revealed.length} cards for review. Waiting for confirmation.`);
 };
 
 const drawDynamic: ActionImplementation = (ctx, params) => {

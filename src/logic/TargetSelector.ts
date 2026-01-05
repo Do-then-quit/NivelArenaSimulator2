@@ -54,6 +54,9 @@ export class TargetSelector {
                     return myZone.unit !== null && oppZone?.unit !== null;
                 });
                 break;
+            case 'REVEALED':
+                candidates = [...engine.state.revealedCards];
+                break;
         }
 
         // 2. Type filtering (UNIT, LEADER, etc.)
@@ -193,6 +196,9 @@ export class TargetSelector {
                     const oppIdx = opponent ? opponent.unitZones.indexOf(target) : -1;
                     if (oppIdx !== -1) inScope = (player.unitZones[oppIdx].unit !== null && (opponent ? opponent.unitZones[oppIdx].unit !== null : false));
                 }
+                break;
+            case 'REVEALED':
+                inScope = engine.state.revealedCards.includes(target);
                 break;
         }
 
