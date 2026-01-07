@@ -171,6 +171,35 @@ export class GameEngine {
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
         this.state.turnCount++;
         this.state.phase = Phase.LEVEL_UP;
+
+        // Reset once-per-turn effects
+        (this.state as any).firedEffects = {};
+
+        // Process delayed actions (e.g., Return from trash)
+        this.processDelayedActions();
+    }
+
+    private processDelayedActions() {
+        this.state.players.forEach(player => {
+            const delayed = (player as any).delayedActions || [];
+            if (delayed.length === 0) return;
+
+            const remaining: any[] = [];
+            delayed.forEach((action: any) => {
+                if (action.type === 'RETURN_TO_HAND_FROM_TRASH') {
+                    // Check if card is still in trash
+                    const idx = player.trash.indexOf(action.card);
+                    if (idx !== -1) {
+                        player.trash.splice(idx, 1);
+                        player.hand.push(action.card);
+                        console.log(`Delayed Action: Returned ${action.card.name} to hand.`);
+                    }
+                } else {
+                    remaining.push(action);
+                }
+            });
+            (player as any).delayedActions = remaining;
+        });
     }
 
     public addLeaderLevel(playerIndex: number, amount: number) {
@@ -401,6 +430,14 @@ export class GameEngine {
 
         this.effectManager.processEffect(effect, context);
 
+        if (pending.actionType === 'ATTACK_COST') {
+            const zoneIndex = pending.actionValue.attackerZoneIndex;
+            const zone = this.currentPlayer.unitZones[zoneIndex];
+            (zone as any)._attackCostPaid = true;
+            this.attack(zoneIndex); // Resume attack
+            return;
+        }
+
         // Resume remaining effects if any
         if (remainingEffects && remainingEffects.length > 0) {
             this.effectManager.resumeEffects(remainingEffects, context);
@@ -434,9 +471,28 @@ export class GameEngine {
             return;
         }
 
-        this.state.attackTerminated = false;
-
         const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
+
+        // Check for Attack Costs (e.g. Admi, Yunha: Trash 1 card from hand)
+        if (attackerZone.unit && this.hasKeywordInZone(attackerZone, '패시브')) {
+            const trashCostEffect = attackerZone.unit.effects?.find(e =>
+                e.activation === ActivationCondition.PASSIVE &&
+                e.description.includes("공격하려면 자신의 패를 1장 골라 트래시해야 한다")
+            );
+            if (trashCostEffect && !(attackerZone as any)._attackCostPaid) {
+                this.initiateAttackCostSelection(trashCostEffect, {
+                    sourceCard: attackerZone.unit,
+                    player: this.currentPlayer,
+                    opponent: this.opponentPlayer,
+                    unitZone: attackerZone,
+                    machine: this
+                }, attackerZoneIndex);
+                return;
+            }
+        }
+
+        this.state.attackTerminated = false;
+        (attackerZone as any)._attackCostPaid = false; // Reset for next time
         attackerZone.hasAttacked = true;
 
         // Trigger Attacker Effects (Unit + Items)
@@ -694,11 +750,41 @@ export class GameEngine {
             });
 
             player.trash.push(zone.unit);
+            const trashedUnit = zone.unit; // Remember for trigger
             zone.items.forEach(i => player.trash.push(i));
             zone.unit = null;
             zone.items = [];
             zone.buffs = [];
             zone.temporaryEffects = [];
+
+            // Trigger UNIT_TRASHED for all cards on field (like Cinderella Leader)
+            this.state.players.forEach(p => {
+                // Check Leader
+                if (p.levelZone && p.levelZone.effects) {
+                    this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
+                        sourceCard: p.levelZone,
+                        player: p,
+                        opponent: (p === this.state.players[0] ? this.state.players[1] : this.state.players[0]),
+                        machine: this,
+                        trashedUnit: trashedUnit,
+                        trashedUnitOwner: player // Pass the owner of the trashed unit
+                    });
+                }
+                // Check all units on field (if any have UNIT_TRASHED, though rare)
+                p.unitZones.forEach(z => {
+                    if (z.unit) {
+                        this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
+                            sourceCard: z.unit,
+                            player: p,
+                            opponent: (p === this.state.players[0] ? this.state.players[1] : this.state.players[0]),
+                            unitZone: z,
+                            machine: this,
+                            trashedUnit: trashedUnit,
+                            trashedUnitOwner: player // Pass the owner of the trashed unit
+                        });
+                    }
+                });
+            });
         }
     }
 
@@ -714,6 +800,21 @@ export class GameEngine {
                 }
             });
         });
+    }
+
+    public initiateAttackCostSelection(effect: any, context: any, attackerZoneIndex: number) {
+        this.state.interactionMode = 'SELECT_COST';
+        this.state.pendingEffect = {
+            sourceCard: context.sourceCard,
+            sourcePlayerId: context.player.id,
+            actionType: 'ATTACK_COST',
+            actionValue: { attackerZoneIndex },
+            costToPay: { type: 'TRASH_HAND', amount: 1 },
+            selectedTargets: []
+        } as any;
+        (this.state.pendingEffect as any)._fullEffect = effect;
+        (this.state.pendingEffect as any)._context = context;
+        console.log("Entered Attack Cost Selection Mode for " + context.sourceCard.name);
     }
 
     public dealDamage(player: PlayerState, amount: number) {

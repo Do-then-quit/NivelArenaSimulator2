@@ -419,6 +419,22 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
     console.log(`Revealed top ${revealed.length} cards for review. Waiting for confirmation.`);
 };
 
+const returnFromTrashAtTurnEnd: ActionImplementation = (ctx, _params, _targets) => {
+    const card = ctx.sourceCard;
+    const player = ctx.player;
+
+    // This is a delayed action, so we need a place to store it.
+    // For now, let's add it to a temporary storage in the player's state
+    // and assume GameEngine handles it at turn end.
+    const delayed = (player as any).delayedActions = (player as any).delayedActions || [];
+    delayed.push({
+        type: 'RETURN_TO_HAND_FROM_TRASH',
+        card: card,
+        turnCount: ctx.machine.state.turnCount
+    });
+    console.log(`Scheduled ${card.name} to return to hand at end of turn.`);
+};
+
 const drawDynamic: ActionImplementation = (ctx, params) => {
     const player = ctx.player;
     let count = 0;
@@ -430,6 +446,65 @@ const drawDynamic: ActionImplementation = (ctx, params) => {
         const pIdx = ctx.machine.state.players.indexOf(player);
         ctx.machine.drawCard(pIdx, count);
         console.log(`Drew ${count} cards dynamically.`);
+    }
+};
+
+const destroyUnitAndDrawByHit: ActionImplementation = (ctx, _params, targets) => {
+    if (!targets[0]) return;
+    const targetZone = targets[0] as UnitZoneState;
+    const unit = targetZone.unit;
+    if (!unit) return;
+
+    const hit = parseInt(unit.hit) || 0;
+    const owner = getOwnerOfZone(ctx.machine, targetZone);
+    const ownerIdx = ctx.machine.state.players.indexOf(owner);
+
+    ctx.machine.destroyUnit(targetZone);
+    if (hit > 0 && ownerIdx !== -1) {
+        ctx.machine.drawCard(ownerIdx, hit);
+        console.log(`Destroyed ${unit.name} and drew ${hit} cards.`);
+    }
+};
+
+const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => {
+    if (!targets[0]) return;
+    const targetZone = targets[0] as UnitZoneState;
+    const unit = targetZone.unit;
+    if (!unit) return;
+
+    const hit = parseInt(unit.hit) || 0;
+
+    // This action requires a cost payment from hand based on the unit's hit.
+    // Setting up pending cost for GameEngine to handle.
+    ctx.machine.state.pendingCost = {
+        type: 'TRASH_HAND',
+        amount: hit,
+        callback: () => {
+            ctx.machine.destroyUnit(targetZone);
+            console.log(`Paid ${hit} hand cost and destroyed ${unit.name}.`);
+        }
+    };
+    ctx.machine.state.interactionMode = 'SELECT_COST';
+    ctx.machine.render();
+};
+
+const complexAction: ActionImplementation = (ctx, params, _targets) => {
+    const subActions = (params as any).subActions;
+    if (!Array.isArray(subActions)) return;
+
+    // We process sub-actions sequentially. 
+    // Note: This is a simplified implementation that assumes sub-actions don't require nested interaction modes
+    // unless they are the last one.
+    for (const sub of subActions) {
+        const impl = ActionRegistry[sub.type];
+        if (impl) {
+            // Re-evaluating targets if specific target schemas are provided in sub-actions
+            let subTargets = _targets;
+            if (sub.targets) {
+                subTargets = ctx.machine.targetSelector.resolve(ctx.player, sub.targets, ctx);
+            }
+            impl(ctx, sub.params || {}, subTargets);
+        }
     }
 };
 
@@ -463,4 +538,8 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'REVEAL_TOP_AND_CHOOSE_TO_HAND': revealTopAndChooseToHand,
     'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER': revealTopAndTakeAllByFilter,
     'DRAW_DYNAMIC': drawDynamic,
+    'RETURN_FROM_TRASH_AT_TURN_END': returnFromTrashAtTurnEnd,
+    'DESTROY_UNIT_AND_DRAW_BY_HIT': destroyUnitAndDrawByHit,
+    'DESTROY_UNIT_WITH_HIT_COST': destroyUnitWithHitCost,
+    'COMPLEX_ACTION': complexAction,
 };

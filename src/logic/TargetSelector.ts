@@ -48,7 +48,6 @@ export class TargetSelector {
                 if (opponent) candidates = [...opponent.hand];
                 break;
             case 'SHARED_LANE':
-                // Return player's zones that are part of a shared lane (both sides have units)
                 candidates = player.unitZones.filter((myZone, idx) => {
                     const oppZone = (opponent || engine.state.players.find(p => p !== player))?.unitZones[idx];
                     return myZone.unit !== null && oppZone?.unit !== null;
@@ -59,7 +58,7 @@ export class TargetSelector {
                 break;
         }
 
-        // 2. Type filtering (UNIT, LEADER, etc.)
+        // 2. Type filtering
         if (schema.type === 'UNIT') {
             candidates = candidates.filter(c => this.getUnitFromTarget(c) !== null);
         }
@@ -93,11 +92,25 @@ export class TargetSelector {
                             return unit && unit.cost <= filter.value;
                         });
                         break;
+                    case 'COST_EQUAL':
+                        candidates = candidates.filter(c => {
+                            const unit = this.getUnitFromTarget(c);
+                            return unit && unit.cost === filter.value;
+                        });
+                        break;
                     case 'COST_LOWER_THAN_COST_PAYMENT':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
                             if (!unit || !context.costPaymentCard) return false;
                             return unit.cost < context.costPaymentCard.cost;
+                        });
+                        break;
+                    case 'COST_HIGHER_THAN_ENCOUNTER':
+                        candidates = candidates.filter(c => {
+                            const unit = this.getUnitFromTarget(c);
+                            if (!unit || !context.unitZone || !context.unitZone.unit) return false;
+                            const encounterUnit = context.unitZone.unit;
+                            return unit.cost > encounterUnit.cost;
                         });
                         break;
                     case 'HAS_NAME':
@@ -139,12 +152,18 @@ export class TargetSelector {
 
         if (schema.selectMode === 'LOWEST_POWER') {
             candidates.sort((a, b) => {
-                const unitA = this.getUnitFromTarget(a);
-                const unitB = this.getUnitFromTarget(b);
-                if (!unitA || !unitB) return 0;
                 const pA = engine.getUnitPower(a, this.getOwner(engine, a));
                 const pB = engine.getUnitPower(b, this.getOwner(engine, b));
                 return pA - pB;
+            });
+            return candidates.slice(0, schema.count || 1);
+        }
+
+        if (schema.selectMode === 'HIGHEST_POWER') {
+            candidates.sort((a, b) => {
+                const pA = engine.getUnitPower(a, this.getOwner(engine, a));
+                const pB = engine.getUnitPower(b, this.getOwner(engine, b));
+                return pB - pA;
             });
             return candidates.slice(0, schema.count || 1);
         }
@@ -156,7 +175,6 @@ export class TargetSelector {
         const player = context.player;
         const opponent = context.opponent || engine.state.players.find(p => p !== player);
 
-        // Rule 8.3.4: If no schema, default to SELF
         if (!schema) {
             return target === context.unitZone || target === context.player.levelZone;
         }
@@ -165,9 +183,7 @@ export class TargetSelector {
         let inScope = false;
         switch (schema.scope) {
             case 'SELF': inScope = (target === context.unitZone); break;
-            case 'MY_FIELD':
-                inScope = player.unitZones.includes(target);
-                break;
+            case 'MY_FIELD': inScope = player.unitZones.includes(target); break;
             case 'OPP_FIELD': inScope = opponent ? opponent.unitZones.includes(target) : false; break;
             case 'BOTH_FIELDS': inScope = player.unitZones.includes(target) || (opponent ? opponent.unitZones.includes(target) : false); break;
             case 'MY_LEADER': inScope = (target === player.levelZone); break;
@@ -178,18 +194,10 @@ export class TargetSelector {
                     if (idx !== -1 && opponent) inScope = (target === opponent.unitZones[idx]);
                 }
                 break;
-            case 'MY_TRASH':
-                inScope = player.trash.includes(target);
-                break;
-            case 'MY_HAND':
-                inScope = player.hand.includes(target);
-                break;
-            case 'OPP_HAND':
-                inScope = opponent ? opponent.hand.includes(target) : false;
-                break;
+            case 'MY_TRASH': inScope = player.trash.includes(target); break;
+            case 'MY_HAND': inScope = player.hand.includes(target); break;
+            case 'OPP_HAND': inScope = opponent ? opponent.hand.includes(target) : false; break;
             case 'SHARED_LANE':
-                // For shared lane validation, we usually need the lane index or both zones.
-                // Simplified: check if target is a zone in a shared lane
                 const idx = player.unitZones.indexOf(target);
                 if (idx !== -1) inScope = (player.unitZones[idx].unit !== null && (opponent ? opponent.unitZones[idx].unit !== null : false));
                 else {
@@ -197,9 +205,7 @@ export class TargetSelector {
                     if (oppIdx !== -1) inScope = (player.unitZones[oppIdx].unit !== null && (opponent ? opponent.unitZones[oppIdx].unit !== null : false));
                 }
                 break;
-            case 'REVEALED':
-                inScope = engine.state.revealedCards.includes(target);
-                break;
+            case 'REVEALED': inScope = engine.state.revealedCards.includes(target); break;
         }
 
         if (!inScope) return false;
@@ -228,6 +234,13 @@ export class TargetSelector {
                     case 'HAS_NAME':
                         if (!unit || !unit.name.includes(filter.value)) return false;
                         break;
+                    case 'COST_EQUAL':
+                        if (!unit || unit.cost !== filter.value) return false;
+                        break;
+                    case 'COST_HIGHER_THAN_ENCOUNTER':
+                        if (!unit || !context.unitZone || !context.unitZone.unit) return false;
+                        if (unit.cost <= context.unitZone.unit.cost) return false;
+                        break;
                 }
             }
         }
@@ -236,7 +249,6 @@ export class TargetSelector {
         if (schema.conditions) {
             const unit = this.getUnitFromTarget(target);
             if (schema.conditions.costMax !== undefined && (!unit || unit.cost > schema.conditions.costMax)) return false;
-            if (schema.conditions.costMin !== undefined && (!unit || unit.cost < schema.conditions.costMin)) return false;
             if (schema.conditions.hasTrait && (!unit || !unit.traits?.includes(schema.conditions.hasTrait))) return false;
         }
 
@@ -245,8 +257,8 @@ export class TargetSelector {
 
     private static getUnitFromTarget(target: any): any | null {
         if (!target) return null;
-        if ('unit' in target) return target.unit; // It's a UnitZoneState
-        if ('type' in target) return target; // It's a Card
+        if ('unit' in target) return target.unit;
+        if ('type' in target) return target;
         return null;
     }
 
@@ -256,40 +268,26 @@ export class TargetSelector {
     }
 
     private static hasDynamicKeyword(card: any, keyword: string, zone: UnitZoneState | null): boolean {
-        // 1. Check base keywords (CardDatabase already extracts ability keywords here)
         if (card.keywords?.includes(keyword)) return true;
 
-        // 2. Map Korean keyword to ActivationCondition
         const keywordMap: Record<string, string> = {
-            '어태커': 'ATTACKER',
-            '디펜더': 'DEFENDER',
-            '액티브': 'ACTIVE',
-            '엔트리': 'ENTRY',
-            '엑시트': 'EXIT',
-            '트리거': 'DAMAGE_TRIGGER',
-            '각성': 'AWAKEN'
+            '어태커': 'ATTACKER', '디펜더': 'DEFENDER', '액티브': 'ACTIVE',
+            '엔트리': 'ENTRY', '엑시트': 'EXIT', '트리거': 'DAMAGE_TRIGGER', '각성': 'AWAKEN'
         };
         const mappedCondition = keywordMap[keyword];
         const isActivationKeyword = !!mappedCondition;
 
-        // Helper to check an effect
         const effectHasKeyword = (effect: any) => {
-            if (isActivationKeyword) {
-                return effect.activation === mappedCondition;
-            } else {
-                // For ability keywords (Penetration, etc.)
-                return effect.description.includes(keyword);
-            }
+            if (isActivationKeyword) return effect.activation === mappedCondition;
+            return effect.description.includes(keyword);
         };
 
-        // 3. Check effects on the card itself
         if (card.effects) {
             for (const effect of card.effects) {
                 if (effectHasKeyword(effect)) return true;
             }
         }
 
-        // 4. Check Zone (Items and Temporary Effects)
         if (zone) {
             for (const item of zone.items) {
                 if (item.keywords?.includes(keyword)) return true;

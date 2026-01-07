@@ -102,6 +102,14 @@ export class EffectManager {
 
         if (actionImpl) {
             console.log(`Executing Effect: ${effect.description} [Action: ${action.type}]`);
+
+            // Mark as fired if it's a ONCE_PER_TURN effect
+            if (effect.condition?.type === 'ONCE_PER_TURN') {
+                const fired = (this.engine.state as any).firedEffects = (this.engine.state as any).firedEffects || {};
+                const effectId = effect.id || effect.description;
+                fired[effectId] = true;
+            }
+
             const params = { ...action.params, duration: effect.duration };
             actionImpl(context, params, targets);
             this.engine.checkRuleProcessing();
@@ -112,7 +120,15 @@ export class EffectManager {
 
     public checkCondition(effect: Effect, context: GameContext): boolean {
         if (!effect.condition) return true;
-        const { type, value } = effect.condition;
+        const { type, value, trashedUnitCostMin, friendlyOnly } = effect.condition;
+
+        if (trashedUnitCostMin !== undefined && context.trashedUnit) {
+            if (context.trashedUnit.cost < trashedUnitCostMin) return false;
+        }
+
+        if (friendlyOnly && context.trashedUnitOwner) {
+            if (context.trashedUnitOwner !== context.player) return false;
+        }
 
         switch (type) {
             case 'ALWAYS':
@@ -149,6 +165,10 @@ export class EffectManager {
                 return context.player.unitZones.every(z => z.unit !== null);
             case 'LEVEL_LINK':
                 return context.player.leaderLevel >= value;
+            case 'ONCE_PER_TURN':
+                const fired = (this.engine.state as any).firedEffects = (this.engine.state as any).firedEffects || {};
+                const effectId = effect.id || effect.description; // Fallback to description if ID missing
+                return !fired[effectId];
             default:
                 return true;
         }

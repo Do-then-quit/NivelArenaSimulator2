@@ -32,10 +32,12 @@ export enum ActivationCondition {
     DEFENDER = 'DEFENDER',   // When defending
     EXIT = 'EXIT',           // When leaving play/destroyed
     ON_KILL = 'ON_KILL',     // When trashing opponent unit in combat
+    ACTIVE_MAIN = 'ACTIVE_MAIN', // Added
     DAMAGE_TRIGGER = 'DAMAGE_TRIGGER', // Game keyword "TRIGGER" (when dealt as damage)
     TURN_START = 'TURN_START',
     TURN_END = 'TURN_END',
     AWAKEN = 'AWAKEN',
+    UNIT_TRASHED = 'UNIT_TRASHED', // New: Triggered when any unit is moved to trash
 }
 
 export type ActionType =
@@ -66,15 +68,21 @@ export type ActionType =
     | 'BUFF_POWER_AND_DRAW_IF_TRASHED'
     | 'REVEAL_TOP_AND_CHOOSE_TO_HAND'
     | 'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER'
-    | 'DRAW_DYNAMIC';
+    | 'DRAW_DYNAMIC'
+    | 'TERMINATE_ATTACK'
+    | 'NONE'
+    | 'RETURN_FROM_TRASH_AT_TURN_END'
+    | 'DESTROY_UNIT_AND_DRAW_BY_HIT' // Added
+    | 'DESTROY_UNIT_WITH_HIT_COST' // Added
+    | 'COMPLEX_ACTION'; // Added
 
 export interface TargetFilter {
-    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT';
+    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT' | 'COST_EQUAL' | 'COST_HIGHER_THAN_ENCOUNTER';
     value?: any;
 }
 
 export interface TargetSchema {
-    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED';
+    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'FIELD' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED';
     type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
     count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
     filters?: TargetFilter[];
@@ -88,11 +96,14 @@ export interface TargetSchema {
         state?: 'EXHAUSTED' | 'READY';
     };
     selectMode: 'MANUAL' | 'RANDOM' | 'LOWEST_POWER' | 'HIGHEST_POWER' | 'ALL';
+    totalCostLimit?: number; // New: total cost of all selected targets must not exceed this
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE' | 'LEVEL_LINK';
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE' | 'LEVEL_LINK' | 'ONCE_PER_TURN';
     value?: any;
+    trashedUnitCostMin?: number; // New: for triggers like Cinderella's UNIT_TRASHED
+    friendlyOnly?: boolean; // New: check if trashed unit belongs to player
 }
 
 export interface EffectCost {
@@ -116,6 +127,8 @@ export interface GameContext {
     machine: any; // Ideally GameEngine but avoids circular dependency
     selectedLaneIndex?: number;
     destroyedBy?: Card;
+    trashedUnit?: Card; // New: relevant for UNIT_TRASHED triggers
+    trashedUnitOwner?: PlayerState; // New: identifying whose unit was trashed
     costPaymentCard?: Card;
 }
 

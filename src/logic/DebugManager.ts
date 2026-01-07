@@ -2276,5 +2276,235 @@ export class DebugManager {
         this.renderCallback();
         console.log("1. Equip Sword. Confirm power +5000.");
     }
+
+    setupBT01_055_Scenario() {
+        console.log("Setting up BT01-055 (Cinderella Leader) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        this.setLeader(0, "BT01-055");
+        p0.leaderLevel = 5;
+        this.game.checkAwakening(0);
+
+        const unit5 = this.getCard("BT01-069"); // 5-cost
+        if (unit5) p0.unitZones[0].unit = unit5;
+        if (unit5) p0.unitZones[1].unit = unit5;
+        if (unit5) p0.unitZones[2].unit = unit5;
+
+        if (unit5) p1.unitZones[0].unit = unit5;
+        if (unit5) p1.unitZones[1].unit = unit5;
+        if (unit5) p1.unitZones[2].unit = unit5;
+
+        p0.hand = [];
+        this.renderCallback();
+        console.log("1. P0 is Level 5 Cinderella (Awakened).");
+        console.log("2. Units (5-cost) are on both fields.");
+        console.log("3. Trash P1's unit: Confirm P0 does NOT draw.");
+        console.log("4. Trash P0's unit: Confirm P0 DOES draw (once per turn).");
+    }
+
+    setupBT01_058_Scenario() {
+        console.log("Setting up BT01-058 (Maiden-Secret Nurse) Scenario...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+        p0.unitZones.forEach(z => z.unit = null);
+        p1.unitZones.forEach(z => z.unit = null);
+
+        const attacker = this.getCard("BT01-002");
+        const maiden = this.getCard("BT01-058");
+
+        if (attacker) p1.unitZones[0].unit = attacker;
+        if (maiden) p0.unitZones[0].unit = maiden;
+
+        this.renderCallback();
+        console.log("1. P1 attacks with Neon. P0 has Maiden (Defender: Terminate) in Lane 0.");
+        console.log("2. Declare block with Maiden.");
+        console.log("3. Confirm attack ends immediately and Maiden is trashed.");
+    }
+
+    setupBT01_060_Scenario() {
+        console.log("Setting up BT01-060 (Admi) Scenario...");
+        const p0 = this.game.state.players[0];
+        p0.unitZones.forEach(z => z.unit = null);
+        p0.hand = [];
+
+        const admi = this.getCard("BT01-060");
+        const fodder = this.getCard("BT01-002");
+
+        if (admi) p0.unitZones[0].unit = admi;
+        if (fodder) p0.hand = [fodder];
+
+        this.renderCallback();
+        console.log("1. Admi on field, 1 card in hand.");
+        console.log("2. Go to Attack phase and attack with Admi.");
+        console.log("3. Confirm cost prompt (trash 1 hand) appears.");
+        console.log("4. After paying, confirm Admi proceeds with attack.");
+    }
+
+    setupBT01_Storm_Combat_Utilities_Scenario() {
+        console.log("Setting up Storm Combat Utilities (BT01-056, 058, 070)...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+
+        const ether = this.getCard("BT01-056");
+        const mihara = this.getCard("BT01-058");
+        const miharaSecret = this.getCard("BT01-070");
+        const target = this.getCard("BT01-001");
+
+        p0.hand = [];
+        if (mihara) p0.hand.push(mihara);
+        if (miharaSecret) p0.hand.push(miharaSecret);
+        if (ether) p0.unitZones[0].unit = ether;
+
+        if (target) p1.unitZones[0].unit = target;
+
+        this.renderCallback();
+        console.log("1. Ether on field. Miharas in hand. Opponent has unit in Lane 0.");
+        console.log("2. Use window.debug.setField(0, [null]) to trigger Ether's Exit: Buff enemy P-2000.");
+        console.log("3. Play Mihara (BT01-058/070): If they block, combat terminates and they are trashed.");
+    }
+
+    setupBT01_Storm_Passive_Costs_Scenario() {
+        console.log("Setting up Storm Passive Attack Costs (BT01-060, 065)...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+
+        const admi = this.getCard("BT01-060");
+        const maiden = this.getCard("BT01-065");
+        const fodder = this.getCard("BT01-002");
+        const target = this.getCard("BT01-001");
+
+        p0.hand = fodder ? [fodder, fodder] : [];
+        if (admi) p0.unitZones[0].unit = admi;
+        if (maiden) p0.unitZones[1].unit = maiden;
+
+        if (target) p1.unitZones[0].unit = target;
+
+        this.renderCallback();
+        console.log("1. Admi and Maiden on field. Fodder in hand.");
+        console.log("2. Attack with either: Confirm you must trash 1 hand card to proceed.");
+    }
+
+    setupBT01_Storm_Board_Control_Scenario() {
+        console.log("Setting up Storm Board Control (BT01-061, 064, 069, 075, 077)...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+
+        const sakura = this.getCard("BT01-061"); // ActiveMain
+        const rapunzel = this.getCard("BT01-064"); // Entry
+        const dorothy = this.getCard("BT01-069"); // Entry
+        const glass = this.getCard("BT01-075"); // Skill
+        const shot = this.getCard("BT01-077"); // Skill
+
+        const selfFodder = this.getCard("BT01-010");
+        const handFodder = this.getCard("BT01-001"); // 1 cost
+        const targetLow = this.getCard("BT01-002"); // 1 cost
+        const targetHigh = this.getCard("BT01-040"); // 6 cost
+
+        p0.hand = [];
+        [rapunzel, dorothy, glass, shot, handFodder, selfFodder].forEach(c => {
+            if (c) p0.hand.push(c);
+        });
+
+        if (sakura) p0.unitZones[0].unit = sakura;
+        if (selfFodder) p0.unitZones[1].unit = selfFodder;
+
+        if (targetLow) p1.unitZones[0].unit = targetLow;
+        if (targetHigh) p1.unitZones[1].unit = targetHigh;
+
+        this.renderCallback();
+        console.log("1. Board control cards in hand/field. Opponent has 1-cost and 6-cost units.");
+        console.log("2. Sakura: Trash self fodder, buff other unit +2000.");
+        console.log("3. Rapunzel: Play vs Encounter, trash 2 from hand to destroy.");
+        console.log("4. Dorothy: Play vs 1-cost Encounter, destroy it.");
+        console.log("5. Glass (Skill): Trash hand card, destroy enemy with same cost.");
+        console.log("6. Shot (Skill): Choose target, trash hand cards equal to target's Hit, destroy it.");
+    }
+
+    setupBT01_Storm_Exit_Recursion_Scenario() {
+        console.log("Setting up Storm Exit & Recursion (BT01-066, 068, 072, 080, 081, 079)...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+
+        const soda = this.getCard("BT01-066");
+        const bloom = this.getCard("BT01-068");
+        const modernia = this.getCard("BT01-072");
+        const boots = this.getCard("BT01-081");
+        const glasses = this.getCard("BT01-080");
+        const parasol = this.getCard("BT01-079");
+
+        p0.hand = [];
+        if (parasol) p0.hand.push(parasol);
+        if (boots) p0.hand.push(boots);
+        if (glasses) p0.hand.push(glasses);
+
+        const exit1 = this.getCard("BT01-056");
+        const exit2 = this.getCard("BT01-058");
+        p0.trash = [];
+        if (exit1) p0.trash.push(exit1);
+        if (exit2) p0.trash.push(exit2);
+
+        if (soda) p0.unitZones[0].unit = soda;
+        if (bloom) p0.unitZones[1].unit = bloom;
+        if (modernia) p0.unitZones[2].unit = modernia;
+
+        p1.hand = [];
+        ["BT01-001", "BT01-002", "BT01-003"].forEach(id => {
+            const c = this.getCard(id);
+            if (c) p1.hand.push(c);
+        });
+
+        this.renderCallback();
+        console.log("1. Exit units and recursion in hand/field. Opponent has 3 cards.");
+        console.log("2. Soda Exit: Opponent discards 1.");
+        console.log("3. Bloom Exit: Draw 2, trash 1.");
+        console.log("4. Modernia Passive: Grant 'Exit: Draw 1' to others (try trashing Soda).");
+        console.log("5. Equip Glasses/Boots: Confirm Exit draw 2 (Glasses) or Turn end return (Boots).");
+        console.log("6. Parasol (Skill): Return 2 Exit units from trash to hand.");
+    }
+
+    setupBT01_Storm_Synergy_Scenario() {
+        console.log("Setting up Storm Synergy (BT01-063, 067, 076)...");
+        const p0 = this.game.state.players[0];
+        const exia = this.getCard("BT01-063");
+        const mokdan = this.getCard("BT01-067");
+        const training = this.getCard("BT01-076");
+
+        p0.hand = [];
+        if (training) p0.hand.push(training);
+        if (exia) p0.unitZones[0].unit = exia;
+        if (mokdan) p0.unitZones[1].unit = mokdan;
+
+        this.renderCallback();
+        console.log("1. Exia and Mokdan (Has MD) on field.");
+        console.log("2. Confirm Exia buffs MD units (Mokdan) +2000.");
+        console.log("3. Training (Skill): Buff MD unit +4500.");
+    }
+
+    setupBT01_Storm_Damage_Triggers_Scenario() {
+        console.log("Setting up Storm Damage Triggers (BT01-071, 073, 074, 078)...");
+        const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
+
+        const triggers = [
+            this.getCard("BT01-071"), // Return to hand
+            this.getCard("BT01-073"), // Opp discard
+            this.getCard("BT01-074"), // Return to hand
+            this.getCard("BT01-078")  // Return exit unit from trash
+        ].filter(c => c !== null) as any[];
+
+        p0.deck = [...triggers];
+        const exit1 = this.getCard("BT01-056");
+        if (exit1) p0.trash = [exit1];
+
+        p1.hand = [];
+        ["BT01-001", "BT01-002", "BT01-003"].forEach(id => {
+            const c = this.getCard(id);
+            if (c) p1.hand.push(c);
+        });
+
+        this.renderCallback();
+        console.log("1. Triggers at top of P0 deck. Opponent has 3 cards.");
+        console.log("2. Dealt damage to P0: Confirm each trigger effect.");
+    }
 }
 

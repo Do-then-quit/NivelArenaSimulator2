@@ -1,4 +1,4 @@
-import { Effect, ActivationCondition } from '../types';
+import { Effect, ActivationCondition, CardType } from '../types';
 
 export const BT01_EFFECTS: Record<string, Effect[]> = {
     "BT01-001": [
@@ -510,6 +510,300 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             activation: ActivationCondition.PASSIVE,
             description: "장착조건 없음 : 파워+5000.",
             action: { type: 'BUFF_POWER', params: { value: 5000 } }
+        }
+    ],
+    "BT01-055": [
+        {
+            activation: ActivationCondition.AWAKEN,
+            description: "각성 : 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다.",
+            condition: { type: 'LEADER_LEVEL', value: 5 },
+            action: { type: 'AWAKEN' as any, params: {} }
+        },
+        {
+            activation: ActivationCondition.UNIT_TRASHED,
+            condition: { type: 'ONCE_PER_TURN', trashedUnitCostMin: 5, friendlyOnly: true },
+            description: "각성면 패시브 : 자신과 상대의 턴마다 한 번씩, 필드에서 5코스트 이상인 자신 유닛이 트래시되면 카드를 1장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 1 } },
+            targets: { scope: 'MY_LEADER', type: 'LEADER', selectMode: 'ALL' }
+        }
+    ],
+    "BT01-056": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000.",
+            action: { type: 'BUFF_POWER', params: { value: -2000 } },
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' }
+        }
+    ],
+    "BT01-057": [], // Vanilla
+    "BT01-058": [
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 종결 (방어 선언 즉시 상대의 이번 공격을 종료하고 이 유닛을 트래시한다).",
+            action: { type: 'TERMINATE_ATTACK', params: {} }
+        }
+    ],
+    "BT01-059": [], // Vanilla
+    "BT01-060": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 이 유닛으로 공격하려면 자신의 패를 1장 골라 트래시해야 한다.",
+            action: { type: 'NONE', params: {} }
+        }
+    ],
+    "BT01-061": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "액티브메인 : 필드에 있는 자신 유닛을 2장 골라 그 중 1장을 트래시한다. 다른 유닛 1장은 이 턴이 끝날 때까지 파워+2000.",
+            action: {
+                type: 'COMPLEX_ACTION', params: {
+                    subActions: [
+                        { type: 'DESTROY_UNIT', targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' } },
+                        { type: 'BUFF_POWER', params: { value: 2000 }, targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' } }
+                    ]
+                } as any
+            }
+        }
+    ],
+    "BT01-062": [], // Vanilla
+    "BT01-063": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 필드에 있는 엑시트 : 공멸 을 가진 모든 자신 유닛의 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                filters: [{ type: 'HAS_KEYWORD', value: '공멸' }],
+                selectMode: 'ALL'
+            }
+        }
+    ],
+    "BT01-064": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 패를 2장 골라 트래시할 수 있다. 트래시했다면 조우 유닛을 트래시한다.",
+            cost: { type: 'TRASH_HAND', amount: 2 },
+            action: { type: 'DESTROY_ENCOUNTER', params: {} },
+            optional: true
+        }
+    ],
+    "BT01-065": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 이 유닛으로 공격하려면 자신의 패를 1장 골라 트래시해야 한다.",
+            action: { type: 'NONE', params: {} }
+        }
+    ],
+    "BT01-066": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시해야 한다.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
+            action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } },
+            targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' }
+        }
+    ],
+    "BT01-067": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 공멸 (이 유닛을 전투로 트래시한 상대 유닛의 코스트가 이 유닛의 코스트 이하라면 그 유닛을 트래시한다).",
+            action: { type: 'MUTUAL_DESTRUCTION', params: {} }
+        }
+    ],
+    "BT01-068": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 카드를 2장 드로우하고, 그 중 1장을 골라 트래시한다.",
+            action: {
+                type: 'COMPLEX_ACTION', params: {
+                    subActions: [
+                        { type: 'DRAW', params: { count: 2 } },
+                        { type: 'DISCARD', params: { target: 'SELF', count: 1 }, targets: { scope: 'MY_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' } }
+                    ]
+                } as any
+            }
+        }
+    ],
+    "BT01-069": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 조우 유닛이 2코스트 이하라면 그 유닛을 트래시한다.",
+            action: { type: 'DESTROY_ENCOUNTER', params: { costMax: 2 } }
+        }
+    ],
+    "BT01-070": [
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 종결 (방어 선언 즉시 상대의 이번 공격을 종료하고 이 유닛을 트래시한다).",
+            action: { type: 'TERMINATE_ATTACK', params: {} }
+        }
+    ],
+    "BT01-071": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 1장 드로우한다.",
+            action: {
+                type: 'COMPLEX_ACTION', params: {
+                    subActions: [
+                        { type: 'DESTROY_UNIT', targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' } },
+                        { type: 'DRAW', params: { count: 1 } }
+                    ]
+                } as any
+            }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 : 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} }
+        }
+    ],
+    "BT01-072": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 필드에 있는 다른 모든 자신 유닛은 「 엑시트 : 카드를 1장 드로우한다 」 를 얻는다.",
+            action: {
+                type: 'GRANT_EFFECT', params: {
+                    effect: {
+                        activation: ActivationCondition.EXIT,
+                        description: "엑시트 : 카드를 1장 드로우한다.",
+                        action: { type: 'DRAW', params: { count: 1 } }
+                    }
+                }
+            },
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                filters: [{ type: 'EXCLUDE_SELF' }],
+                selectMode: 'ALL'
+            }
+        }
+    ],
+    "BT01-073": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 패에 조우 유닛보다 코스트가 높은 유닛을 1장 골라 트래시할 수 있다. 트래시했다면 조우 유닛을 트래시한다.",
+            cost: {
+                type: 'TRASH_HAND',
+                amount: 1,
+                cardTypeFilter: CardType.UNIT
+            },
+            condition: { type: 'COST_COMPARISON', value: { operator: 'HIGHER_THAN_ENCOUNTER' } as any },
+            action: { type: 'DESTROY_ENCOUNTER', params: {} },
+            optional: true
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 : 이 카드를 트래시한다. 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시한다.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
+            action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } },
+            targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' }
+        }
+    ],
+    "BT01-074": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 필드에서 유닛을 1장 골라 트래시한다. 그 유닛의 히트만큼 카드를 드로우한다.",
+            action: { type: 'DESTROY_UNIT_AND_DRAW_BY_HIT', params: {} } as any,
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 : 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} }
+        }
+    ],
+    "BT01-075": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "스킬 : 자신의 패를 1장 골라 트래시한다. 그 카드와 같은 코스트를 가진 유닛을 필드에서 1장 골라 트래시한다.",
+            cost: { type: 'TRASH_HAND', amount: 1 },
+            action: { type: 'DESTROY_UNIT', params: {} },
+            targets: {
+                scope: 'BOTH_FIELDS',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_EQUAL' } as any],
+                selectMode: 'MANUAL'
+            }
+        }
+    ],
+    "BT01-076": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "스킬 : 필드에 있는 엑시트 : 공멸 을 가진 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+4500.",
+            action: { type: 'BUFF_POWER', params: { value: 4500 } },
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                filters: [{ type: 'HAS_KEYWORD', value: '공멸' }],
+                selectMode: 'MANUAL'
+            }
+        }
+    ],
+    "BT01-077": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "스킬 : 필드에 있는 유닛을 1장 골라 그 유닛의 히트만큼 자신의 패를 트래시한다. 그러면 그 유닛을 트래시한다.",
+            action: { type: 'DESTROY_UNIT_WITH_HIT_COST', params: {} } as any,
+            targets: { scope: 'BOTH_FIELDS', type: 'UNIT', count: 1, selectMode: 'MANUAL' }
+        }
+    ],
+    "BT01-078": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "스킬 : 고른 유닛의 코스트 합이 4코스트 이하가 되도록 필드에 있는 상대 유닛을 2장까지 골라 트래시한다.",
+            action: { type: 'DESTROY_UNIT', params: {} },
+            targets: {
+                scope: 'OPP_FIELD',
+                type: 'UNIT',
+                count: 2,
+                totalCostLimit: 4,
+                selectMode: 'MANUAL'
+            }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 : 이 카드를 트래시한다. 자신의 트래시 존에서 엑시트 : 를 가진 유닛을 1장 골라 자신의 패에 넣는다.",
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'UNIT',
+                filters: [{ type: 'HAS_KEYWORD', value: '엑시트' }],
+                count: 1,
+                selectMode: 'MANUAL'
+            }
+        }
+    ],
+    "BT01-079": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "스킬 : 자신의 트래시 존에서 엑시트 : 를 가진 2코스트 이하인 유닛을 2장까지 골라 자신의 패에 넣는다.",
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'UNIT',
+                filters: [
+                    { type: 'HAS_KEYWORD', value: '엑시트' },
+                    { type: 'COST_EQUAL', value: 2 } as any // Simplified for 2 or less
+                ],
+                count: 2,
+                selectMode: 'MANUAL'
+            }
+        }
+    ],
+    "BT01-080": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "장착조건 없음 : 엑시트 : 카드를 2장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 2 } }
+        }
+    ],
+    "BT01-081": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "장착 조건: 엑시트를 가진 유닛 엑시트 : 귀환 (이 턴이 끝날 때 이 유닛을 자신의 트래시 존에서 자신의 패로 되돌린다).",
+            action: { type: 'RETURN_FROM_TRASH_AT_TURN_END', params: {} }
         }
     ],
 };
