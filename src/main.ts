@@ -121,12 +121,21 @@ function renderGame() {
     <div class="game-container">
       <div class="header">
         <h1>NivelArena</h1>
-        ${game.state.interactionMode === 'SELECT_TARGET' ? `
+        ${game.state.interactionMode === 'SELECT_TARGET' ? (() => {
+            const pending = game!.state.pendingEffect as any;
+            const fullEffect = pending._fullEffect;
+            const maxCount = fullEffect?.targets?.count || 0;
+            const currentCount = pending.selectedTargets?.length || 0;
+            // Disable only if it's manual selection and we haven't reached the count
+            const canConfirm = maxCount === 0 || currentCount === maxCount || fullEffect?.targets?.selectMode === 'ALL';
+
+            return `
             <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
-                <span style="animation: pulse 1s infinite;">SELECT TARGETS (${(game.state.pendingEffect as any).selectedTargets?.length || 0}/${(game.state.pendingEffect as any)._fullEffect?.targets?.count || 1})</span>
-                <button id="confirm-targets-btn" class="primary-btn" style="background: #2ecc71; border: none; padding: 5px 15px;">Confirm</button>
+                <span style="animation: pulse 1s infinite;">SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
+                <button id="confirm-targets-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'} style="background: ${canConfirm ? '#2ecc71' : '#636e72'}; border: none; padding: 5px 15px;">Confirm</button>
             </div>
-        ` : ''}
+            `;
+        })() : ''}
         ${game.state.interactionMode === 'SELECT_COST' ? `
             <div style="background: #0984e3; color: white; padding: 10px; border-radius: 4px; animation: pulse 1s infinite;">
                 SELECT CARD TO TRASH (COST)
@@ -318,7 +327,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                         ` : ''}
 
                         ${z.unit && !isOpponent && game!.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${z.unit && !isOpponent && game!.state.phase === Phase.MAIN && !z.hasActivatedEffectThisTurn && z.unit.effects?.some((e: any) => e.activation === 'ACTIVE') ? '<button class="active-btn">Active</button>' : ''}
+                        ${z.unit && !isOpponent && game!.state.phase === Phase.MAIN && !z.hasActivatedEffectThisTurn && z.unit.effects?.some((e: any) => e.activation === 'ACTIVE' || e.activation === 'ACTIVE_MAIN') ? '<button class="active-btn">Active</button>' : ''}
                         ${isBlockingTarget ? `
                             <div class="block-controls">
                                 <button class="block-btn">Block</button>
@@ -583,7 +592,7 @@ function attachListeners() {
             e.stopPropagation();
             const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
             const zone = game!.currentPlayer.unitZones[zoneIndex];
-            const effectIndex = zone.unit?.effects?.findIndex(e => e.activation === 'ACTIVE') ?? -1;
+            const effectIndex = zone.unit?.effects?.findIndex(e => e.activation === 'ACTIVE' || e.activation === 'ACTIVE_MAIN') ?? -1;
 
             if (effectIndex !== -1) {
                 game!.activateEffect(zoneIndex, effectIndex);

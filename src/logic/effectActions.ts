@@ -455,7 +455,7 @@ const destroyUnitAndDrawByHit: ActionImplementation = (ctx, _params, targets) =>
     const unit = targetZone.unit;
     if (!unit) return;
 
-    const hit = parseInt(unit.hit) || 0;
+    const hit = parseInt(String(unit.hit)) || 0;
     const owner = getOwnerOfZone(ctx.machine, targetZone);
     const ownerIdx = ctx.machine.state.players.indexOf(owner);
 
@@ -472,7 +472,7 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
     const unit = targetZone.unit;
     if (!unit) return;
 
-    const hit = parseInt(unit.hit) || 0;
+    const hit = parseInt(String(unit.hit)) || 0;
 
     // This action requires a cost payment from hand based on the unit's hit.
     // Setting up pending cost for GameEngine to handle.
@@ -492,9 +492,6 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
     const subActions = (params as any).subActions;
     if (!Array.isArray(subActions)) return;
 
-    // We process sub-actions sequentially. 
-    // Note: This is a simplified implementation that assumes sub-actions don't require nested interaction modes
-    // unless they are the last one.
     for (const sub of subActions) {
         const impl = ActionRegistry[sub.type];
         if (impl) {
@@ -505,6 +502,39 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             }
             impl(ctx, sub.params || {}, subTargets);
         }
+    }
+};
+
+const sacrificeToBuff: ActionImplementation = (ctx, params, targets) => {
+    if (!targets || targets.length < 2) {
+        console.warn("SACRIFICE_TO_BUFF requires at least 2 targets.");
+        return;
+    }
+
+    // Assumptions:
+    // targets[0] is the unit to sacrifice (trash)
+    // targets[1] is the unit to buff
+    const trashTarget = targets[0] as UnitZoneState;
+    const buffTarget = targets[1] as UnitZoneState;
+
+    if (trashTarget && trashTarget.unit) {
+        const owner = getOwnerOfZone(ctx.machine, trashTarget);
+        if (owner) {
+            ctx.machine.destroyUnit(owner, trashTarget);
+            console.log(`Sacrificed ${trashTarget.unit.name} for effect.`);
+        }
+    }
+
+    if (buffTarget && buffTarget.unit) {
+        const value = params.powerValue || 0;
+        buffTarget.buffs.push({
+            id: Math.random().toString(36),
+            sourceCard: ctx.sourceCard,
+            type: 'POWER',
+            value: value,
+            duration: params.duration || 'TURN_END'
+        });
+        console.log(`Buffed ${buffTarget.unit.name} by ${value} Power.`);
     }
 };
 
@@ -542,4 +572,5 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DESTROY_UNIT_AND_DRAW_BY_HIT': destroyUnitAndDrawByHit,
     'DESTROY_UNIT_WITH_HIT_COST': destroyUnitWithHitCost,
     'COMPLEX_ACTION': complexAction,
+    'SACRIFICE_TO_BUFF': sacrificeToBuff,
 };

@@ -2494,7 +2494,7 @@ export class DebugManager {
 
         p0.deck = [...triggers];
         const exit1 = this.getCard("BT01-056");
-        if (exit1) p0.trash = [exit1];
+        if (exit1) p0.trash.push(exit1);
 
         p1.hand = [];
         ["BT01-001", "BT01-002", "BT01-003"].forEach(id => {
@@ -2506,5 +2506,14 @@ export class DebugManager {
         console.log("1. Triggers at top of P0 deck. Opponent has 3 cards.");
         console.log("2. Dealt damage to P0: Confirm each trigger effect.");
     }
-}
 
+    setupBT01_064_Scenario() {
+        this.forcePhase(Phase.MAIN);
+        this.setLeaderLevel(0, 10); // Ensure enough cost
+        this.setLeader(0, 'BT01-028');
+        this.setHand(0, ['BT01-064', 'ST02-005', 'ST02-005', 'ST02-005']); // 3 dummy cards for cost
+        this.setField(1, ['BT01-044', null, null]); // Encounter unit (using BT01-044 as valid unit)
+        console.log("Setup BT01-064 Scenario: Play BT01-064 and check if it requires 2 cards to trash.");
+        this.renderCallback();
+    }
+}

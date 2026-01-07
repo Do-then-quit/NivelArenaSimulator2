@@ -74,7 +74,8 @@ export type ActionType =
     | 'RETURN_FROM_TRASH_AT_TURN_END'
     | 'DESTROY_UNIT_AND_DRAW_BY_HIT' // Added
     | 'DESTROY_UNIT_WITH_HIT_COST' // Added
-    | 'COMPLEX_ACTION'; // Added
+    | 'COMPLEX_ACTION' // Added
+    | 'SACRIFICE_TO_BUFF'; // Added
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT' | 'COST_EQUAL' | 'COST_HIGHER_THAN_ENCOUNTER';
@@ -226,4 +227,5 @@ export interface PendingEffect {
     costToPay?: EffectCost;
     selectedTargets?: any[];
     revealedCards?: Card[];
+    costPaidCount?: number; // Track how many items have been paid for the cost
 }

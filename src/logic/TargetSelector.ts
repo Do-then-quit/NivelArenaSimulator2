@@ -279,6 +279,7 @@ export class TargetSelector {
 
         const effectHasKeyword = (effect: any) => {
             if (isActivationKeyword) return effect.activation === mappedCondition;
+            if (keyword === '공멸') return effect.action?.type === 'MUTUAL_DESTRUCTION';
             return effect.description.includes(keyword);
         };
 

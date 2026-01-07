@@ -324,7 +324,7 @@ export class GameEngine {
         if (!card || !card.effects || zone.hasActivatedEffectThisTurn) return;
 
         const effect = card.effects[effectIndex];
-        if (effect.activation !== ActivationCondition.ACTIVE) return;
+        if (effect.activation !== ActivationCondition.ACTIVE && effect.activation !== ActivationCondition.ACTIVE_MAIN) return;
 
         const context = {
             sourceCard: card,
@@ -348,7 +348,8 @@ export class GameEngine {
             sourcePlayerId: context.player.id,
             actionType: effect.action.type,
             actionValue: effect.action.params,
-            costToPay: effect.cost
+            costToPay: effect.cost,
+            costPaidCount: 0
         };
         (this.state.pendingEffect as any)._fullEffect = effect;
         (this.state.pendingEffect as any)._context = context;
@@ -407,6 +408,9 @@ export class GameEngine {
             this.currentPlayer.trash.push(discarded);
             console.log(`Paid cost: Trashed ${discarded.name}`);
 
+            if (!pending.costPaidCount) pending.costPaidCount = 0;
+            pending.costPaidCount++;
+
             // Store discarded card for effect context (e.g. for ST03-013 comparison)
             const context = (this.state.pendingEffect as any)._context;
             context.costPaymentCard = discarded;
@@ -416,6 +420,15 @@ export class GameEngine {
             this.currentPlayer.deck.push(card);
             this.shuffle(this.currentPlayer.deck);
             console.log(`Paid cost: Shuffled ${card.name} into deck`);
+
+            if (!pending.costPaidCount) pending.costPaidCount = 0;
+            pending.costPaidCount++;
+        }
+
+        const requiredAmount = pending.costToPay.amount || 1;
+        if ((pending.costPaidCount || 0) < requiredAmount) {
+            console.log(`Partial cost paid: ${pending.costPaidCount}/${requiredAmount}`);
+            return;
         }
 
         // Resume Effect Execution
@@ -1047,10 +1060,6 @@ export class GameEngine {
                 pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== targetZone);
                 console.log(`Target removed. ${pending.selectedTargets.length}/${maxCount}`);
             }
-
-            if (pending.selectedTargets.length === maxCount) {
-                this.confirmTargets();
-            }
         } else {
             // Legacy/Single target behavior: Execute via Manager
             this.effectManager.executeEffect(effect, context, [targetZone]);
@@ -1155,9 +1164,6 @@ export class GameEngine {
             } else {
                 pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== card);
             }
-            if (pending.selectedTargets.length === maxCount) {
-                this.confirmTargets();
-            }
         } else {
             // Execute
             this.effectManager.executeEffect(pending._fullEffect, pending._context, [card]);
@@ -1192,9 +1198,6 @@ export class GameEngine {
             } else {
                 pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== targetCard);
             }
-            if (pending.selectedTargets.length === maxCount) {
-                this.confirmTargets();
-            }
         } else {
             // Execute Effect via Manager
             this.effectManager.executeEffect(effect, context, [targetCard]);
@@ -1226,9 +1229,6 @@ export class GameEngine {
                 pending.selectedTargets.push(card);
             } else {
                 pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== card);
-            }
-            if (pending.selectedTargets.length === maxCount) {
-                this.confirmTargets();
             }
         } else {
             // Execute

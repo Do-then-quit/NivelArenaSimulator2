@@ -555,13 +555,12 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ACTIVE_MAIN,
             description: "액티브메인 : 필드에 있는 자신 유닛을 2장 골라 그 중 1장을 트래시한다. 다른 유닛 1장은 이 턴이 끝날 때까지 파워+2000.",
-            action: {
-                type: 'COMPLEX_ACTION', params: {
-                    subActions: [
-                        { type: 'DESTROY_UNIT', targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' } },
-                        { type: 'BUFF_POWER', params: { value: 2000 }, targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' } }
-                    ]
-                } as any
+            action: { type: 'SACRIFICE_TO_BUFF', params: { powerValue: 2000 } },
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 2,
+                selectMode: 'MANUAL',
             }
         }
     ],
