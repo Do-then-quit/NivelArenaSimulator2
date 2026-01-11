@@ -83,7 +83,7 @@ export interface TargetFilter {
 }
 
 export interface TargetSchema {
-    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'FIELD' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED';
+    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'FIELD' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED' | 'LAST_DRAWN';
     type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
     count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
     filters?: TargetFilter[];
@@ -131,6 +131,12 @@ export interface GameContext {
     trashedUnit?: Card; // New: relevant for UNIT_TRASHED triggers
     trashedUnitOwner?: PlayerState; // New: identifying whose unit was trashed
     costPaymentCard?: Card;
+}
+
+export interface EffectQueueItem {
+    effect: Effect;
+    context: GameContext;
+    id: string; // Unique ID for tracking
 }
 
 export type ActionImplementation = (context: GameContext, params: any, targets: any[]) => void;
@@ -216,6 +222,7 @@ export interface GameState {
     pendingEffect: PendingEffect | null;
     attackTerminated?: boolean;
     revealedCards: Card[];
+    effectQueue: EffectQueueItem[]; // New: Centralized Effect Queue
 }
 
 export interface PendingEffect {

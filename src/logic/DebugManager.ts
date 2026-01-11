@@ -2447,6 +2447,10 @@ export class DebugManager {
         if (bloom) p0.unitZones[1].unit = bloom;
         if (modernia) p0.unitZones[2].unit = modernia;
 
+        const strongUnit = this.getCard("ST02-009");
+        if (strongUnit) p1.unitZones[0].unit = strongUnit; p1.unitZones[1].unit = strongUnit; p1.unitZones[2].unit = strongUnit;
+
+
         p1.hand = [];
         ["BT01-001", "BT01-002", "BT01-003"].forEach(id => {
             const c = this.getCard(id);
@@ -2465,9 +2469,13 @@ export class DebugManager {
     setupBT01_Storm_Synergy_Scenario() {
         console.log("Setting up Storm Synergy (BT01-063, 067, 076)...");
         const p0 = this.game.state.players[0];
+        const p1 = this.game.state.players[1];
         const exia = this.getCard("BT01-063");
         const mokdan = this.getCard("BT01-067");
         const training = this.getCard("BT01-076");
+
+        const strongFourCost = this.getCard("ST02-008");
+        if (strongFourCost) p1.unitZones[1].unit = strongFourCost;
 
         p0.hand = [];
         if (training) p0.hand.push(training);
@@ -2515,5 +2523,79 @@ export class DebugManager {
         this.setField(1, ['BT01-044', null, null]); // Encounter unit (using BT01-044 as valid unit)
         console.log("Setup BT01-064 Scenario: Play BT01-064 and check if it requires 2 cards to trash.");
         this.renderCallback();
+    }
+
+    setupBT01_069_Scenario() {
+        console.log("Setting up BT01-069 (Dorothy) Cost Limit Scenario...");
+        const p0 = this.getPlayer(0);
+        const p1 = this.getPlayer(1);
+
+        // Reset
+        [p0, p1].forEach(p => {
+            p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+            p.hand = [];
+        });
+
+        this.setLeaderLevel(0, 10);
+        this.forcePhase(Phase.MAIN);
+
+        // Dorothy (BT01-069) in hand
+        const dorothy = this.getCard("BT01-069");
+        if (dorothy) p0.hand.push(dorothy);
+
+        // Opponent Field
+        // Lane 0: 3-cost unit (BT01-017 Viper) -> Should survival
+        const viper = this.getCard("BT01-017");
+        if (viper) p1.unitZones[0].unit = viper;
+
+        // Lane 1: 2-cost unit (BT01-002 Neon) -> Should be trashed
+        const neon = this.getCard("BT01-002");
+        if (neon) p1.unitZones[1].unit = neon;
+
+        this.renderCallback();
+        console.group("BT01-069 Scenario Ready");
+        console.log("1. Opponent has Viper (3-cost) in Lane 0.");
+        console.log("2. Opponent has Neon (2-cost) in Lane 1.");
+        console.log("3. Play Dorothy in Lane 0: Confirm Viper SURVIVES (Cost 3 > 2).");
+        console.log("4. (Undo or retry) Play Dorothy in Lane 1: Confirm Neon is TRASHED (Cost 2 <= 2).");
+        console.groupEnd();
+    }
+
+    setupBT01_071_Scenario() {
+        console.log("Setting up BT01-071 (Drake) Scenario...");
+        const p0 = this.getPlayer(0);
+        const p1 = this.getPlayer(1);
+
+        // Reset players
+        [p0, p1].forEach(p => {
+            p.unitZones.forEach(z => { z.unit = null; z.items = []; z.buffs = []; });
+            p.hand = [];
+            p.damage = [];
+            p.trash = [];
+        });
+
+        this.setLeaderLevel(0, 30);
+        this.forcePhase(Phase.MAIN);
+
+        // BT01-071 (Drake) in hand
+        const drake = this.getCard("BT01-071");
+        if (drake) p0.hand.push(drake);
+
+        // Friendly fodder unit on field
+        const fodder = this.getCard("BT01-068"); // Neon (Friendly fodder)
+        if (fodder) p0.unitZones[0].unit = fodder;
+
+        // Ensure deck has cards to draw
+        p0.deck.push(this.getCard("BT01-003")!); // Crow
+
+
+        this.renderCallback();
+        console.group("BT01-071 Scenario Ready");
+        console.log("1. Drake in hand.");
+        console.log("2. Friendly unit (Neon) on field in Lane 0.");
+        console.log("3. Play Drake to Lane 1.");
+        console.log("4. Confirm: Modal appears to select a friendly unit to trash.");
+        console.log("5. Select Neon. Confirm Neon is trashed AND you draw a card.");
+        console.groupEnd();
     }
 }

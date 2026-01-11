@@ -21,7 +21,8 @@ export class GameEngine {
             pendingAttackerIndex: null,
             interactionMode: 'NORMAL',
             pendingEffect: null,
-            revealedCards: []
+            revealedCards: [],
+            effectQueue: []
         };
         this.startGame();
     }
@@ -73,16 +74,19 @@ export class GameEngine {
         return this.state.players[this.state.turnPlayerIndex === 0 ? 1 : 0];
     }
 
-    drawCard(playerIndex: number, count: number = 1) {
+    drawCard(playerIndex: number, count: number = 1): Card[] {
         const player = this.state.players[playerIndex];
+        const drawn: Card[] = [];
         for (let i = 0; i < count; i++) {
             if (player.deck.length === 0) {
                 this.state.winner = this.state.players[playerIndex === 0 ? 1 : 0].id; // Loss by deck out
-                return;
+                return drawn;
             }
             const card = player.deck.pop()!;
             player.hand.push(card);
+            drawn.push(card);
         }
+        return drawn;
     }
 
     nextPhase() {
@@ -379,7 +383,6 @@ export class GameEngine {
 
         // Reset Mode
         this.state.interactionMode = 'NORMAL';
-        const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
         this.state.pendingEffect = null;
 
         if (confirm) {
@@ -391,10 +394,8 @@ export class GameEngine {
             console.log("Optional Effect skipped.");
         }
 
-        // Resume remaining effects
-        if (remainingEffects && remainingEffects.length > 0) {
-            this.effectManager.resumeEffects(remainingEffects, context);
-        }
+        // Resume global queue
+        this.effectManager.resumeQueue();
     }
 
     selectCost(handIndex: number) {
@@ -436,14 +437,9 @@ export class GameEngine {
         const context = pending._context;
         context.costPaid = true; // Mark as paid to avoid loop
 
-        // Reset State BEFORE processing effect (in case effect enters selection mode)
-        this.state.interactionMode = 'NORMAL';
-        const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
-        this.state.pendingEffect = null;
-
         this.effectManager.processEffect(effect, context);
 
-        if (pending.actionType === 'ATTACK_COST') {
+        if (pending.actionType === 'ATTACK_COST' && (this.state.interactionMode as any) === 'NORMAL') {
             const zoneIndex = pending.actionValue.attackerZoneIndex;
             const zone = this.currentPlayer.unitZones[zoneIndex];
             (zone as any)._attackCostPaid = true;
@@ -451,10 +447,7 @@ export class GameEngine {
             return;
         }
 
-        // Resume remaining effects if any
-        if (remainingEffects && remainingEffects.length > 0) {
-            this.effectManager.resumeEffects(remainingEffects, context);
-        }
+        this.handleEffectCompletion(context, pending);
     }
 
     initiateTargetSelection(effect: any, context: any) {
@@ -1056,20 +1049,15 @@ export class GameEngine {
                 pending.selectedTargets.push(targetZone);
                 console.log(`Target added. ${pending.selectedTargets.length}/${maxCount}`);
             } else {
-                // Toggle off if already selected? Or just ignore. Let's toggle for better UX.
                 pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== targetZone);
                 console.log(`Target removed. ${pending.selectedTargets.length}/${maxCount}`);
             }
+            // Do not execute yet. Wait for Confirm.
+            return;
         } else {
-            // Legacy/Single target behavior: Execute via Manager
+            // Single target behavior: Execute immediately
             this.effectManager.executeEffect(effect, context, [targetZone]);
-            this.state.interactionMode = 'NORMAL';
-            const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
-            this.state.pendingEffect = null;
-
-            if (remainingEffects && remainingEffects.length > 0) {
-                this.effectManager.resumeEffects(remainingEffects, context);
-            }
+            this.handleEffectCompletion(context, pending);
         }
     }
 
@@ -1126,8 +1114,7 @@ export class GameEngine {
         // Execute Effect via Manager
         this.effectManager.executeEffect(effect, context, pending.selectedTargets);
 
-        // Reset Interaction Mode
-        this.resetInteractionMode(context);
+        this.handleEffectCompletion(context, pending);
     }
 
     public selectTrashTarget(trashIndex: number) {
@@ -1167,8 +1154,7 @@ export class GameEngine {
         } else {
             // Execute
             this.effectManager.executeEffect(pending._fullEffect, pending._context, [card]);
-            // Reset
-            this.resetInteractionMode(pending._context);
+            this.handleEffectCompletion(pending._context, pending);
         }
     }
 
@@ -1201,8 +1187,8 @@ export class GameEngine {
         } else {
             // Execute Effect via Manager
             this.effectManager.executeEffect(effect, context, [targetCard]);
-            // Reset State
-            this.resetInteractionMode(context);
+
+            this.handleEffectCompletion(context, pending);
         }
     }
 
@@ -1251,18 +1237,27 @@ export class GameEngine {
                 }
             }
             // Reset
-            this.resetInteractionMode(context);
+            this.handleEffectCompletion(context, pending);
         }
     }
 
-    private resetInteractionMode(context: any) {
+    private handleEffectCompletion(context: any, currentPending: any) {
+        console.log(`[GameEngine] Handling completion for ${context.sourceCard.name}`);
+        // Queue Architecture: If a new interaction mode started, it means the processed effect caused a trigger.
+        // We do NOTHING here. The queue already has the remaining effects.
+        // The new interaction will block the queue until it is resolved.
+        if (this.state.interactionMode === 'SELECT_TARGET' && this.state.pendingEffect !== currentPending) {
+            console.log("[GameEngine] Action triggered a nested selection mode. Queue paused.");
+        } else {
+            this.resetInteractionMode();
+        }
+    }
+
+    private resetInteractionMode() {
         this.state.interactionMode = 'NORMAL';
-        const remainingEffects = (this.state.pendingEffect as any)._remainingEffects;
         this.state.pendingEffect = null;
 
-        // Resume remaining effects if any
-        if (remainingEffects && remainingEffects.length > 0) {
-            this.effectManager.resumeEffects(remainingEffects, context);
-        }
+        // Resume global queue
+        this.effectManager.resumeQueue();
     }
 }

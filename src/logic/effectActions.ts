@@ -1,4 +1,5 @@
 import { ActionImplementation, UnitZoneState, ActivationCondition } from './types';
+import { TargetSelector } from './TargetSelector';
 
 const gainLevel: ActionImplementation = (ctx, params) => {
     const amount = params.value || 1;
@@ -26,7 +27,9 @@ const drawCard: ActionImplementation = (ctx, params) => {
     } else {
         const count = params.count || 1;
         const pIdx = ctx.machine.state.players.indexOf(ctx.player);
-        ctx.machine.drawCard(pIdx, count);
+        const drawn = ctx.machine.drawCard(pIdx, count);
+        // Store drawn cards in context for subsequent effects (e.g. discard among drawn)
+        (ctx as any).lastDrawnCards = drawn;
     }
 };
 
@@ -259,12 +262,18 @@ const discardAll: ActionImplementation = (ctx, _params) => {
     (ctx as any).discardedCount = count;
 };
 
-const destroyEncounter: ActionImplementation = (ctx, _params, targets) => {
+const destroyEncounter: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(targetZone => {
         const idx = ctx.player.unitZones.indexOf(targetZone);
         if (idx !== -1) {
             const oppZone = ctx.opponent.unitZones[idx];
             if (oppZone.unit) {
+                // Fix: Check costMax if provided
+                if (params.costMax !== undefined && (oppZone.unit.cost || 0) > params.costMax) {
+                    console.log(`Encounter unit ${oppZone.unit.name} cost ${oppZone.unit.cost} exceeds limit ${params.costMax}. Skipping.`);
+                    return;
+                }
+
                 const unitName = oppZone.unit.name;
                 ctx.machine.destroyUnit(ctx.opponent, oppZone);
                 console.log(`Trashed encounter unit ${unitName} in lane ${idx}`);
@@ -274,6 +283,12 @@ const destroyEncounter: ActionImplementation = (ctx, _params, targets) => {
             if (oppIdx !== -1) {
                 const myZone = ctx.player.unitZones[oppIdx];
                 if (myZone.unit) {
+                    // Fix: Check costMax if provided (for reverse encounter case if any)
+                    if (params.costMax !== undefined && (myZone.unit.cost || 0) > params.costMax) {
+                        console.log(`Encounter unit ${myZone.unit.name} cost ${myZone.unit.cost} exceeds limit ${params.costMax}. Skipping.`);
+                        return;
+                    }
+
                     ctx.machine.destroyUnit(ctx.player, myZone);
                 }
             }
@@ -498,7 +513,8 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             // Re-evaluating targets if specific target schemas are provided in sub-actions
             let subTargets = _targets;
             if (sub.targets) {
-                subTargets = ctx.machine.targetSelector.resolve(ctx.player, sub.targets, ctx);
+                // Fix: TargetSelector.resolve is a static method, not a property of machine instance
+                subTargets = TargetSelector.resolve(ctx.machine, sub.targets, ctx);
             }
             impl(ctx, sub.params || {}, subTargets);
         }

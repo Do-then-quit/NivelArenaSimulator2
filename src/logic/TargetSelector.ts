@@ -56,6 +56,10 @@ export class TargetSelector {
             case 'REVEALED':
                 candidates = [...engine.state.revealedCards];
                 break;
+            case 'LAST_DRAWN':
+                candidates = [...((context as any).lastDrawnCards || [])];
+                console.log(`[TargetSelector] Resolving LAST_DRAWN. Context has ${((context as any).lastDrawnCards || []).length} cards.`);
+                break;
         }
 
         // 2. Type filtering
@@ -206,6 +210,7 @@ export class TargetSelector {
                 }
                 break;
             case 'REVEALED': inScope = engine.state.revealedCards.includes(target); break;
+            case 'LAST_DRAWN': inScope = ((context as any).lastDrawnCards || []).includes(target); break;
         }
 
         if (!inScope) return false;

@@ -3,6 +3,7 @@ import { GameEngine } from './logic/GameEngine';
 import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
 import { RuleValidator } from './logic/RuleValidator';
+import { TargetSelector } from './logic/TargetSelector';
 
 import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
@@ -157,19 +158,31 @@ function renderGame() {
       </div>
 
       <div class="hand-zone">
-          ${currentPlayer.hand.map((c, i) => `
-              <div class="card-in-hand ${game!.state.interactionMode === 'SELECT_COST' ? 'cost-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
+          ${currentPlayer.hand.map((c, i) => {
+            const isCostCandidate = game!.state.interactionMode === 'SELECT_COST';
+            const pending = game!.state.pendingEffect as any;
+            const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
+                pending &&
+                TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
+
+            return `
+              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
                   ${renderCard(c)}
               </div>
-          `).join('')}
+          `}).join('')}
       </div>
 
       <div class="opponent-hand-zone">
-          ${opponent.hand.map((c, i) => `
-              <div class="card-in-hand" data-index="${i}">
+          ${opponent.hand.map((c, i) => {
+                const pending = game!.state.pendingEffect as any;
+                const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
+                    pending &&
+                    TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
+                return `
+              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''}" data-index="${i}">
                   ${renderCard(c)}
               </div>
-          `).join('')}
+          `}).join('')}
       </div>
 
 
@@ -673,7 +686,7 @@ function attachListeners() {
         }
 
         // Hand Selection Listener
-        if (pending && (pending.validTargets === 'OPP_HAND' || pending.validTargets === 'MY_HAND')) {
+        if (pending && (pending.validTargets === 'OPP_HAND' || pending.validTargets === 'MY_HAND' || pending.validTargets === 'LAST_DRAWN')) {
             const sourceIsMe = pending.sourcePlayerId === game!.currentPlayer.id;
 
             // Effective Target relative to ME (the client user)
@@ -684,9 +697,10 @@ function attachListeners() {
 
             if (sourceIsMe) {
                 if (pending.validTargets === 'OPP_HAND') targetIsOpponentHand = true;
+                // LAST_DRAWN for source is me -> my hand
             } else {
                 // Source is Opponent
-                if (pending.validTargets === 'MY_HAND') targetIsOpponentHand = true; // They target "My Hand" = Their Hand = Opponent Hand for me
+                if (pending.validTargets === 'MY_HAND' || pending.validTargets === 'LAST_DRAWN') targetIsOpponentHand = true; // They target "My Hand" / "Last Drawn" = Their Hand = Opponent Hand for me
                 // if OPP_HAND -> They target "Opponent Hand" = Me -> My Hand (targetIsOpponentHand = false)
             }
 

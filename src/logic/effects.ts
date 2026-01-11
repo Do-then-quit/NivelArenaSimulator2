@@ -12,9 +12,10 @@ export class EffectManager {
 
     processEffects(activation: ActivationCondition, context: any): boolean {
         const { sourceCard } = context;
-        let triggered = false;
 
         if (!sourceCard || !sourceCard.effects) return false;
+
+        console.log(`[EffectManager] Processing ${activation} effects for ${sourceCard.name}`);
 
         const effectsToProcess = [...(sourceCard.effects || [])].filter((e: Effect) => e.activation === activation);
 
@@ -23,21 +24,61 @@ export class EffectManager {
             effectsToProcess.push(...context.unitZone.temporaryEffects.filter((e: Effect) => e.activation === activation));
         }
 
-        for (let i = 0; i < effectsToProcess.length; i++) {
-            const effect = effectsToProcess[i];
+        if (effectsToProcess.length === 0) return false;
 
-            if (this.processEffect(effect, context)) {
-                triggered = true;
-                if (this.engine.state.interactionMode !== 'NORMAL') {
-                    if (i < effectsToProcess.length - 1) {
-                        (this.engine.state.pendingEffect as any)._remainingEffects = effectsToProcess.slice(i + 1);
-                    }
-                    break;
-                }
-            }
+        // Queueing: Stack behavior (LIFO) for the batch, but FIFO within the batch?
+        // Usually, if a card has multiple effects, they trigger in order.
+        // If we want [E1, E2] to jump to the front of [Old1, Old2],
+        // result should be [E1, E2, Old1, Old2].
+        // So we assume effectsToProcess is already in order [E1, E2].
+        // We prepend them to the queue.
+
+        const queueItems = effectsToProcess.map((e: Effect, index: number) => ({
+            effect: e,
+            context: context,
+            id: `${sourceCard.id}_${activation}_${index}_${Date.now()}`
+        }));
+
+        this.engine.state.effectQueue.unshift(...queueItems);
+        console.log(`[EffectManager] Added ${queueItems.length} effects to queue. Total: ${this.engine.state.effectQueue.length}`);
+
+        // Start processing immediately
+        this.processQueue();
+
+        return true;
+    }
+
+    public processQueue() {
+        if (this.engine.state.interactionMode !== 'NORMAL') {
+            console.log(`[EffectManager] Cannot process queue, interaction mode is ${this.engine.state.interactionMode}`);
+            return;
         }
 
-        return triggered;
+        while (this.engine.state.effectQueue.length > 0) {
+            const item = this.engine.state.effectQueue[0]; // Peek first (don't remove yet in case of failure/pause?) 
+            // Actually, standard is shift. If we pause, we rely on the fact that we break loop.
+            // But if processEffect triggers a manual step, it might consume the step logic.
+
+            // Let's shift it. If it causes a pause, the handling logic (initiateTargetSelection) 
+            // will set the interaction mode. The effect itself is "processed" in terms of "we tried to run it".
+            // The *continuation* of that effect (resolution) happens later via resolve methods, 
+            // but the effect item itself is done being "initiated".
+
+            this.engine.state.effectQueue.shift();
+            // console.log(`[EffectManager] Processing queue item: ${item.effect.description}`);
+
+            this.processEffect(item.effect, item.context);
+
+            if (this.engine.state.interactionMode !== 'NORMAL') {
+                console.log(`[EffectManager] Queue paused for interaction: ${this.engine.state.interactionMode}`);
+                break;
+            }
+        }
+    }
+
+    public resumeQueue() {
+        console.log(`[EffectManager] Resuming queue. Size: ${this.engine.state.effectQueue.length}`);
+        this.processQueue();
     }
 
     public processEffect(effect: Effect, context: GameContext): boolean {
@@ -62,6 +103,7 @@ export class EffectManager {
 
         if (effect.targets && effect.targets.selectMode === 'MANUAL') {
             const candidates = TargetSelector.resolve(this.engine, effect.targets, context);
+            console.log(`[EffectManager] Resolving targets for "${effect.description}". Scope: ${effect.targets.scope}, Candidates: ${candidates.length}`);
             if (candidates.length > 0) {
                 this.engine.initiateTargetSelection(effect, context);
             } else {
@@ -82,19 +124,6 @@ export class EffectManager {
         return true;
     }
 
-    public resumeEffects(effects: Effect[], context: GameContext) {
-        for (let i = 0; i < effects.length; i++) {
-            const effect = effects[i];
-            if (this.processEffect(effect, context)) {
-                if (this.engine.state.interactionMode !== 'NORMAL') {
-                    if (i < effects.length - 1) {
-                        (this.engine.state.pendingEffect as any)._remainingEffects = effects.slice(i + 1);
-                    }
-                    break;
-                }
-            }
-        }
-    }
 
     public executeEffect(effect: Effect, context: GameContext, targets: any[] = []) {
         const { action } = effect;

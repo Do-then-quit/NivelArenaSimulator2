@@ -617,6 +617,13 @@ body {
     animation: pulse-blue 1.5s infinite;
 }
 
+.target-candidate {
+    cursor: crosshair;
+    border: 3px solid #ffeaa7;
+    animation: pulse-gold 1.5s infinite;
+    z-index: 10;
+}
+
 @keyframes pulse-blue {
     0% {
         box-shadow: 0 0 5px rgba(9, 132, 227, 0.4);

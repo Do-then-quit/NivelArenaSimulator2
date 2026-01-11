@@ -613,15 +613,14 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     "BT01-068": [
         {
             activation: ActivationCondition.EXIT,
-            description: "엑시트 : 카드를 2장 드로우하고, 그 중 1장을 골라 트래시한다.",
-            action: {
-                type: 'COMPLEX_ACTION', params: {
-                    subActions: [
-                        { type: 'DRAW', params: { count: 2 } },
-                        { type: 'DISCARD', params: { target: 'SELF', count: 1 }, targets: { scope: 'MY_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' } }
-                    ]
-                } as any
-            }
+            description: "엑시트 : 카드를 2장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 2 } }
+        },
+        {
+            activation: ActivationCondition.EXIT,
+            description: "그 중 1장을 골라 트래시한다.",
+            action: { type: 'DISCARD', params: { target: 'SELF', count: 1 } },
+            targets: { scope: 'LAST_DRAWN', type: 'CARD', count: 1, selectMode: 'MANUAL' }
         }
     ],
     "BT01-069": [
@@ -641,15 +640,14 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     "BT01-071": [
         {
             activation: ActivationCondition.ENTRY,
-            description: "엔트리 : 필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 1장 드로우한다.",
-            action: {
-                type: 'COMPLEX_ACTION', params: {
-                    subActions: [
-                        { type: 'DESTROY_UNIT', targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' } },
-                        { type: 'DRAW', params: { count: 1 } }
-                    ]
-                } as any
-            }
+            description: "엔트리 : 필드에 있는 자신 유닛을 1장 골라 트래시한다.",
+            action: { type: 'DESTROY_UNIT', params: {} },
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' }
+        },
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "그 후, 카드를 1장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 1 } }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
