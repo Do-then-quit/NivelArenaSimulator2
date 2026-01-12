@@ -561,6 +561,18 @@ function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     return null;
 }
 
+const damage: ActionImplementation = (ctx, params, _targets) => {
+    // Damage to player
+    // params.value
+    const value = params.value || 0;
+    const targetPlayer = ctx.opponent; // Usually opponent? Or specified?
+    // Penetration implies damage to opponent.
+    if (value > 0) {
+        ctx.machine.dealDamage(targetPlayer, value);
+        console.log(`Dealt ${value} damage to ${targetPlayer.name} via effect.`);
+    }
+};
+
 export const ActionRegistry: Record<string, ActionImplementation> = {
     'GAIN_LEVEL': gainLevel,
     'DRAW': drawCard,
@@ -589,4 +601,5 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DESTROY_UNIT_WITH_HIT_COST': destroyUnitWithHitCost,
     'COMPLEX_ACTION': complexAction,
     'SACRIFICE_TO_BUFF': sacrificeToBuff,
+    'DAMAGE': damage,
 };

@@ -38,6 +38,7 @@ export enum ActivationCondition {
     TURN_END = 'TURN_END',
     AWAKEN = 'AWAKEN',
     UNIT_TRASHED = 'UNIT_TRASHED', // New: Triggered when any unit is moved to trash
+    ESCAPE = 'ESCAPE', // New: When unit is returned to deck bottom from field (Entry of Main Phase)
 }
 
 export type ActionType =
@@ -137,6 +138,8 @@ export interface EffectQueueItem {
     effect: Effect;
     context: GameContext;
     id: string; // Unique ID for tracking
+    creationTime: number; // Global Step timestamp
+    sourcePlayerId: string; // Owner ID for priority sorting
 }
 
 export type ActionImplementation = (context: GameContext, params: any, targets: any[]) => void;
@@ -223,6 +226,9 @@ export interface GameState {
     attackTerminated?: boolean;
     revealedCards: Card[];
     effectQueue: EffectQueueItem[]; // New: Centralized Effect Queue
+    globalStep: number; // Global Timer for effects
+    combatStep: 'NONE' | 'ATTACK_DECLARATION' | 'DEFENSE_DECLARATION' | 'BATTLE' | 'BATTLE_END';
+    combatBlocked: boolean; // Tracks if a block was declared
 }
 
 export interface PendingEffect {

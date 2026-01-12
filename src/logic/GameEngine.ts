@@ -22,9 +22,38 @@ export class GameEngine {
             interactionMode: 'NORMAL',
             pendingEffect: null,
             revealedCards: [],
-            effectQueue: []
+            effectQueue: [],
+            globalStep: 0,
+            combatStep: 'NONE',
+            combatBlocked: false
         };
         this.startGame();
+    }
+
+    public incrementGlobalStep() {
+        this.state.globalStep++;
+        // console.log(`[GlobalStep] Incremented to ${this.state.globalStep}`);
+    }
+
+    public sortEffectQueue() {
+        this.state.effectQueue.sort((a, b) => {
+            // 1. Creation Time (Ascending) - Oldest First
+            if (a.creationTime !== b.creationTime) {
+                return a.creationTime - b.creationTime;
+            }
+
+            // 2. Turn Player Priority (Same Timestamp)
+            const turnPlayerId = this.state.players[this.state.turnPlayerIndex].id;
+            const aIsTurnPlayer = a.sourcePlayerId === turnPlayerId;
+            const bIsTurnPlayer = b.sourcePlayerId === turnPlayerId;
+
+            if (aIsTurnPlayer && !bIsTurnPlayer) return -1; // a comes first
+            if (!aIsTurnPlayer && bIsTurnPlayer) return 1;  // b comes first
+
+            // 3. (Optional) Order preserved for same player (stable sort mostly)
+            return 0;
+        });
+        // console.log(`[Queue] Sorted. Head: ${this.state.effectQueue[0]?.effect.description}`);
     }
 
     private createPlayer(name: string, deck: Card[], leader: Card): PlayerState {
@@ -90,7 +119,9 @@ export class GameEngine {
     }
 
     nextPhase() {
-        if (this.state.winner) return;
+        if (this.state.winner) {
+            return;
+        }
 
         const endValidation = RuleValidator.canEndPhase(this, this.currentPlayer);
         if (!endValidation.valid) {
@@ -98,73 +129,150 @@ export class GameEngine {
             return;
         }
 
+        let nextPhase: Phase = this.state.phase;
+
         switch (this.state.phase) {
             case Phase.LEVEL_UP:
                 this.addLeaderLevel(this.state.turnPlayerIndex, 1);
-                this.state.phase = Phase.DRAW;
+                nextPhase = Phase.DRAW;
                 break;
             case Phase.DRAW:
                 if (!(this.state.turnCount === 1 && this.state.turnPlayerIndex === 0)) {
                     this.drawCard(this.state.turnPlayerIndex);
                 }
-                this.state.phase = Phase.MAIN;
+                nextPhase = Phase.MAIN;
                 break;
             case Phase.MAIN:
-                this.state.phase = Phase.ATTACK;
+                nextPhase = Phase.ATTACK;
                 break;
             case Phase.ATTACK:
-                this.state.phase = Phase.END;
-                this.endPhase();
+                nextPhase = Phase.END;
                 break;
             case Phase.BLOCK:
                 console.warn("Cannot skip BLOCK phase manually. Must resolve block.");
-                break;
+                return;
             case Phase.END:
-                this.endTurn();
+                nextPhase = Phase.LEVEL_UP;
                 break;
         }
-    }
 
-    private endPhase() {
-        // Trash skills
-        this.currentPlayer.skillZone.forEach(c => this.currentPlayer.trash.push(c));
-        this.currentPlayer.skillZone = [];
-
-        // Remove TURN_END buffs (this is now handled in nextPhase END case for all players)
-        // [this.currentPlayer, this.opponentPlayer].forEach(p => {
-        //     p.unitZones.forEach(z => {
-        //         z.buffs = z.buffs.filter(b => b.duration !== 'TURN_END');
-        //         z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'TURN_END');
-        //     });
-        // });
-
-        // Hand limit 7
-        while (this.currentPlayer.hand.length > 7) {
-            const discarded = this.currentPlayer.hand.pop()!;
-            this.currentPlayer.trash.push(discarded);
+        // Execute Exit Logic (Current Phase)
+        // (Currently mostly handled in endPhase/endTurn calls, unifying now)
+        if (this.state.phase === Phase.END) {
+            this.resolveEndPhase(); // New dedicated method
+        } else {
+            this.state.phase = nextPhase;
+            this.enterPhase(nextPhase);
         }
     }
 
-    private endTurn() {
-        // 1. Clear TURN_END for everyone (though usually only matters for current player)
+    public enterPhase(phase: Phase) {
+        this.state.phase = phase;
+        console.log(`Entering Phase: ${phase}`);
+
+        if (phase === Phase.MAIN) {
+            // [ESCAPE] Logic: Check all units for ESCAPE effect
+            this.state.players.forEach((p) => {
+                p.unitZones.forEach((zone) => {
+                    // Check if unit has ESCAPE keyword/effect
+                    // Note: We need to trigger it.
+                    // Logic: "Unit Zone -> Deck Bottom" is the cost/condition.
+                    // But usually auto-triggered.
+                    // If unit has "ESCAPE" activation, trigger it.
+                    if (zone.unit) {
+                        const escapeEffects = zone.unit.effects?.filter(e => e.activation === ActivationCondition.ESCAPE);
+                        if (escapeEffects && escapeEffects.length > 0) {
+                            console.log(`[ESCAPE] Triggered for ${zone.unit.name}`);
+                            // Logic: Move to Deck Bottom first? Or let effect handle it?
+                            // Proposal: "Send to deck bottom AND activate effect"
+                            // We should probably treat it as an effect that pays the cost of moving itself.
+                            // For now, let's trigger the effect Manager.
+                            this.effectManager.processEffects(ActivationCondition.ESCAPE, {
+                                sourceCard: zone.unit,
+                                player: player,
+                                opponent: (player === this.state.players[0] ? this.state.players[1] : this.state.players[0]),
+                                unitZone: zone,
+                                machine: this
+                            });
+                            // Handle movement if not handled by action?
+                            // Assuming the action implementation handles the move or strict rule.
+                            // For simplicity now, we assume the Effect Action includes "RETURN_TO_DECK_BOTTOM".
+                            // Use 'RETURN_TO_DECK_BOTTOM' action type if exists, or adding it now?
+                            // Let's rely on effect definition.
+                        }
+                    }
+                });
+            });
+        }
+    }
+
+    private resolveEndPhase() {
+        console.log("Resolving End Phase Sequence...");
+        // 1. "At the end of turn" Effects (e.g. Return, etc.)
+        this.effectManager.processEffects(ActivationCondition.TURN_END, {
+            sourceCard: this.currentPlayer.levelZone!, // Dummy source for global check? Or check all cards?
+            player: this.currentPlayer,
+            opponent: this.opponentPlayer,
+            machine: this
+        });
+        // We should check all cards on field for TURN_END triggers
+        this.state.players.forEach(p => {
+            // Units
+            p.unitZones.forEach(z => {
+                if (z.unit) {
+                    this.effectManager.processEffects(ActivationCondition.TURN_END, {
+                        sourceCard: z.unit,
+                        player: p,
+                        opponent: p === this.currentPlayer ? this.opponentPlayer : this.currentPlayer, // Logic check
+                        unitZone: z,
+                        machine: this
+                    });
+                }
+                // Items
+                z.items.forEach(i => {
+                    this.effectManager.processEffects(ActivationCondition.TURN_END, {
+                        sourceCard: i,
+                        player: p,
+                        opponent: p === this.currentPlayer ? this.opponentPlayer : this.currentPlayer,
+                        unitZone: z,
+                        machine: this
+                    });
+                });
+            });
+            // Pending: Leader/Skill?
+        });
+
+        // 2. Clear Temporary Buffs/Effects ("Until End of Turn")
         this.state.players.forEach(p => {
             p.unitZones.forEach(z => {
                 z.buffs = z.buffs.filter(b => b.duration !== 'TURN_END');
                 z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'TURN_END');
             });
         });
+        // Clear OPP_TURN_END for the Opponent (since it IS their opponent's turn ending now)
+        const opponent = this.opponentPlayer; // The non-turn player
+        opponent.unitZones.forEach(z => {
+            z.buffs = z.buffs.filter(b => b.duration !== 'OPP_TURN_END');
+            z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'OPP_TURN_END');
+        });
 
-        // 2. Clear OPP_TURN_END for the player whose opponent's turn it was.
-        // If it's Player A's TURN END, and Player B has a "Until end of opponent's turn" buff, it clears now.
-        const opponent = this.state.players.find(p => p !== this.currentPlayer);
-        if (opponent) {
-            opponent.unitZones.forEach(z => {
-                z.buffs = z.buffs.filter(b => b.duration !== 'OPP_TURN_END');
-                z.temporaryEffects = z.temporaryEffects.filter(e => e.duration !== 'OPP_TURN_END');
-            });
+        // 3. Trash Skills (Skill Zone -> Trash)
+        this.currentPlayer.skillZone.forEach(c => this.currentPlayer.trash.push(c));
+        this.currentPlayer.skillZone = [];
+
+        // 4. Hand Adjustment (Limit 7)
+        while (this.currentPlayer.hand.length > 7) {
+            const discarded = this.currentPlayer.hand.pop()!;
+            this.currentPlayer.trash.push(discarded);
+            console.log(`Hand limit: Discarded ${discarded.name}`);
         }
 
-        // 3. Reset per-turn flags
+        // 5. Turn Switch
+        this.endTurn();
+    }
+
+    private endTurn() {
+        // Reset per-turn flags
         this.currentPlayer.unitZones.forEach(z => {
             z.hasAttacked = false;
             z.isExhausted = false;
@@ -172,14 +280,15 @@ export class GameEngine {
             z.hasActivatedEffectThisTurn = false;
         });
 
+        // Switch
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
         this.state.turnCount++;
-        this.state.phase = Phase.LEVEL_UP;
+        this.enterPhase(Phase.LEVEL_UP); // Correctly enter next phase
 
         // Reset once-per-turn effects
         (this.state as any).firedEffects = {};
 
-        // Process delayed actions (e.g., Return from trash)
+        // Process delayed actions (Legacy support, maybe merge into TURN_END effects?)
         this.processDelayedActions();
     }
 
@@ -501,6 +610,11 @@ export class GameEngine {
         (attackerZone as any)._attackCostPaid = false; // Reset for next time
         attackerZone.hasAttacked = true;
 
+        // COMBAT STEP 1: Attack Declaration
+        this.state.combatStep = 'ATTACK_DECLARATION';
+        this.state.phase = Phase.ATTACK; // Ensure phase is set
+        this.state.pendingAttackerIndex = attackerZoneIndex;
+
         // Trigger Attacker Effects (Unit + Items)
         this.effectManager.processEffects(ActivationCondition.ATTACKER, {
             sourceCard: attackerZone.unit,
@@ -520,25 +634,197 @@ export class GameEngine {
             });
         });
 
-        // Lane Alignment: In mirrored layout, Lane 0 faces Lane 0
+        // The queue is automatically running.
+        // If queue is empty immediately, strict flow requires us to manually advance?
+        // OR rely on onQueueCompleted callback?
+        // If queue was empty, processEffects returns false/true but queue is empty.
+        // EffectManager.processEffects calls processQueue.
+        // processQueue returns COMPLETED if empty.
+        // BUT processEffects doesn't return that status.
+
+        // Better: Check queue size. If 0, advance interactively.
+        if (this.state.effectQueue.length === 0) {
+            this.advanceCombatStep();
+        }
+    }
+
+    public onQueueCompleted() {
+        // Called when EffectManager finishes draining the queue
+        // Check if we need to advance the game state
+        if (this.state.combatStep !== 'NONE') {
+            this.advanceCombatStep();
+        }
+    }
+
+    private advanceCombatStep() {
+        const attackerZone = this.currentPlayer.unitZones[this.state.pendingAttackerIndex!];
+
+        switch (this.state.combatStep) {
+            case 'ATTACK_DECLARATION':
+                // Proceed to Defense Declaration
+                this.stepDefenseDeclaration(attackerZone);
+                break;
+            case 'DEFENSE_DECLARATION':
+                // Proceed to Battle Resolution
+                this.stepBattleResolution(attackerZone);
+                break;
+            case 'BATTLE':
+                // Proceed to Battle End
+                this.stepBattleEnd();
+                break;
+            case 'BATTLE_END':
+                // End Combat
+                this.state.combatStep = 'NONE';
+                this.state.pendingAttackerIndex = null;
+                this.state.phase = Phase.ATTACK; // Return to Attack Available
+                break;
+        }
+    }
+
+    private stepDefenseDeclaration(attackerZone: UnitZoneState) {
+        this.state.combatStep = 'DEFENSE_DECLARATION';
+        const attackerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
+
+        // 1. Check BREAKTHROUGH
         const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
+        let breakthroughActive = false;
         if (blockerZone.unit) {
-            // CHECK BREAKTHROUGH before entering BLOCK phase
             const limit = this.getBreakthroughLimit(attackerZone);
             if (limit !== null && blockerZone.unit.cost <= limit) {
-                console.log(`BREAKTHROUGH active (Cost ${blockerZone.unit.cost} <= ${limit}). Skipping Block phase.`);
-                this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
-                return;
+                console.log(`BREAKTHROUGH active. Skipping Block phase.`);
+                breakthroughActive = true;
+            }
+        }
+
+        if (breakthroughActive || !blockerZone.unit) {
+            // Direct Attack or Breakthrough -> Skip Blocking
+            this.advanceCombatStep(); // Go directly to BATTLE
+            return;
+        }
+
+        // 2. Encounter Unit exists -> Potential Block
+        this.state.phase = Phase.BLOCK;
+        // Wait for user input (resolveBlock)
+        console.log("Waiting for Block Declaration...");
+
+        // NOTE: guardian/auto-block logic would go here if implemented
+        // For now, we wait for Manual Block (UI calls resolveBlock)
+    }
+
+    private stepBattleResolution(attackerZone: UnitZoneState) {
+        this.state.combatStep = 'BATTLE';
+        const blockerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
+        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
+
+        // 1. Check Attack Terminated
+        if (this.state.attackTerminated) {
+            console.log("Attack Terminated during resolution.");
+            this.advanceCombatStep();
+            return;
+        }
+
+        // 2. Pre-Combat Effects? (e.g. Infiltration)
+        // INFILTRATION (Rule 10.2.3.1): If Infiltration & No Blocker -> Draw 1
+        // Wait, Proposal says "Pre-Combat Effect".
+        if (!this.state.combatBlocked && this.hasKeywordInZone(attackerZone, '침투')) {
+            console.log("Infiltration Triggered.");
+            this.drawCard(this.state.turnPlayerIndex, 1);
+        }
+
+        // 3. Resolution
+        // 3. Resolution
+        if (this.state.combatBlocked && blockerZone.unit) {
+            // Combat Resolution
+            const attPower = this.getUnitPower(attackerZone, this.currentPlayer);
+            const blkPower = this.getUnitPower(blockerZone, this.opponentPlayer);
+            console.log(`Combat! Attacker Power: ${attPower}, Blocker Power: ${blkPower}`);
+
+            if (attPower >= blkPower) {
+                // IMPORTANT: Destroy first, THEN queue result effects. 
+                // Currently destroyUnit triggers EXIT effects (queued).
+                // Proposal says Result Effects (Penetration, Plunder) should be queued AFTER kill.
+                this.destroyUnit(this.opponentPlayer, blockerZone, attackerZone.unit || undefined);
+
+                // PENETRATION (Rule 10.2.3.2)
+                const penValue = this.getPenetrationValue(attackerZone);
+                if (penValue > 0) {
+                    console.log("[Combat] Queuing PENETRATION Effect");
+                    // Create ephemeral effect
+                    const penEffect: any = {
+                        activation: 'AUTO_RESOLVED_COMBAT' as any, // Pseudo-condition or use ATTACKER
+                        action: { type: 'DAMAGE', params: { value: penValue } },
+                        description: `Penetration Damage: ${penValue}`,
+                        id: `PEN_${Date.now()}`
+                    };
+                    // Queue it directly? Or use processEffects with source?
+                    // Use processEffects with a custom activation? 
+                    // Let's manually queue it using internal logic or a helper to ensure it's a "New Stamp".
+                    // Actually, if we use effectManager.processEffects with a custom activation, it creates a new timestamp.
+                    // But these effects belong to the ATTACKING UNIT.
+
+                    // Let's use a new activation 'COMBAT_RESULT' or generic 'AUTO'?
+                    // For now, let's inject it into the queue directly to force it as a NEW timestamp,
+                    // OR add a "One-shot" effect to the unit and trigger it?
+                    // Simplest: Create a dummy effect object and use effectManager.processEffects with a special condition.
+                    // BUT processEffects filters by card effects. The unit doesn't have this effect explicitly.
+
+                    // ALTERNATIVE: Use `effectManager.executeEffects` directly? 
+                    // NO, we need it in the QUEUE.
+
+                    // We must expose a method to "Queue Single Effect Immediately"
+                    this.effectManager.queueEphemeralEffect(penEffect, {
+                        sourceCard: attackerZone.unit!,
+                        player: this.currentPlayer,
+                        opponent: this.opponentPlayer,
+                        machine: this
+                    });
+                }
+
+                // PLUNDER (Rule 10.2.3.3)
+                const pluValue = this.getPlunderValue(attackerZone);
+                if (pluValue > 0) {
+                    console.log("[Combat] Queuing PLUNDER Effect");
+                    const pluEffect: any = {
+                        activation: 'AUTO_RESOLVED_COMBAT' as any,
+                        action: { type: 'DRAW', params: { count: pluValue } },
+                        description: `Plunder Draw: ${pluValue}`,
+                        id: `PLU_${Date.now()}`
+                    };
+                    this.effectManager.queueEphemeralEffect(pluEffect, {
+                        sourceCard: attackerZone.unit!,
+                        player: this.currentPlayer,
+                        opponent: this.opponentPlayer,
+                        machine: this
+                    });
+                }
             }
 
-            // Encounter Unit exists -> Go to BLOCK phase
-            this.state.phase = Phase.BLOCK;
-            this.state.pendingAttackerIndex = attackerZoneIndex;
+            if (blkPower > attPower) {
+                this.destroyUnit(this.currentPlayer, attackerZone, blockerZone.unit || undefined);
+            }
         } else {
-            // Direct Attack
+            // Direct Damage
             this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
+        }
+
+        // Queue might have new effects (Destruction triggers).
+        // If queue empty, advance to End.
+        if (this.state.effectQueue.length === 0) {
+            this.advanceCombatStep();
+        }
+    }
+
+    private stepBattleEnd() {
+        this.state.combatStep = 'BATTLE_END';
+
+        // Cleanup temp effects?? 
+        // Actually, trigger Result Effects [EXIT, MUTUAL_DESTRUCTION] happens inside Resolution.
+        // This step is just for checking if those effects are done.
+
+        if (this.state.effectQueue.length === 0) {
+            this.advanceCombatStep();
         }
     }
 
@@ -551,7 +837,7 @@ export class GameEngine {
         const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
-        // CHECK BREAKTHROUGH (Fallback check if resolveBlock is called directly)
+        // CHECK BREAKTHROUGH (Fallback check)
         if (shouldBlock && blockerZone.unit) {
             const limit = this.getBreakthroughLimit(attackerZone);
             if (limit !== null && blockerZone.unit.cost <= limit) {
@@ -560,7 +846,7 @@ export class GameEngine {
             }
         }
 
-        // DUALIST (Rule 10.2.3.5.3): Must defend if encounter unit exists and can defend.
+        // DUALIST (Rule 10.2.3.5.3)
         const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
         let finalShouldBlock = shouldBlock;
         if (isDualist && blockerZone.unit) {
@@ -587,53 +873,33 @@ export class GameEngine {
                 });
             });
 
-            // Check if attack was terminated (e.g. by TERMINATE_ATTACK effect)
-            if (this.state.attackTerminated) {
-                console.log("Attack Terminated. Skipping Combat.");
-                this.state.phase = Phase.ATTACK;
-                this.state.pendingAttackerIndex = null;
-                return;
-            }
+            // Mark blocking happened? Actually, the presence of blockerZone.unit implies blocking capability,
+            // but we need to know if the player CHOSE to block.
+            // If they chose NOT to block, we should probably pretend the unit isn't there for combat??
+            // Wait, Nivel Arena rules: Encounter unit blocks logic or direct attack logic?
+            // "Manual Block: If there is no Guardian, the opponent decides whether to defend with the encounter unit."
+            // If they decide NOT to defend, what happens? "Attack Unit's Hit -> Player Damage".
+            // So if !finalShouldBlock, we treat it as unblocked even if unit is there because of Encounter logic.
 
-            // Combat
-            this.resolveCombat(attackerZone, blockerZone);
+            // CRITICAL FIX: If user chose NOT to block, we must clear the 'blockerZone.unit' from the combat equation momentarily?
+            // No, we just need to pass a flag to stepBattleResolution. 
+            // BUT stepBattleResolution looks at `blockerZone.unit`.
+            // We need a robust way to say "This combat is unblocked".
+            // Let's set a temporary state on the engine? `this.state.isCombatBlocked`.
+
+            this.state.combatBlocked = true;
+
         } else {
-            // Direct Damage
-            this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
+            this.state.combatBlocked = false;
         }
 
-        // Return to ATTACK phase
-        this.state.phase = Phase.ATTACK;
-        this.state.pendingAttackerIndex = null;
-    }
-
-    private resolveCombat(attacker: UnitZoneState, blocker: UnitZoneState) {
-        // Use calculated stats
-        const attPower = this.getUnitPower(attacker, this.currentPlayer);
-        const blkPower = this.getUnitPower(blocker, this.opponentPlayer);
-
-        console.log(`Combat! Attacker Power: ${attPower}, Blocker Power: ${blkPower}`);
-
-        if (attPower >= blkPower) {
-            this.destroyUnit(this.opponentPlayer, blocker, attacker.unit || undefined);
-
-            // PENETRATION (Rule 10.2.3.2)
-            const penValue = this.getPenetrationValue(attacker);
-            if (penValue > 0) {
-                this.dealDamage(this.opponentPlayer, penValue);
-            }
-
-            // PLUNDER (Rule 10.2.3.3)
-            const pluValue = this.getPlunderValue(attacker);
-            if (pluValue > 0) {
-                this.drawCard(this.state.turnPlayerIndex, pluValue);
-            }
-        }
-
-        if (blkPower > attPower) {
-            this.destroyUnit(this.currentPlayer, attacker, blocker.unit || undefined);
+        // Advance to next step (Battle Resolution)
+        // If effects were added, queue runs. If not, manual advance.
+        if (this.state.effectQueue.length === 0) {
+            this.advanceCombatStep();
         }
     }
+
 
     private hasKeyword(card: Card, keyword: string): boolean {
         return card.keywords?.includes(keyword) || false;
@@ -1260,4 +1526,6 @@ export class GameEngine {
         // Resume global queue
         this.effectManager.resumeQueue();
     }
+
+
 }

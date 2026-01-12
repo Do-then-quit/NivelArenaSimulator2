@@ -10,6 +10,25 @@ export class EffectManager {
         this.engine = engine;
     }
 
+    public queueEphemeralEffect(effect: Effect, context: GameContext) {
+        this.engine.incrementGlobalStep();
+        const currentStep = this.engine.state.globalStep;
+
+        const item = {
+            effect: effect,
+            context: context,
+            id: `EPH_${Date.now()}_${Math.random()}`,
+            creationTime: currentStep,
+            sourcePlayerId: context.player.id
+        };
+
+        this.engine.state.effectQueue.push(item);
+        console.log(`[EffectManager] Queued Ephemeral Effect: ${effect.description} (Timestamp: ${currentStep})`);
+
+        this.engine.sortEffectQueue();
+        this.processQueue();
+    }
+
     processEffects(activation: ActivationCondition, context: any): boolean {
         const { sourceCard } = context;
 
@@ -26,21 +45,26 @@ export class EffectManager {
 
         if (effectsToProcess.length === 0) return false;
 
-        // Queueing: Stack behavior (LIFO) for the batch, but FIFO within the batch?
-        // Usually, if a card has multiple effects, they trigger in order.
-        // If we want [E1, E2] to jump to the front of [Old1, Old2],
-        // result should be [E1, E2, Old1, Old2].
-        // So we assume effectsToProcess is already in order [E1, E2].
-        // We prepend them to the queue.
+        // Queueing with Timestamp & Priority System
+
+        // 1. Increment Global Step for this new batch of effects
+        // (Assuming this method call represents an atomic event reaction)
+        this.engine.incrementGlobalStep();
+        const currentStep = this.engine.state.globalStep;
 
         const queueItems = effectsToProcess.map((e: Effect, index: number) => ({
             effect: e,
             context: context,
-            id: `${sourceCard.id}_${activation}_${index}_${Date.now()}`
+            id: `${sourceCard.id}_${activation}_${index}_${Date.now()}`,
+            creationTime: currentStep,
+            sourcePlayerId: context.player.id
         }));
 
-        this.engine.state.effectQueue.unshift(...queueItems);
-        console.log(`[EffectManager] Added ${queueItems.length} effects to queue. Total: ${this.engine.state.effectQueue.length}`);
+        this.engine.state.effectQueue.push(...queueItems);
+        console.log(`[EffectManager] Added ${queueItems.length} effects to queue (Timestamp: ${currentStep}). Total: ${this.engine.state.effectQueue.length}`);
+
+        // 2. Sort Queue based on Priority
+        this.engine.sortEffectQueue();
 
         // Start processing immediately
         this.processQueue();
@@ -48,10 +72,10 @@ export class EffectManager {
         return true;
     }
 
-    public processQueue() {
+    public processQueue(): 'COMPLETED' | 'PAUSED' {
         if (this.engine.state.interactionMode !== 'NORMAL') {
             console.log(`[EffectManager] Cannot process queue, interaction mode is ${this.engine.state.interactionMode}`);
-            return;
+            return 'PAUSED';
         }
 
         while (this.engine.state.effectQueue.length > 0) {
@@ -71,14 +95,18 @@ export class EffectManager {
 
             if (this.engine.state.interactionMode !== 'NORMAL') {
                 console.log(`[EffectManager] Queue paused for interaction: ${this.engine.state.interactionMode}`);
-                break;
+                return 'PAUSED';
             }
         }
+        return 'COMPLETED';
     }
 
     public resumeQueue() {
         console.log(`[EffectManager] Resuming queue. Size: ${this.engine.state.effectQueue.length}`);
-        this.processQueue();
+        const status = this.processQueue();
+        if (status === 'COMPLETED') {
+            this.engine.onQueueCompleted();
+        }
     }
 
     public processEffect(effect: Effect, context: GameContext): boolean {

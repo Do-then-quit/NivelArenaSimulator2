@@ -49,6 +49,8 @@ function mapAttribute(rawAttr: string): Attribute {
     }
 }
 
+import { CardParser } from './CardParser';
+
 export const DUMMY_CARDS: Card[] = [
     ...rawST01, ...rawST02, ...rawST03, ...rawST04, ...rawST05,
     ...rawST06, ...rawST07, ...rawST08, ...rawST09,
@@ -65,15 +67,17 @@ export const DUMMY_CARDS: Card[] = [
     text: raw.text,
     traits: raw.traits,
     keywords: (() => {
+        // Use the new CardParser to extract keywords from text
+        const parsed = CardParser.parseKeywords(raw.text);
+
+        // Merge with existing raw.keywords if any
         let k = raw.keywords || "";
-        const abilityKeywords = ['관통', '약탈', '광전사', '전선구축', '레벨링크', '돌파'];
-        abilityKeywords.forEach(kw => {
-            const regex = new RegExp(`${kw}\\s*[:\\[\\(]`);
-            if (regex.test(raw.text) && !k.includes(kw)) {
-                k = k === "-" ? kw : `${k}, ${kw}`;
+        parsed.forEach(pk => {
+            if (!k.includes(pk)) {
+                k = k === "-" || k === "" ? pk : `${k}, ${pk}`;
             }
         });
-        return k;
+        return k || "-";
     })(),
     imageUrl: `/assets/cards/${raw.id}.jpg`,
     effects: MANUAL_EFFECTS[raw.id] || []
