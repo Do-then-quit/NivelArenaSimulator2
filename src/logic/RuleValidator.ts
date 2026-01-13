@@ -41,6 +41,7 @@ export class RuleValidator {
     static canPlaySkill(engine: GameEngine, player: PlayerState, cardIndex: number): ValidationResult {
         if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
         const card = player.hand[cardIndex];
+        if (!card || card.type !== CardType.SKILL) return { valid: false, reason: "Card is not a skill" };
         const playerSize = engine.getPlayerSize(player);
         if (playerSize < card.cost) return { valid: false, reason: `Size too low (Required: ${card.cost}, Current: ${playerSize})` };
 
