@@ -183,8 +183,8 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-020": [
         {
-            activation: ActivationCondition.ENTRY,
-            description: "필드에 있는 어태커 : 를 가진 유닛을 1장 고른다. 그 유닛은 어태커 : 관통[1] 을 얻는다.",
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 어태커 : 를 가진 유닛을 1장 골은다. 그 유닛은 어태커 : 관통[1] 을 얻는다.",
             targets: { scope: 'MY_FIELD', type: 'UNIT', filters: [{ type: 'HAS_KEYWORD', value: '어태커' }], selectMode: 'MANUAL', count: 1 },
             action: {
                 type: 'GRANT_EFFECT',
@@ -202,7 +202,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-021": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "이 턴이 끝날 때까지 필드에 있는 모든 상대 유닛의 파워-1000.",
             targets: { scope: 'OPP_FIELD', type: 'UNIT', selectMode: 'ALL', count: 0 },
             action: { type: 'BUFF_POWER', params: { value: -1000 } },
@@ -211,7 +211,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-022": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "필드에 있는 상대 유닛을 2장까지 골라, 이 턴이 끝날 때까지 파워-2000.",
             targets: { scope: 'OPP_FIELD', type: 'UNIT', selectMode: 'MANUAL', count: 2 },
             action: { type: 'BUFF_POWER', params: { value: -2000 } },
@@ -220,7 +220,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-023": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "이 턴이 끝날 때까지 필드에 있는 어태커 : 를 가진 모든 자신 유닛의 파워+2500.",
             targets: { scope: 'MY_FIELD', type: 'UNIT', filters: [{ type: 'HAS_KEYWORD', value: '어태커' }], selectMode: 'ALL', count: 0 },
             action: { type: 'BUFF_POWER', params: { value: 2500 } },
@@ -229,7 +229,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-024": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-3000. 이 효과로 그 유닛을 트래시했다면 카드를 1장 드로우한다.",
             targets: { scope: 'OPP_FIELD', type: 'UNIT', selectMode: 'MANUAL', count: 1 },
             action: { type: 'BUFF_POWER_AND_DRAW_IF_TRASHED', params: { value: -3000, drawCount: 1 } },
@@ -238,7 +238,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-025": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "자신의 트래시 존에서 어태커 : 를 가진 유닛을 1장 골라 자신의 패에 넣는다.",
             targets: { scope: 'MY_TRASH', type: 'UNIT', filters: [{ type: 'HAS_KEYWORD', value: '어태커' }], selectMode: 'MANUAL', count: 1 },
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }
@@ -248,6 +248,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ATTACKER,
             description: "어태커 : 관통[1]",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'PENETRATION', params: { value: 1 } }
         },
         {
@@ -260,12 +261,14 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ATTACKER,
             description: "어태커 : 이 공격이 끝날 때까지 파워+2000.",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'BUFF_POWER', params: { value: 2000 } },
             duration: 'TURN_END'
         },
         {
             activation: ActivationCondition.ATTACKER,
             description: "어태커 : 약탈[1]",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'PLUNDER', params: { value: 1 } },
             duration: 'TURN_END'
         }
@@ -437,8 +440,8 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-047": [
         {
-            activation: ActivationCondition.ENTRY,
-            description: "필드에 있는 《베이스》를 가진 1코스트인 자신 유닛을 1장 고른다. 이 턴이 끝날 때까지 그 유닛의 히트가 2가 된다.",
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 《베이스》를 가진 1코스트인 자신 유닛을 1장 곤른다. 이 턴이 끝날 때까지 그 유닛의 히트가 2가 된다.",
             targets: { scope: 'MY_FIELD', type: 'UNIT', filters: [{ type: 'HAS_TRAIT', value: '베이스' }, { type: 'COST_LIMIT', value: 1 }], selectMode: 'MANUAL', count: 1 },
             action: { type: 'BUFF_HIT', params: { value: 2, mode: 'SET' } },
             duration: 'TURN_END'
@@ -446,7 +449,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-048": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "현재 필드에 있는 모든 자신 유닛은 상대의 턴이 끝날 때까지 파워+500.",
             targets: { scope: 'MY_FIELD', type: 'UNIT', selectMode: 'ALL', count: 0 },
             action: { type: 'BUFF_POWER', params: { value: 500 } },
@@ -455,14 +458,14 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-049": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "필드에 있는 《베이스》를 가진 자신 유닛의 수만큼 카드를 드로우한다.",
             action: { type: 'DRAW_DYNAMIC', params: { multiplier: 'BASE_UNIT_COUNT' } }
         }
     ],
     "BT01-050": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "자신의 모든 유닛 존에 유닛이 존재한다면 현재 필드에 있는 모든 자신 유닛은 상대의 턴이 끝날 때까지 파워+1500.",
             condition: { type: 'FRONTLINE' as any },
             targets: { scope: 'MY_FIELD', type: 'UNIT', selectMode: 'ALL', count: 0 },
@@ -472,7 +475,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-051": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "자신의 덱 맨 위에서 카드를 3장 공개하고, 그 중 3코스트 이하인 카드를 모두 자신의 패에 넣는다.",
             action: { type: 'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER', params: { count: 3, filter: { type: 'COST_LIMIT', value: 3 } } }
         },
@@ -490,7 +493,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-052": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "현재 필드에 있는 《베이스》를 가진 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1.",
             targets: { scope: 'MY_FIELD', type: 'UNIT', filters: [{ type: 'HAS_TRAIT', value: '베이스' }], selectMode: 'ALL', count: 0 },
             action: { type: 'BUFF_HIT', params: { value: 1 } },
@@ -501,6 +504,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ATTACKER,
             description: "어태커 : 돌파[2코스트 이하]",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'BREAKTHROUGH', params: { costMax: 2 } },
             duration: 'TURN_END'
         }
@@ -509,6 +513,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.PASSIVE,
             description: "장착조건 없음 : 파워+5000.",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'BUFF_POWER', params: { value: 5000 } }
         }
     ],
@@ -712,7 +717,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-075": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "스킬 : 자신의 패를 1장 골라 트래시한다. 그 카드와 같은 코스트를 가진 유닛을 필드에서 1장 골라 트래시한다.",
             cost: { type: 'TRASH_HAND', amount: 1 },
             action: { type: 'DESTROY_UNIT', params: {} },
@@ -727,7 +732,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-076": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "스킬 : 필드에 있는 엑시트 : 공멸 을 가진 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+4500.",
             action: { type: 'BUFF_POWER', params: { value: 4500 } },
             targets: {
@@ -740,7 +745,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-077": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "스킬 : 필드에 있는 유닛을 1장 골라 그 유닛의 히트만큼 자신의 패를 트래시한다. 그러면 그 유닛을 트래시한다.",
             action: { type: 'DESTROY_UNIT_WITH_HIT_COST', params: {} } as any,
             targets: { scope: 'BOTH_FIELDS', type: 'UNIT', count: 1, selectMode: 'MANUAL' }
@@ -748,7 +753,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-078": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "스킬 : 고른 유닛의 코스트 합이 4코스트 이하가 되도록 필드에 있는 상대 유닛을 2장까지 골라 트래시한다.",
             action: { type: 'DESTROY_UNIT', params: {} },
             targets: {
@@ -774,7 +779,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-079": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "스킬 : 자신의 트래시 존에서 엑시트 : 를 가진 2코스트 이하인 유닛을 2장까지 골라 자신의 패에 넣는다.",
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
             targets: {
@@ -793,6 +798,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.EXIT,
             description: "장착조건 없음 : 엑시트 : 카드를 2장 드로우한다.",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'DRAW', params: { count: 2 } }
         }
     ],
@@ -800,6 +806,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.EXIT,
             description: "장착 조건: 엑시트를 가진 유닛 엑시트 : 귀환 (이 턴이 끝날 때 이 유닛을 자신의 트래시 존에서 자신의 패로 되돌린다).",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'RETURN_FROM_TRASH_AT_TURN_END', params: {} }
         }
     ],
