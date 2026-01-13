@@ -41,7 +41,8 @@ export class RuleValidator {
     static canPlaySkill(engine: GameEngine, player: PlayerState, cardIndex: number): ValidationResult {
         if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
         const card = player.hand[cardIndex];
-        if (player.leaderLevel < card.cost) return { valid: false, reason: `Leader Level too low (Required: ${card.cost}, Current: ${player.leaderLevel})` };
+        const playerSize = engine.getPlayerSize(player);
+        if (playerSize < card.cost) return { valid: false, reason: `Size too low (Required: ${card.cost}, Current: ${playerSize})` };
 
         // Check if effect requires a specific card type for cost payment
         if (card.effects) {

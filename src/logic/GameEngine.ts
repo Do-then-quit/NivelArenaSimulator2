@@ -405,8 +405,9 @@ export class GameEngine {
         this.currentPlayer.hand.splice(cardIndex, 1);
         this.currentPlayer.skillZone.push(card);
 
-        // Process Entry Effects (Skills are treated as Entry effects when played)
-        this.effectManager.processEffects(ActivationCondition.ENTRY, {
+        // Process Skill Effects (Skills are treated as ACTIVE effects when played)
+        // Note: The card text parser classifies them as Activate type.
+        this.effectManager.processEffects(ActivationCondition.ACTIVE, {
             sourceCard: card,
             player: this.currentPlayer,
             opponent: this.opponentPlayer,
