@@ -30,6 +30,7 @@ export class TargetSelector {
                     }
                 }
                 break;
+            case 'ENCOUNTER':
             case 'ENCOUNTER_UNIT':
                 if (context.unitZone) {
                     const idx = player.unitZones.indexOf(context.unitZone);

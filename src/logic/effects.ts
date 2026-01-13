@@ -32,11 +32,12 @@ export class EffectManager {
     processEffects(activation: ActivationCondition, context: any): boolean {
         const { sourceCard } = context;
 
-        if (!sourceCard || !sourceCard.effects) return false;
-
         console.log(`[EffectManager] Processing ${activation} effects for ${sourceCard.name}`);
 
-        const effectsToProcess = [...(sourceCard.effects || [])].filter((e: Effect) => e.activation === activation);
+        const effectsToProcess: Effect[] = [];
+        if (sourceCard.effects) {
+            effectsToProcess.push(...sourceCard.effects.filter((e: Effect) => e.activation === activation));
+        }
 
         // Add temporary effects from unitZone if applicable
         if (context.unitZone && context.unitZone.temporaryEffects) {
@@ -89,8 +90,6 @@ export class EffectManager {
             // but the effect item itself is done being "initiated".
 
             this.engine.state.effectQueue.shift();
-            // console.log(`[EffectManager] Processing queue item: ${item.effect.description}`);
-
             this.processEffect(item.effect, item.context);
 
             if (this.engine.state.interactionMode !== 'NORMAL') {

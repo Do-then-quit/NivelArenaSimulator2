@@ -573,6 +573,11 @@ const damage: ActionImplementation = (ctx, params, _targets) => {
     }
 };
 
+const breakthrough: ActionImplementation = (_ctx, _params, _targets) => {
+    // Breakthrough is handled by GameEngine.getBreakthroughLimit directly
+    // This action exists to avoid "unimplemented action" warnings
+};
+
 export const ActionRegistry: Record<string, ActionImplementation> = {
     'GAIN_LEVEL': gainLevel,
     'DRAW': drawCard,
@@ -596,6 +601,7 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'REVEAL_TOP_AND_CHOOSE_TO_HAND': revealTopAndChooseToHand,
     'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER': revealTopAndTakeAllByFilter,
     'DRAW_DYNAMIC': drawDynamic,
+    'BREAKTHROUGH': breakthrough,
     'RETURN_FROM_TRASH_AT_TURN_END': returnFromTrashAtTurnEnd,
     'DESTROY_UNIT_AND_DRAW_BY_HIT': destroyUnitAndDrawByHit,
     'DESTROY_UNIT_WITH_HIT_COST': destroyUnitWithHitCost,
