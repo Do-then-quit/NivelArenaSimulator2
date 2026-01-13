@@ -126,13 +126,13 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
     ],
     "ST03-012": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "자신의 패를 1장 골라 트래시한다. 그러면 상대는 패를 1장 골라 트래시한다.",
             targets: { scope: 'MY_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DISCARD', params: { target: 'PLAYER', count: 1 } }
         },
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "(그러면 상대는 패를 1장 골라 트래시한다)",
             targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } }
@@ -140,7 +140,7 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
     ],
     "ST03-013": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "자신의 패에서 유닛을 1장 골라 트래시한다. 그 유닛보다 코스트가 낮은 유닛을 필드에서 1장 골라 트래시한다.",
             cost: { type: 'TRASH_HAND', amount: 1, cardTypeFilter: 'UNIT' as any },
             targets: {
@@ -155,20 +155,20 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
     ],
     "ST03-014": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 2장 드로우한다.",
             targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DESTROY_UNIT', params: {} }
         },
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "(그러면 카드를 2장 드로우한다)",
             action: { type: 'DRAW', params: { count: 2 } }
         }
     ],
     "ST03-015": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "필드에 있는 자신 유닛을 1장 골라, 그 유닛과 조우 유닛을 모두 트래시한다.",
             targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DESTROY_UNIT', params: { alsoDestroyEncounter: true } }
@@ -195,6 +195,7 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.PASSIVE, // Item Passive
             description: "장착조건 없음 : 파워+3000.",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'BUFF_POWER', params: { value: 3000 } }
         },
         {
@@ -207,6 +208,7 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.EXIT,
             description: "장착조건 없음 : 엑시트 : 공멸 (이 유닛을 전투로 트래시한 상대 유닛의 코스트가 이 유닛의 코스트 이하라면 그 유닛을 트래시한다).",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'MUTUAL_DESTRUCTION', params: {} }
         }
     ]
