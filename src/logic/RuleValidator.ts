@@ -42,8 +42,13 @@ export class RuleValidator {
         if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
         const card = player.hand[cardIndex];
         if (!card || card.type !== CardType.SKILL) return { valid: false, reason: "Card is not a skill" };
+
+        // Size Limit Check (Field Cost + Skill Cost must not exceed Size)
         const playerSize = engine.getPlayerSize(player);
-        if (playerSize < card.cost) return { valid: false, reason: `Size too low (Required: ${card.cost}, Current: ${playerSize})` };
+        const currentFieldCost = this.calculateFieldCost(player);
+        if (currentFieldCost + card.cost > playerSize) {
+            return { valid: false, reason: `Cost exceeds Size limit (Field: ${currentFieldCost}, Skill: ${card.cost}, Size: ${playerSize})` };
+        }
 
         // Check if effect requires a specific card type for cost payment
         if (card.effects) {

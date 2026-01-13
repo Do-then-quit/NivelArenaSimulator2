@@ -30,7 +30,7 @@ export const ST02_EFFECTS: Record<string, Effect[]> = {
     ],
     "ST02-007": [
         {
-            activation: ActivationCondition.ACTIVE,
+            activation: ActivationCondition.ACTIVE_MAIN,
             description: "자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 《베이스》를 가진 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1.",
             cost: { type: 'TRASH_HAND', amount: 1 },
             targets: { scope: 'MY_FIELD', type: 'UNIT', conditions: { hasTrait: '베이스' }, selectMode: 'ALL', count: 0 },
@@ -83,7 +83,7 @@ export const ST02_EFFECTS: Record<string, Effect[]> = {
     ],
     "ST02-012": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "필드에 있는 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
             targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
             action: { type: 'BUFF_POWER', params: { value: 3000 } },
@@ -92,21 +92,21 @@ export const ST02_EFFECTS: Record<string, Effect[]> = {
     ],
     "ST02-013": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "자신의 리더 레벨+1.",
             action: { type: 'GAIN_LEVEL', params: { value: 1 } }
         }
     ],
     "ST02-014": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "자신의 덱 맨 위에서 3장 공개 -> 1장 패",
             action: { type: 'DRAW', params: { count: 1, selection: 'LOOK_3_PICK_1' } }
         }
     ],
     "ST02-015": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "자신 유닛과 상대 유닛이 모두 있는 레인을 하나 골라, 그 레인에서 파워가 가장 낮은 유닛을 트래시한다. 같다면 모두 트래시한다.",
             targets: { scope: 'SHARED_LANE', type: 'ALL', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DESTROY_LANE_LOWEST', params: {} }
@@ -128,6 +128,7 @@ export const ST02_EFFECTS: Record<string, Effect[]> = {
             activation: ActivationCondition.PASSIVE,
             description: "파워+2000",
             condition: { type: 'ALWAYS' },
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'BUFF_POWER', params: { value: 2000 } }
         }
     ],
@@ -136,6 +137,7 @@ export const ST02_EFFECTS: Record<string, Effect[]> = {
             activation: ActivationCondition.PASSIVE,
             description: "히트+1",
             condition: { type: 'COST_COMPARISON', value: { operator: 'GTE', cost: 4 } },
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'BUFF_HIT', params: { value: 1 } }
         }
     ]

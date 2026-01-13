@@ -170,6 +170,7 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ATTACKER,
             description: "어태커 : 이 공격이 끝날 때까지 파워+2000.",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'BUFF_POWER', params: { value: 2000 } },
             duration: 'TURN_END'
         }
@@ -178,6 +179,7 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ATTACKER,
             description: "어태커 : 약탈[1]",
+            targets: { scope: 'SELF', type: 'UNIT', selectMode: 'ALL' },
             action: { type: 'PLUNDER', params: { value: 1 } }
         }
     ]
