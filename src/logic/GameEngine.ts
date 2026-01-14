@@ -189,8 +189,8 @@ export class GameEngine {
                             // For now, let's trigger the effect Manager.
                             this.effectManager.processEffects(ActivationCondition.ESCAPE, {
                                 sourceCard: zone.unit,
-                                player: player,
-                                opponent: (player === this.state.players[0] ? this.state.players[1] : this.state.players[0]),
+                                player: p,
+                                opponent: (p === this.state.players[0] ? this.state.players[1] : this.state.players[0]),
                                 unitZone: zone,
                                 machine: this
                             });

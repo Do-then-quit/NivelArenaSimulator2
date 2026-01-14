@@ -1,6 +1,6 @@
 
 import { GameEngine } from './GameEngine';
-import { CardType, Phase, ActivationCondition } from './types';
+import { CardType, Phase } from './types';
 import { DUMMY_CARDS, createDeck } from './CardDatabase';
 
 // Mock EffectManager to inspect interactions
@@ -28,7 +28,6 @@ function runTest() {
 
     // Setup Player 0 with a Skill Card in hand
     const p0 = engine.state.players[0];
-    const p1 = engine.state.players[1];
 
     // Set Levels for Cost
     p0.leaderLevel = 3;
@@ -71,7 +70,7 @@ function runTest() {
 
     // 3. Effect should have applied (Power +2000)
     // recalculate power
-    const currentPower = engine.getUnitPower(p0.unitZones[0]);
+    const currentPower = engine.getUnitPower(p0.unitZones[0], p0);
     console.log(`Current Unit Power: ${currentPower}`);
 
     if (currentPower === initialPower + 2000) console.log("PASS: Buff applied correctly");

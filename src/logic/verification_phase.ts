@@ -68,7 +68,7 @@ if (turnEndTriggered) {
 }
 
 // Verify Phase Switch
-if (engine.state.phase === Phase.LEVEL_UP) { // Should have switched to Level Up of next turn
+if (engine.state.phase as string === Phase.LEVEL_UP as string) { // Should have switched to Level Up of next turn
     console.log('[PASS] Phase correctly switched to LEVEL_UP of next turn');
 } else {
     console.error(`[FAIL] Phase is ${engine.state.phase}, expected LEVEL_UP`);

@@ -175,7 +175,7 @@ export interface Card {
     hit?: number;   // Only for Units
     text: string;
     traits?: string;
-    keywords?: string;
+    keywords?: string[];
     imageUrl?: string;
     isAwakened?: boolean;
     effects?: Effect[];
