@@ -1,7 +1,7 @@
 import './style.css'
 import { GameEngine } from './logic/GameEngine';
 import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
-import { Phase, Card, CardType } from './logic/types';
+import { Phase, Card, CardType, LogType } from './logic/types';
 import { RuleValidator } from './logic/RuleValidator';
 import { TargetSelector } from './logic/TargetSelector';
 
@@ -21,6 +21,7 @@ enum Screen {
 
 let currentScreen: Screen = Screen.MENU;
 let game: GameEngine | null = null;
+let logs: { message: string, type: LogType, id: number }[] = [];
 const hoverPreview = new HoverPreview();
 const trashHoverOverlay = new TrashHoverOverlay(hoverPreview);
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -60,6 +61,16 @@ function renderMenu() {
 
 function startGame(deck1: Card[], deck2: Card[], leader1: Card, leader2: Card) {
     game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2);
+    logs = []; // Reset logs
+
+    // Subscribe to logs
+    game.onLog((msg, type) => {
+        logs.push({ message: msg, type, id: Date.now() + Math.random() });
+        if (currentScreen === Screen.GAME) {
+            render();
+        }
+    });
+
     // Initialize Debug System
     (window as any).debug = new DebugManager(game, render);
     currentScreen = Screen.GAME;
@@ -118,15 +129,24 @@ function renderGame() {
     const currentPlayer = game.currentPlayer;
     const opponent = game.opponentPlayer;
 
-
     // Helper to determine if a zone is a valid drop target
     const isMainPhase = game.state.phase === Phase.MAIN;
 
+    const logContent = document.querySelector('.log-content');
+    const previousScrollTop = logContent?.scrollTop;
+    const wasAtBottom = logContent ?
+        (logContent.scrollTop + logContent.clientHeight >= logContent.scrollHeight - 10)
+        : true;
+
+
     app.innerHTML = `
-    <div class="game-container">
-      <div class="header">
-        <h1>NivelArena</h1>
-        ${game.state.interactionMode === 'SELECT_TARGET' ? (() => {
+    <div class="main-layout">
+        ${renderLogSidebar()}
+        
+        <div class="game-container">
+            <div class="header">
+                <h1>NivelArena</h1>
+                ${game.state.interactionMode === 'SELECT_TARGET' ? (() => {
             const pending = game!.state.pendingEffect as any;
             const fullEffect = pending._fullEffect;
             const maxCount = fullEffect?.targets?.count || 0;
@@ -135,34 +155,34 @@ function renderGame() {
             const canConfirm = maxCount === 0 || currentCount === maxCount || fullEffect?.targets?.selectMode === 'ALL';
 
             return `
-            <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
-                <span style="animation: pulse 1s infinite;">SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
-                <button id="confirm-targets-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'} style="background: ${canConfirm ? '#2ecc71' : '#636e72'}; border: none; padding: 5px 15px;">Confirm</button>
-            </div>
-            `;
+                    <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
+                        <span style="animation: pulse 1s infinite;">SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
+                        <button id="confirm-targets-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'} style="background: ${canConfirm ? '#2ecc71' : '#636e72'}; border: none; padding: 5px 15px;">Confirm</button>
+                    </div>
+                    `;
         })() : ''}
-        ${game.state.interactionMode === 'SELECT_COST' ? `
-            <div style="background: #0984e3; color: white; padding: 10px; border-radius: 4px; animation: pulse 1s infinite;">
-                SELECT CARD TO TRASH (COST)
+                ${game.state.interactionMode === 'SELECT_COST' ? `
+                    <div style="background: #0984e3; color: white; padding: 10px; border-radius: 4px; animation: pulse 1s infinite;">
+                        SELECT CARD TO TRASH (COST)
+                    </div>
+                ` : ''}
+                <button id="db-back-to-menu" class="secondary-btn" style="position: absolute; top: 10px; left: 10px;">Menu</button>
             </div>
-        ` : ''}
-        <button id="db-back-to-menu" class="secondary-btn" style="position: absolute; top: 10px; left: 10px;">Menu</button>
-      </div>
 
-      ${renderPlayer(opponent, true, isMainPhase)}
-      ${renderPlayer(currentPlayer, false, isMainPhase)}
+            ${renderPlayer(opponent, true, isMainPhase)}
+            ${renderPlayer(currentPlayer, false, isMainPhase)}
 
-      <div class="game-controls">
-        <div class="status-bar">
-          <div class="status-item"><span>Turn</span> <strong>${game.state.turnCount}</strong></div>
-          <div class="status-item"><span>Phase</span> <strong>${game.state.phase}</strong></div>
-          <div class="status-item"><span>Active</span> <strong>${game.currentPlayer.name}</strong></div>
-        </div>
-        <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' ? 'disabled' : ''}>Next Phase</button>
-      </div>
+            <div class="game-controls">
+                <div class="status-bar">
+                <div class="status-item"><span>Turn</span> <strong>${game.state.turnCount}</strong></div>
+                <div class="status-item"><span>Phase</span> <strong>${game.state.phase}</strong></div>
+                <div class="status-item"><span>Active</span> <strong>${game.currentPlayer.name}</strong></div>
+                </div>
+                <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' ? 'disabled' : ''}>Next Phase</button>
+            </div>
 
-      <div class="hand-zone">
-          ${currentPlayer.hand.map((c, i) => {
+            <div class="hand-zone">
+                ${currentPlayer.hand.map((c, i) => {
             const isCostCandidate = game!.state.interactionMode === 'SELECT_COST';
             const pending = game!.state.pendingEffect as any;
             const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
@@ -170,33 +190,62 @@ function renderGame() {
                 TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
 
             return `
-              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
-                  ${renderCard(c)}
-              </div>
-          `}).join('')}
-      </div>
+                    <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
+                        ${renderCard(c)}
+                    </div>
+                `}).join('')}
+            </div>
 
-      <div class="opponent-hand-zone">
-          ${opponent.hand.map((c, i) => {
+            <div class="opponent-hand-zone">
+                ${opponent.hand.map((c, i) => {
                 const pending = game!.state.pendingEffect as any;
                 const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
                     pending &&
                     TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
                 return `
-              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''}" data-index="${i}">
-                  ${renderCard(c)}
-              </div>
-          `}).join('')}
-      </div>
+                    <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''}" data-index="${i}">
+                        ${renderCard(c)}
+                    </div>
+                `}).join('')}
+            </div>
 
-
-      ${renderOptionalEffectModal()}
-      ${renderTrashModal()}
-      ${renderRevealedCardsModal()}
+            ${renderOptionalEffectModal()}
+            ${renderTrashModal()}
+            ${renderRevealedCardsModal()}
+        </div>
     </div>
   `;
 
     attachListeners();
+
+    // Auto-scroll logic (Targeting the element inside the new layout)
+    const newLogContent = document.querySelector('.log-content');
+    if (newLogContent) {
+        if (wasAtBottom) {
+            newLogContent.scrollTop = newLogContent.scrollHeight;
+        } else if (previousScrollTop !== undefined) {
+            newLogContent.scrollTop = previousScrollTop;
+        }
+    }
+}
+
+function renderLogSidebar() {
+    return `
+        <div class="log-sidebar">
+            <div class="log-header">
+                <span>Game Log</span>
+                <span style="font-size: 0.7rem; opacity: 0.7;">Turn ${game?.state.turnCount}</span>
+            </div>
+            <div class="log-content">
+                ${logs.length === 0 ? '<div style="color: rgba(255,255,255,0.3); text-align: center; padding: 20px;">No events yet...</div>' : ''}
+                ${logs.map(log => `
+                     <div class="log-entry ${log.type}">
+                        ${log.message}
+                     </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
 }
 
 function renderOptionalEffectModal() {
@@ -292,25 +341,25 @@ function renderRevealedCardsModal() {
 function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
     if (!game) return '';
     return `
-      <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
-        <!-- Level Zone (1) -->
-        <div class="level-zone">
-            <!-- Leader Card Slot -->
-            <div class="leader-slot">
-                ${player.levelZone ? renderCard(player.levelZone, true) : ''}
+        <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
+            <!-- Level Zone (1) -->
+            <div class="level-zone">
+                <!-- Leader Card Slot -->
+                <div class="leader-slot">
+                    ${player.levelZone ? renderCard(player.levelZone, true) : ''}
+                </div>
+                
+                ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
+                    <div class="level-indicator ${player.leaderLevel >= lv ? 'active' : ''}">${lv}</div>
+                `).join('')}
+                <div class="level-indicator" style="color: #fff; font-size: 0.6rem;">LVL</div>
             </div>
 
-            ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
-                <div class="level-indicator ${player.leaderLevel >= lv ? 'active' : ''}">${lv}</div>
-            `).join('')}
-            <div class="level-indicator" style="color: #fff; font-size: 0.6rem;">LVL</div>
-        </div>
-
-        <!-- Main Field (2, 3, 4) -->
-        <div class="field-center">
-            <!-- Unit Zones (3) -->
-            <div class="units-container">
-                ${player.unitZones.map((z: any, i: number) => {
+            <!-- Main Field (2, 3, 4) -->
+            <div class="field-center">
+                <!-- Unit Zones (3) -->
+                <div class="units-container">
+                    ${player.unitZones.map((z: any, i: number) => {
         const blockerZoneIndex = (game!.state.pendingAttackerIndex ?? -1);
         const isBlockingTarget = game!.state.phase === Phase.BLOCK && isOpponent && blockerZoneIndex === i;
         const isSelected = game!.state.pendingEffect?.selectedTargets?.includes(z);
@@ -354,32 +403,32 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                         ${z.unit ? `<div class="stats">${game!.getUnitPower(z, player)} / ${game!.getUnitHit(z, player)}</div>` : ''}
                     </div>
                 `}).join('')}
+                </div>
+
+                <!-- Bottom Field (2, 4) -->
+                <div class="bottom-center">
+                    <div class="damage-zone">
+                        ${player.damage.map((c: any) => renderCard(c, true)).join('')}
+                        ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
+                    </div>
+                    <div class="skill-zone ${!isOpponent && isMainPhase ? 'interactive drop-zone-skill' : ''}">
+                        ${player.skillZone.map((c: any) => renderCard(c, true)).join('')}
+                        ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
+                    </div>
+                </div>
             </div>
 
-            <!-- Bottom Field (2, 4) -->
-            <div class="bottom-center">
-                <div class="damage-zone">
-                    ${player.damage.map((c: any) => renderCard(c, true)).join('')}
-                    ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
+            <!-- Right Side (5, 6) -->
+            <div class="field-right">
+                <div class="deck-zone">
+                    <div class="deck-count">${player.deck.length}</div>
+                    <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
                 </div>
-                <div class="skill-zone ${!isOpponent && isMainPhase ? 'interactive drop-zone-skill' : ''}">
-                    ${player.skillZone.map((c: any) => renderCard(c, true)).join('')}
-                    ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
+                <div class="trash-zone" data-player="${isOpponent ? 'opponent' : 'current'}">
+                    ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
                 </div>
             </div>
         </div>
-
-        <!-- Right Side (5, 6) -->
-        <div class="field-right">
-            <div class="deck-zone">
-                <div class="deck-count">${player.deck.length}</div>
-                <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
-            </div>
-            <div class="trash-zone" data-player="${isOpponent ? 'opponent' : 'current'}">
-                ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
-            </div>
-        </div>
-      </div>
     `;
 }
 

@@ -23,7 +23,7 @@ export class EffectManager {
         };
 
         this.engine.state.effectQueue.push(item);
-        console.log(`[EffectManager] Queued Ephemeral Effect: ${effect.description} (Timestamp: ${currentStep})`);
+        this.engine.log(`[EffectManager] Queued Ephemeral Effect: ${effect.description} (Timestamp: ${currentStep})`, 'effect');
 
         this.engine.sortEffectQueue();
         this.processQueue();
@@ -32,7 +32,7 @@ export class EffectManager {
     processEffects(activation: ActivationCondition, context: any): boolean {
         const { sourceCard } = context;
 
-        console.log(`[EffectManager] Processing ${activation} effects for ${sourceCard.name}`);
+        // this.engine.log(`[EffectManager] Processing ${activation} effects for ${sourceCard.name}`, 'info');
 
         const effectsToProcess: Effect[] = [];
         if (sourceCard.effects) {
@@ -62,7 +62,7 @@ export class EffectManager {
         }));
 
         this.engine.state.effectQueue.push(...queueItems);
-        console.log(`[EffectManager] Added ${queueItems.length} effects to queue (Timestamp: ${currentStep}). Total: ${this.engine.state.effectQueue.length}`);
+        this.engine.log(`[EffectManager] Added ${queueItems.length} effects to queue (Timestamp: ${currentStep}). Total: ${this.engine.state.effectQueue.length}`, 'effect');
 
         // 2. Sort Queue based on Priority
         this.engine.sortEffectQueue();
@@ -157,7 +157,7 @@ export class EffectManager {
         const actionImpl = ActionRegistry[action.type];
 
         if (actionImpl) {
-            console.log(`Executing Effect: ${effect.description} [Action: ${action.type}]`);
+            this.engine.log(`Executing Effect: ${effect.description} [Action: ${action.type}]`, 'effect');
 
             // Mark as fired if it's a ONCE_PER_TURN effect
             if (effect.condition?.type === 'ONCE_PER_TURN') {

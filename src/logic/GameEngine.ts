@@ -1,4 +1,4 @@
-import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext } from './types';
+import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext, LogType } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
@@ -6,6 +6,7 @@ import { TargetSelector } from './TargetSelector';
 export class GameEngine {
     state: GameState;
     effectManager: EffectManager;
+    private logListeners: ((msg: string, type: LogType) => void)[] = [];
 
     constructor(player1Name: string, player2Name: string, deck1: Card[], deck2: Card[], leader1: Card, leader2: Card) {
         this.effectManager = new EffectManager(this);
@@ -28,6 +29,15 @@ export class GameEngine {
             combatBlocked: false
         };
         this.startGame();
+    }
+
+    public onLog(listener: (msg: string, type: LogType) => void) {
+        this.logListeners.push(listener);
+    }
+
+    public log(message: string, type: LogType = 'info') {
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        this.logListeners.forEach(l => l(message, type));
     }
 
     public incrementGlobalStep() {
@@ -168,7 +178,7 @@ export class GameEngine {
 
     public enterPhase(phase: Phase) {
         this.state.phase = phase;
-        console.log(`Entering Phase: ${phase}`);
+        this.log(`Entering Phase: ${phase}`, 'phase');
 
         if (phase === Phase.MAIN) {
             // [ESCAPE] Logic: Check all units for ESCAPE effect
@@ -207,7 +217,7 @@ export class GameEngine {
     }
 
     private resolveEndPhase() {
-        console.log("Resolving End Phase Sequence...");
+        this.log("Resolving End Phase Sequence...", 'phase');
         // 1. "At the end of turn" Effects (e.g. Return, etc.)
         this.effectManager.processEffects(ActivationCondition.TURN_END, {
             sourceCard: this.currentPlayer.levelZone!, // Dummy source for global check? Or check all cards?
@@ -319,7 +329,7 @@ export class GameEngine {
         const player = this.state.players[playerIndex];
         if (player.leaderLevel < 10) {
             player.leaderLevel = Math.min(10, player.leaderLevel + amount);
-            console.log(`${player.name} level increased to ${player.leaderLevel}`);
+            this.log(`${player.name} level increased to ${player.leaderLevel}`, 'info');
             this.checkAwakening(playerIndex);
         }
     }
@@ -349,7 +359,7 @@ export class GameEngine {
         const player = this.state.players[playerIndex];
         if (player.levelZone) {
             player.levelZone.isAwakened = true;
-            console.log(`Leader ${player.levelZone.name} AWAKENED!`);
+            this.log(`Leader ${player.levelZone.name} AWAKENED!`, 'effect');
         }
     }
 
@@ -357,7 +367,7 @@ export class GameEngine {
     playUnit(cardIndex: number, zoneIndex: number) {
         const validation = RuleValidator.canPlayUnit(this, this.currentPlayer, cardIndex, zoneIndex);
         if (!validation.valid) {
-            console.log(`Cannot place unit: ${validation.reason}`);
+            this.log(`Cannot place unit: ${validation.reason}`, 'error');
             return;
         }
 
@@ -383,6 +393,7 @@ export class GameEngine {
         zone.buffs = []; // Ensure clear state for new unit if not upgrade (though empty zone implies empty buffs)
 
         // Trigger Entry Effects
+        this.log(`Played Unit: ${card.name} into Zone ${zoneIndex}`, 'info');
         this.effectManager.processEffects(ActivationCondition.ENTRY, {
             sourceCard: card,
             player: this.currentPlayer,
@@ -429,7 +440,9 @@ export class GameEngine {
         this.currentPlayer.hand.splice(cardIndex, 1);
         zone.items.push(card);
 
-        console.log(`Equipped ${card.name} to unit in zone ${zoneIndex}`);
+        zone.items.push(card);
+
+        this.log(`Equipped ${card.name} to unit in zone ${zoneIndex}`, 'info');
     }
 
     activateEffect(zoneIndex: number, effectIndex: number) {
@@ -517,7 +530,7 @@ export class GameEngine {
         if (costType === 'TRASH_HAND') {
             const discarded = this.currentPlayer.hand.splice(handIndex, 1)[0];
             this.currentPlayer.trash.push(discarded);
-            console.log(`Paid cost: Trashed ${discarded.name}`);
+            this.log(`Paid cost: Trashed ${discarded.name}`, 'info');
 
             if (!pending.costPaidCount) pending.costPaidCount = 0;
             pending.costPaidCount++;
@@ -583,7 +596,7 @@ export class GameEngine {
     attack(attackerZoneIndex: number) {
         const validation = RuleValidator.canAttack(this, this.currentPlayer, attackerZoneIndex);
         if (!validation.valid) {
-            console.log(`Cannot attack: ${validation.reason}`);
+            this.log(`Cannot attack: ${validation.reason}`, 'error');
             return;
         }
 
@@ -740,7 +753,7 @@ export class GameEngine {
             // Combat Resolution
             const attPower = this.getUnitPower(attackerZone, this.currentPlayer);
             const blkPower = this.getUnitPower(blockerZone, this.opponentPlayer);
-            console.log(`Combat! Attacker Power: ${attPower}, Blocker Power: ${blkPower}`);
+            this.log(`Combat! Attacker Power: ${attPower}, Blocker Power: ${blkPower}`, 'combat');
 
             if (attPower >= blkPower) {
                 // IMPORTANT: Destroy first, THEN queue result effects. 

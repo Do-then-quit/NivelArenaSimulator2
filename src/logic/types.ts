@@ -242,3 +242,5 @@ export interface PendingEffect {
     revealedCards?: Card[];
     costPaidCount?: number; // Track how many items have been paid for the cost
 }
+
+export type LogType = 'info' | 'phase' | 'combat' | 'effect' | 'error';
