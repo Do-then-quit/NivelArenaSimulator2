@@ -7,6 +7,7 @@ import { TargetSelector } from './logic/TargetSelector';
 
 import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
+import { TrashHoverOverlay } from './TrashHoverOverlay';
 import { DeckBuilderUI } from './DeckBuilderUI';
 
 import { SetupUI } from './SetupUI';
@@ -21,6 +22,7 @@ enum Screen {
 let currentScreen: Screen = Screen.MENU;
 let game: GameEngine | null = null;
 const hoverPreview = new HoverPreview();
+const trashHoverOverlay = new TrashHoverOverlay(hoverPreview);
 const app = document.querySelector<HTMLDivElement>('#app')!;
 
 function renderMenu() {
@@ -371,7 +373,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                 <div class="deck-count">${player.deck.length}</div>
                 <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
             </div>
-            <div class="trash-zone">
+            <div class="trash-zone" data-player="${isOpponent ? 'opponent' : 'current'}">
                 ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
             </div>
         </div>
@@ -760,6 +762,72 @@ function attachListeners() {
             render();
         });
     }
+
+    // Leader Card Hover Listeners
+    document.querySelectorAll('.leader-slot .card').forEach(card => {
+        card.addEventListener('mouseenter', (e) => {
+            const isOpponent = card.closest('.opponent') !== null;
+            const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;
+            if (player.levelZone) {
+                const mouseEvent = e as MouseEvent;
+                hoverPreview.show(player.levelZone, mouseEvent.clientX, mouseEvent.clientY);
+            }
+        });
+        card.addEventListener('mousemove', (e) => {
+            const mouseEvent = e as MouseEvent;
+            const isOpponent = card.closest('.opponent') !== null;
+            const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;
+            if (player.levelZone) {
+                hoverPreview.show(player.levelZone, mouseEvent.clientX, mouseEvent.clientY);
+            }
+        });
+        card.addEventListener('mouseleave', () => {
+            hoverPreview.hide();
+        });
+    });
+
+    // Trash Zone Hover Listeners
+    document.querySelectorAll('.trash-zone').forEach(zone => {
+        zone.addEventListener('mouseenter', (e) => {
+            const el = zone as HTMLElement;
+            const isOpponent = el.dataset.player === 'opponent';
+            const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;
+
+            // Pass the renderCard function to the overlay
+            // We use the hoisted renderCard function from the bottom of this file
+            trashHoverOverlay.show(player.trash, el, isOpponent, renderCard);
+        });
+
+        zone.addEventListener('mouseleave', () => {
+            trashHoverOverlay.scheduleHide();
+        });
+    });
+
+    // Damage Zone Hover Listeners
+    document.querySelectorAll('.damage-zone').forEach(zone => {
+        const isOpponent = zone.closest('.opponent') !== null;
+        const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;
+
+        zone.querySelectorAll('.card').forEach((cardEl, index) => {
+            cardEl.addEventListener('mouseenter', (e) => {
+                const card = player.damage[index];
+                if (card) {
+                    const mouseEvent = e as MouseEvent;
+                    hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+                }
+            });
+            cardEl.addEventListener('mousemove', (e) => {
+                const mouseEvent = e as MouseEvent;
+                const card = player.damage[index];
+                if (card) {
+                    hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+                }
+            });
+            cardEl.addEventListener('mouseleave', () => {
+                hoverPreview.hide();
+            });
+        });
+    });
 
 }
 

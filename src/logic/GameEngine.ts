@@ -998,11 +998,17 @@ export class GameEngine {
 
     public destroyUnit(player: PlayerState, zone: UnitZoneState, killerCard?: Card) {
         if (zone.unit) {
+            const unit = zone.unit;
+            // IMPORTANT: Remove unit (and clear items/buffs linkage) from zone immediately
+            // to prevent recursion if an triggered effect calls checkRuleProcessing().
+            // Rules say Power 0 -> Unit Trashed immediately.
+            zone.unit = null;
+
             const opponent = player === this.state.players[0] ? this.state.players[1] : this.state.players[0];
 
             // Trigger Exit Effects for Unit
             this.effectManager.processEffects(ActivationCondition.EXIT, {
-                sourceCard: zone.unit,
+                sourceCard: unit,
                 player: player,
                 opponent: opponent,
                 unitZone: zone,
@@ -1022,10 +1028,10 @@ export class GameEngine {
                 });
             });
 
-            player.trash.push(zone.unit);
-            const trashedUnit = zone.unit; // Remember for trigger
+            player.trash.push(unit);
+            const trashedUnit = unit; // Remember for trigger
             zone.items.forEach(i => player.trash.push(i));
-            zone.unit = null;
+            // zone.unit = null; // Already done above
             zone.items = [];
             zone.buffs = [];
             zone.temporaryEffects = [];
