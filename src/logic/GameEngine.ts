@@ -513,24 +513,27 @@ export class GameEngine {
         const pending = this.state.pendingEffect as any;
         const costType = pending.costToPay?.type;
 
+        // Determine payer
+        const payer = this.state.players.find(p => p.id === pending.sourcePlayerId) || this.currentPlayer;
+
         // Execute Cost
         if (costType === 'TRASH_HAND') {
-            const discarded = this.currentPlayer.hand.splice(handIndex, 1)[0];
-            this.currentPlayer.trash.push(discarded);
-            console.log(`Paid cost: Trashed ${discarded.name}`);
+            const discarded = payer.hand.splice(handIndex, 1)[0];
+            payer.trash.push(discarded);
+            console.log(`Paid cost: Trashed ${discarded.name} from ${payer.id}'s hand`);
 
             if (!pending.costPaidCount) pending.costPaidCount = 0;
             pending.costPaidCount++;
 
-            // Store discarded card for effect context (e.g. for ST03-013 comparison)
+            // Store discarded card for effect context
             const context = (this.state.pendingEffect as any)._context;
             context.costPaymentCard = discarded;
 
         } else if (costType === 'SHUFFLE_HAND_TO_DECK') {
-            const card = this.currentPlayer.hand.splice(handIndex, 1)[0];
-            this.currentPlayer.deck.push(card);
-            this.shuffle(this.currentPlayer.deck);
-            console.log(`Paid cost: Shuffled ${card.name} into deck`);
+            const card = payer.hand.splice(handIndex, 1)[0];
+            payer.deck.push(card);
+            this.shuffle(payer.deck);
+            console.log(`Paid cost: Shuffled ${card.name} into deck from ${payer.id}'s hand`);
 
             if (!pending.costPaidCount) pending.costPaidCount = 0;
             pending.costPaidCount++;
@@ -558,6 +561,17 @@ export class GameEngine {
         }
 
         this.handleEffectCompletion(context, pending);
+    }
+
+    cancelPendingEffect() {
+        if (!this.state.pendingEffect) return;
+
+        console.log(`Cancelling Pending Effect: ${this.state.pendingEffect.actionType}`);
+        this.state.pendingEffect = null;
+        this.state.interactionMode = 'NORMAL';
+
+        // Resume queue (skipping the cancelled effect)
+        this.effectManager.resumeQueue();
     }
 
     initiateTargetSelection(effect: any, context: any) {
@@ -608,6 +622,8 @@ export class GameEngine {
         }
 
         this.state.attackTerminated = false;
+        this.state.redirectBlockerZone = null;
+        this.guardiansChecked = false;
         (attackerZone as any)._attackCostPaid = false; // Reset for next time
         attackerZone.hasAttacked = true;
 
@@ -682,20 +698,79 @@ export class GameEngine {
         }
     }
 
+    private guardiansChecked: boolean = false;
+
     private stepDefenseDeclaration(attackerZone: UnitZoneState) {
         this.state.combatStep = 'DEFENSE_DECLARATION';
+
+        // 0. Check if Guardian already successfully blocked
+        if (this.state.redirectBlockerZone) {
+            console.log("Guardian Block confirmed. Proceeding to Battle.");
+            this.advanceCombatStep();
+            return;
+        }
+
+        // 1. Check Guardians (Only once per combat)
+        if (!this.guardiansChecked) {
+            this.guardiansChecked = true;
+            const attackerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
+            const adjacentIndices = [attackerZoneIndex - 1, attackerZoneIndex + 1];
+
+            const breakthroughLimits = this.getBreakthroughLimits(attackerZone); // Attacker's breakthrough stats
+
+            let guardianTriggered = false;
+
+            adjacentIndices.forEach(idx => {
+                if (idx >= 0 && idx < 3) {
+                    const zone = this.opponentPlayer.unitZones[idx];
+                    if (zone.unit) {
+                        // Check if this unit can block (Breakthrough check)
+                        const cost = zone.unit.cost;
+                        let canBlock = true;
+                        if (breakthroughLimits.max !== undefined && cost <= breakthroughLimits.max) canBlock = false;
+                        if (breakthroughLimits.min !== undefined && cost >= breakthroughLimits.min) canBlock = false;
+
+                        if (canBlock) {
+                            // Check for GUARDIAN trigger
+                            const triggered = this.effectManager.processEffects(ActivationCondition.GUARDIAN, {
+                                sourceCard: zone.unit,
+                                player: this.opponentPlayer,
+                                opponent: this.currentPlayer,
+                                unitZone: zone,
+                                machine: this
+                            });
+                            if (triggered) guardianTriggered = true;
+                        } else {
+                            console.log(`Guardian candidate ${zone.unit.name} cannot block due to Breakthrough.`);
+                        }
+                    }
+                }
+            });
+
+            if (guardianTriggered) {
+                console.log("Guardian effect(s) triggered. Waiting for resolution...");
+                return; // Wait for queue
+            }
+        }
+
         const attackerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
 
-        // 1. Check BREAKTHROUGH
+        // 2. Check BREAKTHROUGH (Main Lane)
+        // Only if no Guardian intercepted
         const blockerZoneIndex = attackerZoneIndex;
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
         let breakthroughActive = false;
         if (blockerZone.unit) {
-            const limit = this.getBreakthroughLimit(attackerZone);
-            if (limit !== null && blockerZone.unit.cost <= limit) {
-                console.log(`BREAKTHROUGH active. Skipping Block phase.`);
-                breakthroughActive = true;
+            const limits = this.getBreakthroughLimits(attackerZone);
+            const cost = blockerZone.unit.cost;
+
+            // Logic: Can't block if Cost <= Max OR Cost >= Min
+            if (limits.max !== undefined && cost <= limits.max) breakthroughActive = true;
+            if (limits.min !== undefined && cost >= limits.min) breakthroughActive = true;
+
+            if (breakthroughActive) {
+                console.log(`BREAKTHROUGH active (Cost ${cost} vs Min:${limits.min}/Max:${limits.max}). Skipping Block phase.`);
             }
         }
 
@@ -705,7 +780,7 @@ export class GameEngine {
             return;
         }
 
-        // 2. Encounter Unit exists -> Potential Block
+        // 3. Encounter Unit exists -> Potential Block
         this.state.phase = Phase.BLOCK;
         // Wait for user input (resolveBlock)
         console.log("Waiting for Block Declaration...");
@@ -716,8 +791,14 @@ export class GameEngine {
 
     private stepBattleResolution(attackerZone: UnitZoneState) {
         this.state.combatStep = 'BATTLE';
-        const blockerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
-        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
+
+        let blockerZone: UnitZoneState;
+        if (this.state.redirectBlockerZone) {
+            blockerZone = this.state.redirectBlockerZone;
+        } else {
+            const blockerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
+            blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
+        }
 
         // 1. Check Attack Terminated
         if (this.state.attackTerminated) {
@@ -840,10 +921,16 @@ export class GameEngine {
 
         // CHECK BREAKTHROUGH (Fallback check)
         if (shouldBlock && blockerZone.unit) {
-            const limit = this.getBreakthroughLimit(attackerZone);
-            if (limit !== null && blockerZone.unit.cost <= limit) {
-                console.log(`Block prevented by BREAKTHROUGH (Cost ${blockerZone.unit.cost} <= ${limit})`);
-                shouldBlock = false; // Force no block
+            const limits = this.getBreakthroughLimits(attackerZone);
+            const cost = blockerZone.unit.cost;
+
+            if (limits.max !== undefined && cost <= limits.max) {
+                console.log(`Block prevented by BREAKTHROUGH (Cost ${cost} <= Max ${limits.max})`);
+                shouldBlock = false;
+            }
+            if (limits.min !== undefined && cost >= limits.min) {
+                console.log(`Block prevented by BREAKTHROUGH (Cost ${cost} >= Min ${limits.min})`);
+                shouldBlock = false;
             }
         }
 
@@ -906,47 +993,46 @@ export class GameEngine {
         return card.keywords?.includes(keyword) || false;
     }
 
-    private getBreakthroughLimit(zone: UnitZoneState): number | null {
-        if (!zone.unit) return null;
-        let maxLimit: number | null = null;
+    private getBreakthroughLimits(zone: UnitZoneState): { min?: number, max?: number } {
+        const limits: { min?: number, max?: number } = {};
+        if (!zone.unit) return limits;
+
+        const mergeLimits = (costMin?: number, costMax?: number) => {
+            if (costMax !== undefined) {
+                if (limits.max === undefined || costMax > limits.max) limits.max = costMax;
+            }
+            if (costMin !== undefined) {
+                // If multiple limits exist, we effectively union them?
+                // Logic: "Cannot block if X" OR "Cannot block if Y".
+                // So we want the WIDEST range.
+                // Min Limit 4 (4+) vs Min Limit 5 (5+). 
+                // A 4 cost unit cannot block in case 1. Can block in case 2? No, case 1 forbids it.
+                // So min should be the Minimum of Mins? (Widest range).
+                if (limits.min === undefined || costMin < limits.min) limits.min = costMin;
+            }
+        };
+
+        const checkEffect = (e: any) => {
+            if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
+                mergeLimits(e.action.params.costMin, e.action.params.costMax);
+            }
+            // Support for "GRANT_KEYWORD" implies the keyword text parsing or explicit action params?
+        };
 
         // 1. Check Unit Effects
-        if (zone.unit.effects) {
-            zone.unit.effects.forEach(e => {
-                if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
-                    const limit = e.action.params.costMax;
-                    if (limit !== undefined) {
-                        if (maxLimit === null || limit > maxLimit) maxLimit = limit;
-                    }
-                }
-            });
-        }
+        zone.unit.effects?.forEach(checkEffect);
 
         // 2. Check Item Effects
-        zone.items.forEach(item => {
-            if (item.effects) {
-                item.effects.forEach(e => {
-                    if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
-                        const limit = e.action.params.costMax;
-                        if (limit !== undefined) {
-                            if (maxLimit === null || limit > maxLimit) maxLimit = limit;
-                        }
-                    }
-                });
-            }
-        });
+        zone.items.forEach(item => item.effects?.forEach(checkEffect));
 
         // 3. Check Temporary Effects
         zone.temporaryEffects.forEach(effect => {
             if (effect.action && effect.action.type === 'BREAKTHROUGH') {
-                const limit = effect.action.params.costMax;
-                if (limit !== undefined) {
-                    if (maxLimit === null || limit > maxLimit) maxLimit = limit;
-                }
+                mergeLimits(effect.action.params.costMin, effect.action.params.costMax);
             }
         });
 
-        return maxLimit;
+        return limits;
     }
 
     private getPenetrationValue(zone: UnitZoneState): number {
@@ -1534,5 +1620,19 @@ export class GameEngine {
         this.effectManager.resumeQueue();
     }
 
+    // For Testing/Verification
+    public processEffects(card: Card, condition: ActivationCondition, context: Partial<GameContext> = {}) {
+        return this.effectManager.processEffects(condition, {
+            sourceCard: card,
+            player: context.player || this.currentPlayer,
+            opponent: context.opponent || this.opponentPlayer,
+            machine: this,
+            ...context
+        });
+    }
 
+    // Helper to add card to hand (for testing)
+    public addCardToHand(playerIndex: number, card: Card) {
+        this.state.players[playerIndex].hand.push(card);
+    }
 }

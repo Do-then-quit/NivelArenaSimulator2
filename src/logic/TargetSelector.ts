@@ -142,6 +142,23 @@ export class TargetSelector {
                     return unit && unit.cost <= schema.conditions!.costMax!;
                 });
             }
+            if (schema.conditions.hasKeyword) {
+                candidates = candidates.filter(c => {
+                    const unit = this.getUnitFromTarget(c);
+                    const zone = ('unit' in c) ? c as UnitZoneState : null;
+                    return unit && this.hasDynamicKeyword(unit, schema.conditions!.hasKeyword!, zone);
+                });
+            }
+            if (schema.conditions.isLowestCost) {
+                const units = candidates.filter(c => this.getUnitFromTarget(c) !== null);
+                if (units.length > 0) {
+                    const minCost = Math.min(...units.map(c => this.getUnitFromTarget(c).cost));
+                    candidates = candidates.filter(c => {
+                        const unit = this.getUnitFromTarget(c);
+                        return unit && unit.cost === minCost;
+                    });
+                }
+            }
         }
 
         // 5. Selection Mode
@@ -256,6 +273,37 @@ export class TargetSelector {
             const unit = this.getUnitFromTarget(target);
             if (schema.conditions.costMax !== undefined && (!unit || unit.cost > schema.conditions.costMax)) return false;
             if (schema.conditions.hasTrait && (!unit || !unit.traits?.includes(schema.conditions.hasTrait))) return false;
+            if (schema.conditions.hasKeyword && (!unit || !this.hasDynamicKeyword(unit, schema.conditions.hasKeyword, target as UnitZoneState))) return false;
+            if (schema.conditions.isLowestCost) {
+                // Filter is applied later in "Selection Mode" phase usually?
+                // Actually TargetSelector.resolve does filtering first, then selection.
+                // But isValidTarget is for verifying a specific target.
+                // To check 'isLowestCost' here, we need the context of ALL candidates.
+                // This is expensive to do in isValidTarget if we have to scan everything.
+                // However, since we need to validate a specific choice against "Lowest Cost", we must scan self/opponent field based on scope.
+
+                // Re-calculating min cost for scope
+                // This is potentially slow but necessary for validation.
+                let scopeCandidates: any[] = [];
+                const p = context.player;
+                const o = context.opponent || engine.state.players.find(pl => pl !== p);
+
+                // Determine scope again (simplified for common cases)
+                if (schema.scope === 'OPP_FIELD' && o) scopeCandidates = [...o.unitZones];
+                else if (schema.scope === 'MY_FIELD') scopeCandidates = [...p.unitZones];
+                else if (schema.scope === 'BOTH_FIELDS') {
+                    scopeCandidates = [...p.unitZones];
+                    if (o) scopeCandidates.push(...o.unitZones);
+                }
+
+                // Filter out empty zones
+                scopeCandidates = scopeCandidates.filter(z => z.unit !== null);
+
+                if (scopeCandidates.length > 0) {
+                    const minCost = Math.min(...scopeCandidates.map(z => z.unit.cost));
+                    if (!unit || unit.cost > minCost) return false;
+                }
+            }
         }
 
         return true;

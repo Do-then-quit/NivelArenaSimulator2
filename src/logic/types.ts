@@ -39,6 +39,7 @@ export enum ActivationCondition {
     AWAKEN = 'AWAKEN',
     UNIT_TRASHED = 'UNIT_TRASHED', // New: Triggered when any unit is moved to trash
     ESCAPE = 'ESCAPE', // New: When unit is returned to deck bottom from field (Entry of Main Phase)
+    GUARDIAN = 'GUARDIAN', // New: Triggers at start of Defense Step
 }
 
 export type ActionType =
@@ -76,7 +77,11 @@ export type ActionType =
     | 'DESTROY_UNIT_AND_DRAW_BY_HIT' // Added
     | 'DESTROY_UNIT_WITH_HIT_COST' // Added
     | 'COMPLEX_ACTION' // Added
-    | 'SACRIFICE_TO_BUFF'; // Added
+    | 'SACRIFICE_TO_BUFF' // Added
+    | 'DECK_CONSTRAINT' // Added for ST04-001
+    | 'AWAKEN' // Added for ST04-001
+    | 'GRANT_KEYWORD' // Added for ST04-015
+    | 'BLOCK'; // New: Sets the unit as the blocker
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT' | 'COST_EQUAL' | 'COST_HIGHER_THAN_ENCOUNTER';
@@ -96,13 +101,15 @@ export interface TargetSchema {
         isLeader?: boolean;
         hasTrait?: string; // e.g., "Base", "Elysion"
         state?: 'EXHAUSTED' | 'READY';
+        hasKeyword?: string; // New for ST04
+        isLowestCost?: boolean; // New for ST04
     };
     selectMode: 'MANUAL' | 'RANDOM' | 'LOWEST_POWER' | 'HIGHEST_POWER' | 'ALL';
     totalCostLimit?: number; // New: total cost of all selected targets must not exceed this
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE' | 'LEVEL_LINK' | 'ONCE_PER_TURN';
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE' | 'LEVEL_LINK' | 'ONCE_PER_TURN' | 'OPPONENT_TURN' | 'DECK_CONSTRAINT';
     value?: any;
     trashedUnitCostMin?: number; // New: for triggers like Cinderella's UNIT_TRASHED
     friendlyOnly?: boolean; // New: check if trashed unit belongs to player
@@ -151,7 +158,7 @@ export interface Effect {
     cost?: EffectCost;
     targets?: TargetSchema;
     action: EffectAction;
-    duration?: 'PERMANENT' | 'TURN_END' | 'OPP_TURN_END';
+    duration?: 'PERMANENT' | 'TURN_END' | 'OPP_TURN_END' | 'BATTLE_END';
     description: string;
     optional?: boolean;
 }
@@ -229,6 +236,7 @@ export interface GameState {
     globalStep: number; // Global Timer for effects
     combatStep: 'NONE' | 'ATTACK_DECLARATION' | 'DEFENSE_DECLARATION' | 'BATTLE' | 'BATTLE_END';
     combatBlocked: boolean; // Tracks if a block was declared
+    redirectBlockerZone?: UnitZoneState | null; // For Guardian/redirect effects
 }
 
 export interface PendingEffect {

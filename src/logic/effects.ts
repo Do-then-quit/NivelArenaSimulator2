@@ -205,6 +205,8 @@ export class EffectManager {
                 return false;
             case 'YOUR_TURN':
                 return context.machine.currentPlayer === context.player;
+            case 'OPPONENT_TURN':
+                return context.machine.currentPlayer === context.opponent;
             case 'OPPONENT_HAND_COUNT':
                 if (typeof value === 'number') {
                     return context.opponent.hand.length >= value;

@@ -573,9 +573,89 @@ const damage: ActionImplementation = (ctx, params, _targets) => {
     }
 };
 
-const breakthrough: ActionImplementation = (_ctx, _params, _targets) => {
-    // Breakthrough is handled by GameEngine.getBreakthroughLimit directly
-    // This action exists to avoid "unimplemented action" warnings
+const breakthrough: ActionImplementation = (ctx, params, _targets) => {
+    // Apply Breakthrough effect temporarily to the unit (source)
+    // This allows GameEngine.getBreakthroughLimits to find it during combat.
+    if (ctx.unitZone) {
+        ctx.unitZone.temporaryEffects.push({
+            activation: ActivationCondition.PASSIVE, // Passive check during combat
+            description: `Breakthrough [Cost >= ${params.costMin}]`,
+            action: {
+                type: 'BREAKTHROUGH', // Now correctly identified by GameEngine
+                params: {
+                    costMin: params.costMin,
+                    costMax: params.costMax
+                }
+            },
+            duration: 'BATTLE_END',
+            condition: { type: 'ALWAYS', value: true } // Always active (conditional logic handled by limits)
+        });
+
+        console.log(`Applied Breakthrough [Min:${params.costMin}] to ${ctx.unitZone.unit?.name}`);
+    }
+};
+
+const awaken: ActionImplementation = (ctx, _params, _targets) => {
+    // Logic to flip leader card
+    const player = ctx.player;
+    if (player.levelZone && !player.levelZone.isAwakened) {
+        player.levelZone.isAwakened = true;
+        console.log(`${player.name}'s Leader Awakened!`);
+    }
+};
+
+const deckConstraint: ActionImplementation = (_ctx, _params, _targets) => {
+    // Passive rule check, no active effect
+    // Could eventually validate deck composition here if called at start
+};
+
+const grantKeyword: ActionImplementation = (ctx, params, targets) => {
+    targets.forEach(target => {
+        if (target && target.unit) {
+            const keywords = params.keywords || [];
+            // We can't easily modify the static 'keywords' property on Card.
+            // But we can simulate it via temporary effects or buffs if the engine checks for it.
+            // Current engine checks: unit.keywords.includes() OR buffs...
+            // Let's add a special buff type 'KEYWORD' or just assume temporaryEffects handles it.
+            // GameEngine.hasKeyword checks: unit.keywords and temporaryEffects.
+
+            keywords.forEach((kw: string) => {
+                target.temporaryEffects.push({
+                    activation: ActivationCondition.PASSIVE,
+                    description: `Granted Keyword: ${kw}`,
+                    action: { type: 'NONE', params: {} },
+                    duration: params.duration || 'TURN_END',
+                    condition: { type: 'ALWAYS', value: kw } // Hacky: Store kw in value for retrieval?
+                    // Actually, GameEngine needs to support checking temporary effects for keywords.
+                    // For now, let's assume we can add a "GRANT_KEYWORD" effect to temporaryEffects.
+                });
+                // Better approach: Add a buff that sets a flag.
+                // Or better: temporaryEffects IS the list of added effects.
+                // We need an effect that SAYS "I give this keyword".
+                // Since `hasKeyword` isn't fully robust for granted keywords yet, 
+                // we'll rely on a specific pattern: 
+                // If effect.action.type === 'GRANT_KEYWORD', checking it might be hard.
+
+                // Let's explicitly push a "GRANT_KEYWORD" dummy effect that has the keyword in params.
+                target.temporaryEffects.push({
+                    activation: ActivationCondition.PASSIVE,
+                    description: `Grant ${kw}`,
+                    action: { type: 'GRANT_KEYWORD', params: { keywords: [kw] } },
+                    duration: params.duration || 'TURN_END'
+                });
+            });
+            console.log(`Granted keywords [${keywords.join(', ')}] to ${target.unit.name}.`);
+        }
+    });
+};
+
+const block: ActionImplementation = (ctx, params, _targets) => {
+    // Sets the source unit as the blocker for the current combat
+    if (ctx.unitZone) {
+        ctx.machine.state.redirectBlockerZone = ctx.unitZone;
+        ctx.machine.state.combatBlocked = true; // Automatically considered blocked
+        console.log(`${ctx.unitZone.unit?.name} activated BLOCK (Guardian). Redirecting attack.`);
+    }
 };
 
 export const ActionRegistry: Record<string, ActionImplementation> = {
@@ -608,4 +688,8 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'COMPLEX_ACTION': complexAction,
     'SACRIFICE_TO_BUFF': sacrificeToBuff,
     'DAMAGE': damage,
+    'AWAKEN': awaken,
+    'DECK_CONSTRAINT': deckConstraint,
+    'GRANT_KEYWORD': grantKeyword,
+    'BLOCK': block,
 };
