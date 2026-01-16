@@ -45,6 +45,8 @@ function renderMenu() {
         startGame(deck1, deck2, leader1, leader2);
     });
 
+
+
     document.getElementById('custom-sim-btn')?.addEventListener('click', () => {
         currentScreen = Screen.SETUP;
         render();
@@ -788,7 +790,7 @@ function attachListeners() {
 
     // Trash Zone Hover Listeners
     document.querySelectorAll('.trash-zone').forEach(zone => {
-        zone.addEventListener('mouseenter', (e) => {
+        zone.addEventListener('mouseenter', () => {
             const el = zone as HTMLElement;
             const isOpponent = el.dataset.player === 'opponent';
             const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;

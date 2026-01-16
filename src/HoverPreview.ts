@@ -8,7 +8,7 @@ export class HoverPreview {
         this.tooltipElement.className = 'hover-preview-tooltip';
         this.tooltipElement.style.display = 'none';
         this.tooltipElement.style.position = 'fixed';
-        this.tooltipElement.style.zIndex = '1000';
+        this.tooltipElement.style.zIndex = '3000';
         this.tooltipElement.style.pointerEvents = 'none'; // Ensure it doesn't block mouse events
         document.body.appendChild(this.tooltipElement);
     }
@@ -16,7 +16,7 @@ export class HoverPreview {
     show(card: Card, x: number, y: number) {
         const isUnit = card.type === CardType.UNIT;
         const formattedText = this.formatEffectText(card.text);
-        
+
         this.tooltipElement.innerHTML = `
             <div class="preview-content">
                 ${card.imageUrl ? `<img src="${card.imageUrl}" class="preview-image">` : ''}
@@ -33,7 +33,7 @@ export class HoverPreview {
         `;
 
         this.tooltipElement.style.display = 'block';
-        
+
         // Initial positioning
         this.updatePosition(x, y);
     }
@@ -52,7 +52,7 @@ export class HoverPreview {
         // Offset from cursor
         const offsetX = 20;
         const offsetY = 20;
-        
+
         let left = x + offsetX;
         let top = y + offsetY;
 
