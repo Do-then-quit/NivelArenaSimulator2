@@ -7,9 +7,7 @@ export class TrashHoverOverlay {
     private titleElement: HTMLElement;
     private gridElement: HTMLElement;
     private hoverPreview: HoverPreview;
-    private isVisible: boolean = false;
     private hideTimeout: number | null = null;
-    private currentAnchor: HTMLElement | null = null;
 
     constructor(hoverPreview: HoverPreview) {
         this.hoverPreview = hoverPreview;
@@ -39,8 +37,7 @@ export class TrashHoverOverlay {
 
     show(cards: Card[], anchorElement: HTMLElement, isOpponent: boolean, renderCardFn: (c: Card, small: boolean, p?: number, h?: number) => string) {
         this.cancelHide();
-        this.isVisible = true;
-        this.currentAnchor = anchorElement;
+
 
         this.titleElement.textContent = `${isOpponent ? "Opponent" : "Your"} Trash (${cards.length})`;
 
@@ -76,7 +73,7 @@ export class TrashHoverOverlay {
     }
 
     hide() {
-        this.isVisible = false;
+
         this.element.classList.remove('active');
         this.hoverPreview.hide();
     }
