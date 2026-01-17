@@ -19,6 +19,7 @@ import { ST01_EFFECTS } from './cardEffects/st01';
 import { ST02_EFFECTS } from './cardEffects/st02';
 import { ST03_EFFECTS } from './cardEffects/st03';
 import { BT01_EFFECTS } from './cardEffects/bt01';
+import { CardParser } from './CardParser';
 
 const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...ST01_EFFECTS,
@@ -27,68 +28,113 @@ const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...BT01_EFFECTS
 };
 
-function mapType(rawType: string): CardType {
-    switch (rawType) {
-        case '리더': return CardType.LEADER;
-        case '유닛': return CardType.UNIT;
-        case '스킬': return CardType.SKILL;
-        case '아이템': return CardType.ITEM;
-        default: return CardType.UNIT;
+export class CardDatabase {
+    private static instance: CardDatabase;
+    private cards: Map<string, Card> = new Map();
+
+    private constructor() {
+        this.loadCards();
     }
-}
 
-function mapAttribute(rawAttr: string): Attribute {
-    switch (rawAttr) {
-        case '화염': return Attribute.FIRE;
-        case '대지': return Attribute.EARTH;
-        case '폭풍': return Attribute.STORM;
-        case '파도': return Attribute.WATER;
-        case '번개': return Attribute.LIGHTNING;
-        case '없음': return Attribute.NONE;
-        default: return Attribute.NONE;
+    public static getInstance(): CardDatabase {
+        if (!CardDatabase.instance) {
+            CardDatabase.instance = new CardDatabase();
+        }
+        return CardDatabase.instance;
     }
-}
 
-import { CardParser } from './CardParser';
+    private loadCards() {
+        const rawData = [
+            ...rawST01, ...rawST02, ...rawST03, ...rawST04, ...rawST05,
+            ...rawST06, ...rawST07, ...rawST08, ...rawST09,
+            ...rawBT01, ...rawBT02, ...rawBT03, ...rawBT04, ...rawBT05,
+            ...rawSB01
+        ];
 
-export const DUMMY_CARDS: Card[] = [
-    ...rawST01, ...rawST02, ...rawST03, ...rawST04, ...rawST05,
-    ...rawST06, ...rawST07, ...rawST08, ...rawST09,
-    ...rawBT01, ...rawBT02, ...rawBT03, ...rawBT04, ...rawBT05,
-    ...rawSB01
-].map((raw: any) => ({
-    id: raw.id,
-    name: raw.name,
-    type: mapType(raw.type),
-    attribute: mapAttribute(raw.attribute),
-    cost: raw.cost === '레어도' ? 0 : parseInt(raw.cost),
-    power: raw.power === '-' ? undefined : parseInt(raw.power),
-    hit: raw.hit === '-' ? undefined : parseInt(raw.hit),
-    text: raw.text,
-    traits: raw.traits,
-    keywords: (() => {
+        rawData.forEach((raw: any) => {
+            const card = this.parseCard(raw);
+            this.cards.set(card.id, card);
+        });
+    }
+
+    public getCard(id: string): Card | undefined {
+        return this.cards.get(id);
+    }
+
+    public getAllCards(): Card[] {
+        return Array.from(this.cards.values());
+    }
+
+    private parseCard(raw: any): Card {
+        return {
+            id: raw.id,
+            name: raw.name,
+            type: this.mapType(raw.type),
+            attribute: this.mapAttribute(raw.attribute),
+            cost: raw.cost === '레어도' ? 0 : parseInt(raw.cost),
+            power: raw.power === '-' ? undefined : parseInt(raw.power),
+            hit: raw.hit === '-' ? undefined : parseInt(raw.hit),
+            text: raw.text,
+            traits: raw.traits,
+            keywords: this.parseKeywords(raw),
+            imageUrl: `/assets/cards/${raw.id}.jpg`,
+            effects: MANUAL_EFFECTS[raw.id] || []
+        };
+    }
+
+    private parseKeywords(raw: any): string[] {
         // Use the new CardParser to extract keywords from text
         const parsed = CardParser.parseKeywords(raw.text);
 
         // Merge with existing raw.keywords if any
         let k = raw.keywords || "";
+        const combined: string[] = [];
+
+        if (k && k !== "-") {
+            combined.push(...k.split(',').map((s: string) => s.trim()));
+        }
+
         parsed.forEach(pk => {
-            if (!k.includes(pk)) {
-                k = k === "-" || k === "" ? pk : `${k}, ${pk}`;
+            if (!combined.includes(pk)) {
+                combined.push(pk);
             }
         });
-        return k || "-";
-    })(),
-    imageUrl: `/assets/cards/${raw.id}.jpg`,
-    effects: MANUAL_EFFECTS[raw.id] || []
-}));
 
-export function createDeck(): Card[] {
+        return combined;
+    }
+
+    private mapType(rawType: string): CardType {
+        switch (rawType) {
+            case '리더': return CardType.LEADER;
+            case '유닛': return CardType.UNIT;
+            case '스킬': return CardType.SKILL;
+            case '아이템': return CardType.ITEM;
+            default: return CardType.UNIT;
+        }
+    }
+
+    private mapAttribute(rawAttr: string): Attribute {
+        switch (rawAttr) {
+            case '화염': return Attribute.FIRE;
+            case '대지': return Attribute.EARTH;
+            case '폭풍': return Attribute.STORM;
+            case '파도': return Attribute.WATER;
+            case '번개': return Attribute.LIGHTNING;
+            case '없음': return Attribute.NONE;
+            default: return Attribute.NONE;
+        }
+    }
+}
+
+
+// Maintain compatibility for existing tests if needed, or deprecate
+export const DUMMY_CARDS: Card[] = []; // Deprecated, but keeping to avoid breakage if referenced elsewhere temporarily
+export function createDeck(): Card[] { // Deprecated wrapper
+    const db = CardDatabase.getInstance();
+    const pool = db.getAllCards().filter(c => c.type !== CardType.LEADER);
     const deck: Card[] = [];
-    // Only use Units for the deck as requested
-    const deckPool = DUMMY_CARDS.filter(c => c.type !== CardType.LEADER);
     for (let i = 0; i < 40; i++) {
-        const template = deckPool[i % deckPool.length];
+        const template = pool[i % pool.length];
         deck.push({ ...template, id: `${template.id}_${i}` });
     }
     return deck;

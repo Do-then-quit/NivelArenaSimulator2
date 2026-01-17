@@ -236,7 +236,7 @@ export interface PendingEffect {
     sourcePlayerId: string;
     actionType: string;
     actionValue: any;
-    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED'; // Simplified target constraint
+    validTargets?: TargetSchema['scope']; // Use strict scope type from TargetSchema
     costToPay?: EffectCost;
     selectedTargets?: any[];
     revealedCards?: Card[];
