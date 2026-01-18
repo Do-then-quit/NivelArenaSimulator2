@@ -157,7 +157,8 @@ function renderTestScreen() {
         const cards = [
             'ST01-001', 'ST01-003', 'ST01-005', 'ST01-006', 'ST01-007',
             'ST01-008', 'ST01-010', 'ST01-011', 'ST01-012', 'ST01-013',
-            'ST01-014', 'ST01-015', 'ST01-016', 'ST01-017'
+            'ST01-014', 'ST01-015', 'ST01-016', 'ST01-017',
+            'ST01-010_Trigger', 'ST01-011_Trigger', 'ST01-013_Trigger', 'ST01-015_Trigger'
         ];
 
         for (const id of cards) {

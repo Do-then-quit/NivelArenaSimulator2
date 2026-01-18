@@ -110,6 +110,23 @@ export class CardTester {
                 this.setupST01_017_State();
                 instructions = "Scenario: Glove (Item). Instructions: Drag Glove to Neon. Attack with Neon. Verify Plunder effect.";
                 break;
+            // Trigger Scenarios
+            case 'ST01-010_Trigger':
+                this.setupST01_010_Trigger_State();
+                instructions = "Scenario: Anis Trigger (Trash Self -> Opp Unit -5000). Anis is on top of Deck. Opponent has Emma (7000). Instructions: Run console `window.debug.dealDamage(0, 1)`. Verify Emma power becomes 2000.";
+                break;
+            case 'ST01-011_Trigger':
+                this.setupST01_011_Trigger_State();
+                instructions = "Scenario: Rapi Trigger (Return to Hand). Rapi is on top of Deck. Instructions: Run console `window.debug.dealDamage(0, 1)`. Verify Rapi added to Hand.";
+                break;
+            case 'ST01-013_Trigger':
+                this.setupST01_013_Trigger_State();
+                instructions = "Scenario: Reinforcement Trigger (Trash Self -> Recover Cost 2 Unit). Reinforcement on Deck. Neon (Cost 1) in Trash. Instructions: Run console `window.debug.dealDamage(0, 1)`. Select Neon. Verify Neon in Hand.";
+                break;
+            case 'ST01-015_Trigger':
+                this.setupST01_015_Trigger_State();
+                instructions = "Scenario: Missile Trigger (Trash Self -> Opp Unit -5000). Missile on Deck. Opponent has Emma (7000). Instructions: Run console `window.debug.dealDamage(0, 1)`. Select Emma. Verify Emma power becomes 2000.";
+                break;
             default:
                 instructions = "Scenario not implemented.";
         }
@@ -235,6 +252,31 @@ export class CardTester {
         this.engine.state.phase = Phase.MAIN;
     }
 
+    private setupST01_010_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.deck.push(this.getCard('ST01-010')); // Anis on top
+        p2.unitZones[0].unit = this.getCard('ST01-009'); // Emma (7000)
+    }
+
+    private setupST01_011_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.deck.push(this.getCard('ST01-011')); // Rapi on top
+    }
+
+    private setupST01_013_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.deck.push(this.getCard('ST01-013')); // Reinforcement on top
+        p1.trash = [this.getCard('ST01-002')]; // Neon in trash
+    }
+
+    private setupST01_015_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.deck.push(this.getCard('ST01-015')); // Missile on top
+        p2.unitZones[0].unit = this.getCard('ST01-009'); // Emma (7000)
+    }
+
     // --- Automated Tests (Using Setups) ---
 
     async runTest(cardId: string): Promise<TestResult> {
@@ -255,6 +297,11 @@ export class CardTester {
                 case 'ST01-015': await this.testST01_015(); break;
                 case 'ST01-016': await this.testST01_016(); break;
                 case 'ST01-017': await this.testST01_017(); break;
+                // Trigger Tests
+                case 'ST01-010_Trigger': await this.testST01_010_Trigger(); break;
+                case 'ST01-011_Trigger': await this.testST01_011_Trigger(); break;
+                case 'ST01-013_Trigger': await this.testST01_013_Trigger(); break;
+                case 'ST01-015_Trigger': await this.testST01_015_Trigger(); break;
                 default:
                     throw new Error(`Test for ${cardId} not implemented yet`);
             }
@@ -430,5 +477,66 @@ export class CardTester {
         const buffs = p1.unitZones[0].buffs;
         const plunder = buffs.find(b => b.type === 'PLUNDER');
         this.assert(!!plunder, "Plunder applied");
+    }
+
+    private async testST01_010_Trigger() {
+        this.setupST01_010_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        
+        // Trigger
+        this.engine.dealDamage(p1, 1);
+
+        // Interaction: Select Opponent Unit
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Should be in Target Selection");
+        this.engine.selectTarget(0, true);
+
+        // Verify
+        const oppPower = this.engine.getUnitPower(p2.unitZones[0], p2);
+        this.assert(oppPower === 2000, "Emma Power -5000 (7000->2000)");
+        this.assert(p1.trash.some(c => c.id.startsWith('ST01-010')), "Anis should be in trash");
+    }
+
+    private async testST01_011_Trigger() {
+        this.setupST01_011_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        
+        this.engine.dealDamage(p1, 1);
+
+        // Verify: Card should be in Hand, not Damage, not Trash
+        this.assert(p1.hand.some(c => c.id.startsWith('ST01-011')), "Rapi should be in Hand");
+        this.assert(p1.damage.length === 0, "Damage zone empty");
+    }
+
+    private async testST01_013_Trigger() {
+        this.setupST01_013_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        
+        this.engine.dealDamage(p1, 1);
+
+        // Interaction: Select Trash Target
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Should be in Target Selection");
+        this.engine.selectTrashTarget(0);
+
+        // Verify
+        this.assert(p1.hand.some(c => c.id.startsWith('ST01-002')), "Neon retrieved from trash");
+        this.assert(p1.trash.some(c => c.id.startsWith('ST01-013')), "Reinforcement should be in trash");
+    }
+
+    private async testST01_015_Trigger() {
+        this.setupST01_015_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        
+        this.engine.dealDamage(p1, 1);
+
+        // Interaction
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Should be in Target Selection");
+        this.engine.selectTarget(0, true);
+
+        // Verify
+        const oppPower = this.engine.getUnitPower(p2.unitZones[0], p2);
+        this.assert(oppPower === 2000, "Emma Power -5000 (7000->2000)");
+        this.assert(p1.trash.some(c => c.id.startsWith('ST01-015')), "Missile should be in trash");
     }
 }
