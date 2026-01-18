@@ -57,12 +57,26 @@ export class CardParser {
 
         // Also scan for specific known keywords that might appear without full brackets
         // e.g., "관통[1]", "약탈[1]"
+        // FIX: Use negative lookbehind to avoid matching keywords inside conditions (e.g., "어태커 : 관통")
         const abilityKeywords = ['관통', '약탈', '광전사', '전선구축', '레벨링크', '돌파'];
+        const conditions = '(어태커|엔트리|디펜더|액티브|트리거|패시브)';
+        
         abilityKeywords.forEach(kw => {
-            // Check if keyword exists in text (simple includes check or regex boundary)
-            // Using regex to avoid matching inside other words, though these are unique enough in KR.
-            if (text.includes(kw)) {
-                keywords.add(kw);
+            try {
+                // Regex: Match 'kw' only if NOT immediately preceded by "Condition : "
+                // \s* allows for flexible whitespace.
+                const regex = new RegExp(`(?<!${conditions}\\s*:\\s*)${kw}`);
+                if (regex.test(text)) {
+                    keywords.add(kw);
+                }
+            } catch (e) {
+                // Fallback for environments without lookbehind support (shouldn't happen in ES2020+)
+                if (text.includes(kw)) {
+                    // Primitive check: if "어태커 : kw" exists, don't add? 
+                    // This fallback is risky, but better than crashing.
+                    // For now, assume lookbehind works.
+                    console.warn(`Regex error for ${kw}:`, e);
+                }
             }
         });
 

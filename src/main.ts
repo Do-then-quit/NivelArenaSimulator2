@@ -11,12 +11,14 @@ import { TrashHoverOverlay } from './TrashHoverOverlay';
 import { DeckBuilderUI } from './DeckBuilderUI';
 
 import { SetupUI } from './SetupUI';
+import { CardTester } from './logic/CardTester';
 
 enum Screen {
     MENU,
     DECK_BUILDER,
     SETUP,
-    GAME
+    GAME,
+    TEST
 }
 
 let currentScreen: Screen = Screen.MENU;
@@ -24,6 +26,9 @@ let game: GameEngine | null = null;
 const hoverPreview = new HoverPreview();
 const trashHoverOverlay = new TrashHoverOverlay(hoverPreview);
 const app = document.querySelector<HTMLDivElement>('#app')!;
+const cardTester = new CardTester();
+let testResults: any[] = [];
+let testRunning = false;
 
 function renderMenu() {
     app.innerHTML = `
@@ -33,6 +38,7 @@ function renderMenu() {
                 <button id="start-game-btn" class="primary-btn">Quick Play (ST01 vs ST01)</button>
                 <button id="custom-sim-btn" class="primary-btn">Custom Simulation</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
+                <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Tests (ST01)</button>
             </div>
         </div>
     `;
@@ -54,6 +60,11 @@ function renderMenu() {
 
     document.getElementById('deck-builder-btn')?.addEventListener('click', () => {
         currentScreen = Screen.DECK_BUILDER;
+        render();
+    });
+
+    document.getElementById('card-test-btn')?.addEventListener('click', () => {
+        currentScreen = Screen.TEST;
         render();
     });
 }
@@ -101,6 +112,78 @@ function renderSetup() {
     setupUI.render();
 }
 
+function renderTestScreen() {
+    app.innerHTML = `
+        <div class="test-screen" style="padding: 20px; color: white; max-width: 800px; margin: 0 auto;">
+            <h1>Card Logic Verification (ST01)</h1>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button id="back-menu-btn" class="secondary-btn">Back to Menu</button>
+                <button id="run-all-tests-btn" class="primary-btn" ${testRunning ? 'disabled' : ''}>Run All Tests</button>
+            </div>
+            
+            <div id="test-results" style="margin-top: 20px;">
+                ${testResults.length === 0 ? '<p>No tests run yet. Click "Run All Tests" to start.</p>' : ''}
+                ${testResults.map(r => `
+                    <div class="test-result ${r.success ? 'pass' : 'fail'}" style="margin-bottom: 10px; padding: 10px; border-left: 5px solid ${r.success ? '#00b894' : '#d63031'}; background: rgba(0,0,0,0.3); border-radius: 4px;">
+                        <div style="display:flex; justify-content:space-between; align-items: center; font-weight:bold;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 1.1em;">${r.cardId}</span>
+                                <button class="play-test-btn small-btn" data-cardid="${r.cardId}" style="font-size: 0.8rem; padding: 2px 8px; background: #0984e3; border: none; border-radius: 4px; color: white; cursor: pointer;">Play</button>
+                            </div>
+                            <span style="color: ${r.success ? '#00b894' : '#d63031'}">${r.success ? 'PASS' : 'FAIL'}</span>
+                        </div>
+                        ${!r.success && r.error ? `<div style="color: #ff7675; margin-top:5px; background: rgba(214, 48, 49, 0.1); padding: 5px;">Error: ${r.error}</div>` : ''}
+                        <details style="margin-top: 5px;">
+                            <summary style="cursor: pointer; color: #a0aec0;">Show Logs</summary>
+                            <pre style="font-size: 0.8rem; color: #b2bec3; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; overflow-x: auto; margin-top: 5px;">${r.logs.join('\n')}</pre>
+                        </details>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    document.getElementById('back-menu-btn')?.addEventListener('click', () => {
+        currentScreen = Screen.MENU;
+        render();
+    });
+
+    document.getElementById('run-all-tests-btn')?.addEventListener('click', async () => {
+        if (testRunning) return;
+        testRunning = true;
+        testResults = [];
+        render();
+
+        const cards = [
+            'ST01-001', 'ST01-003', 'ST01-005', 'ST01-006', 'ST01-007',
+            'ST01-008', 'ST01-010', 'ST01-011', 'ST01-012', 'ST01-013',
+            'ST01-014', 'ST01-015', 'ST01-016', 'ST01-017'
+        ];
+
+        for (const id of cards) {
+            const result = await cardTester.runTest(id);
+            testResults.push(result);
+            render(); // Live update
+            await new Promise(r => setTimeout(r, 50)); // Small delay for visual
+        }
+
+        testRunning = false;
+        render();
+    });
+
+    document.querySelectorAll('.play-test-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const cardId = (e.target as HTMLElement).dataset.cardid!;
+            const { engine, instructions } = cardTester.setupScenario(cardId);
+            game = engine;
+            (window as any).debug = new DebugManager(game, render);
+            currentScreen = Screen.GAME;
+            alert(`Scenario Started: ${cardId}\n\n${instructions}`);
+            render();
+        });
+    });
+}
+
 function render() {
     if (currentScreen === Screen.MENU) {
         renderMenu();
@@ -110,6 +193,8 @@ function render() {
         renderSetup();
     } else if (currentScreen === Screen.GAME && game) {
         renderGame();
+    } else if (currentScreen === Screen.TEST) {
+        renderTestScreen();
     }
 }
 
@@ -440,7 +525,8 @@ function attachListeners() {
         // Hover Preview Listeners
         card.addEventListener('mouseenter', (e) => {
             const index = parseInt((card as HTMLElement).dataset.index!);
-            const cardObj = game!.currentPlayer.hand[index];
+            const isOpponent = card.closest('.opponent-hand-zone') !== null;
+            const cardObj = isOpponent ? game!.opponentPlayer.hand[index] : game!.currentPlayer.hand[index];
             const mouseEvent = e as MouseEvent;
             hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
         });
@@ -448,7 +534,8 @@ function attachListeners() {
         card.addEventListener('mousemove', (e) => {
             const mouseEvent = e as MouseEvent;
             const index = parseInt((card as HTMLElement).dataset.index!);
-            const cardObj = game!.currentPlayer.hand[index];
+            const isOpponent = card.closest('.opponent-hand-zone') !== null;
+            const cardObj = isOpponent ? game!.opponentPlayer.hand[index] : game!.currentPlayer.hand[index];
             hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
         });
 
