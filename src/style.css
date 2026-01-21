@@ -28,12 +28,10 @@ body {
 .game-container {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    /* Slightly tighter gap */
-    padding-bottom: 240px;
-    /* Space for fixed hand zone */
-    padding-top: 60px;
-    /* Space for fixed header */
+    align-items: center;
+    gap: 20px;
+    padding: 80px 20px 40px 20px;
+    min-height: 100vh;
 }
 
 .header {
@@ -410,43 +408,35 @@ body {
 
 /* --- Hand Zone --- */
 .hand-zone {
-    position: fixed;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
     width: fit-content;
-    max-width: 90vw;
-    background: rgba(20, 22, 35, 0.9);
-    backdrop-filter: blur(20px);
-    padding: 20px 40px;
-    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    background: rgba(20, 22, 35, 0.4);
+    backdrop-filter: blur(10px);
+    padding: 15px 30px;
+    border-radius: 15px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
+    justify-content: center;
     gap: 10px;
-    z-index: 1000;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    margin-top: 10px;
 }
 
 .opponent-hand-zone {
-    position: fixed;
-    top: 60px;
-    /* Below the fixed header */
-    left: 50%;
-    transform: translateX(-50%) rotate(180deg);
     width: fit-content;
-    max-width: 90vw;
-    background: rgba(20, 22, 35, 0.9);
-    backdrop-filter: blur(20px);
-    padding: 20px 40px;
-    border-radius: 20px 20px 0 0;
-    /* Rounded at 'top' (which is visual bottom due to rotation) */
+    max-width: 100%;
+    background: rgba(20, 22, 35, 0.4);
+    backdrop-filter: blur(10px);
+    padding: 15px 30px;
+    border-radius: 15px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
+    justify-content: center;
     gap: 10px;
-    z-index: 1000;
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
-    /* Shadow will also rotate */
-    /* pointer-events: none; REMOVED to allow interaction during selection effects */
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    margin-bottom: 10px;
 }
 
 .card-in-hand {
@@ -466,14 +456,21 @@ body {
     z-index: 2000;
     background: rgba(25, 27, 40, 0.85);
     backdrop-filter: blur(12px);
-    padding: 20px;
+    padding: 15px;
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    min-width: 200px;
+    gap: 10px;
+    min-width: 180px;
+}
+
+.game-divider {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(74, 158, 255, 0.3), transparent);
+    margin: 10px 0;
 }
 
 .status-bar {

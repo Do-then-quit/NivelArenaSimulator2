@@ -235,8 +235,39 @@ function renderGame() {
         <button id="db-back-to-menu" class="secondary-btn" style="position: absolute; top: 10px; left: 10px;">Menu</button>
       </div>
 
+      <div class="opponent-hand-zone">
+          ${opponent.hand.map((c, i) => {
+            const pending = game!.state.pendingEffect as any;
+            const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
+                pending &&
+                TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
+            return `
+              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''}" data-index="${i}">
+                  ${renderCard(c)}
+              </div>
+          `}).join('')}
+      </div>
+
       ${renderPlayer(opponent, true, isMainPhase)}
+      
+      <div class="game-divider"></div>
+
       ${renderPlayer(currentPlayer, false, isMainPhase)}
+
+      <div class="hand-zone">
+          ${currentPlayer.hand.map((c, i) => {
+                const isCostCandidate = game!.state.interactionMode === 'SELECT_COST';
+                const pending = game!.state.pendingEffect as any;
+                const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
+                    pending &&
+                    TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
+
+                return `
+              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
+                  ${renderCard(c)}
+              </div>
+          `}).join('')}
+      </div>
 
       <div class="game-controls">
         <div class="status-bar">
@@ -246,35 +277,6 @@ function renderGame() {
         </div>
         <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' ? 'disabled' : ''}>Next Phase</button>
       </div>
-
-      <div class="hand-zone">
-          ${currentPlayer.hand.map((c, i) => {
-            const isCostCandidate = game!.state.interactionMode === 'SELECT_COST';
-            const pending = game!.state.pendingEffect as any;
-            const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
-                pending &&
-                TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
-
-            return `
-              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
-                  ${renderCard(c)}
-              </div>
-          `}).join('')}
-      </div>
-
-      <div class="opponent-hand-zone">
-          ${opponent.hand.map((c, i) => {
-                const pending = game!.state.pendingEffect as any;
-                const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
-                    pending &&
-                    TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
-                return `
-              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''}" data-index="${i}">
-                  ${renderCard(c)}
-              </div>
-          `}).join('')}
-      </div>
-
 
       ${renderOptionalEffectModal()}
       ${renderTrashModal()}
