@@ -101,7 +101,7 @@ export const ST02_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ACTIVE,
             description: "자신의 덱 맨 위에서 3장 공개 -> 1장 패",
-            action: { type: 'DRAW', params: { count: 1, selection: 'LOOK_3_PICK_1' } }
+            action: { type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND', params: { count: 3 } }
         }
     ],
     "ST02-015": [

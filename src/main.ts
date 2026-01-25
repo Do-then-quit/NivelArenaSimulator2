@@ -38,7 +38,7 @@ function renderMenu() {
                 <button id="start-game-btn" class="primary-btn">Quick Play (ST01 vs ST01)</button>
                 <button id="custom-sim-btn" class="primary-btn">Custom Simulation</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
-                <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Tests (ST01)</button>
+                <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Tests (ST01 & ST02)</button>
             </div>
         </div>
     `;
@@ -115,7 +115,7 @@ function renderSetup() {
 function renderTestScreen() {
     app.innerHTML = `
         <div class="test-screen" style="padding: 20px; color: white; max-width: 800px; margin: 0 auto;">
-            <h1>Card Logic Verification (ST01)</h1>
+            <h1>Card Logic Verification (ST01 & ST02)</h1>
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                 <button id="back-menu-btn" class="secondary-btn">Back to Menu</button>
                 <button id="run-all-tests-btn" class="primary-btn" ${testRunning ? 'disabled' : ''}>Run All Tests</button>
@@ -158,7 +158,10 @@ function renderTestScreen() {
             'ST01-001', 'ST01-003', 'ST01-005', 'ST01-006', 'ST01-007',
             'ST01-008', 'ST01-010', 'ST01-011', 'ST01-012', 'ST01-013',
             'ST01-014', 'ST01-015', 'ST01-016', 'ST01-017',
-            'ST01-010_Trigger', 'ST01-011_Trigger', 'ST01-013_Trigger', 'ST01-015_Trigger'
+            'ST01-010_Trigger', 'ST01-011_Trigger', 'ST01-013_Trigger', 'ST01-015_Trigger',
+            // ST02
+            'ST02-001', 'ST02-007', 'ST02-010', 'ST02-012',
+            'ST02-014', 'ST02-015', 'ST02-016', 'ST02-017'
         ];
 
         for (const id of cards) {

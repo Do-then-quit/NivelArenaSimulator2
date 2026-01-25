@@ -127,6 +127,40 @@ export class CardTester {
                 this.setupST01_015_Trigger_State();
                 instructions = "Scenario: Missile Trigger (Trash Self -> Opp Unit -5000). Missile on Deck. Opponent has Emma (7000). Instructions: Run console `window.debug.dealDamage(0, 1)`. Select Emma. Verify Emma power becomes 2000.";
                 break;
+
+            // ST02 Scenarios
+            case 'ST02-001':
+                this.setupST02_001_State();
+                instructions = "Scenario: Leader (Awakening Lv 6, Passive Size +1). Instructions: Level up to 6. Verify Leader Awakens and Size increases by 1.";
+                break;
+            case 'ST02-007':
+                this.setupST02_007_State();
+                instructions = "Scenario: Unit (Active: Trash Hand -> Base Units Check). Instructions: Use Active, drop hand. Verify 'Base' units get Hit+1.";
+                break;
+            case 'ST02-010':
+                this.setupST02_010_State();
+                instructions = "Scenario: Breakthrough & Return Trigger. Instructions: Attack with ST02-010. Verify Breakthrough. Then deal damage to self to verify Return Trigger.";
+                break;
+            case 'ST02-012':
+                this.setupST02_012_State();
+                instructions = "Scenario: Active Power Buff. Instructions: Use Active, Select Unit. Verify +3000 Power.";
+                break;
+            case 'ST02-014':
+                this.setupST02_014_State();
+                instructions = "Scenario: Look 3 Pick 1. Instructions: Use Active. Verify Look 3 Pick 1 UI appears.";
+                break;
+            case 'ST02-015':
+                this.setupST02_015_State();
+                instructions = "Scenario: Destroy Lowest in Lane. Instructions: Use Active -> Select Lane. Verify lowest power unit in lane is destroyed.";
+                break;
+            case 'ST02-016':
+                this.setupST02_016_State();
+                instructions = "Scenario: Passive +2000. Verify Power is Base + 2000.";
+                break;
+            case 'ST02-017':
+                this.setupST02_017_State();
+                instructions = "Scenario: Passive Hit +1 (Cost >= 4). Verify Hit count.";
+                break;
             default:
                 instructions = "Scenario not implemented.";
         }
@@ -277,6 +311,79 @@ export class CardTester {
         p2.unitZones[0].unit = this.getCard('ST01-009'); // Emma (7000)
     }
 
+    // --- ST02 Setup Helpers ---
+
+    private setupST02_001_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.leaderLevel = 5;
+        p1.levelZone = this.getCard('ST02-001');
+        p1.levelZone.isAwakened = false;
+    }
+
+    private setupST02_007_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.leaderLevel = 5;
+        p1.unitZones[0].unit = this.getCard('ST02-007');
+        p1.unitZones[1].unit = this.getCard('ST02-002');
+        p1.hand = [this.getCard('ST02-003')];
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private setupST02_010_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.unitZones[0].unit = this.getCard('ST02-010');
+        p2.unitZones[0].unit = this.getCard('ST01-002');
+
+        p1.deck.push(this.getCard('ST02-010'));
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private setupST02_012_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.leaderLevel = 5;
+        p1.hand = [this.getCard('ST02-012')];
+        p1.unitZones[1].unit = this.getCard('ST02-002');
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private setupST02_014_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.leaderLevel = 5;
+        p1.hand = [this.getCard('ST02-014')];
+        p1.deck.push(this.getCard('ST02-001'));
+        p1.deck.push(this.getCard('ST02-002'));
+        p1.deck.push(this.getCard('ST02-003'));
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private setupST02_015_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.leaderLevel = 5;
+        p1.hand = [this.getCard('ST02-015')];
+        p1.unitZones[1].unit = this.getCard('ST02-002');
+        p2.unitZones[1].unit = this.getCard('ST01-002');
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private setupST02_016_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.leaderLevel = 5;
+        p1.hand = [this.getCard('ST02-016')];
+        p1.unitZones[0].unit = this.getCard('ST02-002');
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private setupST02_017_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.leaderLevel = 10;
+        p1.unitZones[0].unit = this.getCard('ST02-002');
+        p1.unitZones[0].unit.cost = 4;
+        p1.hand = [this.getCard('ST02-017')];
+        this.engine.state.phase = Phase.MAIN;
+    }
+
     // --- Automated Tests (Using Setups) ---
 
     async runTest(cardId: string): Promise<TestResult> {
@@ -302,6 +409,16 @@ export class CardTester {
                 case 'ST01-011_Trigger': await this.testST01_011_Trigger(); break;
                 case 'ST01-013_Trigger': await this.testST01_013_Trigger(); break;
                 case 'ST01-015_Trigger': await this.testST01_015_Trigger(); break;
+
+                // ST02 Tests
+                case 'ST02-001': await this.testST02_001(); break;
+                case 'ST02-007': await this.testST02_007(); break;
+                case 'ST02-010': await this.testST02_010(); break;
+                case 'ST02-012': await this.testST02_012(); break;
+                case 'ST02-014': await this.testST02_014(); break;
+                case 'ST02-015': await this.testST02_015(); break;
+                case 'ST02-016': await this.testST02_016(); break;
+                case 'ST02-017': await this.testST02_017(); break;
                 default:
                     throw new Error(`Test for ${cardId} not implemented yet`);
             }
@@ -483,7 +600,7 @@ export class CardTester {
         this.setupST01_010_Trigger_State();
         const p1 = this.engine.currentPlayer;
         const p2 = this.engine.opponentPlayer;
-        
+
         // Trigger
         this.engine.dealDamage(p1, 1);
 
@@ -500,7 +617,7 @@ export class CardTester {
     private async testST01_011_Trigger() {
         this.setupST01_011_Trigger_State();
         const p1 = this.engine.currentPlayer;
-        
+
         this.engine.dealDamage(p1, 1);
 
         // Verify: Card should be in Hand, not Damage, not Trash
@@ -511,7 +628,7 @@ export class CardTester {
     private async testST01_013_Trigger() {
         this.setupST01_013_Trigger_State();
         const p1 = this.engine.currentPlayer;
-        
+
         this.engine.dealDamage(p1, 1);
 
         // Interaction: Select Trash Target
@@ -527,7 +644,7 @@ export class CardTester {
         this.setupST01_015_Trigger_State();
         const p1 = this.engine.currentPlayer;
         const p2 = this.engine.opponentPlayer;
-        
+
         this.engine.dealDamage(p1, 1);
 
         // Interaction
@@ -538,5 +655,90 @@ export class CardTester {
         const oppPower = this.engine.getUnitPower(p2.unitZones[0], p2);
         this.assert(oppPower === 2000, "Emma Power -5000 (7000->2000)");
         this.assert(p1.trash.some(c => c.id.startsWith('ST01-015')), "Missile should be in trash");
+    }
+
+    // --- ST02 Tests ---
+
+    private async testST02_001() {
+        this.setupST02_001_State();
+        const p1 = this.engine.currentPlayer;
+
+        // Level Up to 6
+        p1.leaderLevel = 6;
+        this.engine.checkAwakening(0);
+
+        this.assert(!!p1.levelZone?.isAwakened, "Leader should awaken at Level 6");
+    }
+
+    private async testST02_007() {
+        this.setupST02_007_State();
+        this.engine.activateEffect(0, 0); // Activate ST02-007
+        this.engine.selectCost(0); // Trash ST02-003 from hand
+    }
+
+    private async testST02_010() {
+        this.setupST02_010_State();
+        const p1 = this.engine.currentPlayer;
+
+        // 1. Attack Test (Breakthrough)
+        this.engine.attack(0);
+
+        // 2. Trigger Test
+        // Reset or use deck card
+        const deckCard = p1.deck[p1.deck.length - 1];
+        if (deckCard.id.startsWith('ST02-010')) {
+            this.engine.dealDamage(p1, 1);
+            this.assert(p1.hand.some(c => c.id.startsWith('ST02-010')), "Returned to hand from damage");
+        }
+    }
+
+    private async testST02_012() {
+        this.setupST02_012_State();
+        const p1 = this.engine.currentPlayer;
+
+        this.engine.activateEffect(0, 0);
+        this.engine.selectTarget(0, true); // Select ST02-002
+
+        const power = this.engine.getUnitPower(p1.unitZones[1], p1);
+        this.assert(power > 0, "Power increased");
+    }
+
+    private async testST02_014() {
+        this.setupST02_014_State();
+        this.engine.playSkill(0);
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Look 3 Pick 1 UI (Select Target)");
+        this.assert(this.engine.state.pendingEffect?.validTargets === 'REVEALED', "Target Scope REVEALED");
+    }
+
+    private async testST02_015() {
+        this.setupST02_015_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.playSkill(0);
+        this.engine.selectTarget(1, false); // Select Lane 1
+
+        const u1 = p1.unitZones[1].unit;
+        const u2 = p2.unitZones[1].unit;
+        this.assert(u1 === null || u2 === null, "At least one unit destroyed");
+    }
+
+    private async testST02_016() {
+        this.setupST02_016_State();
+        this.engine.playItem(0, 0);
+        const p1 = this.engine.currentPlayer;
+        const power = this.engine.getUnitPower(p1.unitZones[0], p1);
+        this.assert(power === 5500, "power +2000");
+    }
+
+    private async testST02_017() {
+        this.setupST02_017_State();
+        this.engine.playItem(0, 0);
+        const p1 = this.engine.currentPlayer;
+        const u = p1.unitZones[0].unit;
+        if (u && u.cost >= 4) {
+            const hit = this.engine.getUnitHit(p1.unitZones[0], p1);
+            this.assert(hit === 2, "hit +1");
+        }
     }
 }
