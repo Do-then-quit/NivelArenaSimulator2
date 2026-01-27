@@ -138,6 +138,9 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
             action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } }
         }
     ],
+
+    // Current It Uses Special Select Cost to trash Mode
+    // Later, All Selection should goes to 'Select Target' Mode
     "ST03-013": [
         {
             activation: ActivationCondition.ACTIVE,

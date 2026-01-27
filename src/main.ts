@@ -161,7 +161,12 @@ function renderTestScreen() {
             'ST01-010_Trigger', 'ST01-011_Trigger', 'ST01-013_Trigger', 'ST01-015_Trigger',
             // ST02
             'ST02-001', 'ST02-007', 'ST02-010', 'ST02-012',
-            'ST02-014', 'ST02-015', 'ST02-016', 'ST02-017'
+            'ST02-014', 'ST02-015', 'ST02-016', 'ST02-017',
+            // ST03
+            'ST03-001', 'ST03-003', 'ST03-005', 'ST03-006', 'ST03-007',
+            'ST03-008', 'ST03-010', 'ST03-011', 'ST03-012', 'ST03-013',
+            'ST03-014', 'ST03-015', 'ST03-016', 'ST03-017',
+            'ST03-003_Trigger', 'ST03-010_Trigger', 'ST03-011_Trigger', 'ST03-015_Trigger'
         ];
 
         for (const id of cards) {

@@ -161,7 +161,82 @@ export class CardTester {
                 this.setupST02_017_State();
                 instructions = "Scenario: Passive Hit +1 (Cost >= 4). Verify Hit count.";
                 break;
-            default:
+
+            // ST03 Scenarios
+            case 'ST03-001':
+                this.setupST03_001_State();
+                instructions = "Scenario: Leader (Awakening Lv 4, Passive: Field 'Exit' Units +1000). Instructions: Level up to 4. Verify Leader Awakens and ST03-006 gets +1000 Power.";
+                break;
+            case 'ST03-003':
+                this.setupST03_003_State();
+                instructions = "Scenario: Unit (Exit: Opponent Discards 1). Instructions: Destroy ST03-003 (Attack with it). Verify Opponent hand size decreases by 1.";
+                break;
+            case 'ST03-005':
+                this.setupST03_005_State();
+                instructions = "Scenario: Unit (Entry: Destroy Encounter with Cost <= 1). Instructions: Play ST03-005 to Zone 0. Verify Opponent's Cost 1 unit is destroyed.";
+                break;
+            case 'ST03-006':
+                this.setupST03_006_State();
+                instructions = "Scenario: Unit (Exit: Draw 1). Instructions: Destroy ST03-006. Verify Player draws 1 card.";
+                break;
+            case 'ST03-007':
+                this.setupST03_007_State();
+                instructions = "Scenario: Unit (Exit: Mutual Destruction). Instructions: Attack with ST03-007 (Lower Power) into Opponent. Verify Opponent is also destroyed (if Cost condition met).";
+                break;
+            case 'ST03-008':
+                this.setupST03_008_State();
+                instructions = "Scenario: Unit (Passive: Field 'Exit' Units +1000). Verify ST03-006 gets +1000 Power.";
+                break;
+            case 'ST03-010':
+                this.setupST03_010_State();
+                instructions = "Scenario: Unit (Exit: Retrieve 'Exit' Unit Cost <= 2). Instructions: Destroy ST03-010. Select ST03-003 in Trash. Verify it returns to hand.";
+                break;
+            case 'ST03-011':
+                this.setupST03_011_State();
+                instructions = "Scenario: Unit (Entry: Optional Discard All -> Destroy Encounter). Instructions: Play ST03-011. Accept Optional Discard. Verify Encounter unit destroyed.";
+                break;
+            case 'ST03-012':
+                this.setupST03_012_State();
+                instructions = "Scenario: Skill (Active: Discard 1 -> Opp Discard 1). Instructions: Use Active. Verify both players discard 1.";
+                break;
+            case 'ST03-013':
+                this.setupST03_013_State();
+                instructions = "Scenario: Skill (Active: Trash Hand Unit -> Destroy Field Unit with Lower Cost). Instructions: Use Active. Pay Cost. Select Opponent Unit. Verify Destroyed.";
+                break;
+            case 'ST03-014':
+                this.setupST03_014_State();
+                instructions = "Scenario: Skill (Active: Destroy My Unit -> Draw 2). Instructions: Use Active. Select My Unit. Verify Draw 2.";
+                break;
+            case 'ST03-015':
+                this.setupST03_015_State();
+                instructions = "Scenario: Skill (Active: Destroy My Unit & Encounter). Instructions: Use Active. Select My Unit. Verify both units destroyed.";
+                break;
+            case 'ST03-016':
+                this.setupST03_016_State();
+                instructions = "Scenario: Item (Passive +3000, Defender: Terminate). Instructions: Equip. Attack with Opponent. Block with Equipped Unit. Verify Battle Termination.";
+                break;
+            case 'ST03-017':
+                this.setupST03_017_State();
+                instructions = "Scenario: Item (Exit: Mutual Destruction). Instructions: Equip. Destroy Equipped Unit. Verify Opponent destroyed.";
+                break;
+
+            // ST03 Triggers
+            case 'ST03-003_Trigger':
+                this.setupST03_003_Trigger_State();
+                instructions = "Scenario: Trigger (Trash Self & Opp Discard). Instructions: Damage. Verify Trigger.";
+                break;
+            case 'ST03-010_Trigger':
+                this.setupST03_010_Trigger_State();
+                instructions = "Scenario: Trigger (Trash Self & Opp Discard). Instructions: Damage. Verify Trigger.";
+                break;
+            case 'ST03-011_Trigger':
+                this.setupST03_011_Trigger_State();
+                instructions = "Scenario: Trigger (Return to Hand). Instructions: Damage. Verify Return to Hand.";
+                break;
+            case 'ST03-015_Trigger':
+                this.setupST03_015_Trigger_State();
+                instructions = "Scenario: Trigger (Trash Self & Retrieve 'Exit' Unit). Instructions: Damage. Verify Retrieval.";
+                break;
                 instructions = "Scenario not implemented.";
         }
 
@@ -419,6 +494,27 @@ export class CardTester {
                 case 'ST02-015': await this.testST02_015(); break;
                 case 'ST02-016': await this.testST02_016(); break;
                 case 'ST02-017': await this.testST02_017(); break;
+
+                // ST03 Tests
+                case 'ST03-001': await this.testST03_001(); break;
+                case 'ST03-003': await this.testST03_003(); break;
+                case 'ST03-005': await this.testST03_005(); break;
+                case 'ST03-006': await this.testST03_006(); break;
+                case 'ST03-007': await this.testST03_007(); break;
+                case 'ST03-008': await this.testST03_008(); break;
+                case 'ST03-010': await this.testST03_010(); break;
+                case 'ST03-011': await this.testST03_011(); break;
+                case 'ST03-012': await this.testST03_012(); break;
+                case 'ST03-013': await this.testST03_013(); break;
+                case 'ST03-014': await this.testST03_014(); break;
+                case 'ST03-015': await this.testST03_015(); break;
+                case 'ST03-016': await this.testST03_016(); break;
+                case 'ST03-017': await this.testST03_017(); break;
+                case 'ST03-003_Trigger': await this.testST03_003_Trigger(); break;
+                case 'ST03-010_Trigger': await this.testST03_010_Trigger(); break;
+                case 'ST03-011_Trigger': await this.testST03_011_Trigger(); break;
+                case 'ST03-015_Trigger': await this.testST03_015_Trigger(); break;
+
                 default:
                     throw new Error(`Test for ${cardId} not implemented yet`);
             }
@@ -741,4 +837,439 @@ export class CardTester {
             this.assert(hit === 2, "hit +1");
         }
     }
+
+    // --- ST03 Setup & Tests ---
+
+    private setupST03_001_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.leaderLevel = 3;
+        p1.levelZone = this.getCard('ST03-001');
+        p1.levelZone.isAwakened = false;
+        // Need a unit with 'Exit' keyword
+        p1.unitZones[0].unit = this.getCard('ST03-006'); // Has Exit
+        this.engine.state.phase = Phase.LEVEL_UP;
+    }
+
+    private async testST03_001() {
+        this.setupST03_001_State();
+        const p1 = this.engine.currentPlayer;
+
+        // Level Up to 4
+        this.engine.nextPhase();
+        this.engine.checkAwakening(0);
+        this.assert(!!p1.levelZone?.isAwakened, "Leader should awaken at Level 4");
+
+        const power = this.engine.getUnitPower(p1.unitZones[0], p1);
+        this.assert(power === 3500, "Passive +1000 to Exit unit (2500 -> 3500)");
+    }
+
+    private setupST03_003_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.unitZones[0].unit = this.getCard('ST03-003');
+        p2.unitZones[0].unit = this.getCard('ST01-002'); // Neon 3000
+        p2.hand = [this.getCard('ST01-002'), this.getCard('ST01-002')];
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private async testST03_003() {
+        this.setupST03_003_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        const initialHandSize = p2.hand.length;
+
+        this.assert(initialHandSize === 2, "Opponent should have 2 cards in hand");
+        // Attack creates destruction (ST03-003 is 2000 power, Neon is 3000)
+        // ST03-003 will be destroyed
+        this.engine.destroyUnit(p1, p1.unitZones[0], p2.unitZones[0].unit || undefined);
+        // Should trigger Opponent Discard
+        // This likely requires interaction or automatic random discard depending on implementation
+        // The card says "Opponent chooses", so we might need to simulate opponent choice or it might be random in test engine
+        // Assuming Manual Selection:
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Should Select Target Mode");
+
+        this.engine.selectHandTarget(0, true); // Select card index 0 in Opp Hand? SELECT_TARGET usually for field.
+
+        // Simplified check:
+        this.assert(p2.hand.length === initialHandSize - 1, "Opponent Should Discard 1 card");
+    }
+
+    private setupST03_005_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.leaderLevel = 3;
+        p1.hand = [this.getCard('ST03-005')];
+        p2.unitZones[0].unit = this.getCard('ST01-002'); // Cost 1
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private async testST03_005() {
+        this.setupST03_005_State();
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.playUnit(0, 0);
+
+        // Entry effect: Destroy Encounter (Cost <= 1)
+        this.assert(p2.unitZones[0].unit === null, "Opponent unit destroyed");
+    }
+
+    private setupST03_006_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.unitZones[0].unit = this.getCard('ST03-006');
+        p2.unitZones[0].unit = this.getCard('ST01-009'); // Emma (7000 Power)
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private async testST03_006() {
+        this.setupST03_006_State();
+        const p1 = this.engine.currentPlayer;
+        const initialHand = p1.hand.length;
+
+        // Suicide attack to trigger Exit
+        this.engine.destroyUnit(p1, p1.unitZones[0], undefined);
+
+        this.assert(p1.hand.length === initialHand + 1, "Drew 1 card on Exit");
+    }
+
+    private setupST03_007_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p2.unitZones[0].unit = this.getCard('ST03-007'); // Cost 3, Power 4000
+
+        const strongerUnit = this.getCard('ST01-002');
+        strongerUnit.power = 4000;
+        strongerUnit.cost = 1; // Must be <= ST03-007 Cost (3)
+        p1.unitZones[0].unit = strongerUnit;
+
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private async testST03_007() {
+        this.setupST03_007_State();
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.attack(0);
+        this.engine.resolveBlock(true);
+
+        this.assert(p2.unitZones[0].unit === null, "Opponent unit mutually destroyed");
+    }
+
+    private setupST03_008_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.unitZones[0].unit = this.getCard('ST03-008'); // Passive source
+        p1.unitZones[1].unit = this.getCard('ST03-006'); // Has Exit
+        p1.unitZones[2].unit = this.getCard('ST01-002'); // No Exit
+    }
+
+    private async testST03_008() {
+        this.setupST03_008_State();
+        const p1 = this.engine.currentPlayer;
+
+        const uExit = this.engine.getUnitPower(p1.unitZones[1], p1);
+        const uNoExit = this.engine.getUnitPower(p1.unitZones[2], p1);
+
+        this.assert(uExit === 3500, "Exit unit +1000 (2500 -> 3500)");
+        this.assert(uNoExit === 3000, "No Exit unit +0");
+    }
+
+    private setupST03_010_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.unitZones[0].unit = this.getCard('ST03-010');
+        // Setup Trash
+        p1.trash = [this.getCard('ST03-003')]; // Exit, Cost 2
+        p2.unitZones[0].unit = this.getCard('ST01-009'); // Emma (Strong)
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private async testST03_010() {
+        this.setupST03_010_State();
+        const p1 = this.engine.currentPlayer;
+
+        this.engine.attack(0); // Suicide to Trigger Exit
+        this.engine.resolveBlock(true);
+
+        // Should ask to select from Trash
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET' || !!this.engine.state.pendingEffect, "Triggered Trash Selection");
+        this.engine.selectTrashTarget(0);
+
+        this.assert(p1.hand.some(c => c.id.startsWith('ST03-003')), "Retrieved card");
+    }
+
+    private setupST03_011_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.leaderLevel = 7;
+        p1.hand = [this.getCard('ST03-011'), this.getCard('ST01-002'), this.getCard('ST01-002')]; // Hand size 3
+        p2.unitZones[0].unit = this.getCard('ST01-009'); // Target
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private async testST03_011() {
+        this.setupST03_011_State();
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.playUnit(0, 0);
+
+        // Optional Discard? 
+        // Engine typically asks confirmation for optional effects
+        // Assuming YES
+        try {
+            this.engine.resolveOptionalEffect(true);
+        } catch { }
+
+        this.assert(p2.unitZones[0].unit === null, "Opponent unit destroyed after discard");
+    }
+
+    private setupST03_012_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.hand = [this.getCard('ST03-012'), this.getCard('ST01-002')];
+        p2.hand = [this.getCard('ST01-002')];
+        p1.leaderLevel = 5; // Ensure can play
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private async testST03_012() {
+        this.setupST03_012_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.playSkill(0);
+
+        // Choose self discard
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Should Select Target Mode p1");
+
+        this.engine.selectHandTarget(0, false); // Assuming Hand Target maps to index
+        // Choose opp discard (if manual)
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Should Select Target Mode p2");
+        this.engine.selectHandTarget(0, true); // Assuming Hand Target maps to index
+        // Check implementation of ST03-012 target scope
+        // It says TARGET: PLAYER and OPPONENT.
+        // Assuming manual selection for both or one.
+
+        // Simplify assertion
+        this.assert(p1.hand.length === 0, "P1 Discarded");
+        this.assert(p2.hand.length === 0, "P2 Discarded");
+    }
+
+    private setupST03_013_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.hand = [this.getCard('ST03-013'), this.getCard('ST01-002')]; // Unit in hand (Cost 1)
+        p2.unitZones[0].unit = this.getCard('ST01-002'); // Cost 1 or 0? Needs to be Lower? 
+        // ST01-002 is Cost 1. Leftover Unit in hand is Cost 1.
+        // Effect: Destroy unit with cost LOWER than paid unit.
+        // 1 is not lower than 1.
+        // Need 0 cost unit on field or higher cost in hand.
+        p1.hand[1].cost = 2; // Hack cost
+        p2.unitZones[0].unit.cost = 1;
+        p1.leaderLevel = 5;
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private async testST03_013() {
+        this.setupST03_013_State();
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.playSkill(0);
+        this.engine.selectCost(0); // Trash 2 cost unit
+        this.engine.selectTarget(0, true); // Select Opp Unit (Cost 1)
+
+        this.assert(p2.unitZones[0].unit === null, "Destroyed");
+    }
+
+    private setupST03_014_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.hand = [this.getCard('ST03-014')];
+        p1.unitZones[0].unit = this.getCard('ST01-002');
+        p1.leaderLevel = 5;
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private async testST03_014() {
+        this.setupST03_014_State();
+        const p1 = this.engine.currentPlayer;
+
+        this.engine.playSkill(0);
+        this.engine.selectTarget(0, false); // Destroy My Unit (Zone 0)
+
+        this.assert(p1.unitZones[0].unit === null, "Unit Destroyed");
+        this.assert(p1.hand.length === 2, "Drew 2");
+    }
+
+    private setupST03_015_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.hand = [this.getCard('ST03-015')];
+        p1.unitZones[0].unit = this.getCard('ST01-002');
+        p2.unitZones[0].unit = this.getCard('ST01-002');
+        p1.leaderLevel = 5;
+        this.engine.state.phase = Phase.MAIN;
+    }
+
+    private async testST03_015() {
+        this.setupST03_015_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.playSkill(0);
+        this.engine.selectTarget(0, false); // My Unit
+
+        this.assert(p1.unitZones[0].unit === null && p2.unitZones[0].unit === null, "Both Destroyed");
+    }
+
+    private setupST03_016_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.hand = [this.getCard('ST03-016')];
+        p1.unitZones[0].unit = this.getCard('ST01-002');
+        p2.unitZones[0].unit = this.getCard('ST01-011');
+        p1.leaderLevel = 5;
+        this.engine.state.phase = Phase.MAIN;
+        this.engine.playItem(0, 0);
+
+        this.engine.state.phase = Phase.ATTACK;
+        (this.engine as any).endTurn(); // Pass turn to Opponent to Attack
+
+        // P2 Turn
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private async testST03_016() {
+        this.setupST03_016_State(); // Equip
+        //const p1 = this.engine.currentPlayer; // Original P1
+        const p2 = this.engine.opponentPlayer; // Original P2
+        this.engine.attack(0);
+
+        this.engine.resolveBlock(true);
+        // P1 should be able to block? Or Defender triggers on block.
+        // Switch back perspective if needed or use internal logic.
+        // Assuming Auto Block for simplicty or manual?
+        // Defender keyword usually requires manual block or just having 'Defender' trait?
+        // "Defender: Terminate" means "When declaring block..."
+        this.assert(p2.unitZones[0].unit === null, "Destroyed");
+        this.assert(p2.damage.length === 0, "No Damage");
+
+    }
+
+    private setupST03_017_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.hand = [this.getCard('ST03-017')];
+        p1.unitZones[0].unit = this.getCard('ST01-002'); // Cost 1
+        p2.unitZones[0].unit = this.getCard('ST01-002'); // Cost 1
+        p1.leaderLevel = 5;
+        this.engine.state.phase = Phase.MAIN;
+        this.engine.playItem(0, 0);
+        (this.engine as any).endTurn(); // Pass turn to Opponent to Attack
+
+        // P2 Turn
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private async testST03_017() {
+        this.setupST03_017_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.attack(0);
+
+        this.engine.resolveBlock(true);
+        // Similar to 007 but Item
+        // Ensure destruction logic works for Item Exit
+        this.assert(p1.unitZones[0].unit === null, "Destroyed");
+        this.assert(p2.unitZones[0].unit === null, "Destroyed");
+    }
+
+    // --- ST03 Triggers ---
+
+    private setupST03_003_Trigger_State() {
+        const p1 = this.engine.currentPlayer; // My Turn
+        const p2 = this.engine.opponentPlayer;
+        p2.deck.push(this.getCard('ST03-003')); // On top
+        p1.hand = [this.getCard('ST01-002'), this.getCard('ST01-002'), this.getCard('ST01-002')]; // 3 cards
+        p1.unitZones[0].unit = this.getCard('ST01-002');
+        this.engine.state.phase = Phase.ATTACK;
+        // Trigger condition: Opp Hand >= 3
+    }
+
+    private async testST03_003_Trigger() {
+        this.setupST03_003_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        // const p2 = this.engine.opponentPlayer;
+
+        this.engine.attack(0);
+
+        // assert now is select target mode
+        this.assert(this.engine.state.interactionMode === "SELECT_TARGET", "Select Target");
+
+        this.engine.selectHandTarget(0, false);
+        // Trigger check
+        // ST03-003 Trigger: Trash Self + Opp Discard 1
+        this.assert(p1.hand.length === 2, "Discarded 1");
+    }
+
+    private setupST03_010_Trigger_State() {
+        const p1 = this.engine.currentPlayer; // My Turn
+        const p2 = this.engine.opponentPlayer;
+        p2.deck.push(this.getCard('ST03-010')); // On top
+        p1.hand = [this.getCard('ST01-002'), this.getCard('ST01-002'), this.getCard('ST01-002')]; // 3 cards
+        p1.unitZones[0].unit = this.getCard('ST01-002');
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private async testST03_010_Trigger() {
+        this.setupST03_010_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        // const p2 = this.engine.opponentPlayer;
+
+        this.engine.attack(0);
+
+        // assert now is select target mode
+        this.assert(this.engine.state.interactionMode === "SELECT_TARGET", "Select Target");
+
+        this.engine.selectHandTarget(0, false);
+        // Trigger check
+        // ST03-003 Trigger: Trash Self + Opp Discard 1
+        this.assert(p1.hand.length === 2, "Discarded 1");
+    }
+
+    private setupST03_011_Trigger_State() {
+        const p1 = this.engine.currentPlayer; // My Turn
+        const p2 = this.engine.opponentPlayer;
+        p2.deck.push(this.getCard('ST03-011')); // On top
+        p1.hand = [this.getCard('ST01-002'), this.getCard('ST01-002'), this.getCard('ST01-002')]; // 3 cards
+        p1.unitZones[0].unit = this.getCard('ST01-002');
+        this.engine.state.phase = Phase.ATTACK;
+    }
+
+    private async testST03_011_Trigger() {
+        this.setupST03_011_Trigger_State();
+        //const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        this.engine.dealDamage(p2, 1);
+        this.assert(p2.hand.some(c => c.id.startsWith('ST03-011')), "Returned to hand");
+    }
+
+    private setupST03_015_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.deck.push(this.getCard('ST03-015'));
+        p1.trash = [this.getCard('ST03-006')]; // Exit unit
+    }
+
+    private async testST03_015_Trigger() {
+        this.setupST03_015_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+
+        this.engine.dealDamage(p1, 1);
+
+        // Interaction: Select from Trash
+        this.engine.selectTrashTarget(0);
+
+        this.assert(p1.hand.some(c => c.id.startsWith('ST03-006')), "Retrieved Exit unit");
+        this.assert(p1.trash.some(c => c.id.startsWith('ST03-015')), "Trashed self");
+    }
+
 }

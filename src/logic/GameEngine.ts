@@ -590,6 +590,7 @@ export class GameEngine {
         const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
 
         // Check for Attack Costs (e.g. Admi, Yunha: Trash 1 card from hand)
+        // should be fixed to use effectManager later.
         if (attackerZone.unit && this.hasKeywordInZone(attackerZone, '패시브')) {
             const trashCostEffect = attackerZone.unit.effects?.find(e =>
                 e.activation === ActivationCondition.PASSIVE &&
