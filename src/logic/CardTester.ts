@@ -162,6 +162,24 @@ export class CardTester {
                 instructions = "Scenario: Passive Hit +1 (Cost >= 4). Verify Hit count.";
                 break;
 
+            // ST02 Triggers
+            case 'ST02-007_Trigger':
+                this.setupST02_007_Trigger_State();
+                instructions = "Scenario: ST02-007 Trigger (Trash Self -> Leader Lv+1). ST02-007 on Deck. Instructions: Run console `window.debug.dealDamage(0, 1)`. Verify Leader Level increases.";
+                break;
+            case 'ST02-009_Trigger':
+                this.setupST02_009_Trigger_State();
+                instructions = "Scenario: ST02-009 Trigger (Trash Self -> Destroy Opp Unit Cost <= 3). ST02-009 on Deck. Opponent has unit (Cost 3). Instructions: Run console `window.debug.dealDamage(0, 1)`. Select Opp Unit. Verify destroyed.";
+                break;
+            case 'ST02-010_Trigger':
+                this.setupST02_010_Trigger_State();
+                instructions = "Scenario: ST02-010 Trigger (Return to Hand). ST02-010 on Deck. Instructions: Run console `window.debug.dealDamage(0, 1)`. Verify added to Hand.";
+                break;
+            case 'ST02-015_Trigger':
+                this.setupST02_015_Trigger_State();
+                instructions = "Scenario: ST02-015 Trigger (Trash Self -> Destroy Opp Unit Cost <= 3). ST02-015 on Deck. Opponent has unit (Cost 3). Instructions: Run console `window.debug.dealDamage(0, 1)`. Select Opp Unit. Verify destroyed.";
+                break;
+
             // ST03 Scenarios
             case 'ST03-001':
                 this.setupST03_001_State();
@@ -459,6 +477,31 @@ export class CardTester {
         this.engine.state.phase = Phase.MAIN;
     }
 
+    private setupST02_007_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.leaderLevel = 1;
+        p1.deck.push(this.getCard('ST02-007')); // Trigger: Lv+1
+    }
+
+    private setupST02_009_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.deck.push(this.getCard('ST02-009')); // Trigger: Trash Opp Unit Cost <= 3
+        p2.unitZones[0].unit = this.getCard('ST02-005'); // Jan (Cost 3)
+    }
+
+    private setupST02_010_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        p1.deck.push(this.getCard('ST02-010')); // Trigger: Return to Hand
+    }
+
+    private setupST02_015_Trigger_State() {
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+        p1.deck.push(this.getCard('ST02-015')); // Trigger: Trash Opp Unit Cost <= 3
+        p2.unitZones[0].unit = this.getCard('ST02-005'); // Jan (Cost 3)
+    }
+
     // --- Automated Tests (Using Setups) ---
 
     async runTest(cardId: string): Promise<TestResult> {
@@ -494,6 +537,11 @@ export class CardTester {
                 case 'ST02-015': await this.testST02_015(); break;
                 case 'ST02-016': await this.testST02_016(); break;
                 case 'ST02-017': await this.testST02_017(); break;
+                // ST02 Trigger Tests
+                case 'ST02-007_Trigger': await this.testST02_007_Trigger(); break;
+                case 'ST02-009_Trigger': await this.testST02_009_Trigger(); break;
+                case 'ST02-010_Trigger': await this.testST02_010_Trigger(); break;
+                case 'ST02-015_Trigger': await this.testST02_015_Trigger(); break;
 
                 // ST03 Tests
                 case 'ST03-001': await this.testST03_001(); break;
@@ -797,6 +845,51 @@ export class CardTester {
 
         const power = this.engine.getUnitPower(p1.unitZones[1], p1);
         this.assert(power > 0, "Power increased");
+    }
+
+    private async testST02_007_Trigger() {
+        this.setupST02_007_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        const initialLevel = p1.leaderLevel;
+
+        this.engine.dealDamage(p1, 1);
+        this.assert(p1.leaderLevel === initialLevel + 1, "Leader Level increased by 1");
+        this.assert(p1.trash.some(c => c.id.startsWith('ST02-007')), "ST02-007 should be in trash");
+    }
+
+    private async testST02_009_Trigger() {
+        this.setupST02_009_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.dealDamage(p1, 1);
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Should be in Target Selection");
+        this.engine.selectTarget(0, true);
+
+        this.assert(p2.unitZones[0].unit === null, "Opponent unit trashed");
+        this.assert(p1.trash.some(c => c.id.startsWith('ST02-009')), "ST02-009 should be in trash");
+    }
+
+    private async testST02_010_Trigger() {
+        this.setupST02_010_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+
+        this.engine.dealDamage(p1, 1);
+        this.assert(p1.hand.some(c => c.id.startsWith('ST02-010')), "ST02-010 returned to hand");
+        this.assert(p1.damage.length === 0, "No damage taken (returned to hand)");
+    }
+
+    private async testST02_015_Trigger() {
+        this.setupST02_015_Trigger_State();
+        const p1 = this.engine.currentPlayer;
+        const p2 = this.engine.opponentPlayer;
+
+        this.engine.dealDamage(p1, 1);
+        this.assert(this.engine.state.interactionMode === 'SELECT_TARGET', "Should be in Target Selection");
+        this.engine.selectTarget(0, true);
+
+        this.assert(p2.unitZones[0].unit === null, "Opponent unit trashed");
+        this.assert(p1.trash.some(c => c.id.startsWith('ST02-015')), "ST02-015 should be in trash");
     }
 
     private async testST02_014() {
