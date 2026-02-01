@@ -1,7 +1,7 @@
 import { GameEngine } from './GameEngine';
 import { Card } from './types';
 import { DUMMY_CARDS, createDeck } from './CardDatabase';
-import { findTestModule } from './cardTests/registry';
+import { findTestModule, CARD_TEST_REGISTRY } from './cardTests/registry';
 import { CardTestContext } from './cardTests/types';
 
 export interface TestResult {
@@ -89,5 +89,13 @@ export class CardTester {
             this.log(`ERROR: ${e.message}`);
             return { cardId, success: false, logs: this.logs, error: e.message };
         }
+    }
+    public getAvailablePacks(): string[] {
+        return Object.keys(CARD_TEST_REGISTRY);
+    }
+
+    public getTestsForPack(packId: string): string[] {
+        const module = CARD_TEST_REGISTRY[packId];
+        return module ? Object.keys(module.runTests) : [];
     }
 }

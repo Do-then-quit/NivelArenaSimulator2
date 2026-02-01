@@ -112,17 +112,42 @@ function renderSetup() {
     setupUI.render();
 }
 
+// Track selected packs
+let selectedPacks: Set<string> = new Set();
+// Initialize selectedPacks with all available packs on first load
+if (selectedPacks.size === 0) {
+    const packs = cardTester.getAvailablePacks();
+    packs.forEach(p => selectedPacks.add(p));
+}
+
 function renderTestScreen() {
+    const packs = cardTester.getAvailablePacks();
+
     app.innerHTML = `
         <div class="test-screen" style="padding: 20px; color: white; max-width: 800px; margin: 0 auto;">
-            <h1>Card Logic Verification (ST01 & ST02)</h1>
+            <h1>Card Logic Verification</h1>
+            
+            <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="margin-top: 0; margin-bottom: 10px;">Select Packs to Test</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    ${packs.map(pack => `
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 4px;">
+                            <input type="checkbox" class="pack-filter-checkbox" value="${pack}" ${selectedPacks.has(pack) ? 'checked' : ''} style="cursor: pointer;">
+                            <span>${pack}</span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                 <button id="back-menu-btn" class="secondary-btn">Back to Menu</button>
-                <button id="run-all-tests-btn" class="primary-btn" ${testRunning ? 'disabled' : ''}>Run All Tests</button>
+                <button id="run-selected-tests-btn" class="primary-btn" ${testRunning ? 'disabled' : ''}>
+                    ${testRunning ? 'Running Tests...' : 'Run Selected Tests'}
+                </button>
             </div>
             
             <div id="test-results" style="margin-top: 20px;">
-                ${testResults.length === 0 ? '<p>No tests run yet. Click "Run All Tests" to start.</p>' : ''}
+                ${testResults.length === 0 ? '<p>No tests run yet. Select packs and click "Run Selected Tests".</p>' : ''}
                 ${testResults.map(r => `
                     <div class="test-result ${r.success ? 'pass' : 'fail'}" style="margin-bottom: 10px; padding: 10px; border-left: 5px solid ${r.success ? '#00b894' : '#d63031'}; background: rgba(0,0,0,0.3); border-radius: 4px;">
                         <div style="display:flex; justify-content:space-between; align-items: center; font-weight:bold;">
@@ -148,29 +173,37 @@ function renderTestScreen() {
         render();
     });
 
-    document.getElementById('run-all-tests-btn')?.addEventListener('click', async () => {
+    // Checkbox Listeners
+    document.querySelectorAll('.pack-filter-checkbox').forEach(box => {
+        box.addEventListener('change', (e) => {
+            const target = e.target as HTMLInputElement;
+            if (target.checked) {
+                selectedPacks.add(target.value);
+            } else {
+                selectedPacks.delete(target.value);
+            }
+        });
+    });
+
+    document.getElementById('run-selected-tests-btn')?.addEventListener('click', async () => {
         if (testRunning) return;
+        if (selectedPacks.size === 0) {
+            alert('Please select at least one pack.');
+            return;
+        }
+
         testRunning = true;
         testResults = [];
         render();
 
-        const cards = [
-            'ST01-001', 'ST01-003', 'ST01-005', 'ST01-006', 'ST01-007',
-            'ST01-008', 'ST01-010', 'ST01-011', 'ST01-012', 'ST01-013',
-            'ST01-014', 'ST01-015', 'ST01-016', 'ST01-017',
-            'ST01-010_Trigger', 'ST01-011_Trigger', 'ST01-013_Trigger', 'ST01-015_Trigger',
-            // ST02
-            'ST02-001', 'ST02-007', 'ST02-010', 'ST02-012',
-            'ST02-014', 'ST02-015', 'ST02-016', 'ST02-017',
-            'ST02-007_Trigger', 'ST02-009_Trigger', 'ST02-010_Trigger', 'ST02-015_Trigger',
-            // ST03
-            'ST03-001', 'ST03-003', 'ST03-005', 'ST03-006', 'ST03-007',
-            'ST03-008', 'ST03-010', 'ST03-011', 'ST03-012', 'ST03-013',
-            'ST03-014', 'ST03-015', 'ST03-016', 'ST03-017',
-            'ST03-003_Trigger', 'ST03-010_Trigger', 'ST03-011_Trigger', 'ST03-015_Trigger'
-        ];
+        // Dynamically get tests for selected packs
+        const cardsToTest: string[] = [];
+        selectedPacks.forEach(packId => {
+            const tests = cardTester.getTestsForPack(packId);
+            cardsToTest.push(...tests);
+        });
 
-        for (const id of cards) {
+        for (const id of cardsToTest) {
             const result = await cardTester.runTest(id);
             testResults.push(result);
             render(); // Live update
