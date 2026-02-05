@@ -578,6 +578,65 @@ const breakthrough: ActionImplementation = (_ctx, _params, _targets) => {
     // This action exists to avoid "unimplemented action" warnings
 };
 
+const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => {
+    const player = ctx.player;
+    const drawCount = params.drawCount || 2;
+    const discardCount = params.discardCount || 1;
+    const pIdx = ctx.machine.state.players.indexOf(player);
+
+    // First, draw cards
+    const drawnCards = ctx.machine.drawCard(pIdx, drawCount);
+    console.log(`${player.name} drew ${drawnCards.length} cards for DRAW_THEN_DISCARD effect.`);
+
+    if (drawnCards.length === 0) return;
+
+    // Now, initiate discard selection from drawn cards
+    ctx.machine.state.revealedCards = drawnCards;
+    ctx.machine.state.interactionMode = 'SELECT_TARGET';
+    ctx.machine.state.pendingEffect = {
+        sourceCard: ctx.sourceCard,
+        sourcePlayerId: player.id,
+        actionType: 'DISCARD_FROM_DRAWN',
+        actionValue: { discardCount },
+        validTargets: 'REVEALED',
+        selectedTargets: []
+    } as any;
+
+    (ctx.machine.state.pendingEffect as any)._fullEffect = {
+        activation: 'AUTO' as any,
+        description: "Choose card to discard",
+        action: { type: 'DISCARD', params: { target: 'SELF', count: discardCount } },
+        targets: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: discardCount,
+            selectMode: 'MANUAL'
+        }
+    };
+    (ctx.machine.state.pendingEffect as any)._context = ctx;
+
+    console.log(`Waiting for ${player.name} to select ${discardCount} card(s) to discard from drawn cards.`);
+};
+
+const destroyUnitAndDraw: ActionImplementation = (ctx, params, targets) => {
+    if (!targets[0]) return;
+    const targetZone = targets[0] as UnitZoneState;
+    const unit = targetZone.unit;
+    if (!unit) return;
+
+    const owner = getOwnerOfZone(ctx.machine, targetZone);
+    const drawCount = params.drawCount || 1;
+
+    // Destroy the unit first
+    ctx.machine.destroyUnit(owner, targetZone);
+    console.log(`Destroyed ${unit.name} for DESTROY_UNIT_AND_DRAW effect.`);
+
+    // Then draw cards for the effect controller (not the owner)
+    const pIdx = ctx.machine.state.players.indexOf(ctx.player);
+    ctx.machine.drawCard(pIdx, drawCount);
+    console.log(`Drew ${drawCount} card(s) after destroying unit.`);
+};
+
 export const ActionRegistry: Record<string, ActionImplementation> = {
     'GAIN_LEVEL': gainLevel,
     'DRAW': drawCard,
@@ -608,4 +667,6 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'COMPLEX_ACTION': complexAction,
     'SACRIFICE_TO_BUFF': sacrificeToBuff,
     'DAMAGE': damage,
+    'DRAW_THEN_DISCARD': drawThenDiscard,
+    'DESTROY_UNIT_AND_DRAW': destroyUnitAndDraw,
 };

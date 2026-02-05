@@ -76,7 +76,9 @@ export type ActionType =
     | 'DESTROY_UNIT_AND_DRAW_BY_HIT' // Added
     | 'DESTROY_UNIT_WITH_HIT_COST' // Added
     | 'COMPLEX_ACTION' // Added
-    | 'SACRIFICE_TO_BUFF'; // Added
+    | 'SACRIFICE_TO_BUFF' // Added
+    | 'DRAW_THEN_DISCARD' // Added for BT01-068
+    | 'DESTROY_UNIT_AND_DRAW'; // Added for BT01-071
 
 export interface TargetFilter {
     type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT' | 'COST_EQUAL' | 'COST_HIGHER_THAN_ENCOUNTER';

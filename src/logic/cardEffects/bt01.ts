@@ -24,12 +24,20 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             duration: 'TURN_END'
         }
     ],
+    "BT01-003": [], // Vanilla (크로우)
     "BT01-004": [
         {
             activation: ActivationCondition.ATTACKER,
             description: "어태커 : 관통[1]",
             action: { type: 'PENETRATION', params: { value: 1 } },
             duration: 'TURN_END'
+        }
+    ],
+    "BT01-005": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 광전사 (이 유닛은 가능하다면 반드시 공격해야 한다).",
+            action: { type: 'NONE', params: { keyword: 'BERSERK' } }
         }
     ],
     "BT01-006": [
@@ -74,6 +82,8 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             duration: 'TURN_END'
         }
     ],
+    "BT01-007": [], // Vanilla (클레이)
+    "BT01-010": [], // Vanilla (아리아)
     "BT01-011": [
         {
             activation: ActivationCondition.ACTIVE,
@@ -111,6 +121,11 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         }
     ],
     "BT01-014": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 광전사 (이 유닛은 가능하다면 반드시 공격해야 한다).",
+            action: { type: 'NONE', params: { keyword: 'BERSERK' } }
+        },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "이 카드를 트래시한다.",
@@ -295,6 +310,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             duration: 'OPP_TURN_END'
         }
     ],
+    "BT01-031": [], // Vanilla (앤 : 미라클 페어리)
     "BT01-030": [
         {
             activation: ActivationCondition.PASSIVE,
@@ -389,6 +405,8 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             duration: 'TURN_END'
         }
     ],
+    "BT01-042": [], // Vanilla (나가)
+    "BT01-043": [], // Vanilla (티아)
     "BT01-044": [
         {
             activation: ActivationCondition.ENTRY,
@@ -618,14 +636,8 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     "BT01-068": [
         {
             activation: ActivationCondition.EXIT,
-            description: "엑시트 : 카드를 2장 드로우한다.",
-            action: { type: 'DRAW', params: { count: 2 } }
-        },
-        {
-            activation: ActivationCondition.EXIT,
-            description: "그 중 1장을 골라 트래시한다.",
-            action: { type: 'DISCARD', params: { target: 'SELF', count: 1 } },
-            targets: { scope: 'LAST_DRAWN', type: 'CARD', count: 1, selectMode: 'MANUAL' }
+            description: "엑시트 : 카드를 2장 드로우하고, 그 중 1장을 골라 트래시한다.",
+            action: { type: 'DRAW_THEN_DISCARD', params: { drawCount: 2, discardCount: 1 } }
         }
     ],
     "BT01-069": [
@@ -645,14 +657,9 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     "BT01-071": [
         {
             activation: ActivationCondition.ENTRY,
-            description: "엔트리 : 필드에 있는 자신 유닛을 1장 골라 트래시한다.",
-            action: { type: 'DESTROY_UNIT', params: {} },
+            description: "엔트리 : 필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 1장 드로우한다.",
+            action: { type: 'DESTROY_UNIT_AND_DRAW', params: { drawCount: 1 } },
             targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' }
-        },
-        {
-            activation: ActivationCondition.ENTRY,
-            description: "그 후, 카드를 1장 드로우한다.",
-            action: { type: 'DRAW', params: { count: 1 } }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
@@ -787,7 +794,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
                 type: 'UNIT',
                 filters: [
                     { type: 'HAS_KEYWORD', value: '엑시트' },
-                    { type: 'COST_EQUAL', value: 2 } as any // Simplified for 2 or less
+                    { type: 'COST_LIMIT', value: 2 }
                 ],
                 count: 2,
                 selectMode: 'MANUAL'
