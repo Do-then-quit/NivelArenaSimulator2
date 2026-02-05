@@ -10,6 +10,7 @@
 ## 2. Core Architecture: Effect Engine (Based on Rule 8)
 
 니벨아레나의 규칙은 효과 처리 순서가 매우 엄격합니다. 다음 아키텍처를 반드시 준수하십시오.
+모호하다면 규칙을 확인하고 처리하십시오. 규칙은 NivelArena_Comprehensive_Rules_Ver.2.0.pdf 에 있습니다.
 
 ### 2.1. Timestamp System (Global Clock)
 
