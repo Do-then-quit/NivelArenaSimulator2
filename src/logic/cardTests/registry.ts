@@ -1,18 +1,29 @@
-import { ST01Tests } from './ST01';
-import { ST02Tests } from './ST02';
-import { ST03Tests } from './ST03';
-import { BT01FireTests } from './BT01Fire';
-import { BT01EarthTests } from './BT01Earth';
-import { BT01StormTests } from './BT01Storm';
 import { CardTestModule } from './types';
 
+// Unified test modules
+import { ST01Module } from './shared/ST01';
+import { ST02Module } from './shared/ST02';
+import { ST03Module } from './shared/ST03';
+import { BT01FireModule } from './shared/BT01Fire';
+import { BT01EarthModule } from './shared/BT01Earth';
+import { BT01StormModule } from './shared/BT01Storm';
+import { adaptUnifiedModule } from './cardtester-adapter';
+
+// Convert all unified modules to CardTestModule format
+const UnifiedST01 = adaptUnifiedModule(ST01Module);
+const UnifiedST02 = adaptUnifiedModule(ST02Module);
+const UnifiedST03 = adaptUnifiedModule(ST03Module);
+const UnifiedBT01Fire = adaptUnifiedModule(BT01FireModule);
+const UnifiedBT01Earth = adaptUnifiedModule(BT01EarthModule);
+const UnifiedBT01Storm = adaptUnifiedModule(BT01StormModule);
+
 export const CARD_TEST_REGISTRY: Record<string, CardTestModule> = {
-    'ST01': ST01Tests,
-    'ST02': ST02Tests,
-    'ST03': ST03Tests,
-    'BT01화염': BT01FireTests,
-    'BT01대지': BT01EarthTests,
-    'BT01폭풍': BT01StormTests
+    'ST01': UnifiedST01,
+    'ST02': UnifiedST02,
+    'ST03': UnifiedST03,
+    'BT01화염': UnifiedBT01Fire,
+    'BT01대지': UnifiedBT01Earth,
+    'BT01폭풍': UnifiedBT01Storm
 };
 
 export function findTestModule(cardId: string): CardTestModule | undefined {
