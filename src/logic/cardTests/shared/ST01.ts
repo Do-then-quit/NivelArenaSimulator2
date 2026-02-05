@@ -158,7 +158,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-010: 트리거 효과
     {
-        cardId: 'ST01-010',
+        cardId: 'ST01-010-Trigger',
         name: '아니스 트리거 -5000',
         description: '대미지 트리거: 상대 유닛 -5000.',
         setup: (engine, getCard) => {
@@ -209,7 +209,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-011: 트리거 패복귀
     {
-        cardId: 'ST01-011',
+        cardId: 'ST01-011-Trigger',
         name: '라피 트리거 패복귀',
         description: '대미지 트리거: 패로 복귀.',
         setup: (engine, getCard) => {
@@ -276,7 +276,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-013: 트리거 효과
     {
-        cardId: 'ST01-013',
+        cardId: 'ST01-013-Trigger',
         name: '전력 보강 트리거',
         description: '대미지 트리거: 2코 이하 유닛 회수.',
         setup: (engine, getCard) => {
@@ -349,7 +349,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-015: 트리거 효과
     {
-        cardId: 'ST01-015',
+        cardId: 'ST01-015-Trigger',
         name: '미사일 트리거 -5000',
         description: '대미지 트리거: 상대 유닛 -5000.',
         setup: (engine, getCard) => {

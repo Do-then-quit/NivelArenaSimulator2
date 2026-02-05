@@ -93,7 +93,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-007: 트리거 효과
     {
-        cardId: 'ST02-007',
+        cardId: 'ST02-007-Trigger',
         name: '브리드 트리거 레벨+1',
         description: '대미지 트리거: 리더 레벨+1.',
         setup: (engine, getCard) => {
@@ -113,7 +113,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-009: 트리거 효과
     {
-        cardId: 'ST02-009',
+        cardId: 'ST02-009-Trigger',
         name: '길티 트리거 3코 트래시',
         description: '대미지 트리거: 3코 이하 상대 유닛 트래시.',
         setup: (engine, getCard) => {
@@ -158,7 +158,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-010: 트리거 효과
     {
-        cardId: 'ST02-010',
+        cardId: 'ST02-010-Trigger',
         name: '스노우 화이트 트리거 패복귀',
         description: '대미지 트리거: 패로 복귀.',
         setup: (engine, getCard) => {
@@ -282,7 +282,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-015: 트리거 효과
     {
-        cardId: 'ST02-015',
+        cardId: 'ST02-015-Trigger',
         name: '엑셀러레이션 트리거',
         description: '대미지 트리거: 3코 이하 상대 유닛 트래시.',
         setup: (engine, getCard) => {

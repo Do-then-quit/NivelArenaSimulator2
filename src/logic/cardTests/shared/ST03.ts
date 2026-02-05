@@ -49,7 +49,7 @@ const tests: UnifiedTestCase[] = [
             const initHand = p2.hand.length;
             engine.destroyUnit(p1, p1.unitZones[0]);
             if (engine.state.interactionMode === 'SELECT_TARGET') {
-                engine.selectTarget(0, true);
+                engine.selectHandTarget(0, true);
             }
             return [
                 { pass: p2.hand.length < initHand, message: `상대 버림 (${p2.hand.length})` }
@@ -58,7 +58,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-003: 트리거 효과
     {
-        cardId: 'ST03-003',
+        cardId: 'ST03-003-Trigger',
         name: '프리바티 트리거 상대버림',
         description: '대미지 트리거: 상대 패 3장 이상이면 버림.',
         setup: (engine, getCard) => {
@@ -74,7 +74,7 @@ const tests: UnifiedTestCase[] = [
             const initHand = p2.hand.length;
             engine.dealDamage(p1, 1);
             if (engine.state.interactionMode === 'SELECT_TARGET') {
-                engine.selectTarget(0, true);
+                engine.selectHandTarget(0, true);
             }
             return [
                 { pass: p2.hand.length < initHand, message: '트리거 버림' }
@@ -195,7 +195,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-010: 트리거 효과
     {
-        cardId: 'ST03-010',
+        cardId: 'ST03-010-Trigger',
         name: '로산나 트리거 상대버림',
         description: '대미지 트리거: 상대 패 3장 이상이면 버림.',
         setup: (engine, getCard) => {
@@ -211,7 +211,7 @@ const tests: UnifiedTestCase[] = [
             const initHand = p2.hand.length;
             engine.dealDamage(p1, 1);
             if (engine.state.interactionMode === 'SELECT_TARGET') {
-                engine.selectTarget(0, true);
+                engine.selectHandTarget(0, true);
             }
             return [
                 { pass: p2.hand.length < initHand, message: '트리거 버림' }
@@ -234,6 +234,7 @@ const tests: UnifiedTestCase[] = [
         verify: (engine) => {
             const p2 = engine.opponentPlayer;
             engine.playUnit(0, 0);
+            engine.resolveOptionalEffect(true);
             return [
                 { pass: p2.unitZones[0].unit === null, message: '조우 트래시' }
             ];
@@ -241,7 +242,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-011: 트리거 효과
     {
-        cardId: 'ST03-011',
+        cardId: 'ST03-011-Trigger',
         name: '모더니아 트리거 패복귀',
         description: '대미지 트리거: 패로 복귀.',
         setup: (engine, getCard) => {
@@ -275,9 +276,9 @@ const tests: UnifiedTestCase[] = [
             const p2 = engine.opponentPlayer;
             const initHand = p2.hand.length;
             engine.playSkill(0);
-            engine.selectCost(0);
+            engine.selectHandTarget(0, false);
             if (engine.state.interactionMode === 'SELECT_TARGET') {
-                engine.selectTarget(0, true);
+                engine.selectHandTarget(0, true);
             }
             return [
                 { pass: p2.hand.length < initHand, message: '상대 버림' }
@@ -359,7 +360,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-015: 트리거 효과
     {
-        cardId: 'ST03-015',
+        cardId: 'ST03-015-Trigger',
         name: '다 덤벼! 트리거',
         description: '대미지 트리거: 트래시에서 엑시트 회수.',
         setup: (engine, getCard) => {
