@@ -1025,7 +1025,8 @@ export class GameEngine {
                     opponent: opponent,
                     unitZone: zone, // Include unitZone so effect can reference the unit's cost
                     machine: this,
-                    destroyedBy: killerCard
+                    destroyedBy: killerCard,
+                    trashedUnit: unit
                 });
             });
 

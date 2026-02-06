@@ -1,4 +1,4 @@
-import { ActionImplementation, UnitZoneState, ActivationCondition } from './types';
+import { ActionImplementation, UnitZoneState, ActivationCondition, CardType } from './types';
 import { TargetSelector } from './TargetSelector';
 
 const gainLevel: ActionImplementation = (ctx, params) => {
@@ -435,7 +435,11 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
 };
 
 const returnFromTrashAtTurnEnd: ActionImplementation = (ctx, _params, _targets) => {
-    const card = ctx.sourceCard;
+    let card = ctx.sourceCard;
+    // If an item triggers this effect, return the destroyed unit instead of the item itself.
+    if (ctx.sourceCard.type === CardType.ITEM && ctx.trashedUnit) {
+        card = ctx.trashedUnit;
+    }
     const player = ctx.player;
 
     // This is a delayed action, so we need a place to store it.

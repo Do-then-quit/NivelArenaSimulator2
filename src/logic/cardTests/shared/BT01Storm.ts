@@ -303,10 +303,29 @@ const tests: UnifiedTestCase[] = [
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
             const card = getCard('BT01-081');
             const hasExit = card.effects?.some(e => e.activation === ActivationCondition.EXIT) || false;
+
+            const unitCard = p1.unitZones[0].unit;
+            const itemCard = p1.unitZones[0].items[0];
+
+            engine.destroyUnit(p1, p1.unitZones[0]);
+
+            const unitInTrash = !!unitCard && p1.trash.includes(unitCard);
+            const itemInTrash = !!itemCard && p1.trash.includes(itemCard);
+
+            engine.state.phase = Phase.END;
+            engine.nextPhase();
+
+            const unitInHand = !!unitCard && p1.hand.includes(unitCard);
+            const itemInHand = !!itemCard && p1.hand.includes(itemCard);
+            const itemStillInTrash = !!itemCard && p1.trash.includes(itemCard);
             return [
-                { pass: hasExit, message: '엑시트 효과 등록' }
+                { pass: hasExit, message: 'Exit effect registered' },
+                { pass: unitInTrash && itemInTrash, message: 'Unit and item moved to trash on destroy' },
+                { pass: unitInHand, message: 'Unit returned to hand at turn end' },
+                { pass: !itemInHand && itemStillInTrash, message: 'Item stays in trash' }
             ];
         }
     }
