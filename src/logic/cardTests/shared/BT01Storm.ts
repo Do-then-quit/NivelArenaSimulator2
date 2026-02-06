@@ -3,6 +3,7 @@
  */
 
 import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
+import { ActivationCondition } from '../../types';
 
 const tests: UnifiedTestCase[] = [
     // === LEADER ===
@@ -110,6 +111,53 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
+        cardId: 'BT01-068',
+        name: '엑시트: 드로우',
+        description: '유닛 트래시 시 드로우 발생.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('BT01-068');
+            p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const card = getCard('BT01-068');
+            const hasExit = card.effects?.some(e => e.activation === ActivationCondition.EXIT) || false;
+            const initHand = p1.hand.length;
+            engine.destroyUnit(p1, p1.unitZones[0]);
+            return [
+                { pass: hasExit, message: '엑시트 효과 등록' },
+                { pass: p1.hand.length >= initHand, message: `드로우 발생 (${p1.hand.length})` }
+            ];
+        }
+    },
+    {
+        cardId: 'BT01-069',
+        name: '엔트리: 2코 이하 파괴',
+        description: '조우 유닛이 3코 이상이면 파괴되지 않음.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT01-069')];
+            const oppUnit = getCard('ST01-002');
+            oppUnit.cost = 3;
+            p2.unitZones[0].unit = oppUnit;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine, getCard) => {
+            const p2 = engine.opponentPlayer;
+            const card = getCard('BT01-069');
+            const hasEntry = card.effects?.some(e => e.activation === ActivationCondition.ENTRY) || false;
+            engine.playUnit(0, 0);
+            return [
+                { pass: hasEntry, message: '엔트리 효과 등록' },
+                { pass: p2.unitZones[0].unit !== null, message: '3코 이상 생존' }
+            ];
+        }
+    },
+    {
         cardId: 'BT01-070',
         name: '길로틴 종결',
         description: '방어 선언 시 전투 종료, 방어 유닛 트래시.',
@@ -133,6 +181,96 @@ const tests: UnifiedTestCase[] = [
         }
     },
 
+    {
+        cardId: 'BT01-072',
+        name: '패시브 등록',
+        description: '패시브 효과 등록 여부 확인.',
+        setup: (engine) => {
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine, getCard) => {
+            const card = getCard('BT01-072');
+            const hasPassive = card.effects?.some(e => e.activation === ActivationCondition.PASSIVE) || false;
+            return [
+                { pass: hasPassive, message: '패시브 효과 등록' }
+            ];
+        }
+    },
+
+    // === SKILLS ===
+    {
+        cardId: 'BT01-075',
+        name: '액티브 효과 등록',
+        description: 'ACTIVE 효과 등록 여부 확인.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT01-075')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine, getCard) => {
+            const card = getCard('BT01-075');
+            const hasActive = card.effects?.some(e => e.activation === ActivationCondition.ACTIVE) || false;
+            return [
+                { pass: hasActive, message: 'ACTIVE 효과 등록' }
+            ];
+        }
+    },
+    {
+        cardId: 'BT01-076',
+        name: '액티브 효과 등록',
+        description: 'ACTIVE 효과 등록 여부 확인.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT01-076')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine, getCard) => {
+            const card = getCard('BT01-076');
+            const hasActive = card.effects?.some(e => e.activation === ActivationCondition.ACTIVE) || false;
+            return [
+                { pass: hasActive, message: 'ACTIVE 효과 등록' }
+            ];
+        }
+    },
+    {
+        cardId: 'BT01-078',
+        name: '액티브 효과 등록',
+        description: 'ACTIVE 효과 등록 여부 확인.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT01-078')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine, getCard) => {
+            const card = getCard('BT01-078');
+            const hasActive = card.effects?.some(e => e.activation === ActivationCondition.ACTIVE) || false;
+            return [
+                { pass: hasActive, message: 'ACTIVE 효과 등록' }
+            ];
+        }
+    },
+    {
+        cardId: 'BT01-079',
+        name: '액티브 효과 등록',
+        description: 'ACTIVE 효과 등록 여부 확인.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT01-079')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine, getCard) => {
+            const card = getCard('BT01-079');
+            const hasActive = card.effects?.some(e => e.activation === ActivationCondition.ACTIVE) || false;
+            return [
+                { pass: hasActive, message: 'ACTIVE 효과 등록' }
+            ];
+        }
+    },
+
     // === ITEMS ===
     {
         cardId: 'BT01-080',
@@ -151,6 +289,24 @@ const tests: UnifiedTestCase[] = [
             engine.destroyUnit(p1, p1.unitZones[0]);
             return [
                 { pass: p1.hand.length >= initHand + 2, message: `아이템 엑시트: 드로우 2 (패 ${p1.hand.length})` }
+            ];
+        }
+    },
+    {
+        cardId: 'BT01-081',
+        name: '엑시트 효과 등록',
+        description: '엑시트 효과 등록 여부 확인.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.unitZones[0].items = [getCard('BT01-081')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine, getCard) => {
+            const card = getCard('BT01-081');
+            const hasExit = card.effects?.some(e => e.activation === ActivationCondition.EXIT) || false;
+            return [
+                { pass: hasExit, message: '엑시트 효과 등록' }
             ];
         }
     }

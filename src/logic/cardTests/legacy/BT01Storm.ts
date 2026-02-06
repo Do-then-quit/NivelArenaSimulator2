@@ -1,5 +1,5 @@
-import { CardTestModule } from './types';
-import { Phase } from '../types';
+import { CardTestModule } from '../types';
+import { Phase } from '../../types';
 
 export const BT01StormTests: CardTestModule = {
     setupScenarios: {
