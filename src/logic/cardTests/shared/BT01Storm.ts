@@ -188,7 +188,7 @@ const tests: UnifiedTestCase[] = [
         setup: (engine) => {
             engine.state.phase = Phase.MAIN;
         },
-        verify: (engine, getCard) => {
+        verify: (_engine, getCard) => {
             const card = getCard('BT01-072');
             const hasPassive = card.effects?.some(e => e.activation === ActivationCondition.PASSIVE) || false;
             return [
@@ -208,7 +208,7 @@ const tests: UnifiedTestCase[] = [
             p1.hand = [getCard('BT01-075')];
             engine.state.phase = Phase.MAIN;
         },
-        verify: (engine, getCard) => {
+        verify: (_engine, getCard) => {
             const card = getCard('BT01-075');
             const hasActive = card.effects?.some(e => e.activation === ActivationCondition.ACTIVE) || false;
             return [
@@ -226,7 +226,7 @@ const tests: UnifiedTestCase[] = [
             p1.hand = [getCard('BT01-076')];
             engine.state.phase = Phase.MAIN;
         },
-        verify: (engine, getCard) => {
+        verify: (_engine, getCard) => {
             const card = getCard('BT01-076');
             const hasActive = card.effects?.some(e => e.activation === ActivationCondition.ACTIVE) || false;
             return [
@@ -244,7 +244,7 @@ const tests: UnifiedTestCase[] = [
             p1.hand = [getCard('BT01-078')];
             engine.state.phase = Phase.MAIN;
         },
-        verify: (engine, getCard) => {
+        verify: (_engine, getCard) => {
             const card = getCard('BT01-078');
             const hasActive = card.effects?.some(e => e.activation === ActivationCondition.ACTIVE) || false;
             return [
@@ -262,7 +262,7 @@ const tests: UnifiedTestCase[] = [
             p1.hand = [getCard('BT01-079')];
             engine.state.phase = Phase.MAIN;
         },
-        verify: (engine, getCard) => {
+        verify: (_engine, getCard) => {
             const card = getCard('BT01-079');
             const hasActive = card.effects?.some(e => e.activation === ActivationCondition.ACTIVE) || false;
             return [
