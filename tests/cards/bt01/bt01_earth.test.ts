@@ -192,8 +192,10 @@ describe('BT01 Earth Attribute', () => {
 
             // Should enter reveal/select mode
             if (engine.state.interactionMode === 'SELECT_TARGET') {
-                // Select the Base unit (index varies based on implementation)
-                engine.selectTarget(1, false);
+                const idx = engine.state.revealedCards.findIndex(c => c.traits?.includes('베이스'));
+                if (idx >= 0) {
+                    engine.selectRevealedTarget(idx);
+                }
             }
 
             // Hand should have the Base unit

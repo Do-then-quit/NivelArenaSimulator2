@@ -142,8 +142,8 @@ describe('BT01 Fire Attribute', () => {
         });
     });
 
-    describe('BT01-015: Viper (Entry SET_POWER 1000)', () => {
-        it('should set encounter unit power to 1000 on entry', () => {
+    describe('BT01-015: Viper (Entry -4000 to encounter)', () => {
+        it('should reduce encounter unit power by 4000 on entry', () => {
             const engine = createGame('BT01-001');
 
             // Place opponent unit with high power
@@ -151,9 +151,9 @@ describe('BT01 Fire Attribute', () => {
             oppUnit.power = 5000;
 
             // Play Viper
-            playUnit(engine, 'BT01-017', 0);
+            playUnit(engine, 'BT01-015', 0);
 
-            // Opponent's power should be set to 1000
+            // Opponent's power should be reduced by 4000
             const oppPower = getUnitPower(engine, 0, true);
             expect(oppPower).toBe(1000);
         });

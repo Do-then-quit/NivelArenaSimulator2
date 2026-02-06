@@ -144,6 +144,15 @@ export class TargetSelector {
             }
         }
 
+        // 4.5. Total Cost Limit (for multi-target selection)
+        if (schema.totalCostLimit !== undefined) {
+            candidates = candidates.filter(c => {
+                const unit = this.getUnitFromTarget(c);
+                if (!unit) return false;
+                return unit.cost <= schema.totalCostLimit!;
+            });
+        }
+
         // 5. Selection Mode
         if (schema.selectMode === 'ALL' || schema.count === 0) {
             return candidates;
@@ -241,7 +250,13 @@ export class TargetSelector {
                         if (!unit || !unit.name.includes(filter.value)) return false;
                         break;
                     case 'COST_EQUAL':
-                        if (!unit || unit.cost !== filter.value) return false;
+                        if (!unit) return false;
+                        if (filter.value !== undefined) {
+                            if (unit.cost !== filter.value) return false;
+                        } else {
+                            const payment = (context as any).costPaymentCard;
+                            if (!payment || unit.cost !== payment.cost) return false;
+                        }
                         break;
                     case 'COST_HIGHER_THAN_ENCOUNTER':
                         if (!unit || !context.unitZone || !context.unitZone.unit) return false;
@@ -249,6 +264,21 @@ export class TargetSelector {
                         break;
                 }
             }
+        }
+
+        // 5. Total Cost Limit (if multi-select is in progress)
+        if (schema.totalCostLimit !== undefined) {
+            const selected = (context as any).selectedTargets || [];
+            if (selected.includes(target)) {
+                return true; // Allow deselecting existing targets
+            }
+            const targetUnit = this.getUnitFromTarget(target);
+            if (!targetUnit) return false;
+            const selectedCost = selected.reduce((sum: number, t: any) => {
+                const unit = this.getUnitFromTarget(t);
+                return sum + (unit?.cost || 0);
+            }, 0);
+            if (selectedCost + targetUnit.cost > schema.totalCostLimit) return false;
         }
 
         // 4. Legacy Conditions Check

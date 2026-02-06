@@ -201,6 +201,13 @@ export class EffectManager {
                     const cost = context.unitZone.unit.cost;
                     if (value.operator === 'GTE') return cost >= value.cost;
                     if (value.operator === 'LTE') return cost <= value.cost;
+                    if (value.operator === 'HIGHER_THAN_ENCOUNTER') {
+                        const idx = context.player.unitZones.indexOf(context.unitZone);
+                        const encounter = context.opponent?.unitZones[idx]?.unit;
+                        if (!encounter) return false;
+                        if (!context.costPaymentCard) return true; // allow cost selection first
+                        return context.costPaymentCard.cost > encounter.cost;
+                    }
                 }
                 return false;
             case 'YOUR_TURN':

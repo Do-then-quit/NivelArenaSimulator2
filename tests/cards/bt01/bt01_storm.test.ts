@@ -140,17 +140,7 @@ describe('BT01 Storm Attribute', () => {
     });
 
     describe('BT01-068: Tia (Exit: Draw 2, discard 1)', () => {
-        it('should have Exit effect registered', () => {
-            const engine = createGame('BT01-055');
-            const tia = getCard('BT01-068');
-
-            // Verify effect is registered
-            expect(tia.effects).toBeDefined();
-            expect(tia.effects!.length).toBeGreaterThan(0);
-            expect(tia.effects!.some(e => e.activation === ActivationCondition.EXIT)).toBe(true);
-        });
-
-        it('should trigger Exit effect when destroyed', () => {
+        it('should draw 2 then discard 1 on exit', () => {
             const engine = createGame('BT01-055');
             placeUnit(engine, 'BT01-068', 0);
 
@@ -163,8 +153,13 @@ describe('BT01 Storm Attribute', () => {
             const initialHandSize = handSize(engine);
             engine.destroyUnit(engine.currentPlayer, engine.currentPlayer.unitZones[0]);
 
-            // Should have drawn at least 1 (effect triggered)
-            expect(handSize(engine)).toBeGreaterThanOrEqual(initialHandSize);
+            // Select one of the revealed cards to discard
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectRevealedTarget(0);
+            }
+
+            // Draw 2, discard 1 => net +1
+            expect(handSize(engine)).toBe(initialHandSize + 1);
         });
     });
 
@@ -213,11 +208,27 @@ describe('BT01 Storm Attribute', () => {
     });
 
     describe('BT01-072: Sin (Passive: Grant Exit Draw to others)', () => {
-        it('should have Passive effect registered', () => {
-            const sin = getCard('BT01-072');
+        it('should let other units draw 1 on exit', () => {
+            const engine = createGame('BT01-055');
+            placeUnit(engine, 'BT01-072', 0);
+            placeUnit(engine, 'ST03-002', 1);
 
-            expect(sin.effects).toBeDefined();
-            expect(sin.effects!.some(e => e.activation === ActivationCondition.PASSIVE)).toBe(true);
+            engine.currentPlayer.deck = [
+                getCard('ST03-002'),
+                getCard('ST03-002')
+            ];
+
+            const initialHandSize = handSize(engine);
+            engine.effectManager.processEffects(ActivationCondition.PASSIVE, {
+                sourceCard: engine.currentPlayer.unitZones[0].unit!,
+                player: engine.currentPlayer,
+                opponent: engine.opponentPlayer,
+                unitZone: engine.currentPlayer.unitZones[0],
+                machine: engine
+            });
+            engine.destroyUnit(engine.currentPlayer, engine.currentPlayer.unitZones[1]);
+
+            expect(handSize(engine)).toBe(initialHandSize + 1);
         });
     });
 });
@@ -291,11 +302,18 @@ describe('BT01 Storm Items', () => {
     });
 
     describe('BT01-081: Phoenix Feather (Exit: Return at turn end)', () => {
-        it('should have Exit effect registered', () => {
-            const item = getCard('BT01-081');
+        it('should return to hand at end of turn', () => {
+            const engine = createGame('BT01-055');
 
-            expect(item.effects).toBeDefined();
-            expect(item.effects!.some(e => e.activation === ActivationCondition.EXIT)).toBe(true);
+            const unit = placeUnit(engine, 'ST03-002', 0);
+            equipItem(engine, 'BT01-081', 0);
+
+            engine.destroyUnit(engine.currentPlayer, engine.currentPlayer.unitZones[0]);
+
+            engine.state.phase = Phase.END;
+            engine.nextPhase();
+
+            expect(engine.currentPlayer.hand.some(c => c.id === 'BT01-081')).toBe(true);
         });
     });
 });

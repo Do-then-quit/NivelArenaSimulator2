@@ -490,6 +490,7 @@ export class GameEngine {
         const pending = this.state.pendingEffect as any;
         const effect = pending._fullEffect;
         const context = pending._context;
+        (context as any).selectedTargets = pending.selectedTargets;
 
         // Reset Mode
         this.state.interactionMode = 'NORMAL';
@@ -509,9 +510,61 @@ export class GameEngine {
     }
 
     selectCost(handIndex: number) {
-        if (this.state.interactionMode !== 'SELECT_COST' || !this.state.pendingEffect) return;
+        if (this.state.interactionMode !== 'SELECT_COST') return;
+
+        const pendingCost = (this.state as any).pendingCost;
+        if (pendingCost) {
+            const card = this.currentPlayer.hand[handIndex];
+            if (!card) return;
+            this.currentPlayer.hand.splice(handIndex, 1);
+            this.currentPlayer.trash.push(card);
+            console.log(`Paid cost: Trashed ${card.name}`);
+
+            pendingCost.paidCount = (pendingCost.paidCount || 0) + 1;
+            const required = pendingCost.amount || 1;
+            if (pendingCost.paidCount < required) {
+                console.log(`Partial cost paid: ${pendingCost.paidCount}/${required}`);
+                return;
+            }
+
+            (this.state as any).pendingCost = null;
+            this.state.interactionMode = 'NORMAL';
+            this.state.pendingEffect = null;
+            if (typeof pendingCost.callback === 'function') pendingCost.callback();
+            this.effectManager.resumeQueue();
+            return;
+        }
+
+        if (!this.state.pendingEffect) return;
         const pending = this.state.pendingEffect as any;
         const costType = pending.costToPay?.type;
+
+        const selectedCard = this.currentPlayer.hand[handIndex];
+        if (!selectedCard) return;
+
+        // Enforce card type filter if present
+        if (pending.costToPay?.cardTypeFilter && selectedCard.type !== pending.costToPay.cardTypeFilter) {
+            console.log(`Invalid cost card type. Requires ${pending.costToPay.cardTypeFilter}`);
+            return;
+        }
+
+        // Enforce cost comparison against encounter when required
+        const effect = pending._fullEffect;
+        const context = pending._context;
+        if (effect?.condition?.type === 'COST_COMPARISON' && effect.condition?.value?.operator === 'HIGHER_THAN_ENCOUNTER') {
+            const sourceZone = context?.unitZone;
+            if (!sourceZone) return;
+            const idx = context.player.unitZones.indexOf(sourceZone);
+            const encounterUnit = context.opponent?.unitZones[idx]?.unit;
+            if (!encounterUnit) {
+                console.log("No encounter unit for cost comparison.");
+                return;
+            }
+            if ((selectedCard.cost || 0) <= (encounterUnit.cost || 0)) {
+                console.log("Cost payment card is not higher than encounter.");
+                return;
+            }
+        }
 
         // Execute Cost
         if (costType === 'TRASH_HAND') {
@@ -523,7 +576,6 @@ export class GameEngine {
             pending.costPaidCount++;
 
             // Store discarded card for effect context (e.g. for ST03-013 comparison)
-            const context = (this.state.pendingEffect as any)._context;
             context.costPaymentCard = discarded;
 
         } else if (costType === 'SHUFFLE_HAND_TO_DECK') {
@@ -542,9 +594,7 @@ export class GameEngine {
             return;
         }
 
-        // Resume Effect Execution
-        const effect = pending._fullEffect;
-        const context = pending._context;
+        // Resume Effect Execution (effect/context already captured above)
         context.costPaid = true; // Mark as paid to avoid loop
 
         this.effectManager.processEffect(effect, context);
@@ -1395,6 +1445,8 @@ export class GameEngine {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
         const pending = this.state.pendingEffect as any;
+        const context = pending._context;
+        (context as any).selectedTargets = pending.selectedTargets;
         // Verify scope is MY_TRASH
         if (pending.validTargets !== 'MY_TRASH') {
             console.log("Invalid Target: Expected Trash selection.");
@@ -1438,6 +1490,7 @@ export class GameEngine {
         const pending = this.state.pendingEffect as any;
         const effect = pending._fullEffect;
         const context = pending._context;
+        (context as any).selectedTargets = pending.selectedTargets;
 
         const targetPlayer = isOpponentHand ? this.opponentPlayer : this.currentPlayer;
         if (handIndex < 0 || handIndex >= targetPlayer.hand.length) return;
@@ -1471,11 +1524,12 @@ export class GameEngine {
         if (index < 0 || index >= this.state.revealedCards.length) return;
 
         const pending = this.state.pendingEffect as any;
+        const context = pending._context;
+        (context as any).selectedTargets = pending.selectedTargets;
         if (pending.validTargets !== 'REVEALED') return;
 
         const card = this.state.revealedCards[index];
         const effect = pending._fullEffect;
-        const context = pending._context;
 
         // Validate
         if (!TargetSelector.isValidTarget(this, effect.targets, context, card)) {
@@ -1520,6 +1574,14 @@ export class GameEngine {
         // Queue Architecture: If a new interaction mode started, it means the processed effect caused a trigger.
         // We do NOTHING here. The queue already has the remaining effects.
         // The new interaction will block the queue until it is resolved.
+        if ((this.state as any).pendingCost) {
+            console.log("[GameEngine] Pending cost detected. Waiting for cost payment.");
+            return;
+        }
+        if (this.state.interactionMode === 'SELECT_COST') {
+            console.log("[GameEngine] Entered cost selection mode. Waiting for cost payment.");
+            return;
+        }
         if (this.state.interactionMode === 'SELECT_TARGET' && this.state.pendingEffect !== currentPending) {
             console.log("[GameEngine] Action triggered a nested selection mode. Queue paused.");
         } else {

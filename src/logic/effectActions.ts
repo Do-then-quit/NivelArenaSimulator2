@@ -233,11 +233,22 @@ const discard: ActionImplementation = (ctx, params, targets) => {
 
     if (targets && targets.length > 0) {
         targets.forEach(card => {
+            let removed = false;
             const idx = targetPlayer.hand.indexOf(card);
             if (idx !== -1) {
                 targetPlayer.hand.splice(idx, 1);
                 targetPlayer.trash.push(card);
+                removed = true;
                 console.log(`${targetPlayer.name} discarded chosen card: ${card.name}`);
+            }
+
+            const revealedIdx = ctx.machine.state.revealedCards.indexOf(card);
+            if (revealedIdx !== -1) {
+                ctx.machine.state.revealedCards.splice(revealedIdx, 1);
+                if (!removed) {
+                    targetPlayer.trash.push(card);
+                    console.log(`${targetPlayer.name} discarded revealed card: ${card.name}`);
+                }
             }
         });
     } else {
@@ -472,9 +483,10 @@ const destroyUnitAndDrawByHit: ActionImplementation = (ctx, _params, targets) =>
 
     const hit = parseInt(String(unit.hit)) || 0;
     const owner = getOwnerOfZone(ctx.machine, targetZone);
+    if (!owner) return;
     const ownerIdx = ctx.machine.state.players.indexOf(owner);
 
-    ctx.machine.destroyUnit(targetZone);
+    ctx.machine.destroyUnit(owner, targetZone);
     if (hit > 0 && ownerIdx !== -1) {
         ctx.machine.drawCard(ownerIdx, hit);
         console.log(`Destroyed ${unit.name} and drew ${hit} cards.`);
@@ -495,8 +507,11 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
         type: 'TRASH_HAND',
         amount: hit,
         callback: () => {
-            ctx.machine.destroyUnit(targetZone);
-            console.log(`Paid ${hit} hand cost and destroyed ${unit.name}.`);
+            const owner = getOwnerOfZone(ctx.machine, targetZone);
+            if (owner) {
+                ctx.machine.destroyUnit(owner, targetZone);
+                console.log(`Paid ${hit} hand cost and destroyed ${unit.name}.`);
+            }
         }
     };
     ctx.machine.state.interactionMode = 'SELECT_COST';
