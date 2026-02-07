@@ -508,7 +508,7 @@ const tests: UnifiedTestCase[] = [
             engine.resolveBlock(true);
 
             return [
-                { pass: engine.state.phase !== Phase.BLOCK, message: 'Breakthrough skipped block phase' },
+                { pass: (engine.state.phase as Phase) !== Phase.BLOCK, message: 'Breakthrough skipped block phase' },
                 { pass: p2.damage.length > damageBefore, message: `Direct damage dealt (${p2.damage.length})` }
             ];
         }
@@ -811,3 +811,5 @@ export const BT01EarthModule: UnifiedTestModule = {
 };
 
 export default tests;
+
+
