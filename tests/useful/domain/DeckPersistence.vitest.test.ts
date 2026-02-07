@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DeckPersistence, SavedDeck } from '../src/logic/DeckPersistence';
+import { DeckPersistence, SavedDeck } from '../../../src/logic/DeckPersistence';
 
 describe('DeckPersistence', () => {
     beforeEach(() => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DeckBuilderLogic } from '../src/logic/DeckBuilderLogic';
-import { DUMMY_CARDS } from '../src/logic/CardDatabase';
-import { CardType } from '../src/logic/types';
+import { DeckBuilderLogic } from '../../../src/logic/DeckBuilderLogic';
+import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
+import { CardType } from '../../../src/logic/types';
 
 describe('DeckValidation', () => {
     let logic: DeckBuilderLogic;

@@ -1,5 +1,5 @@
-import { createDeck } from '../src/logic/CardDatabase';
-import { CardType } from '../src/logic/types';
+import { createDeck } from '../../../src/logic/CardDatabase';
+import { CardType } from '../../../src/logic/types';
 
 function runTest() {
     console.log("Running: CardDatabase - createDeck");

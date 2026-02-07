@@ -1,4 +1,4 @@
-import { DUMMY_CARDS } from '../src/logic/CardDatabase';
+import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
 
 console.log(`Loaded ${DUMMY_CARDS.length} cards.`);
 

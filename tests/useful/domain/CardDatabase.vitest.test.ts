@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DUMMY_CARDS } from '../src/logic/CardDatabase';
+import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
 
 describe('CardDatabase (Vitest)', () => {
     it('should create a deck with 40 cards', () => {

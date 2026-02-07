@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DeckBuilderLogic, FilterOptions } from '../src/logic/DeckBuilderLogic';
-import { DUMMY_CARDS } from '../src/logic/CardDatabase';
-import { CardType, Attribute } from '../src/logic/types';
+import { DeckBuilderLogic, FilterOptions } from '../../../src/logic/DeckBuilderLogic';
+import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
+import { CardType, Attribute } from '../../../src/logic/types';
 
 describe('DeckBuilderLogic', () => {
     let logic: DeckBuilderLogic;
@@ -15,10 +15,10 @@ describe('DeckBuilderLogic', () => {
     });
 
     it('should filter by search text', () => {
-        const filter: FilterOptions = { searchText: '라피' }; // Rapi in Korean
+        const filter: FilterOptions = { searchText: '?�피' }; // Rapi in Korean
         logic.setFilters(filter);
         const filtered = logic.getFilteredCards();
-        expect(filtered.every(c => c.name.includes('라피'))).toBe(true);
+        expect(filtered.every(c => c.name.includes('?�피'))).toBe(true);
         expect(filtered.length).toBeLessThan(DUMMY_CARDS.length);
     });
 

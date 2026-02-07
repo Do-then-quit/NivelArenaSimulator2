@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { HoverPreview } from '../src/HoverPreview';
-import { Card, CardType, Attribute } from '../src/logic/types';
+import { HoverPreview } from '../../../src/HoverPreview';
+import { Card, CardType, Attribute } from '../../../src/logic/types';
 
 describe('HoverPreview', () => {
     let hoverPreview: HoverPreview;
