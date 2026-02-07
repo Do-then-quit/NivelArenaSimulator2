@@ -661,6 +661,8 @@ export class GameEngine {
         }
 
         this.state.attackTerminated = false;
+        // Combat block state is per-combat. Reset to avoid leaking prior combat results.
+        this.state.combatBlocked = false;
         (attackerZone as any)._attackCostPaid = false; // Reset for next time
         attackerZone.hasAttacked = true;
 
@@ -768,6 +770,7 @@ export class GameEngine {
 
         if (breakthroughActive || !blockerZone.unit) {
             // Direct Attack or Breakthrough -> Skip Blocking
+            this.state.combatBlocked = false;
             this.advanceCombatStep(); // Go directly to BATTLE
             return;
         }

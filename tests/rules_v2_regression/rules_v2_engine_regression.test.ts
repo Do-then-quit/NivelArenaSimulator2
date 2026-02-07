@@ -138,6 +138,39 @@ describe('Rules v2 Engine Regression', () => {
         expect(p1.unitZones[0].buffs.some(b => b.duration === 'BATTLE_END')).toBe(false);
     });
 
+    it('keeps BREAKTHROUGH attacks unblocked even after a previous blocked combat', () => {
+        const engine = createEngine(makeLeader('L1'), makeLeader('L2'));
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+
+        p1.unitZones[0].unit = makeUnit('ATK_NORMAL', { power: 3000, hit: 1 });
+        p2.unitZones[0].unit = makeUnit('BLK_1', { power: 1000, cost: 1 });
+        engine.attack(0);
+        engine.resolveBlock(true);
+
+        expect(p2.unitZones[0].unit).toBeNull();
+        expect(engine.state.combatStep).toBe('NONE');
+
+        p1.unitZones[1].unit = makeUnit('ATK_BREAK', {
+            power: 4000,
+            hit: 2,
+            effects: [{
+                activation: ActivationCondition.ATTACKER,
+                description: 'Breakthrough up to 2 cost',
+                action: { type: 'BREAKTHROUGH', params: { costMax: 2 } }
+            }]
+        });
+        p2.unitZones[1].unit = makeUnit('BLK_2', { power: 1500, cost: 2 });
+        const damageBefore = p2.damage.length;
+
+        engine.attack(1);
+
+        expect(p2.unitZones[1].unit?.id).toBe('BLK_2');
+        expect(p2.damage.length).toBe(damageBefore + 2);
+    });
+
     it('defers non-trigger effects during damage processing and does not resolve them after defeat', () => {
         const engine = createEngine(makeLeader('L1'), makeLeader('L2'));
         const p1 = engine.state.players[0];
