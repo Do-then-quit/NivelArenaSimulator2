@@ -571,7 +571,8 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.PASSIVE,
             description: "패시브 : 이 유닛으로 공격하려면 자신의 패를 1장 골라 트래시해야 한다.",
-            action: { type: 'NONE', params: {} }
+            cost: { type: 'TRASH_HAND', amount: 1 },
+            action: { type: 'NONE', params: { requiresAttackCost: true } }
         }
     ],
     "BT01-061": [
@@ -614,7 +615,8 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.PASSIVE,
             description: "패시브 : 이 유닛으로 공격하려면 자신의 패를 1장 골라 트래시해야 한다.",
-            action: { type: 'NONE', params: {} }
+            cost: { type: 'TRASH_HAND', amount: 1 },
+            action: { type: 'NONE', params: { requiresAttackCost: true } }
         }
     ],
     "BT01-066": [
@@ -711,7 +713,7 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
     ],
     "BT01-074": [
         {
-            activation: ActivationCondition.ENTRY,
+            activation: ActivationCondition.ACTIVE,
             description: "엔트리 : 자신의 필드에서 유닛을 1장 골라 트래시한다. 그 유닛의 히트만큼 카드를 드로우한다.",
             action: { type: 'DESTROY_UNIT_AND_DRAW_BY_HIT', params: {} } as any,
             targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' }

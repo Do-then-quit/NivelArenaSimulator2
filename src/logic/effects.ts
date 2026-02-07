@@ -1,5 +1,5 @@
 import { GameEngine } from './GameEngine';
-import { ActivationCondition, Effect, TargetSchema, GameContext } from './types';
+import { ActivationCondition, Effect, TargetSchema, GameContext, CardType } from './types';
 import { ActionRegistry } from './effectActions';
 import { TargetSelector } from './TargetSelector';
 
@@ -197,6 +197,24 @@ export class EffectManager {
                 if (value.max !== undefined && context.player.leaderLevel > value.max) return false;
                 return true;
             case 'COST_COMPARISON':
+                if (value?.operator === 'HIGHER_THAN_ENCOUNTER') {
+                    if (!context.unitZone) return false;
+                    const laneIndex = context.player.unitZones.indexOf(context.unitZone);
+                    if (laneIndex === -1) return false;
+
+                    const encounterUnit = context.opponent.unitZones[laneIndex]?.unit;
+                    if (!encounterUnit) return false;
+
+                    // Before paying cost, allow the effect if there exists a valid hand candidate.
+                    if (!(context as any).costPaid) {
+                        return context.player.hand.some(
+                            card => card.type === CardType.UNIT && card.cost > encounterUnit.cost
+                        );
+                    }
+
+                    // After paying cost, validate the chosen cost card against the encounter cost.
+                    return !!context.costPaymentCard && context.costPaymentCard.cost > encounterUnit.cost;
+                }
                 if (context.unitZone && context.unitZone.unit) {
                     const cost = context.unitZone.unit.cost;
                     if (value.operator === 'GTE') return cost >= value.cost;

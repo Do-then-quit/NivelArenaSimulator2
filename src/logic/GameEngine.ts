@@ -1,4 +1,4 @@
-import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext } from './types';
+import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext, Effect } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
@@ -542,6 +542,21 @@ export class GameEngine {
             return;
         }
 
+        if (pending.actionType === 'DESTROY_UNIT_WITH_HIT_COST') {
+            const context = pending._context;
+            const targetZone = pending.selectedTargets?.[0];
+            if (targetZone && targetZone.unit) {
+                const owner = this.state.players.find(p => p.unitZones.includes(targetZone));
+                if (owner) {
+                    const targetName = targetZone.unit.name;
+                    this.destroyUnit(owner, targetZone);
+                    console.log(`Paid hit cost and destroyed ${targetName}.`);
+                }
+            }
+            this.handleEffectCompletion(context, pending);
+            return;
+        }
+
         // Resume Effect Execution
         const effect = pending._fullEffect;
         const context = pending._context;
@@ -549,10 +564,15 @@ export class GameEngine {
 
         this.effectManager.processEffect(effect, context);
 
-        if (pending.actionType === 'ATTACK_COST' && (this.state.interactionMode as any) === 'NORMAL') {
+        if (
+            pending.actionType === 'ATTACK_COST' &&
+            this.state.interactionMode === 'SELECT_COST' &&
+            this.state.pendingEffect === pending
+        ) {
             const zoneIndex = pending.actionValue.attackerZoneIndex;
             const zone = this.currentPlayer.unitZones[zoneIndex];
             (zone as any)._attackCostPaid = true;
+            this.resetInteractionMode();
             this.attack(zoneIndex); // Resume attack
             return;
         }
@@ -589,23 +609,16 @@ export class GameEngine {
 
         const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
 
-        // Check for Attack Costs (e.g. Admi, Yunha: Trash 1 card from hand)
-        // should be fixed to use effectManager later.
-        if (attackerZone.unit && this.hasKeywordInZone(attackerZone, '패시브')) {
-            const trashCostEffect = attackerZone.unit.effects?.find(e =>
-                e.activation === ActivationCondition.PASSIVE &&
-                e.description.includes("공격하려면 자신의 패를 1장 골라 트래시해야 한다")
-            );
-            if (trashCostEffect && !(attackerZone as any)._attackCostPaid) {
-                this.initiateAttackCostSelection(trashCostEffect, {
-                    sourceCard: attackerZone.unit,
-                    player: this.currentPlayer,
-                    opponent: this.opponentPlayer,
-                    unitZone: attackerZone,
-                    machine: this
-                }, attackerZoneIndex);
-                return;
-            }
+        const attackCostEffect = this.getAttackCostEffect(attackerZone);
+        if (attackCostEffect && !(attackerZone as any)._attackCostPaid) {
+            this.initiateAttackCostSelection(attackCostEffect, {
+                sourceCard: attackerZone.unit,
+                player: this.currentPlayer,
+                opponent: this.opponentPlayer,
+                unitZone: attackerZone,
+                machine: this
+            }, attackerZoneIndex);
+            return;
         }
 
         this.state.attackTerminated = false;
@@ -648,6 +661,18 @@ export class GameEngine {
         if (this.state.effectQueue.length === 0) {
             this.advanceCombatStep();
         }
+    }
+
+    private getAttackCostEffect(zone: UnitZoneState): Effect | undefined {
+        const unit = zone.unit;
+        if (!unit?.effects) return undefined;
+
+        return unit.effects.find((effect) =>
+            effect.activation === ActivationCondition.PASSIVE &&
+            effect.action?.type === 'NONE' &&
+            effect.action?.params?.requiresAttackCost === true &&
+            !!effect.cost
+        );
     }
 
     public onQueueCompleted() {
@@ -997,15 +1022,69 @@ export class GameEngine {
         return false;
     }
 
+    private processPassiveGrantedExitEffects(
+        destroyedOwner: PlayerState,
+        destroyedZone: UnitZoneState,
+        destroyedUnit: Card,
+        killerCard?: Card
+    ) {
+        this.state.players.forEach(sourceOwner => {
+            const sourceOpponent = sourceOwner === this.state.players[0] ? this.state.players[1] : this.state.players[0];
+            const sources: { card: Card; zone?: UnitZoneState }[] = [];
+
+            sourceOwner.unitZones.forEach(sourceZone => {
+                if (sourceZone.unit) sources.push({ card: sourceZone.unit, zone: sourceZone });
+                sourceZone.items.forEach(item => sources.push({ card: item, zone: sourceZone }));
+            });
+            if (sourceOwner.levelZone) sources.push({ card: sourceOwner.levelZone });
+
+            sources.forEach(source => {
+                if (!source.card.effects) return;
+                source.card.effects.forEach(passive => {
+                    if (passive.activation !== ActivationCondition.PASSIVE) return;
+                    if (passive.action?.type !== 'GRANT_EFFECT') return;
+
+                    const granted = passive.action?.params?.effect;
+                    if (!granted || granted.activation !== ActivationCondition.EXIT) return;
+
+                    const sourceContext: GameContext = {
+                        player: sourceOwner,
+                        opponent: sourceOpponent,
+                        sourceCard: source.card,
+                        unitZone: source.zone,
+                        machine: this
+                    };
+
+                    if (!this.effectManager.checkCondition(passive, sourceContext)) return;
+                    if (passive.targets && !TargetSelector.isValidTarget(this, passive.targets, sourceContext, destroyedZone)) return;
+
+                    const grantedContext: GameContext = {
+                        player: destroyedOwner,
+                        opponent: destroyedOwner === this.state.players[0] ? this.state.players[1] : this.state.players[0],
+                        sourceCard: destroyedUnit,
+                        unitZone: destroyedZone,
+                        machine: this,
+                        destroyedBy: killerCard
+                    };
+
+                    this.effectManager.executeEffect(granted, grantedContext, [destroyedZone]);
+                });
+            });
+        });
+    }
+
     public destroyUnit(player: PlayerState, zone: UnitZoneState, killerCard?: Card) {
         if (zone.unit) {
             const unit = zone.unit;
+            const opponent = player === this.state.players[0] ? this.state.players[1] : this.state.players[0];
+
+            // Apply passive "grant EXIT effect" auras before removing the unit from the zone.
+            this.processPassiveGrantedExitEffects(player, zone, unit, killerCard);
+
             // IMPORTANT: Remove unit (and clear items/buffs linkage) from zone immediately
             // to prevent recursion if an triggered effect calls checkRuleProcessing().
             // Rules say Power 0 -> Unit Trashed immediately.
             zone.unit = null;
-
-            const opponent = player === this.state.players[0] ? this.state.players[1] : this.state.players[0];
 
             // Trigger Exit Effects for Unit
             this.effectManager.processEffects(ActivationCondition.EXIT, {
@@ -1090,7 +1169,7 @@ export class GameEngine {
             sourcePlayerId: context.player.id,
             actionType: 'ATTACK_COST',
             actionValue: { attackerZoneIndex },
-            costToPay: { type: 'TRASH_HAND', amount: 1 },
+            costToPay: effect.cost || { type: 'TRASH_HAND', amount: 1 },
             selectedTargets: []
         } as any;
         (this.state.pendingEffect as any)._fullEffect = effect;
@@ -1521,7 +1600,7 @@ export class GameEngine {
         // Queue Architecture: If a new interaction mode started, it means the processed effect caused a trigger.
         // We do NOTHING here. The queue already has the remaining effects.
         // The new interaction will block the queue until it is resolved.
-        if (this.state.interactionMode === 'SELECT_TARGET' && this.state.pendingEffect !== currentPending) {
+        if (this.state.interactionMode !== 'NORMAL' && this.state.pendingEffect !== currentPending) {
             console.log("[GameEngine] Action triggered a nested selection mode. Queue paused.");
         } else {
             this.resetInteractionMode();

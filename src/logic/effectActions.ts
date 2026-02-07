@@ -474,13 +474,15 @@ const destroyUnitAndDrawByHit: ActionImplementation = (ctx, _params, targets) =>
     const unit = targetZone.unit;
     if (!unit) return;
 
-    const hit = parseInt(String(unit.hit)) || 0;
     const owner = getOwnerOfZone(ctx.machine, targetZone);
-    const ownerIdx = ctx.machine.state.players.indexOf(owner);
+    if (!owner) return;
 
-    ctx.machine.destroyUnit(targetZone);
-    if (hit > 0 && ownerIdx !== -1) {
-        ctx.machine.drawCard(ownerIdx, hit);
+    const hit = Math.max(0, ctx.machine.getUnitHit(targetZone, owner));
+    const controllerIdx = ctx.machine.state.players.indexOf(ctx.player);
+
+    ctx.machine.destroyUnit(owner, targetZone);
+    if (hit > 0 && controllerIdx !== -1) {
+        ctx.machine.drawCard(controllerIdx, hit);
         console.log(`Destroyed ${unit.name} and drew ${hit} cards.`);
     }
 };
@@ -491,20 +493,29 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
     const unit = targetZone.unit;
     if (!unit) return;
 
-    const hit = parseInt(String(unit.hit)) || 0;
+    const owner = getOwnerOfZone(ctx.machine, targetZone);
+    if (!owner) return;
+    const hit = Math.max(0, ctx.machine.getUnitHit(targetZone, owner));
 
-    // This action requires a cost payment from hand based on the unit's hit.
-    // Setting up pending cost for GameEngine to handle.
-    ctx.machine.state.pendingCost = {
-        type: 'TRASH_HAND',
-        amount: hit,
-        callback: () => {
-            ctx.machine.destroyUnit(targetZone);
-            console.log(`Paid ${hit} hand cost and destroyed ${unit.name}.`);
-        }
-    };
+    if (hit <= 0) {
+        ctx.machine.destroyUnit(owner, targetZone);
+        console.log(`Destroyed ${unit.name} (no hand cost required).`);
+        return;
+    }
+
+    // Reuse the engine's unified cost selection flow.
     ctx.machine.state.interactionMode = 'SELECT_COST';
-    ctx.machine.render();
+    ctx.machine.state.pendingEffect = {
+        sourceCard: ctx.sourceCard,
+        sourcePlayerId: ctx.player.id,
+        actionType: 'DESTROY_UNIT_WITH_HIT_COST',
+        actionValue: { hitCost: hit },
+        costToPay: { type: 'TRASH_HAND', amount: hit },
+        costPaidCount: 0,
+        selectedTargets: [targetZone]
+    } as any;
+    (ctx.machine.state.pendingEffect as any)._context = ctx;
+    console.log(`Entered Cost Selection Mode for ${ctx.sourceCard.name}`);
 };
 
 const complexAction: ActionImplementation = (ctx, params, _targets) => {
@@ -538,10 +549,11 @@ const sacrificeToBuff: ActionImplementation = (ctx, params, targets) => {
     const buffTarget = targets[1] as UnitZoneState;
 
     if (trashTarget && trashTarget.unit) {
+        const trashedUnitName = trashTarget.unit.name;
         const owner = getOwnerOfZone(ctx.machine, trashTarget);
         if (owner) {
             ctx.machine.destroyUnit(owner, trashTarget);
-            console.log(`Sacrificed ${trashTarget.unit.name} for effect.`);
+            console.log(`Sacrificed ${trashedUnitName} for effect.`);
         }
     }
 
@@ -556,6 +568,10 @@ const sacrificeToBuff: ActionImplementation = (ctx, params, targets) => {
         });
         console.log(`Buffed ${buffTarget.unit.name} by ${value} Power.`);
     }
+};
+
+const noneAction: ActionImplementation = () => {
+    // Intentionally no-op. Used for effects that only gate costs/timing.
 };
 
 // Helper inside this module
@@ -673,4 +689,5 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DAMAGE': damage,
     'DRAW_THEN_DISCARD': drawThenDiscard,
     'DESTROY_UNIT_AND_DRAW': destroyUnitAndDraw,
+    'NONE': noneAction,
 };
