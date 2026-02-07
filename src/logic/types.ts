@@ -153,7 +153,7 @@ export interface Effect {
     cost?: EffectCost;
     targets?: TargetSchema;
     action: EffectAction;
-    duration?: 'PERMANENT' | 'TURN_END' | 'OPP_TURN_END';
+    duration?: 'PERMANENT' | 'TURN_END' | 'OPP_TURN_END' | 'BATTLE_END';
     description: string;
     optional?: boolean;
 }
@@ -191,6 +191,7 @@ export interface UnitZoneState {
     hasAttacked: boolean;
     hasPlacedUnitThisTurn: boolean; // 6.4.1.1.3
     hasActivatedEffectThisTurn: boolean;
+    activatedEffectKeys: Record<string, boolean>;
     temporaryEffects: Effect[];
 }
 
@@ -199,7 +200,7 @@ export interface Buff {
     sourceCard?: Card; // card that created it (optional for now to be safe, but preferred)
     type: 'POWER' | 'HIT' | 'PENETRATION' | 'PLUNDER';
     value: number;
-    duration: 'TURN_END' | 'PERMANENT' | 'OPP_TURN_END';
+    duration: 'TURN_END' | 'PERMANENT' | 'OPP_TURN_END' | 'BATTLE_END';
     mode?: 'ADD' | 'SET';
 }
 
@@ -228,6 +229,8 @@ export interface GameState {
     attackTerminated?: boolean;
     revealedCards: Card[];
     effectQueue: EffectQueueItem[]; // New: Centralized Effect Queue
+    deferredEffectQueue: EffectQueueItem[]; // Deferred while resolving damage processing
+    damageProcessingDepth: number; // Nested damage processing guard
     globalStep: number; // Global Timer for effects
     combatStep: 'NONE' | 'ATTACK_DECLARATION' | 'DEFENSE_DECLARATION' | 'BATTLE' | 'BATTLE_END';
     combatBlocked: boolean; // Tracks if a block was declared

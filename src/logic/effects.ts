@@ -3,11 +3,25 @@ import { ActivationCondition, Effect, TargetSchema, GameContext, CardType } from
 import { ActionRegistry } from './effectActions';
 import { TargetSelector } from './TargetSelector';
 
+interface ProcessOptions {
+    enqueueOnly?: boolean;
+    batchStep?: number;
+}
+
 export class EffectManager {
     private engine: GameEngine;
+    private isProcessingQueue = false;
 
     constructor(engine: GameEngine) {
         this.engine = engine;
+    }
+
+    private requiresAwakenedLeader(effect: Effect): boolean {
+        const description = effect.description || '';
+        return (
+            description.includes('각성면') ||
+            description.includes('AWAKENED')
+        );
     }
 
     public queueEphemeralEffect(effect: Effect, context: GameContext) {
@@ -22,14 +36,22 @@ export class EffectManager {
             sourcePlayerId: context.player.id
         };
 
+        if (this.engine.state.damageProcessingDepth > 0) {
+            this.engine.state.deferredEffectQueue.push(item);
+            console.log(`[EffectManager] Deferred Ephemeral Effect: ${effect.description} (Timestamp: ${currentStep})`);
+            return;
+        }
+
         this.engine.state.effectQueue.push(item);
         console.log(`[EffectManager] Queued Ephemeral Effect: ${effect.description} (Timestamp: ${currentStep})`);
 
         this.engine.sortEffectQueue();
-        this.processQueue();
+        if (!this.isProcessingQueue) {
+            this.processQueue();
+        }
     }
 
-    processEffects(activation: ActivationCondition, context: any): boolean {
+    processEffects(activation: ActivationCondition, context: any, options: ProcessOptions = {}): boolean {
         const { sourceCard } = context;
 
         console.log(`[EffectManager] Processing ${activation} effects for ${sourceCard.name}`);
@@ -46,12 +68,7 @@ export class EffectManager {
 
         if (effectsToProcess.length === 0) return false;
 
-        // Queueing with Timestamp & Priority System
-
-        // 1. Increment Global Step for this new batch of effects
-        // (Assuming this method call represents an atomic event reaction)
-        this.engine.incrementGlobalStep();
-        const currentStep = this.engine.state.globalStep;
+        const currentStep = options.batchStep ?? this.engine.incrementAndGetGlobalStep();
 
         const queueItems = effectsToProcess.map((e: Effect, index: number) => ({
             effect: e,
@@ -61,14 +78,22 @@ export class EffectManager {
             sourcePlayerId: context.player.id
         }));
 
+        // 8.4.3: while resolving damage processing, non-trigger auto effects are deferred.
+        if (this.engine.state.damageProcessingDepth > 0 && activation !== ActivationCondition.DAMAGE_TRIGGER) {
+            this.engine.state.deferredEffectQueue.push(...queueItems);
+            console.log(`[EffectManager] Deferred ${queueItems.length} ${activation} effects (Timestamp: ${currentStep}). Total Deferred: ${this.engine.state.deferredEffectQueue.length}`);
+            return true;
+        }
+
         this.engine.state.effectQueue.push(...queueItems);
         console.log(`[EffectManager] Added ${queueItems.length} effects to queue (Timestamp: ${currentStep}). Total: ${this.engine.state.effectQueue.length}`);
 
         // 2. Sort Queue based on Priority
         this.engine.sortEffectQueue();
 
-        // Start processing immediately
-        this.processQueue();
+        if (!options.enqueueOnly && !this.isProcessingQueue) {
+            this.processQueue();
+        }
 
         return true;
     }
@@ -79,25 +104,26 @@ export class EffectManager {
             return 'PAUSED';
         }
 
-        while (this.engine.state.effectQueue.length > 0) {
-            const item = this.engine.state.effectQueue[0]; // Peek first (don't remove yet in case of failure/pause?) 
-            // Actually, standard is shift. If we pause, we rely on the fact that we break loop.
-            // But if processEffect triggers a manual step, it might consume the step logic.
-
-            // Let's shift it. If it causes a pause, the handling logic (initiateTargetSelection) 
-            // will set the interaction mode. The effect itself is "processed" in terms of "we tried to run it".
-            // The *continuation* of that effect (resolution) happens later via resolve methods, 
-            // but the effect item itself is done being "initiated".
-
-            this.engine.state.effectQueue.shift();
-            this.processEffect(item.effect, item.context);
-
-            if (this.engine.state.interactionMode !== 'NORMAL') {
-                console.log(`[EffectManager] Queue paused for interaction: ${this.engine.state.interactionMode}`);
-                return 'PAUSED';
-            }
+        if (this.isProcessingQueue) {
+            return 'PAUSED';
         }
-        return 'COMPLETED';
+
+        this.isProcessingQueue = true;
+        try {
+            while (this.engine.state.effectQueue.length > 0) {
+                const item = this.engine.state.effectQueue[0];
+                this.engine.state.effectQueue.shift();
+                this.processEffect(item.effect, item.context);
+
+                if (this.engine.state.interactionMode !== 'NORMAL') {
+                    console.log(`[EffectManager] Queue paused for interaction: ${this.engine.state.interactionMode}`);
+                    return 'PAUSED';
+                }
+            }
+            return 'COMPLETED';
+        } finally {
+            this.isProcessingQueue = false;
+        }
     }
 
     public resumeQueue() {
@@ -108,7 +134,29 @@ export class EffectManager {
         }
     }
 
+    public flushDeferredEffects() {
+        if (this.engine.state.deferredEffectQueue.length === 0) return;
+
+        console.log(`[EffectManager] Flushing deferred effects: ${this.engine.state.deferredEffectQueue.length}`);
+        this.engine.state.effectQueue.push(...this.engine.state.deferredEffectQueue);
+        this.engine.state.deferredEffectQueue = [];
+        this.engine.sortEffectQueue();
+
+        if (this.engine.state.interactionMode === 'NORMAL' && !this.isProcessingQueue) {
+            this.processQueue();
+        }
+    }
+
     public processEffect(effect: Effect, context: GameContext): boolean {
+        if (
+            context.sourceCard.type === CardType.LEADER &&
+            !context.sourceCard.isAwakened &&
+            effect.activation !== ActivationCondition.AWAKEN &&
+            this.requiresAwakenedLeader(effect)
+        ) {
+            return false;
+        }
+
         if (!this.checkCondition(effect, context)) return false;
 
         // NEW: Check Optional
@@ -166,7 +214,15 @@ export class EffectManager {
                 fired[effectId] = true;
             }
 
-            const params = { ...action.params, duration: effect.duration };
+            let resolvedDuration = effect.duration;
+            if (
+                (effect.activation === ActivationCondition.ATTACKER || effect.activation === ActivationCondition.DEFENDER) &&
+                (resolvedDuration === undefined || resolvedDuration === 'TURN_END')
+            ) {
+                resolvedDuration = 'BATTLE_END';
+            }
+
+            const params = { ...action.params, duration: resolvedDuration };
             actionImpl(context, params, targets);
             this.engine.checkRuleProcessing();
         } else {

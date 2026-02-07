@@ -1,4 +1,4 @@
-import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext, Effect } from './types';
+﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext, Effect } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
@@ -23,6 +23,8 @@ export class GameEngine {
             pendingEffect: null,
             revealedCards: [],
             effectQueue: [],
+            deferredEffectQueue: [],
+            damageProcessingDepth: 0,
             globalStep: 0,
             combatStep: 'NONE',
             combatBlocked: false
@@ -33,6 +35,11 @@ export class GameEngine {
     public incrementGlobalStep() {
         this.state.globalStep++;
         // console.log(`[GlobalStep] Incremented to ${this.state.globalStep}`);
+    }
+
+    public incrementAndGetGlobalStep(): number {
+        this.incrementGlobalStep();
+        return this.state.globalStep;
     }
 
     public sortEffectQueue() {
@@ -73,9 +80,9 @@ export class GameEngine {
             levelZone: leaderCopy,
             leaderLevel: 1,
             unitZones: [
-                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
-                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
-                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {} },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {} },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {} },
             ],
             skillZone: [],
         };
@@ -101,6 +108,24 @@ export class GameEngine {
 
     get opponentPlayer(): PlayerState {
         return this.state.players[this.state.turnPlayerIndex === 0 ? 1 : 0];
+    }
+
+    private getOpponentOf(player: PlayerState): PlayerState {
+        return this.state.players.find(p => p.id !== player.id)!;
+    }
+
+    private getPlayersInTurnOrder(): [PlayerState, PlayerState] {
+        const turnPlayer = this.state.players[this.state.turnPlayerIndex];
+        const nonTurnPlayer = this.state.players[this.state.turnPlayerIndex === 0 ? 1 : 0];
+        return [turnPlayer, nonTurnPlayer];
+    }
+
+    private requiresAwakenedLeader(effect: Effect): boolean {
+        const description = effect.description || '';
+        return (
+            description.includes('각성면') ||
+            description.includes('AWAKENED')
+        );
     }
 
     drawCard(playerIndex: number, count: number = 1): Card[] {
@@ -171,36 +196,21 @@ export class GameEngine {
         console.log(`Entering Phase: ${phase}`);
 
         if (phase === Phase.MAIN) {
-            // [ESCAPE] Logic: Check all units for ESCAPE effect
-            this.state.players.forEach((p) => {
-                p.unitZones.forEach((zone) => {
-                    // Check if unit has ESCAPE keyword/effect
-                    // Note: We need to trigger it.
-                    // Logic: "Unit Zone -> Deck Bottom" is the cost/condition.
-                    // But usually auto-triggered.
-                    // If unit has "ESCAPE" activation, trigger it.
-                    if (zone.unit) {
-                        const escapeEffects = zone.unit.effects?.filter(e => e.activation === ActivationCondition.ESCAPE);
-                        if (escapeEffects && escapeEffects.length > 0) {
-                            console.log(`[ESCAPE] Triggered for ${zone.unit.name}`);
-                            // Logic: Move to Deck Bottom first? Or let effect handle it?
-                            // Proposal: "Send to deck bottom AND activate effect"
-                            // We should probably treat it as an effect that pays the cost of moving itself.
-                            // For now, let's trigger the effect Manager.
-                            this.effectManager.processEffects(ActivationCondition.ESCAPE, {
-                                sourceCard: zone.unit,
-                                player: p,
-                                opponent: (p === this.state.players[0] ? this.state.players[1] : this.state.players[0]),
-                                unitZone: zone,
-                                machine: this
-                            });
-                            // Handle movement if not handled by action?
-                            // Assuming the action implementation handles the move or strict rule.
-                            // For simplicity now, we assume the Effect Action includes "RETURN_TO_DECK_BOTTOM".
-                            // Use 'RETURN_TO_DECK_BOTTOM' action type if exists, or adding it now?
-                            // Let's rely on effect definition.
-                        }
-                    }
+            // ESCAPE triggers at the start of that unit owner's Main Phase.
+            const owner = this.currentPlayer;
+            const opponent = this.getOpponentOf(owner);
+            owner.unitZones.forEach((zone) => {
+                if (!zone.unit) return;
+                const escapeEffects = zone.unit.effects?.filter(e => e.activation === ActivationCondition.ESCAPE);
+                if (!escapeEffects || escapeEffects.length === 0) return;
+
+                console.log(`[ESCAPE] Triggered for ${zone.unit.name}`);
+                this.effectManager.processEffects(ActivationCondition.ESCAPE, {
+                    sourceCard: zone.unit,
+                    player: owner,
+                    opponent: opponent,
+                    unitZone: zone,
+                    machine: this
                 });
             });
         }
@@ -208,39 +218,44 @@ export class GameEngine {
 
     private resolveEndPhase() {
         console.log("Resolving End Phase Sequence...");
-        // 1. "At the end of turn" Effects (e.g. Return, etc.)
-        this.effectManager.processEffects(ActivationCondition.TURN_END, {
-            sourceCard: this.currentPlayer.levelZone!, // Dummy source for global check? Or check all cards?
-            player: this.currentPlayer,
-            opponent: this.opponentPlayer,
-            machine: this
-        });
-        // We should check all cards on field for TURN_END triggers
-        this.state.players.forEach(p => {
-            // Units
+        // 1. "At the end of turn" Effects
+        const turnEndBatchStep = this.incrementAndGetGlobalStep();
+        const [turnPlayer, nonTurnPlayer] = this.getPlayersInTurnOrder();
+        [turnPlayer, nonTurnPlayer].forEach((p) => {
+            const opponent = this.getOpponentOf(p);
+
+            if (p.levelZone) {
+                this.effectManager.processEffects(ActivationCondition.TURN_END, {
+                    sourceCard: p.levelZone,
+                    player: p,
+                    opponent: opponent,
+                    machine: this
+                }, { enqueueOnly: true, batchStep: turnEndBatchStep });
+            }
+
             p.unitZones.forEach(z => {
                 if (z.unit) {
                     this.effectManager.processEffects(ActivationCondition.TURN_END, {
                         sourceCard: z.unit,
                         player: p,
-                        opponent: p === this.currentPlayer ? this.opponentPlayer : this.currentPlayer, // Logic check
+                        opponent: opponent,
                         unitZone: z,
                         machine: this
-                    });
+                    }, { enqueueOnly: true, batchStep: turnEndBatchStep });
                 }
-                // Items
+
                 z.items.forEach(i => {
                     this.effectManager.processEffects(ActivationCondition.TURN_END, {
                         sourceCard: i,
                         player: p,
-                        opponent: p === this.currentPlayer ? this.opponentPlayer : this.currentPlayer,
+                        opponent: opponent,
                         unitZone: z,
                         machine: this
-                    });
+                    }, { enqueueOnly: true, batchStep: turnEndBatchStep });
                 });
             });
-            // Pending: Leader/Skill?
         });
+        this.effectManager.processQueue();
 
         // 2. Clear Temporary Buffs/Effects ("Until End of Turn")
         this.state.players.forEach(p => {
@@ -278,6 +293,7 @@ export class GameEngine {
             z.isExhausted = false;
             z.hasPlacedUnitThisTurn = false;
             z.hasActivatedEffectThisTurn = false;
+            z.activatedEffectKeys = {};
         });
 
         // Switch
@@ -354,6 +370,20 @@ export class GameEngine {
     }
 
     // Actions
+    private trashUnitForUpgrade(player: PlayerState, zone: UnitZoneState) {
+        if (!zone.unit) return;
+        const unit = zone.unit;
+
+        // Upgrade trash is rule-based trash and must not trigger EXIT / UNIT_TRASHED.
+        zone.unit = null;
+        player.trash.push(unit);
+        zone.items.forEach(item => player.trash.push(item));
+
+        zone.items = [];
+        zone.buffs = [];
+        zone.temporaryEffects = [];
+    }
+
     playUnit(cardIndex: number, zoneIndex: number) {
         const validation = RuleValidator.canPlayUnit(this, this.currentPlayer, cardIndex, zoneIndex);
         if (!validation.valid) {
@@ -367,13 +397,11 @@ export class GameEngine {
 
         if (zone.unit) {
             isUpgrade = true;
-            // Trash existing unit and items using destroyUnit to trigger Exit effects
-            this.destroyUnit(this.currentPlayer, zone);
+            this.trashUnitForUpgrade(this.currentPlayer, zone);
         }
 
         if (isUpgrade && zone.unit) {
-            // Should not happen if destroyUnit worked, but just safety
-            this.destroyUnit(this.currentPlayer, zone);
+            this.trashUnitForUpgrade(this.currentPlayer, zone);
         }
 
 
@@ -435,10 +463,20 @@ export class GameEngine {
     activateEffect(zoneIndex: number, effectIndex: number) {
         const zone = this.currentPlayer.unitZones[zoneIndex];
         const card = zone.unit;
-        if (!card || !card.effects || zone.hasActivatedEffectThisTurn) return;
+        if (!card || !card.effects) return;
 
         const effect = card.effects[effectIndex];
         if (effect.activation !== ActivationCondition.ACTIVE && effect.activation !== ActivationCondition.ACTIVE_MAIN) return;
+
+        if (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase !== Phase.MAIN) {
+            return;
+        }
+        if (effect.activation === ActivationCondition.ACTIVE && this.state.phase !== Phase.MAIN && this.state.phase !== Phase.ATTACK) {
+            return;
+        }
+
+        const effectKey = `${card.id}_${effect.id || effectIndex}`;
+        if (zone.activatedEffectKeys[effectKey]) return;
 
         const context = {
             sourceCard: card,
@@ -449,6 +487,7 @@ export class GameEngine {
         };
 
         if (this.effectManager.processEffect(effect, context)) {
+            zone.activatedEffectKeys[effectKey] = true;
             zone.hasActivatedEffectThisTurn = true;
         }
     }
@@ -630,14 +669,15 @@ export class GameEngine {
         this.state.phase = Phase.ATTACK; // Ensure phase is set
         this.state.pendingAttackerIndex = attackerZoneIndex;
 
-        // Trigger Attacker Effects (Unit + Items)
+        // Trigger ATTACKER effects as one simultaneous event.
+        const attackerBatchStep = this.incrementAndGetGlobalStep();
         this.effectManager.processEffects(ActivationCondition.ATTACKER, {
             sourceCard: attackerZone.unit,
             player: this.currentPlayer,
             opponent: this.opponentPlayer,
             unitZone: attackerZone,
             machine: this
-        });
+        }, { enqueueOnly: true, batchStep: attackerBatchStep });
 
         attackerZone.items.forEach(item => {
             this.effectManager.processEffects(ActivationCondition.ATTACKER, {
@@ -646,8 +686,9 @@ export class GameEngine {
                 opponent: this.opponentPlayer,
                 unitZone: attackerZone,
                 machine: this
-            });
+            }, { enqueueOnly: true, batchStep: attackerBatchStep });
         });
+        this.effectManager.processQueue();
 
         // The queue is automatically running.
         // If queue is empty immediately, strict flow requires us to manually advance?
@@ -755,7 +796,7 @@ export class GameEngine {
         // 2. Pre-Combat Effects? (e.g. Infiltration)
         // INFILTRATION (Rule 10.2.3.1): If Infiltration & No Blocker -> Draw 1
         // Wait, Proposal says "Pre-Combat Effect".
-        if (!this.state.combatBlocked && this.hasKeywordInZone(attackerZone, '침투')) {
+        if (!this.state.combatBlocked && (this.hasKeywordInZone(attackerZone, '침투') || this.hasKeywordInZone(attackerZone, 'INFILTRATION'))) {
             console.log("Infiltration Triggered.");
             this.drawCard(this.state.turnPlayerIndex, 1);
         }
@@ -845,14 +886,20 @@ export class GameEngine {
 
     private stepBattleEnd() {
         this.state.combatStep = 'BATTLE_END';
-
-        // Cleanup temp effects?? 
-        // Actually, trigger Result Effects [EXIT, MUTUAL_DESTRUCTION] happens inside Resolution.
-        // This step is just for checking if those effects are done.
+        this.clearBattleScopedEffects();
 
         if (this.state.effectQueue.length === 0) {
             this.advanceCombatStep();
         }
+    }
+
+    private clearBattleScopedEffects() {
+        this.state.players.forEach(player => {
+            player.unitZones.forEach(zone => {
+                zone.buffs = zone.buffs.filter(buff => buff.duration !== 'BATTLE_END');
+                zone.temporaryEffects = zone.temporaryEffects.filter(effect => effect.duration !== 'BATTLE_END');
+            });
+        });
     }
 
     resolveBlock(shouldBlock: boolean) {
@@ -881,14 +928,15 @@ export class GameEngine {
         }
 
         if (finalShouldBlock && blockerZone.unit) {
-            // Trigger Defender Effects (Unit + Items)
+            // Trigger DEFENDER effects as one simultaneous event.
+            const defenderBatchStep = this.incrementAndGetGlobalStep();
             this.effectManager.processEffects(ActivationCondition.DEFENDER, {
                 sourceCard: blockerZone.unit,
                 player: this.opponentPlayer,
                 opponent: this.currentPlayer,
                 unitZone: blockerZone,
                 machine: this
-            });
+            }, { enqueueOnly: true, batchStep: defenderBatchStep });
 
             blockerZone.items.forEach(item => {
                 this.effectManager.processEffects(ActivationCondition.DEFENDER, {
@@ -897,8 +945,9 @@ export class GameEngine {
                     opponent: this.currentPlayer,
                     unitZone: blockerZone,
                     machine: this
-                });
+                }, { enqueueOnly: true, batchStep: defenderBatchStep });
             });
+            this.effectManager.processQueue();
 
             // Mark blocking happened? Actually, the presence of blockerZone.unit implies blocking capability,
             // but we need to know if the player CHOSE to block.
@@ -979,8 +1028,7 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let value = 0;
 
-        // 1. Static Keywords on Unit, Items, or Temporary Effects
-        if (this.hasKeywordInZone(zone, '관통')) {
+        if (this.hasKeywordInZone(zone, '관통') || this.hasKeywordInZone(zone, 'PENETRATION')) {
             value = Math.max(value, zone.unit.hit || 0);
         }
 
@@ -996,7 +1044,7 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let value = 0;
 
-        if (this.hasKeywordInZone(zone, '약탈')) {
+        if (this.hasKeywordInZone(zone, '약탈') || this.hasKeywordInZone(zone, 'PLUNDER')) {
             value = Math.max(value, 1);
         }
 
@@ -1074,78 +1122,80 @@ export class GameEngine {
     }
 
     public destroyUnit(player: PlayerState, zone: UnitZoneState, killerCard?: Card) {
-        if (zone.unit) {
-            const unit = zone.unit;
-            const opponent = player === this.state.players[0] ? this.state.players[1] : this.state.players[0];
+        if (!zone.unit) return;
 
-            // Apply passive "grant EXIT effect" auras before removing the unit from the zone.
-            this.processPassiveGrantedExitEffects(player, zone, unit, killerCard);
+        const unit = zone.unit;
+        const opponent = this.getOpponentOf(player);
 
-            // IMPORTANT: Remove unit (and clear items/buffs linkage) from zone immediately
-            // to prevent recursion if an triggered effect calls checkRuleProcessing().
-            // Rules say Power 0 -> Unit Trashed immediately.
-            zone.unit = null;
+        // Apply passive "grant EXIT effect" auras before removing the unit from the zone.
+        this.processPassiveGrantedExitEffects(player, zone, unit, killerCard);
 
-            // Trigger Exit Effects for Unit
+        // Remove from zone first to avoid recursive state inconsistencies while effects resolve.
+        zone.unit = null;
+
+        // 1) Queue EXIT effects in a single batch.
+        const exitBatchStep = this.incrementAndGetGlobalStep();
+        this.effectManager.processEffects(ActivationCondition.EXIT, {
+            sourceCard: unit,
+            player: player,
+            opponent: opponent,
+            unitZone: zone,
+            machine: this,
+            destroyedBy: killerCard
+        }, { enqueueOnly: true, batchStep: exitBatchStep });
+
+        zone.items.forEach(item => {
             this.effectManager.processEffects(ActivationCondition.EXIT, {
-                sourceCard: unit,
+                sourceCard: item,
                 player: player,
                 opponent: opponent,
                 unitZone: zone,
                 machine: this,
-                destroyedBy: killerCard
-            });
+                destroyedBy: killerCard,
+                trashedUnit: unit
+            }, { enqueueOnly: true, batchStep: exitBatchStep });
+        });
 
-            // Trigger Exit Effects for Equipped Items (e.g., ST03-017 공멸)
-            zone.items.forEach(item => {
-                this.effectManager.processEffects(ActivationCondition.EXIT, {
-                    sourceCard: item,
-                    player: player,
-                    opponent: opponent,
-                    unitZone: zone, // Include unitZone so effect can reference the unit's cost
+        // 2) Move cards to trash and clear lane state.
+        player.trash.push(unit);
+        const trashedUnit = unit;
+        zone.items.forEach(i => player.trash.push(i));
+        zone.items = [];
+        zone.buffs = [];
+        zone.temporaryEffects = [];
+
+        // 3) Queue UNIT_TRASHED effects as one simultaneous event in turn-player priority order.
+        const trashedBatchStep = this.incrementAndGetGlobalStep();
+        const [turnPlayer, nonTurnPlayer] = this.getPlayersInTurnOrder();
+        [turnPlayer, nonTurnPlayer].forEach(p => {
+            const sourceOpponent = this.getOpponentOf(p);
+
+            if (p.levelZone) {
+                this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
+                    sourceCard: p.levelZone,
+                    player: p,
+                    opponent: sourceOpponent,
                     machine: this,
-                    destroyedBy: killerCard,
-                    trashedUnit: unit
-                });
-            });
+                    trashedUnit: trashedUnit,
+                    trashedUnitOwner: player
+                }, { enqueueOnly: true, batchStep: trashedBatchStep });
+            }
 
-            player.trash.push(unit);
-            const trashedUnit = unit; // Remember for trigger
-            zone.items.forEach(i => player.trash.push(i));
-            // zone.unit = null; // Already done above
-            zone.items = [];
-            zone.buffs = [];
-            zone.temporaryEffects = [];
-
-            // Trigger UNIT_TRASHED for all cards on field (like Cinderella Leader)
-            this.state.players.forEach(p => {
-                // Check Leader
-                if (p.levelZone && p.levelZone.effects) {
-                    this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
-                        sourceCard: p.levelZone,
-                        player: p,
-                        opponent: (p === this.state.players[0] ? this.state.players[1] : this.state.players[0]),
-                        machine: this,
-                        trashedUnit: trashedUnit,
-                        trashedUnitOwner: player // Pass the owner of the trashed unit
-                    });
-                }
-                // Check all units on field (if any have UNIT_TRASHED, though rare)
-                p.unitZones.forEach(z => {
-                    if (z.unit) {
-                        this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
-                            sourceCard: z.unit,
-                            player: p,
-                            opponent: (p === this.state.players[0] ? this.state.players[1] : this.state.players[0]),
-                            unitZone: z,
-                            machine: this,
-                            trashedUnit: trashedUnit,
-                            trashedUnitOwner: player // Pass the owner of the trashed unit
-                        });
-                    }
-                });
+            p.unitZones.forEach(z => {
+                if (!z.unit) return;
+                this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
+                    sourceCard: z.unit,
+                    player: p,
+                    opponent: sourceOpponent,
+                    unitZone: z,
+                    machine: this,
+                    trashedUnit: trashedUnit,
+                    trashedUnitOwner: player
+                }, { enqueueOnly: true, batchStep: trashedBatchStep });
             });
-        }
+        });
+
+        this.effectManager.processQueue();
     }
 
     public checkRuleProcessing() {
@@ -1179,39 +1229,53 @@ export class GameEngine {
 
     public dealDamage(player: PlayerState, amount: number) {
         console.log(`Dealing ${amount} damage to ${player.name}`);
-        let damageRemaining = amount;
+        const opponent = this.getOpponentOf(player);
+        this.state.damageProcessingDepth++;
 
-        while (damageRemaining > 0) {
-            // 4.5.4.1. decrement damage
-            damageRemaining--;
+        try {
+            let damageRemaining = amount;
 
-            // 4.5.4.3. Check deck
-            if (player.deck.length === 0) {
-                this.state.winner = this.opponentPlayer.id;
-                return;
+            while (damageRemaining > 0) {
+                // 4.5.4.1. decrement damage
+                damageRemaining--;
+
+                // 4.5.4.3. Check deck
+                if (player.deck.length === 0) {
+                    this.state.winner = opponent.id;
+                    return;
+                }
+
+                // 4.5.4.2. Reveal card and move to damage zone
+                const card = player.deck.pop()!;
+                player.damage.push(card);
+
+                // 4.5.4.3. Check for Damage Triggers
+                const wasTriggered = this.effectManager.processEffects(ActivationCondition.DAMAGE_TRIGGER, {
+                    sourceCard: card,
+                    player: player,
+                    opponent: opponent,
+                    machine: this
+                });
+
+                if (wasTriggered) {
+                    console.log("TRIGGER ACTIVATED! Remaining damage cancelled.");
+                    damageRemaining = 0; // 4.5.4.3.1. Set remaining damage to 0
+                }
+
+                // 4.5.4.4. Defeat check
+                if (player.damage.length >= 10) {
+                    this.state.winner = opponent.id;
+                    return;
+                }
             }
-
-            // 4.5.4.2. Reveal card and move to damage zone
-            const card = player.deck.pop()!;
-            player.damage.push(card);
-
-            // 4.5.4.3. Check for Damage Triggers
-            const wasTriggered = this.effectManager.processEffects(ActivationCondition.DAMAGE_TRIGGER, {
-                sourceCard: card,
-                player: player,
-                opponent: this.state.players.find(p => p.id !== player.id),
-                machine: this
-            });
-
-            if (wasTriggered) {
-                console.log("TRIGGER ACTIVATED! Remaining damage cancelled.");
-                damageRemaining = 0; // 4.5.4.3.1. Set remaining damage to 0
-            }
-
-            // 4.5.4.4. Defeat check
-            if (player.damage.length >= 10) {
-                this.state.winner = this.opponentPlayer.id;
-                return;
+        } finally {
+            this.state.damageProcessingDepth = Math.max(0, this.state.damageProcessingDepth - 1);
+            if (this.state.damageProcessingDepth === 0) {
+                if (this.state.winner) {
+                    this.state.deferredEffectQueue = [];
+                } else {
+                    this.effectManager.flushDeferredEffects();
+                }
             }
         }
     }
@@ -1283,10 +1347,8 @@ export class GameEngine {
                         // Check condition
                         if (!this.effectManager.checkCondition(effect, context)) return;
 
-                        // NEW: Check if leader passive requires awakening
-                        if (source.card.type === CardType.LEADER && !source.card.isAwakened) {
-                            // If it mentions "각성" in description, it probably requires awakening
-                            if (effect.description.includes('각성')) return;
+                        if (source.card.type === CardType.LEADER && !source.card.isAwakened && this.requiresAwakenedLeader(effect)) {
+                            return;
                         }
 
                         // Check if this effect targets the zone we are calculating power for
@@ -1347,6 +1409,7 @@ export class GameEngine {
                         };
 
                         if (!this.effectManager.checkCondition(effect, context)) return;
+                        if (source.card.type === CardType.LEADER && !source.card.isAwakened && this.requiresAwakenedLeader(effect)) return;
 
                         if (TargetSelector.isValidTarget(this, effect.targets!, context, zone)) {
                             const params = effect.action.params || {};
@@ -1617,3 +1680,4 @@ export class GameEngine {
 
 
 }
+

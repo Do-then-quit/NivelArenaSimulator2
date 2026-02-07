@@ -57,7 +57,9 @@ const tests: UnifiedTestCase[] = [
         description: '공격 시 파워 +2000.',
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
             p1.unitZones[0].unit = getCard('ST01-005');
+            p2.unitZones[0].unit = getCard('ST01-002');
             engine.state.phase = Phase.ATTACK;
         },
         verify: (engine) => {
@@ -97,7 +99,9 @@ const tests: UnifiedTestCase[] = [
         description: '공격 시 파워 +1000.',
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
             p1.unitZones[0].unit = getCard('ST01-007');
+            p2.unitZones[0].unit = getCard('ST01-002');
             engine.state.phase = Phase.ATTACK;
         },
         verify: (engine) => {
@@ -381,9 +385,11 @@ const tests: UnifiedTestCase[] = [
         description: '아이템 장착 → 공격 시 +2000.',
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
             p1.leaderLevel = 5;
             p1.unitZones[0].unit = getCard('ST01-002');
             p1.unitZones[0].items = [getCard('ST01-016')];
+            p2.unitZones[0].unit = getCard('ST01-002');
             engine.state.phase = Phase.ATTACK;
         },
         verify: (engine) => {

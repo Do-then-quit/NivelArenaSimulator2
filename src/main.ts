@@ -474,7 +474,14 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                         ` : ''}
 
                         ${z.unit && !isOpponent && game!.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${z.unit && !isOpponent && game!.state.phase === Phase.MAIN && !z.hasActivatedEffectThisTurn && z.unit.effects?.some((e: any) => e.activation === 'ACTIVE' || e.activation === 'ACTIVE_MAIN') ? '<button class="active-btn">Active</button>' : ''}
+                        ${z.unit && !isOpponent && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK) && z.unit.effects?.some((e: any, idx: number) => {
+                            const isActivatableInPhase =
+                                (e.activation === 'ACTIVE' && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK)) ||
+                                (e.activation === 'ACTIVE_MAIN' && game!.state.phase === Phase.MAIN);
+                            if (!isActivatableInPhase) return false;
+                            const key = `${z.unit!.id}_${e.id || idx}`;
+                            return !z.activatedEffectKeys?.[key];
+                        }) ? '<button class="active-btn">Active</button>' : ''}
                         ${isBlockingTarget ? `
                             <div class="block-controls">
                                 <button class="block-btn">Block</button>
