@@ -406,6 +406,45 @@ body {
     color: #fff;
 }
 
+.card-back {
+    background: linear-gradient(145deg, #1b2236 0%, #0f1526 100%);
+    border: 1px solid rgba(120, 156, 255, 0.35);
+    cursor: default;
+}
+
+.card-back-pattern {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(74, 158, 255, 0.22) 0%, transparent 30%),
+        radial-gradient(circle at 80% 75%, rgba(255, 255, 255, 0.08) 0%, transparent 35%),
+        repeating-linear-gradient(
+            45deg,
+            rgba(74, 158, 255, 0.08),
+            rgba(74, 158, 255, 0.08) 8px,
+            rgba(255, 255, 255, 0.04) 8px,
+            rgba(255, 255, 255, 0.04) 16px
+        );
+}
+
+.card-back-label {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(240, 245, 255, 0.92);
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(74, 158, 255, 0.6);
+}
+
+.small-card .card-back-label {
+    font-size: 0.52rem;
+    letter-spacing: 1.2px;
+}
+
 /* --- Hand Zone --- */
 .hand-zone {
     width: fit-content;
@@ -446,6 +485,10 @@ body {
 .card-in-hand:hover {
     transform: translateY(-50px) scale(1.2);
     z-index: 1100;
+}
+
+.card-in-hand.concealed-hand:hover {
+    transform: translateY(-22px) scale(1.06);
 }
 
 /* --- Game Controls (Fixed Bottom Right) --- */
@@ -1369,6 +1412,36 @@ body {
     border-radius: 10px;
     font-size: 0.9rem;
     color: #a0aec0;
+}
+
+.setup-extra-options {
+    width: min(640px, calc(100vw - 40px));
+    background: rgba(25, 27, 40, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.setup-extra-options h3 {
+    margin: 0 0 2px 0;
+    font-size: 1rem;
+    color: #dbe6ff;
+}
+
+.setup-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #d0d8ea;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.setup-radio-option input[type="radio"] {
+    accent-color: #4a9eff;
 }
 
 .setup-actions {

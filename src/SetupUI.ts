@@ -1,24 +1,41 @@
 import { Card } from './logic/types';
 import { DeckPersistence, SavedDeck } from './logic/DeckPersistence';
 
+export interface SetupStartOptions {
+    revealBotHand: boolean;
+}
+
+export interface SetupUIOptions {
+    showBotHandVisibilityOption?: boolean;
+    defaultRevealBotHand?: boolean;
+}
+
 export class SetupUI {
     private container: HTMLElement;
     private cards: Card[];
-    private onStart: (deck1: Card[], deck2: Card[], leader1: Card, leader2: Card) => void;
+    private onStart: (deck1: Card[], deck2: Card[], leader1: Card, leader2: Card, options: SetupStartOptions) => void;
     private onBack: () => void;
+    private uiOptions: Required<SetupUIOptions>;
     private selectedDeck1: SavedDeck | null = null;
     private selectedDeck2: SavedDeck | null = null;
+    private revealBotHand: boolean;
 
     constructor(
         container: HTMLElement,
         cards: Card[],
-        onStart: (deck1: Card[], deck2: Card[], leader1: Card, leader2: Card) => void,
-        onBack: () => void
+        onStart: (deck1: Card[], deck2: Card[], leader1: Card, leader2: Card, options: SetupStartOptions) => void,
+        onBack: () => void,
+        options: SetupUIOptions = {}
     ) {
         this.container = container;
         this.cards = cards;
         this.onStart = onStart;
         this.onBack = onBack;
+        this.uiOptions = {
+            showBotHandVisibilityOption: options.showBotHandVisibilityOption ?? false,
+            defaultRevealBotHand: options.defaultRevealBotHand ?? true,
+        };
+        this.revealBotHand = this.uiOptions.defaultRevealBotHand;
 
         const allDecks = DeckPersistence.getAllDecks();
         if (allDecks.length > 0) {
@@ -61,6 +78,20 @@ export class SetupUI {
                     </div>
                 </div>
 
+                ${this.uiOptions.showBotHandVisibilityOption ? `
+                    <div class="setup-extra-options">
+                        <h3>Baseline Bot Hand Visibility</h3>
+                        <label class="setup-radio-option">
+                            <input type="radio" name="bot-hand-visibility" value="hide" ${this.revealBotHand ? '' : 'checked'}>
+                            <span>Hide Bot Hand (Recommended)</span>
+                        </label>
+                        <label class="setup-radio-option">
+                            <input type="radio" name="bot-hand-visibility" value="show" ${this.revealBotHand ? 'checked' : ''}>
+                            <span>Show Bot Hand</span>
+                        </label>
+                    </div>
+                ` : ''}
+
                 <div class="setup-actions">
                     <button id="setup-back" class="secondary-btn">Back to Menu</button>
                     <button id="setup-start" class="primary-btn" ${allDecks.length === 0 ? 'disabled' : ''}>Start Simulation</button>
@@ -87,6 +118,14 @@ export class SetupUI {
             this.updatePreviews();
         });
 
+        if (this.uiOptions.showBotHandVisibilityOption) {
+            document.querySelectorAll<HTMLInputElement>('input[name="bot-hand-visibility"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    this.revealBotHand = radio.value === 'show';
+                });
+            });
+        }
+
         document.getElementById('setup-start')?.addEventListener('click', () => {
             if (!this.selectedDeck1 || !this.selectedDeck2) {
                 alert('Please select decks for both players!');
@@ -107,7 +146,9 @@ export class SetupUI {
                 return;
             }
 
-            this.onStart(deck1, deck2, leader1, leader2);
+            this.onStart(deck1, deck2, leader1, leader2, {
+                revealBotHand: this.revealBotHand,
+            });
         });
     }
 

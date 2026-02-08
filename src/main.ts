@@ -38,6 +38,10 @@ interface MatchControlConfig {
     player2Control: PlayerControlMode;
 }
 
+interface MatchViewConfig {
+    revealBotHand: boolean;
+}
+
 const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
     label: 'HUMAN vs HUMAN',
     player1Control: 'HUMAN',
@@ -52,6 +56,8 @@ const HUMAN_VS_BASELINE_CONFIG: MatchControlConfig = {
 
 let pendingSetupConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG;
 let activeMatchConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG;
+let pendingMatchViewConfig: MatchViewConfig = { revealBotHand: true };
+let activeMatchViewConfig: MatchViewConfig = { revealBotHand: true };
 const botByPlayerId = new Map<string, BaselineBot>();
 let botStepTimer: number | null = null;
 
@@ -68,6 +74,21 @@ function getActionOwnerPlayerId(engine: GameEngine): string {
 
 function isBotControlledPlayer(playerId: string): boolean {
     return botByPlayerId.has(playerId);
+}
+
+function hasBotPlayer(controlConfig: MatchControlConfig): boolean {
+    return controlConfig.player1Control === 'BASELINE_BOT' || controlConfig.player2Control === 'BASELINE_BOT';
+}
+
+function getDefaultViewConfig(controlConfig: MatchControlConfig): MatchViewConfig {
+    return {
+        revealBotHand: !hasBotPlayer(controlConfig),
+    };
+}
+
+function shouldRevealHandForPlayer(playerId: string): boolean {
+    if (activeMatchViewConfig.revealBotHand) return true;
+    return !isBotControlledPlayer(playerId);
 }
 
 function canLocalHumanInput(): boolean {
@@ -139,18 +160,21 @@ function renderMenu() {
         const deck2 = createDeck();
         const leader1 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
         const leader2 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
-        startGame(deck1, deck2, leader1, leader2, HUMAN_VS_BASELINE_CONFIG);
+        const revealBotHand = window.confirm('Show Baseline Bot hand?\n\nOK: Show hand\nCancel: Hide hand');
+        startGame(deck1, deck2, leader1, leader2, HUMAN_VS_BASELINE_CONFIG, { revealBotHand });
     });
 
 
     document.getElementById('custom-sim-btn')?.addEventListener('click', () => {
         pendingSetupConfig = HUMAN_VS_HUMAN_CONFIG;
+        pendingMatchViewConfig = getDefaultViewConfig(HUMAN_VS_HUMAN_CONFIG);
         currentScreen = Screen.SETUP;
         render();
     });
 
     document.getElementById('custom-vs-bot-btn')?.addEventListener('click', () => {
         pendingSetupConfig = HUMAN_VS_BASELINE_CONFIG;
+        pendingMatchViewConfig = getDefaultViewConfig(HUMAN_VS_BASELINE_CONFIG);
         currentScreen = Screen.SETUP;
         render();
     });
@@ -171,10 +195,15 @@ function startGame(
     deck2: Card[],
     leader1: Card,
     leader2: Card,
-    controlConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG
+    controlConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG,
+    viewConfig?: MatchViewConfig
 ) {
     clearBotStepTimer();
     activeMatchConfig = controlConfig;
+    activeMatchViewConfig = {
+        ...getDefaultViewConfig(controlConfig),
+        ...viewConfig,
+    };
     game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2, { enableMulligan: true });
     botByPlayerId.clear();
     const [player1, player2] = game.state.players;
@@ -215,12 +244,18 @@ function renderSetup() {
     const setupUI = new SetupUI(
         app,
         DUMMY_CARDS,
-        (deck1, deck2, leader1, leader2) => {
-            startGame(deck1, deck2, leader1, leader2, pendingSetupConfig);
+        (deck1, deck2, leader1, leader2, options) => {
+            startGame(deck1, deck2, leader1, leader2, pendingSetupConfig, {
+                revealBotHand: options.revealBotHand,
+            });
         },
         () => {
             currentScreen = Screen.MENU;
             render();
+        },
+        {
+            showBotHandVisibilityOption: hasBotPlayer(pendingSetupConfig),
+            defaultRevealBotHand: pendingMatchViewConfig.revealBotHand,
         }
     );
     setupUI.render();
@@ -381,6 +416,8 @@ function renderGame() {
     if (!game) return;
     const currentPlayer = game.currentPlayer;
     const opponent = game.opponentPlayer;
+    const revealCurrentPlayerHand = shouldRevealHandForPlayer(currentPlayer.id);
+    const revealOpponentHand = shouldRevealHandForPlayer(opponent.id);
     const inputOwnerId = getActionOwnerPlayerId(game);
     const inputOwner = game.state.players.find(player => player.id === inputOwnerId) ?? null;
     const localHumanCanInput = canLocalHumanInput();
@@ -431,8 +468,8 @@ function renderGame() {
                 pending &&
                 game!.isPendingCardTarget(c);
             return `
-              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''}" data-index="${i}">
-                  ${renderCard(c)}
+              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealOpponentHand ? '' : 'concealed-hand'}" data-index="${i}" data-hand-revealed="${revealOpponentHand ? '1' : '0'}">
+                  ${revealOpponentHand ? renderCard(c) : renderHiddenHandCard(false)}
               </div>
           `}).join('')}
       </div>
@@ -452,8 +489,8 @@ function renderGame() {
                     game!.isPendingCardTarget(c);
 
                 return `
-              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL' && localHumanCanInput}" data-index="${i}">
-                  ${renderCard(c)}
+              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealCurrentPlayerHand ? '' : 'concealed-hand'}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL' && localHumanCanInput}" data-index="${i}" data-hand-revealed="${revealCurrentPlayerHand ? '1' : '0'}">
+                  ${revealCurrentPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
               </div>
           `}).join('')}
       </div>
@@ -464,6 +501,7 @@ function renderGame() {
           <div class="status-item"><span>Phase</span> <strong>${game.state.phase}</strong></div>
           <div class="status-item"><span>Active</span> <strong>${game.currentPlayer.name}</strong></div>
           <div class="status-item"><span>Mode</span> <strong>${activeMatchConfig.label}</strong></div>
+          <div class="status-item"><span>Bot Hand</span> <strong>${activeMatchViewConfig.revealBotHand ? 'Shown' : 'Hidden'}</strong></div>
           <div class="status-item"><span>Input</span> <strong>${inputOwner?.name ?? 'N/A'} (${inputOwnerControl})</strong></div>
         </div>
         <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}>Next Phase</button>
@@ -580,6 +618,7 @@ function renderMulliganModal() {
     if (!actor) return '';
 
     const localHumanCanInput = canLocalHumanInput();
+    const revealActorHand = shouldRevealHandForPlayer(actor.id);
 
     return `
         <div class="modal-overlay mulligan-overlay">
@@ -589,7 +628,7 @@ function renderMulliganModal() {
                     ${actor.name} can choose one time: keep this opening hand or redraw all 5 cards.
                 </p>
                 <div class="mulligan-hand-preview">
-                    ${actor.hand.map(card => renderCard(card, true)).join('')}
+                    ${actor.hand.map(card => revealActorHand ? renderCard(card, true) : renderHiddenHandCard(true)).join('')}
                 </div>
                 <div class="mulligan-actions">
                     <button id="mulligan-keep-btn" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'} style="background:#636e72;">Keep Hand</button>
@@ -803,6 +842,15 @@ function renderCard(card: Card, isSmall: boolean = false, calculatedPower?: numb
     `;
 }
 
+function renderHiddenHandCard(isSmall: boolean = false) {
+    return `
+        <div class="card card-back ${isSmall ? 'small-card' : ''}">
+            <div class="card-back-pattern"></div>
+            <div class="card-back-label">HIDDEN</div>
+        </div>
+    `;
+}
+
 let draggedCardIndex: number | null = null;
 
 function attachListeners() {
@@ -864,6 +912,9 @@ function attachListeners() {
 
         // Hover Preview Listeners
         card.addEventListener('mouseenter', (e) => {
+            const el = card as HTMLElement;
+            const isRevealed = el.dataset.handRevealed === '1';
+            if (!isRevealed) return;
             const index = parseInt((card as HTMLElement).dataset.index!);
             const isOpponent = card.closest('.opponent-hand-zone') !== null;
             const cardObj = isOpponent ? game!.opponentPlayer.hand[index] : game!.currentPlayer.hand[index];
@@ -872,6 +923,9 @@ function attachListeners() {
         });
 
         card.addEventListener('mousemove', (e) => {
+            const el = card as HTMLElement;
+            const isRevealed = el.dataset.handRevealed === '1';
+            if (!isRevealed) return;
             const mouseEvent = e as MouseEvent;
             const index = parseInt((card as HTMLElement).dataset.index!);
             const isOpponent = card.closest('.opponent-hand-zone') !== null;
