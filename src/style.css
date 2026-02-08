@@ -941,6 +941,103 @@ body {
     transform: scale(1.05);
 }
 
+.game-over-overlay {
+    z-index: 5000;
+}
+
+.game-over-modal {
+    width: min(92vw, 760px);
+    background: rgba(25, 27, 40, 0.96);
+    border: 2px solid #4a9eff;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+}
+
+.game-over-modal h2 {
+    margin: 0 0 8px 0;
+    text-align: center;
+    color: #4a9eff;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.game-over-winner {
+    margin: 0;
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.game-over-reason {
+    margin: 6px 0 0 0;
+    text-align: center;
+    color: #a0aec0;
+    font-size: 0.9rem;
+}
+
+.game-over-score {
+    margin: 16px 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(74, 158, 255, 0.35);
+    background: rgba(74, 158, 255, 0.12);
+    text-align: center;
+    font-weight: 700;
+}
+
+.game-over-stats {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.game-over-row {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr 1fr;
+    gap: 8px;
+    padding: 9px 12px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.game-over-row:last-child {
+    border-bottom: none;
+}
+
+.game-over-row span:first-child {
+    color: #a0aec0;
+    font-weight: 700;
+}
+
+.game-over-row span:not(:first-child) {
+    text-align: right;
+    font-weight: 700;
+}
+
+.game-over-head {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.game-over-head span {
+    color: #dbeafe !important;
+    font-weight: 800 !important;
+}
+
+.game-over-meta {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 18px;
+}
+
 /* --- Deck Builder UI --- */
 .deck-builder {
     display: flex;

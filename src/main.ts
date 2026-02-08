@@ -3,6 +3,7 @@ import { GameEngine } from './logic/GameEngine';
 import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
 import { RuleValidator } from './logic/RuleValidator';
+import { BaselineBot } from './logic/ai/BaselineBot';
 
 import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
@@ -29,13 +30,96 @@ const cardTester = new CardTester();
 let testResults: any[] = [];
 let testRunning = false;
 
+type PlayerControlMode = 'HUMAN' | 'BASELINE_BOT';
+
+interface MatchControlConfig {
+    label: string;
+    player1Control: PlayerControlMode;
+    player2Control: PlayerControlMode;
+}
+
+const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
+    label: 'HUMAN vs HUMAN',
+    player1Control: 'HUMAN',
+    player2Control: 'HUMAN',
+};
+
+const HUMAN_VS_BASELINE_CONFIG: MatchControlConfig = {
+    label: 'HUMAN vs BASELINE BOT',
+    player1Control: 'HUMAN',
+    player2Control: 'BASELINE_BOT',
+};
+
+let pendingSetupConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG;
+let activeMatchConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG;
+const botByPlayerId = new Map<string, BaselineBot>();
+let botStepTimer: number | null = null;
+
+function clearBotStepTimer() {
+    if (botStepTimer !== null) {
+        window.clearTimeout(botStepTimer);
+        botStepTimer = null;
+    }
+}
+
+function getActionOwnerPlayerId(engine: GameEngine): string {
+    return engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
+}
+
+function isBotControlledPlayer(playerId: string): boolean {
+    return botByPlayerId.has(playerId);
+}
+
+function canLocalHumanInput(): boolean {
+    if (!game || game.state.winner) return false;
+    const actorId = getActionOwnerPlayerId(game);
+    return !isBotControlledPlayer(actorId);
+}
+
+function runBotStep() {
+    if (!game || currentScreen !== Screen.GAME || game.state.winner) return;
+
+    const actorId = getActionOwnerPlayerId(game);
+    const bot = botByPlayerId.get(actorId);
+    if (!bot) return;
+
+    const action = bot.chooseAction(game, actorId);
+    if (!action) {
+        console.warn(`[BaselineBot] No legal action for actor: ${actorId}`);
+        return;
+    }
+
+    const ok = game.step(action);
+    if (!ok) {
+        console.warn(`[BaselineBot] Invalid action from actor ${actorId}: ${JSON.stringify(action)}`);
+        return;
+    }
+
+    render();
+}
+
+function scheduleBotStep(delayMs: number = 220) {
+    clearBotStepTimer();
+
+    if (!game || currentScreen !== Screen.GAME || game.state.winner) return;
+    const actorId = getActionOwnerPlayerId(game);
+    if (!isBotControlledPlayer(actorId)) return;
+
+    botStepTimer = window.setTimeout(() => {
+        botStepTimer = null;
+        runBotStep();
+    }, delayMs);
+}
+
 function renderMenu() {
     app.innerHTML = `
         <div class="main-menu">
             <h1>NivelArena</h1>
             <div class="menu-buttons">
                 <button id="start-game-btn" class="primary-btn">Quick Play (ST01 vs ST01)</button>
-                <button id="custom-sim-btn" class="primary-btn">Custom Simulation</button>
+                <button id="start-vs-bot-btn" class="primary-btn">Quick Play vs Baseline Bot</button>
+                <button id="custom-sim-btn" class="primary-btn">Custom Simulation (PvP)</button>
+                <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Baseline Bot</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
                 <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Tests (ST01 & ST02)</button>
             </div>
@@ -50,9 +134,23 @@ function renderMenu() {
         startGame(deck1, deck2, leader1, leader2);
     });
 
+    document.getElementById('start-vs-bot-btn')?.addEventListener('click', () => {
+        const deck1 = createDeck();
+        const deck2 = createDeck();
+        const leader1 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
+        const leader2 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
+        startGame(deck1, deck2, leader1, leader2, HUMAN_VS_BASELINE_CONFIG);
+    });
 
 
     document.getElementById('custom-sim-btn')?.addEventListener('click', () => {
+        pendingSetupConfig = HUMAN_VS_HUMAN_CONFIG;
+        currentScreen = Screen.SETUP;
+        render();
+    });
+
+    document.getElementById('custom-vs-bot-btn')?.addEventListener('click', () => {
+        pendingSetupConfig = HUMAN_VS_BASELINE_CONFIG;
         currentScreen = Screen.SETUP;
         render();
     });
@@ -68,8 +166,25 @@ function renderMenu() {
     });
 }
 
-function startGame(deck1: Card[], deck2: Card[], leader1: Card, leader2: Card) {
+function startGame(
+    deck1: Card[],
+    deck2: Card[],
+    leader1: Card,
+    leader2: Card,
+    controlConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG
+) {
+    clearBotStepTimer();
+    activeMatchConfig = controlConfig;
     game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2);
+    botByPlayerId.clear();
+    const [player1, player2] = game.state.players;
+    if (controlConfig.player1Control === 'BASELINE_BOT') {
+        botByPlayerId.set(player1.id, new BaselineBot('BaselineBot-P1'));
+    }
+    if (controlConfig.player2Control === 'BASELINE_BOT') {
+        botByPlayerId.set(player2.id, new BaselineBot('BaselineBot-P2'));
+    }
+
     // Initialize Debug System
     (window as any).debug = new DebugManager(game, render);
     currentScreen = Screen.GAME;
@@ -101,7 +216,7 @@ function renderSetup() {
         app,
         DUMMY_CARDS,
         (deck1, deck2, leader1, leader2) => {
-            startGame(deck1, deck2, leader1, leader2);
+            startGame(deck1, deck2, leader1, leader2, pendingSetupConfig);
         },
         () => {
             currentScreen = Screen.MENU;
@@ -109,6 +224,21 @@ function renderSetup() {
         }
     );
     setupUI.render();
+
+    const title = app.querySelector('.setup-screen h1');
+    if (title) {
+        title.textContent = pendingSetupConfig.player2Control === 'BASELINE_BOT'
+            ? 'Simulation Setup (vs Baseline Bot)'
+            : 'Simulation Setup';
+    }
+
+    const playerHeaders = app.querySelectorAll('.player-setup h3');
+    const p2Header = playerHeaders.item(1) as HTMLElement | null;
+    if (p2Header) {
+        p2Header.textContent = pendingSetupConfig.player2Control === 'BASELINE_BOT'
+            ? 'Player 2 (Baseline Bot)'
+            : 'Player 2';
+    }
 }
 
 // Track selected packs
@@ -217,6 +347,9 @@ function renderTestScreen() {
         btn.addEventListener('click', (e) => {
             const cardId = (e.target as HTMLElement).dataset.cardid!;
             const { engine, instructions } = cardTester.setupScenario(cardId);
+            clearBotStepTimer();
+            botByPlayerId.clear();
+            activeMatchConfig = HUMAN_VS_HUMAN_CONFIG;
             game = engine;
             (window as any).debug = new DebugManager(game, render);
             currentScreen = Screen.GAME;
@@ -227,6 +360,10 @@ function renderTestScreen() {
 }
 
 function render() {
+    if (currentScreen !== Screen.GAME) {
+        clearBotStepTimer();
+    }
+
     if (currentScreen === Screen.MENU) {
         renderMenu();
     } else if (currentScreen === Screen.DECK_BUILDER) {
@@ -244,6 +381,10 @@ function renderGame() {
     if (!game) return;
     const currentPlayer = game.currentPlayer;
     const opponent = game.opponentPlayer;
+    const inputOwnerId = getActionOwnerPlayerId(game);
+    const inputOwner = game.state.players.find(player => player.id === inputOwnerId) ?? null;
+    const localHumanCanInput = canLocalHumanInput();
+    const inputOwnerControl = inputOwner && isBotControlledPlayer(inputOwner.id) ? 'Baseline Bot' : 'Human';
 
 
     // Helper to determine if a zone is a valid drop target
@@ -303,7 +444,7 @@ function renderGame() {
                     game!.isPendingCardTarget(c);
 
                 return `
-              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
+              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL' && localHumanCanInput}" data-index="${i}">
                   ${renderCard(c)}
               </div>
           `}).join('')}
@@ -314,17 +455,21 @@ function renderGame() {
           <div class="status-item"><span>Turn</span> <strong>${game.state.turnCount}</strong></div>
           <div class="status-item"><span>Phase</span> <strong>${game.state.phase}</strong></div>
           <div class="status-item"><span>Active</span> <strong>${game.currentPlayer.name}</strong></div>
+          <div class="status-item"><span>Mode</span> <strong>${activeMatchConfig.label}</strong></div>
+          <div class="status-item"><span>Input</span> <strong>${inputOwner?.name ?? 'N/A'} (${inputOwnerControl})</strong></div>
         </div>
-        <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' ? 'disabled' : ''}>Next Phase</button>
+        <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}>Next Phase</button>
       </div>
 
       ${renderOptionalEffectModal()}
       ${renderTrashModal()}
       ${renderRevealedCardsModal()}
+      ${renderGameOverModal()}
     </div>
   `;
 
     attachListeners();
+    scheduleBotStep();
 }
 
 function renderOptionalEffectModal() {
@@ -417,8 +562,87 @@ function renderRevealedCardsModal() {
     `;
 }
 
+function renderGameOverModal() {
+    const engine = game;
+    if (!engine || !engine.state.winner) return '';
+
+    const [player1, player2] = engine.state.players;
+    const winner = engine.state.players.find(player => player.id === engine.state.winner) ?? player1;
+    const loser = winner.id === player1.id ? player2 : player1;
+
+    const winnerUnits = winner.unitZones.filter(zone => !!zone.unit).length;
+    const loserUnits = loser.unitZones.filter(zone => !!zone.unit).length;
+
+    const outcomeReason = loser.damage.length >= 10
+        ? 'Defeat Condition: Damage Zone reached 10 cards'
+        : loser.deck.length === 0
+            ? 'Defeat Condition: Deck ran out during draw/damage processing'
+            : 'Defeat Condition met by game rules';
+
+    return `
+        <div class="modal-overlay game-over-overlay">
+            <div class="game-over-modal">
+                <h2>Game Over</h2>
+                <p class="game-over-winner">${winner.name} Wins</p>
+                <p class="game-over-reason">${outcomeReason}</p>
+
+                <div class="game-over-score">
+                    Damage Score: ${player1.name} ${player1.damage.length} : ${player2.damage.length} ${player2.name}
+                </div>
+
+                <div class="game-over-stats">
+                    <div class="game-over-row game-over-head">
+                        <span>Stat</span>
+                        <span>${winner.name}</span>
+                        <span>${loser.name}</span>
+                    </div>
+                    <div class="game-over-row">
+                        <span>Leader Level</span>
+                        <span>${winner.leaderLevel}</span>
+                        <span>${loser.leaderLevel}</span>
+                    </div>
+                    <div class="game-over-row">
+                        <span>Damage</span>
+                        <span>${winner.damage.length}</span>
+                        <span>${loser.damage.length}</span>
+                    </div>
+                    <div class="game-over-row">
+                        <span>Deck</span>
+                        <span>${winner.deck.length}</span>
+                        <span>${loser.deck.length}</span>
+                    </div>
+                    <div class="game-over-row">
+                        <span>Hand</span>
+                        <span>${winner.hand.length}</span>
+                        <span>${loser.hand.length}</span>
+                    </div>
+                    <div class="game-over-row">
+                        <span>Trash</span>
+                        <span>${winner.trash.length}</span>
+                        <span>${loser.trash.length}</span>
+                    </div>
+                    <div class="game-over-row">
+                        <span>Units on Field</span>
+                        <span>${winnerUnits}</span>
+                        <span>${loserUnits}</span>
+                    </div>
+                </div>
+
+                <div class="game-over-meta">
+                    Final Turn: ${engine.state.turnCount} / Final Phase: ${engine.state.phase}
+                </div>
+
+                <div class="modal-actions">
+                    <button id="game-over-menu-btn" class="primary-btn">Back to Main Menu</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
     if (!game) return '';
+    const localHumanCanInput = canLocalHumanInput();
     return `
       <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
         <!-- Level Zone (1) -->
@@ -444,7 +668,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
         const isSelected = game!.state.pendingEffect?.selectedTargets?.includes(z);
 
         return `
-                    <div class="zone unit-zone ${!isOpponent ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
+                    <div class="zone unit-zone ${!isOpponent && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
                         ${z.unit ? renderCard(z.unit, false, game!.getUnitPower(z, player), game!.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
                         
                         <!-- Items -->
@@ -471,8 +695,8 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                             </div>
                         ` : ''}
 
-                        ${z.unit && !isOpponent && game!.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${z.unit && !isOpponent && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK) && z.unit.effects?.some((e: any, idx: number) => {
+                        ${z.unit && !isOpponent && localHumanCanInput && game!.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
+                        ${z.unit && !isOpponent && localHumanCanInput && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK) && z.unit.effects?.some((e: any, idx: number) => {
                             const isActivatableInPhase =
                                 (e.activation === 'ACTIVE' && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK)) ||
                                 (e.activation === 'ACTIVE_MAIN' && game!.state.phase === Phase.MAIN);
@@ -480,7 +704,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                             const key = `${z.unit!.id}_${e.id || idx}`;
                             return !z.activatedEffectKeys?.[key];
                         }) ? '<button class="active-btn">Active</button>' : ''}
-                        ${isBlockingTarget ? `
+                        ${isBlockingTarget && localHumanCanInput ? `
                             <div class="block-controls">
                                 <button class="block-btn">Block</button>
                                 <button class="pass-btn">Pass</button>
@@ -497,7 +721,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                     ${player.damage.map((c: any) => renderCard(c, true)).join('')}
                     ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
                 </div>
-                <div class="skill-zone ${!isOpponent && isMainPhase ? 'interactive drop-zone-skill' : ''}">
+                <div class="skill-zone ${!isOpponent && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
                     ${player.skillZone.map((c: any) => renderCard(c, true)).join('')}
                     ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
                 </div>
@@ -544,13 +768,24 @@ let draggedCardIndex: number | null = null;
 
 function attachListeners() {
     if (!game) return;
+    const localHumanCanInput = canLocalHumanInput();
 
     document.getElementById('db-back-to-menu')?.addEventListener('click', () => {
+        clearBotStepTimer();
+        game = null;
+        currentScreen = Screen.MENU;
+        render();
+    });
+
+    document.getElementById('game-over-menu-btn')?.addEventListener('click', () => {
+        clearBotStepTimer();
+        game = null;
         currentScreen = Screen.MENU;
         render();
     });
 
     document.getElementById('next-phase')?.addEventListener('click', () => {
+        if (!canLocalHumanInput()) return;
         game!.nextPhase();
         render();
     });
@@ -626,6 +861,7 @@ function attachListeners() {
 
         zone.addEventListener('drop', (e) => {
             e.preventDefault();
+            if (!canLocalHumanInput()) return;
             zone.classList.remove('drag-over');
             const event = e as DragEvent;
             if (event.dataTransfer) {
@@ -668,6 +904,7 @@ function attachListeners() {
 
         zone.addEventListener('drop', (e) => {
             e.preventDefault();
+            if (!canLocalHumanInput()) return;
             zone.classList.remove('drag-over');
             const event = e as DragEvent;
             if (event.dataTransfer) {
@@ -718,6 +955,7 @@ function attachListeners() {
     document.querySelectorAll('.attack-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (!canLocalHumanInput()) return;
             const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
             game!.attack(zoneIndex);
             render();
@@ -727,6 +965,7 @@ function attachListeners() {
     document.querySelectorAll('.block-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (!canLocalHumanInput()) return;
             game!.resolveBlock(true);
             render();
         });
@@ -735,6 +974,7 @@ function attachListeners() {
     document.querySelectorAll('.pass-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (!canLocalHumanInput()) return;
             game!.resolveBlock(false);
             render();
         });
@@ -744,6 +984,7 @@ function attachListeners() {
     document.querySelectorAll('.active-btn').forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (!canLocalHumanInput()) return;
             const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
             const zone = game!.currentPlayer.unitZones[zoneIndex];
             const effectIndex = zone.unit?.effects?.findIndex(e => e.activation === 'ACTIVE' || e.activation === 'ACTIVE_MAIN') ?? -1;
@@ -756,66 +997,88 @@ function attachListeners() {
     });
 
     // Cost Selection Listener
-    if (game.state.interactionMode === 'SELECT_COST') {
-        const handCards = document.querySelectorAll('.hand-zone .card-in-hand');
+    if (game.state.interactionMode === 'SELECT_COST' && localHumanCanInput) {
         const pending = game.state.pendingEffect as any;
+        const payerPlayer = game.state.players.find(player => player.id === pending?.sourcePlayerId);
         const costFilter = pending?.costCardTypeFilter;
+        if (payerPlayer) {
+            const handSelector = payerPlayer.id === game.currentPlayer.id
+                ? '.hand-zone .card-in-hand'
+                : '.opponent-hand-zone .card-in-hand';
+            const handCards = document.querySelectorAll(handSelector);
 
-        handCards.forEach((card, i) => {
-            const el = card as HTMLElement;
-            const handCard = game!.currentPlayer.hand[i];
+            handCards.forEach((card, i) => {
+                const el = card as HTMLElement;
+                const handCard = payerPlayer.hand[i];
+                if (!handCard) return;
 
-            // Check if this card matches the required type for cost payment
-            const isValidCostCard = !costFilter || handCard.type === costFilter;
+                const isValidCostCard = !costFilter || handCard.type === costFilter;
 
-            if (isValidCostCard) {
-                el.style.cursor = 'pointer';
-                el.style.boxShadow = '0 0 10px #0984e3';
-                el.addEventListener('click', (_e) => {
-                    const index = parseInt(el.dataset.index!);
-                    game!.selectCost(index);
-                    render();
-                });
-            } else {
-                // Dim invalid cards
-                el.style.opacity = '0.4';
-                el.style.cursor = 'not-allowed';
-            }
-        });
+                if (isValidCostCard) {
+                    el.style.cursor = 'pointer';
+                    el.style.boxShadow = '0 0 10px #0984e3';
+                    el.addEventListener('click', () => {
+                        if (!canLocalHumanInput()) return;
+                        const index = parseInt(el.dataset.index!);
+                        game!.selectCostForPlayerId(index, payerPlayer.id);
+                        render();
+                    });
+                } else {
+                    el.style.opacity = '0.4';
+                    el.style.cursor = 'not-allowed';
+                }
+            });
+        }
     }
 
     // Zone Selection Listener (for Skills)
-    if (game.state.interactionMode === 'SELECT_TARGET') {
+    if (game.state.interactionMode === 'SELECT_TARGET' && localHumanCanInput) {
+        const pending = game.state.pendingEffect as any;
+        const actorId = getActionOwnerPlayerId(game);
+        const legalActions = game.getLegalActions(actorId);
+        const zoneTargetActions =
+            legalActions.filter(action => action.type === 'SELECT_ZONE_TARGET') as Array<{ targetPlayerId: string; zoneIndex: number }>;
+
+        const validZoneKeySet = new Set(zoneTargetActions.map(action => `${action.targetPlayerId}:${action.zoneIndex}`));
+
         const units = document.querySelectorAll('.unit-zone');
         units.forEach(u => {
-            u.addEventListener('click', (_e) => {
-                const el = u as HTMLElement;
-                const zoneIndex = parseInt(el.dataset.index!);
-                const isOpponent = el.dataset.player === 'opponent';
-                game!.selectTarget(zoneIndex, isOpponent);
+            const el = u as HTMLElement;
+            const zoneIndex = parseInt(el.dataset.index!);
+            const isOpponent = el.dataset.player === 'opponent';
+            const targetPlayerId = isOpponent ? game!.opponentPlayer.id : game!.currentPlayer.id;
+            const zoneKey = `${targetPlayerId}:${zoneIndex}`;
+            const canSelectZone = zoneTargetActions.length === 0 || validZoneKeySet.has(zoneKey);
+            if (!canSelectZone) return;
+
+            el.addEventListener('click', () => {
+                if (!canLocalHumanInput()) return;
+                game!.selectZoneTargetByPlayerId(zoneIndex, targetPlayerId);
                 render();
             });
-            // Add visual cue
-            (u as HTMLElement).style.cursor = 'crosshair';
-            (u as HTMLElement).style.boxShadow = '0 0 10px #ffeaa7';
+            el.style.cursor = 'crosshair';
+            el.style.boxShadow = '0 0 10px #ffeaa7';
         });
-    }
 
-    // Trash Selection Listener
-    if (game.state.interactionMode === 'SELECT_TARGET') {
-        const pending = game.state.pendingEffect as any;
+        // Trash Selection Listener
         if (pending && pending.validTargets === 'MY_TRASH') {
+            const trashTargetActions =
+                legalActions.filter(action => action.type === 'SELECT_TRASH_TARGET') as Array<{ targetPlayerId: string; trashIndex: number }>;
+            const validTrashKeys = new Set(trashTargetActions.map(action => `${action.targetPlayerId}:${action.trashIndex}`));
+
             document.querySelectorAll('.trash-card-item').forEach(item => {
+                const index = parseInt((item as HTMLElement).dataset.index!);
+                const key = `${pending.sourcePlayerId}:${index}`;
+                if (trashTargetActions.length > 0 && !validTrashKeys.has(key)) return;
+
                 item.addEventListener('click', () => {
-                    const index = parseInt((item as HTMLElement).dataset.index!);
-                    game!.selectTrashTarget(index);
+                    if (!canLocalHumanInput()) return;
+                    game!.selectTrashTarget(index, pending.sourcePlayerId);
                     render();
                 });
 
                 // Hover preview for trash cards too
                 item.addEventListener('mouseenter', (e) => {
-                    const index = parseInt((item as HTMLElement).dataset.index!);
-                    // Use the effect source player's trash for preview
                     const sourcePlayer = game!.state.players.find(p => p.id === pending.sourcePlayerId);
                     if (!sourcePlayer) return;
                     const card = sourcePlayer.trash[index];
@@ -827,40 +1090,36 @@ function attachListeners() {
         }
 
         // Hand Selection Listener
-        if (pending && (pending.validTargets === 'OPP_HAND' || pending.validTargets === 'MY_HAND' || pending.validTargets === 'LAST_DRAWN')) {
-            const sourceIsMe = pending.sourcePlayerId === game!.currentPlayer.id;
+        const handTargetActions =
+            legalActions.filter(action => action.type === 'SELECT_HAND_TARGET') as Array<{ targetPlayerId: string; handIndex: number }>;
+        if (handTargetActions.length > 0) {
+            const targetMap = new Map<string, Set<number>>();
+            handTargetActions.forEach(action => {
+                const set = targetMap.get(action.targetPlayerId) ?? new Set<number>();
+                set.add(action.handIndex);
+                targetMap.set(action.targetPlayerId, set);
+            });
 
-            // Effective Target relative to ME (the client user)
-            // If Source is Me: MY_HAND -> My Hand, OPP_HAND -> Opponent Hand
-            // If Source is Opponent: MY_HAND -> Opponent Hand (Their Hand), OPP_HAND -> My Hand (Their Opponent's Hand)
+            targetMap.forEach((allowedIndexes, targetPlayerId) => {
+                const handSelector = targetPlayerId === game!.currentPlayer.id
+                    ? '.hand-zone .card-in-hand'
+                    : '.opponent-hand-zone .card-in-hand';
+                const handCards = document.querySelectorAll(handSelector);
 
-            let targetIsOpponentHand = false;
-
-            if (sourceIsMe) {
-                if (pending.validTargets === 'OPP_HAND') targetIsOpponentHand = true;
-                // LAST_DRAWN for source is me -> my hand
-            } else {
-                // Source is Opponent
-                if (pending.validTargets === 'MY_HAND' || pending.validTargets === 'LAST_DRAWN') targetIsOpponentHand = true; // They target "My Hand" / "Last Drawn" = Their Hand = Opponent Hand for me
-                // if OPP_HAND -> They target "Opponent Hand" = Me -> My Hand (targetIsOpponentHand = false)
-            }
-
-            // Select appropriate cards
-            const handSelector = targetIsOpponentHand ? '.opponent-hand-zone .card-in-hand' : '.hand-zone .card-in-hand';
-            const handCards = document.querySelectorAll(handSelector);
-
-            handCards.forEach(card => {
-                const el = card as HTMLElement;
-                // Add visual cue
-                el.style.cursor = 'crosshair';
-                el.style.boxShadow = '0 0 10px #ffeaa7';
-                el.style.border = '2px solid #e17055';
-
-                el.addEventListener('click', () => {
+                handCards.forEach(card => {
+                    const el = card as HTMLElement;
                     const index = parseInt(el.dataset.index!);
-                    // We need to pass if we are clicking Opponent's hand or My Hand
-                    game!.selectHandTarget(index, targetIsOpponentHand);
-                    render();
+                    if (!allowedIndexes.has(index)) return;
+
+                    el.style.cursor = 'crosshair';
+                    el.style.boxShadow = '0 0 10px #ffeaa7';
+                    el.style.border = '2px solid #e17055';
+
+                    el.addEventListener('click', () => {
+                        if (!canLocalHumanInput()) return;
+                        game!.selectHandTargetByPlayerId(index, targetPlayerId);
+                        render();
+                    });
                 });
             });
         }
@@ -868,6 +1127,7 @@ function attachListeners() {
         document.querySelectorAll('.revealed-card-item').forEach(item => {
             if (pending && pending.validTargets === 'REVEALED') {
                 item.addEventListener('click', () => {
+                    if (!canLocalHumanInput()) return;
                     const index = parseInt((item as HTMLElement).dataset.index!);
                     game!.selectRevealedTarget(index);
                     render();
@@ -885,18 +1145,21 @@ function attachListeners() {
         });
 
         document.getElementById('confirm-targets-btn')?.addEventListener('click', () => {
+            if (!canLocalHumanInput()) return;
             game!.confirmTargets();
             render();
         });
     }
 
     // Optional Effect Listeners
-    if (game.state.interactionMode === 'SELECT_OPTIONAL') {
+    if (game.state.interactionMode === 'SELECT_OPTIONAL' && localHumanCanInput) {
         document.getElementById('opt-confirm')?.addEventListener('click', () => {
+            if (!canLocalHumanInput()) return;
             game!.resolveOptionalEffect(true);
             render();
         });
         document.getElementById('opt-skip')?.addEventListener('click', () => {
+            if (!canLocalHumanInput()) return;
             game!.resolveOptionalEffect(false);
             render();
         });
