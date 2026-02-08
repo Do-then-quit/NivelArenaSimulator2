@@ -14,6 +14,7 @@
   - 빌드: `npm run build`
   - 전체 테스트: `npm test`
   - 단일/부분 테스트: `npx vitest run <파일경로>`
+  - Bot self-play soak 테스트: `npm run test:bot-soak`
 
 ## 2. Source of Truth 우선순위
 - 1순위: 카드 텍스트 (룰 1.3.1)
@@ -93,6 +94,7 @@
   - `src/logic/effectActions.ts`: 액션 구현 레지스트리
   - `src/logic/RuleValidator.ts`: 플레이/공격/페이즈 종료 규칙 검증
   - `src/logic/TargetSelector.ts`: 타겟 계산
+  - `src/logic/ai/BaselineBot.ts`: baseline 봇 의사결정 + self-play 실행 유틸
 - 데이터/카드:
   - `packs/*.json`: 카드 데이터
   - `src/logic/cardEffects/*.ts`: 팩별/카드별 효과 정의
@@ -114,6 +116,10 @@
 - 업그레이드로 트래시된 유닛은 엑시트 트리거가 발동하지 않아야 함
 - 어태커/디펜더 기반 일시 효과는 턴 종료가 아니라 전투 종료에 해제
 - 전투 상태(`combatStep`, `pendingAttackerIndex`, `phase`)는 전투 종료 후 정합하게 복구
+- 상호작용 입력권은 `interactionOwnerPlayerId` 기준으로 판정한다.
+- AI/자동플레이 경로는 `getLegalActions(actorPlayerId?)` + `step(action)` 단일 진입점을 사용한다.
+- 관측/재현 경로는 `getObservation(actorPlayerId)`와 `getSerializableState()`를 사용하며, 직렬화 불가능 참조(순환 참조)를 상태에 남기지 않는다.
+- 멀리건은 `SELECT_MULLIGAN` 모드에서 각 플레이어 1회 선택(`RESOLVE_MULLIGAN`)으로만 진행한다.
 
 ## 6. 테스트 우선 개발 원칙
 - 새 기능/버그 수정 전, 먼저 실패하는 테스트를 작성하거나 기존 회귀 테스트를 재현한다.
@@ -126,6 +132,13 @@
   - 2) 관련 회귀 묶음
   - 3) `npm test` 전체
 - 테스트 없이 룰/효과 동작을 변경하지 않는다.
+- AI/봇 변경 시 최소 회귀 세트:
+  - `tests/rules_v2_regression/rules_v2_ai_ready_stage1_regression.test.ts`
+  - `tests/rules_v2_regression/rules_v2_ai_ready_stage2_stage3_regression.test.ts`
+  - `tests/rules_v2_regression/rules_v2_ai_baseline_bot_regression.test.ts`
+  - `tests/rules_v2_regression/rules_v2_mulligan_regression.test.ts`
+  - `tests/rules_v2_regression/rules_v2_bt01_061_targeting_regression.test.ts`
+- 데드락/진행불가 점검은 `npm run test:bot-soak`로 quick soak를 먼저 돌리고, 필요 시 환경변수(`BOT_SOAK_ENABLE`, `BOT_SOAK_GAMES`, `BOT_SOAK_MAX_STEPS`)로 확장한다.
 
 ## 7. 에이전틱 코딩 운영 규칙
 - 작은 단위로 수정하고 바로 테스트한다.
@@ -148,6 +161,10 @@
   - 2) Heuristic/Baseline bot 추가
   - 3) Offline replay dataset 축적
   - 4) PPO 등 정책학습 실험 파이프라인 연결
+- 현재 진행 상태 (2026-02 기준):
+  - 완료: seed 기반 RNG 주입/재현성, `getLegalActions` + `step` 행동 인터페이스, `getObservation`/`getSerializableState`, baseline bot, bot vs bot self-play/soak 회귀
+  - 진행중: self-play 데이터를 학습용 데이터셋으로 적재/정규화하는 파이프라인
+  - 미착수: PPO 등 정책학습 루프와 평가 지표 자동화
 
 ## 9. 작업 시작 체크리스트 (에이전트용)
 - 이번 변경이 참조하는 룰북 조항 번호를 먼저 확인했는가?
@@ -155,3 +172,8 @@
 - `src/logic/` 변경 시 관련 회귀 테스트를 함께 돌렸는가?
 - 동작 설명이 필요하면 테스트명으로 스펙이 읽히게 작성했는가?
 - 결과가 룰북/테스트/코드 우선순위와 충돌하지 않는가?
+
+## 10. UI 운영 메모 (AI 대전)
+- `HUMAN vs BASELINE BOT` 모드에서는 시작 시 봇 핸드 공개/비공개를 선택할 수 있다.
+- 봇 핸드 비공개를 선택하면 일반 손패 영역과 멀리건 미리보기 모두 카드 뒷면으로 렌더링된다.
+- 입력 권한은 UI 표시(`Input`)와 동일하게 `interactionOwnerPlayerId` 기준으로 처리한다.
