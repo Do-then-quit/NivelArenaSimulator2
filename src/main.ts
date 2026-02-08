@@ -175,7 +175,7 @@ function startGame(
 ) {
     clearBotStepTimer();
     activeMatchConfig = controlConfig;
-    game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2);
+    game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2, { enableMulligan: true });
     botByPlayerId.clear();
     const [player1, player2] = game.state.players;
     if (controlConfig.player1Control === 'BASELINE_BOT') {
@@ -462,6 +462,7 @@ function renderGame() {
       </div>
 
       ${renderOptionalEffectModal()}
+      ${renderMulliganModal()}
       ${renderTrashModal()}
       ${renderRevealedCardsModal()}
       ${renderGameOverModal()}
@@ -557,6 +558,36 @@ function renderRevealedCardsModal() {
                         </div>
                     `}).join('')}
                 </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderMulliganModal() {
+    if (!game) return '';
+    if (game.state.interactionMode !== 'SELECT_MULLIGAN') return '';
+
+    const actorId = getActionOwnerPlayerId(game);
+    const actor = game.state.players.find(player => player.id === actorId);
+    if (!actor) return '';
+
+    const localHumanCanInput = canLocalHumanInput();
+
+    return `
+        <div class="modal-overlay mulligan-overlay">
+            <div class="mulligan-modal">
+                <h3>Mulligan</h3>
+                <p class="mulligan-desc">
+                    ${actor.name} can choose one time: keep this opening hand or redraw all 5 cards.
+                </p>
+                <div class="mulligan-hand-preview">
+                    ${actor.hand.map(card => renderCard(card, true)).join('')}
+                </div>
+                <div class="mulligan-actions">
+                    <button id="mulligan-keep-btn" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'} style="background:#636e72;">Keep Hand</button>
+                    <button id="mulligan-redraw-btn" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'}>Full Mulligan</button>
+                </div>
+                ${!localHumanCanInput ? '<p class="mulligan-waiting">Baseline Bot is deciding...</p>' : ''}
             </div>
         </div>
     `;
@@ -789,6 +820,22 @@ function attachListeners() {
         game!.nextPhase();
         render();
     });
+
+    if (game.state.interactionMode === 'SELECT_MULLIGAN' && localHumanCanInput) {
+        const actorPlayerId = getActionOwnerPlayerId(game);
+        document.getElementById('mulligan-keep-btn')?.addEventListener('click', () => {
+            if (!canLocalHumanInput()) return;
+            const ok = game!.step({ type: 'RESOLVE_MULLIGAN', actorPlayerId, shouldMulligan: false });
+            if (!ok) return;
+            render();
+        });
+        document.getElementById('mulligan-redraw-btn')?.addEventListener('click', () => {
+            if (!canLocalHumanInput()) return;
+            const ok = game!.step({ type: 'RESOLVE_MULLIGAN', actorPlayerId, shouldMulligan: true });
+            if (!ok) return;
+            render();
+        });
+    }
 
     // Drag and Drop Listeners
     const cards = document.querySelectorAll('.card-in-hand');

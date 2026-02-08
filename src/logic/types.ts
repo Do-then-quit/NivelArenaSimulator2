@@ -150,6 +150,7 @@ export interface EffectQueueItem {
 
 export type EngineAction =
     | { type: 'NEXT_PHASE'; actorPlayerId: string }
+    | { type: 'RESOLVE_MULLIGAN'; actorPlayerId: string; shouldMulligan: boolean }
     | { type: 'PLAY_UNIT'; actorPlayerId: string; handIndex: number; zoneIndex: number }
     | { type: 'PLAY_SKILL'; actorPlayerId: string; handIndex: number }
     | { type: 'PLAY_ITEM'; actorPlayerId: string; handIndex: number; zoneIndex: number }
@@ -252,9 +253,11 @@ export interface GameState {
     turnCount: number;
     winner: string | null;
     pendingAttackerIndex: number | null; // Track who is attacking during BLOCK phase
-    interactionMode: 'NORMAL' | 'SELECT_TARGET' | 'SELECT_COST' | 'SELECT_OPTIONAL';
+    interactionMode: 'NORMAL' | 'SELECT_MULLIGAN' | 'SELECT_TARGET' | 'SELECT_COST' | 'SELECT_OPTIONAL';
     interactionOwnerPlayerId: string | null; // Player who has input priority in the current interaction window
     pendingEffect: PendingEffect | null;
+    mulliganState: MulliganState | null;
+    mulliganResultByPlayerId: Record<string, boolean>;
     attackTerminated?: boolean;
     revealedCards: Card[];
     effectQueue: EffectQueueItem[]; // New: Centralized Effect Queue
@@ -279,4 +282,9 @@ export interface PendingEffect {
     selectedTargets?: any[];
     revealedCards?: Card[];
     costPaidCount?: number; // Track how many items have been paid for the cost
+}
+
+export interface MulliganState {
+    pendingPlayerIds: string[];
+    completedPlayerIds: string[];
 }

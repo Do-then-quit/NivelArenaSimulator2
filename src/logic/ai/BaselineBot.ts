@@ -1,7 +1,8 @@
 import { GameEngine } from '../GameEngine';
-import { Card, EngineAction, Phase, PlayerState } from '../types';
+import { Card, CardType, EngineAction, Phase, PlayerState } from '../types';
 
 type BlockAction = Extract<EngineAction, { type: 'RESOLVE_BLOCK' }>;
+type MulliganAction = Extract<EngineAction, { type: 'RESOLVE_MULLIGAN' }>;
 type AttackAction = Extract<EngineAction, { type: 'ATTACK' }>;
 type PlayUnitAction = Extract<EngineAction, { type: 'PLAY_UNIT' }>;
 type PlayItemAction = Extract<EngineAction, { type: 'PLAY_ITEM' }>;
@@ -84,6 +85,11 @@ export class BaselineBot {
     }
 
     private pickInteractionAction(engine: GameEngine, actorPlayerId: string, actions: EngineAction[]): EngineAction | null {
+        const mulliganActions = this.filterByType(actions, 'RESOLVE_MULLIGAN');
+        if (mulliganActions.length > 0) {
+            return this.pickMulliganAction(engine, actorPlayerId, mulliganActions);
+        }
+
         const optionalActions = this.filterByType(actions, 'RESOLVE_OPTIONAL');
         if (optionalActions.length > 0) {
             return optionalActions.find(a => a.confirm) ?? optionalActions[0];
@@ -120,6 +126,24 @@ export class BaselineBot {
         }
 
         return actions[0] ?? null;
+    }
+
+    private pickMulliganAction(engine: GameEngine, actorPlayerId: string, actions: MulliganAction[]): MulliganAction {
+        const keepAction = actions.find(action => !action.shouldMulligan);
+        const redrawAction = actions.find(action => action.shouldMulligan);
+        if (!keepAction) return redrawAction ?? actions[0];
+        if (!redrawAction) return keepAction;
+
+        const actor = this.getPlayerById(engine, actorPlayerId);
+        if (!actor || actor.hand.length === 0) return keepAction;
+
+        const unitCount = actor.hand.filter(card => card.type === CardType.UNIT).length;
+        const lowCostCount = actor.hand.filter(card => card.cost <= 2).length;
+        const totalCost = actor.hand.reduce((sum, card) => sum + card.cost, 0);
+        const averageCost = totalCost / actor.hand.length;
+
+        const shouldMulligan = unitCount === 0 || (averageCost >= 3.4 && lowCostCount === 0);
+        return shouldMulligan ? redrawAction : keepAction;
     }
 
     private pickBlockAction(engine: GameEngine, actions: BlockAction[]): BlockAction {

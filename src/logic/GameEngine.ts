@@ -10,6 +10,7 @@ type EngineObservation = import('./types').EngineObservation;
 interface GameEngineOptions {
     seed?: number;
     randomProvider?: RandomProvider;
+    enableMulligan?: boolean;
 }
 
 interface PendingRuntimeState {
@@ -21,6 +22,7 @@ export class GameEngine {
     state: GameState;
     effectManager: EffectManager;
     private readonly random: RandomProvider;
+    private readonly enableMulligan: boolean;
     private runtimeIdCounter = 0;
     private pendingRuntime: PendingRuntimeState | null = null;
 
@@ -34,6 +36,7 @@ export class GameEngine {
         options: GameEngineOptions = {}
     ) {
         this.random = createRandomProvider(options.seed, options.randomProvider);
+        this.enableMulligan = options.enableMulligan ?? false;
         this.effectManager = new EffectManager(this);
         this.state = {
             players: [
@@ -48,6 +51,8 @@ export class GameEngine {
             interactionMode: 'NORMAL',
             interactionOwnerPlayerId: null,
             pendingEffect: null,
+            mulliganState: null,
+            mulliganResultByPlayerId: {},
             revealedCards: [],
             effectQueue: [],
             deferredEffectQueue: [],
@@ -150,6 +155,71 @@ export class GameEngine {
         // Draw 5 cards for each player
         this.drawCard(0, 5);
         this.drawCard(1, 5);
+
+        if (this.enableMulligan && !this.state.winner) {
+            this.startMulliganWindow();
+        }
+    }
+
+    private startMulliganWindow() {
+        const pendingPlayerIds = this.state.players.map(player => player.id);
+        this.state.interactionMode = 'SELECT_MULLIGAN';
+        this.state.pendingEffect = null;
+        this.clearPendingRuntime();
+        this.state.mulliganState = {
+            pendingPlayerIds: [...pendingPlayerIds],
+            completedPlayerIds: [],
+        };
+        this.state.mulliganResultByPlayerId = pendingPlayerIds.reduce<Record<string, boolean>>((acc, playerId) => {
+            acc[playerId] = false;
+            return acc;
+        }, {});
+
+        this.assignInteractionOwner(pendingPlayerIds[0] ?? null);
+    }
+
+    private resolveMulliganForPlayer(actorPlayerId: string, shouldMulligan: boolean): boolean {
+        if (this.state.interactionMode !== 'SELECT_MULLIGAN') return false;
+        const mulliganState = this.state.mulliganState;
+        if (!mulliganState) return false;
+
+        const currentActorId = mulliganState.pendingPlayerIds[0];
+        if (!currentActorId || currentActorId !== actorPlayerId) return false;
+
+        const playerIndex = this.state.players.findIndex(player => player.id === actorPlayerId);
+        if (playerIndex < 0) return false;
+        const player = this.state.players[playerIndex];
+
+        if (shouldMulligan) {
+            if (player.hand.length > 0) {
+                player.deck.push(...player.hand);
+                player.hand = [];
+                this.shuffle(player.deck);
+                this.drawCard(playerIndex, 5);
+            }
+            this.state.mulliganResultByPlayerId[actorPlayerId] = true;
+        } else {
+            this.state.mulliganResultByPlayerId[actorPlayerId] = false;
+        }
+
+        mulliganState.completedPlayerIds.push(actorPlayerId);
+        mulliganState.pendingPlayerIds.shift();
+
+        if (this.state.winner) {
+            this.assignInteractionOwner(null);
+            return true;
+        }
+
+        const nextPlayerId = mulliganState.pendingPlayerIds[0];
+        if (nextPlayerId) {
+            this.assignInteractionOwner(nextPlayerId);
+            return true;
+        }
+
+        this.state.interactionMode = 'NORMAL';
+        this.state.mulliganState = null;
+        this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
+        return true;
     }
 
     get currentPlayer(): PlayerState {
@@ -300,6 +370,15 @@ export class GameEngine {
             const actor = this.getPlayerById(id);
             if (!actor) return;
             if (!this.canActorInput(id)) return;
+
+            if (this.state.interactionMode === 'SELECT_MULLIGAN') {
+                const currentActorId = this.state.mulliganState?.pendingPlayerIds[0];
+                if (!currentActorId || currentActorId !== id) return;
+
+                actions.push({ type: 'RESOLVE_MULLIGAN', actorPlayerId: id, shouldMulligan: false });
+                actions.push({ type: 'RESOLVE_MULLIGAN', actorPlayerId: id, shouldMulligan: true });
+                return;
+            }
 
             if (this.state.interactionMode === 'NORMAL') {
                 if (this.state.phase === Phase.BLOCK) {
@@ -457,6 +536,8 @@ export class GameEngine {
                 if (action.actorPlayerId !== this.currentPlayer.id) return false;
                 this.nextPhase();
                 return true;
+            case 'RESOLVE_MULLIGAN':
+                return this.resolveMulliganForPlayer(action.actorPlayerId, action.shouldMulligan);
             case 'PLAY_UNIT':
                 if (action.actorPlayerId !== this.currentPlayer.id) return false;
                 this.playUnit(action.handIndex, action.zoneIndex);

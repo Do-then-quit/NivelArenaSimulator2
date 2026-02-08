@@ -941,6 +941,55 @@ body {
     transform: scale(1.05);
 }
 
+.mulligan-overlay {
+    z-index: 4200;
+}
+
+.mulligan-modal {
+    width: min(92vw, 860px);
+    background: rgba(25, 27, 40, 0.96);
+    border: 2px solid #4a9eff;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+}
+
+.mulligan-modal h3 {
+    margin: 0 0 8px 0;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #4a9eff;
+}
+
+.mulligan-desc {
+    margin: 0 0 14px 0;
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+}
+
+.mulligan-hand-preview {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.mulligan-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.mulligan-waiting {
+    margin: 12px 0 0 0;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
 .game-over-overlay {
     z-index: 5000;
 }
