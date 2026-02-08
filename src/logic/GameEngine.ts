@@ -3,6 +3,8 @@ import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
 
+type EngineAction = import('./types').EngineAction;
+
 export class GameEngine {
     state: GameState;
     effectManager: EffectManager;
@@ -20,6 +22,7 @@ export class GameEngine {
             winner: null,
             pendingAttackerIndex: null,
             interactionMode: 'NORMAL',
+            interactionOwnerPlayerId: null,
             pendingEffect: null,
             revealedCards: [],
             effectQueue: [],
@@ -30,6 +33,7 @@ export class GameEngine {
             combatBlocked: false
         };
         this.startGame();
+        this.assignInteractionOwner(this.currentPlayer.id);
     }
 
     public incrementGlobalStep() {
@@ -120,6 +124,274 @@ export class GameEngine {
         return [turnPlayer, nonTurnPlayer];
     }
 
+    private getPlayerById(playerId: string): PlayerState | null {
+        return this.state.players.find(p => p.id === playerId) ?? null;
+    }
+
+    private getDefaultInteractionOwnerId(): string {
+        if (this.state.phase === Phase.BLOCK && this.state.pendingAttackerIndex !== null) {
+            return this.opponentPlayer.id;
+        }
+        return this.currentPlayer.id;
+    }
+
+    private assignInteractionOwner(playerId: string | null) {
+        this.state.interactionOwnerPlayerId = playerId;
+        if (this.state.pendingEffect) {
+            this.state.pendingEffect.controllerPlayerId = playerId ?? undefined;
+        }
+    }
+
+    public setInteractionOwner(playerId: string | null) {
+        this.assignInteractionOwner(playerId);
+    }
+
+    private getInteractionOwnerId(): string | null {
+        if (this.state.interactionMode === 'NORMAL') {
+            return this.getDefaultInteractionOwnerId();
+        }
+
+        return (
+            this.state.interactionOwnerPlayerId ??
+            this.state.pendingEffect?.controllerPlayerId ??
+            this.state.pendingEffect?.sourcePlayerId ??
+            null
+        );
+    }
+
+    private canActorInput(actorPlayerId: string): boolean {
+        const ownerId = this.getInteractionOwnerId();
+        return ownerId === null || ownerId === actorPlayerId;
+    }
+
+    private resolveTargetSelectionController(effect: any, context: any): string {
+        const scope = effect?.targets?.scope;
+
+        // In current card data, OPP_HAND + DISCARD means target owner chooses.
+        if (scope === 'OPP_HAND' && effect?.action?.type === 'DISCARD') {
+            return context.opponent.id;
+        }
+
+        return context.player.id;
+    }
+
+    public getLegalActions(actorPlayerId?: string): EngineAction[] {
+        if (this.state.winner) return [];
+
+        const actorIds = actorPlayerId ? [actorPlayerId] : this.state.players.map(p => p.id);
+        const actions: EngineAction[] = [];
+
+        actorIds.forEach(id => {
+            const actor = this.getPlayerById(id);
+            if (!actor) return;
+            if (!this.canActorInput(id)) return;
+
+            if (this.state.interactionMode === 'NORMAL') {
+                if (this.state.phase === Phase.BLOCK) {
+                    if (id !== this.opponentPlayer.id) return;
+                    actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: true });
+                    actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: false });
+                    return;
+                }
+
+                if (id !== this.currentPlayer.id) return;
+
+                if (RuleValidator.canEndPhase(this, actor).valid && this.state.phase !== Phase.BLOCK) {
+                    actions.push({ type: 'NEXT_PHASE', actorPlayerId: id });
+                }
+
+                if (this.state.phase === Phase.MAIN) {
+                    actor.hand.forEach((_card, handIndex) => {
+                        for (let zoneIndex = 0; zoneIndex < actor.unitZones.length; zoneIndex++) {
+                            if (RuleValidator.canPlayUnit(this, actor, handIndex, zoneIndex).valid) {
+                                actions.push({ type: 'PLAY_UNIT', actorPlayerId: id, handIndex, zoneIndex });
+                            }
+                            if (RuleValidator.canPlayItem(this, actor, handIndex, zoneIndex).valid) {
+                                actions.push({ type: 'PLAY_ITEM', actorPlayerId: id, handIndex, zoneIndex });
+                            }
+                        }
+
+                        if (RuleValidator.canPlaySkill(this, actor, handIndex).valid) {
+                            actions.push({ type: 'PLAY_SKILL', actorPlayerId: id, handIndex });
+                        }
+                    });
+                }
+
+                actor.unitZones.forEach((zone, zoneIndex) => {
+                    if (
+                        this.state.phase === Phase.ATTACK &&
+                        RuleValidator.canAttack(this, actor, zoneIndex).valid
+                    ) {
+                        actions.push({ type: 'ATTACK', actorPlayerId: id, attackerZoneIndex: zoneIndex });
+                    }
+
+                    const unit = zone.unit;
+                    if (!unit?.effects) return;
+                    unit.effects.forEach((effect, effectIndex) => {
+                        const activatableInPhase =
+                            (effect.activation === ActivationCondition.ACTIVE && (this.state.phase === Phase.MAIN || this.state.phase === Phase.ATTACK)) ||
+                            (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase === Phase.MAIN);
+                        if (!activatableInPhase) return;
+
+                        const effectKey = `${unit.id}_${effect.id || effectIndex}`;
+                        if (zone.activatedEffectKeys?.[effectKey]) return;
+
+                        actions.push({ type: 'ACTIVATE_EFFECT', actorPlayerId: id, zoneIndex, effectIndex });
+                    });
+                });
+
+                return;
+            }
+
+            const pending = this.state.pendingEffect as any;
+            if (!pending) return;
+
+            if (this.state.interactionMode === 'SELECT_OPTIONAL') {
+                actions.push({ type: 'RESOLVE_OPTIONAL', actorPlayerId: id, confirm: true });
+                actions.push({ type: 'RESOLVE_OPTIONAL', actorPlayerId: id, confirm: false });
+                return;
+            }
+
+            if (this.state.interactionMode === 'SELECT_COST') {
+                const payer = this.getPlayerById(pending.sourcePlayerId) ?? actor;
+                if (payer.id !== id) return;
+                const costFilter = pending?._fullEffect?.cost?.cardTypeFilter;
+                payer.hand.forEach((card, handIndex) => {
+                    if (!costFilter || card.type === costFilter) {
+                        actions.push({ type: 'SELECT_COST_HAND', actorPlayerId: id, handIndex });
+                    }
+                });
+                return;
+            }
+
+            if (this.state.interactionMode !== 'SELECT_TARGET') return;
+
+            const effect = pending._fullEffect;
+            const context = pending._context;
+            if (!effect) return;
+
+            const needsConfirm =
+                (effect.targets?.count ?? 1) !== 1 ||
+                effect.targets?.selectMode === 'ALL' ||
+                pending.actionType === 'TAKE_ALL_REVEALED';
+
+            if (pending.validTargets === 'MY_TRASH') {
+                const targetPlayerId = pending.sourcePlayerId;
+                const targetPlayer = this.getPlayerById(targetPlayerId);
+                if (!targetPlayer) return;
+                targetPlayer.trash.forEach((_card, trashIndex) => {
+                    actions.push({ type: 'SELECT_TRASH_TARGET', actorPlayerId: id, targetPlayerId, trashIndex });
+                });
+                if (needsConfirm) {
+                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
+                }
+                return;
+            }
+
+            if (pending.validTargets === 'REVEALED') {
+                this.state.revealedCards.forEach((_card, revealedIndex) => {
+                    actions.push({ type: 'SELECT_REVEALED_TARGET', actorPlayerId: id, revealedIndex });
+                });
+                if (needsConfirm) {
+                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
+                }
+                return;
+            }
+
+            if (pending.validTargets === 'MY_HAND' || pending.validTargets === 'OPP_HAND' || pending.validTargets === 'LAST_DRAWN') {
+                const targetPlayerId =
+                    pending.validTargets === 'OPP_HAND'
+                        ? (context?.opponent?.id ?? this.getOpponentOf(this.getPlayerById(pending.sourcePlayerId) ?? this.currentPlayer).id)
+                        : (context?.player?.id ?? pending.sourcePlayerId);
+
+                const targetPlayer = this.getPlayerById(targetPlayerId);
+                if (!targetPlayer) return;
+
+                targetPlayer.hand.forEach((_card, handIndex) => {
+                    actions.push({ type: 'SELECT_HAND_TARGET', actorPlayerId: id, targetPlayerId, handIndex });
+                });
+                if (needsConfirm) {
+                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
+                }
+                return;
+            }
+
+            this.state.players.forEach(targetPlayer => {
+                targetPlayer.unitZones.forEach((targetZone, zoneIndex) => {
+                    if (TargetSelector.isValidTarget(this, effect.targets, context, targetZone)) {
+                        actions.push({ type: 'SELECT_ZONE_TARGET', actorPlayerId: id, targetPlayerId: targetPlayer.id, zoneIndex });
+                    }
+                });
+            });
+            if (needsConfirm) {
+                actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
+            }
+        });
+
+        return actions;
+    }
+
+    public step(action: EngineAction): boolean {
+        const actor = this.getPlayerById(action.actorPlayerId);
+        if (!actor) return false;
+        if (!this.canActorInput(action.actorPlayerId)) return false;
+
+        switch (action.type) {
+            case 'NEXT_PHASE':
+                if (action.actorPlayerId !== this.currentPlayer.id) return false;
+                this.nextPhase();
+                return true;
+            case 'PLAY_UNIT':
+                if (action.actorPlayerId !== this.currentPlayer.id) return false;
+                this.playUnit(action.handIndex, action.zoneIndex);
+                return true;
+            case 'PLAY_SKILL':
+                if (action.actorPlayerId !== this.currentPlayer.id) return false;
+                this.playSkill(action.handIndex);
+                return true;
+            case 'PLAY_ITEM':
+                if (action.actorPlayerId !== this.currentPlayer.id) return false;
+                this.playItem(action.handIndex, action.zoneIndex);
+                return true;
+            case 'ACTIVATE_EFFECT':
+                if (action.actorPlayerId !== this.currentPlayer.id) return false;
+                this.activateEffect(action.zoneIndex, action.effectIndex);
+                return true;
+            case 'ATTACK':
+                if (action.actorPlayerId !== this.currentPlayer.id) return false;
+                this.attack(action.attackerZoneIndex);
+                return true;
+            case 'RESOLVE_BLOCK':
+                if (this.state.phase !== Phase.BLOCK) return false;
+                if (action.actorPlayerId !== this.opponentPlayer.id) return false;
+                this.resolveBlock(action.shouldBlock);
+                return true;
+            case 'SELECT_COST_HAND':
+                this.selectCostForPlayerId(action.handIndex, action.actorPlayerId);
+                return true;
+            case 'RESOLVE_OPTIONAL':
+                this.resolveOptionalEffect(action.confirm);
+                return true;
+            case 'SELECT_ZONE_TARGET':
+                this.selectZoneTargetByPlayerId(action.zoneIndex, action.targetPlayerId);
+                return true;
+            case 'SELECT_HAND_TARGET':
+                this.selectHandTargetByPlayerId(action.handIndex, action.targetPlayerId);
+                return true;
+            case 'SELECT_TRASH_TARGET':
+                this.selectTrashTarget(action.trashIndex, action.targetPlayerId);
+                return true;
+            case 'SELECT_REVEALED_TARGET':
+                this.selectRevealedTarget(action.revealedIndex);
+                return true;
+            case 'CONFIRM_TARGETS':
+                this.confirmTargets();
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private requiresAwakenedLeader(effect: Effect): boolean {
         const description = effect.description || '';
         return (
@@ -193,6 +465,9 @@ export class GameEngine {
 
     public enterPhase(phase: Phase) {
         this.state.phase = phase;
+        if (this.state.interactionMode === 'NORMAL') {
+            this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
+        }
         console.log(`Entering Phase: ${phase}`);
 
         if (phase === Phase.MAIN) {
@@ -299,6 +574,7 @@ export class GameEngine {
         // Switch
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
         this.state.turnCount++;
+        this.assignInteractionOwner(this.currentPlayer.id);
         this.enterPhase(Phase.LEVEL_UP); // Correctly enter next phase
 
         // Reset once-per-turn effects
@@ -495,10 +771,12 @@ export class GameEngine {
     // checkPotentialTargets moved to RuleValidator
 
     initiateCostSelection(effect: any, context: any) {
+        const controllerPlayerId = context.player.id;
         this.state.interactionMode = 'SELECT_COST';
         this.state.pendingEffect = {
             sourceCard: context.sourceCard,
             sourcePlayerId: context.player.id,
+            controllerPlayerId,
             actionType: effect.action.type,
             actionValue: effect.action.params,
             costToPay: effect.cost,
@@ -506,20 +784,24 @@ export class GameEngine {
         };
         (this.state.pendingEffect as any)._fullEffect = effect;
         (this.state.pendingEffect as any)._context = context;
+        this.assignInteractionOwner(controllerPlayerId);
 
         console.log("Entered Cost Selection Mode for " + context.sourceCard.name);
     }
 
     initiateOptionalSelection(effect: any, context: any) {
+        const controllerPlayerId = context.player.id;
         this.state.interactionMode = 'SELECT_OPTIONAL';
         this.state.pendingEffect = {
             sourceCard: context.sourceCard,
             sourcePlayerId: context.player.id,
+            controllerPlayerId,
             actionType: effect.action.type,
             actionValue: effect.action.params
         };
         (this.state.pendingEffect as any)._fullEffect = effect;
         (this.state.pendingEffect as any)._context = context;
+        this.assignInteractionOwner(controllerPlayerId);
         console.log("Entered Optional Selection Mode for " + context.sourceCard.name);
     }
 
@@ -533,6 +815,7 @@ export class GameEngine {
         // Reset Mode
         this.state.interactionMode = 'NORMAL';
         this.state.pendingEffect = null;
+        this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
 
         if (confirm) {
             console.log("Optional Effect confirmed.");
@@ -549,13 +832,26 @@ export class GameEngine {
 
     selectCost(handIndex: number) {
         if (this.state.interactionMode !== 'SELECT_COST' || !this.state.pendingEffect) return;
+        const payerPlayerId = this.state.pendingEffect.sourcePlayerId;
+        this.selectCostForPlayerId(handIndex, payerPlayerId);
+    }
+
+    public selectCostForPlayerId(handIndex: number, payerPlayerId: string) {
+        if (this.state.interactionMode !== 'SELECT_COST' || !this.state.pendingEffect) return;
+        if (!this.canActorInput(payerPlayerId)) return;
+
         const pending = this.state.pendingEffect as any;
+        const payer = this.getPlayerById(payerPlayerId);
+        if (!payer) return;
+        if (pending.sourcePlayerId !== payer.id) return;
+
         const costType = pending.costToPay?.type;
 
         // Execute Cost
         if (costType === 'TRASH_HAND') {
-            const discarded = this.currentPlayer.hand.splice(handIndex, 1)[0];
-            this.currentPlayer.trash.push(discarded);
+            if (handIndex < 0 || handIndex >= payer.hand.length) return;
+            const discarded = payer.hand.splice(handIndex, 1)[0];
+            payer.trash.push(discarded);
             console.log(`Paid cost: Trashed ${discarded.name}`);
 
             if (!pending.costPaidCount) pending.costPaidCount = 0;
@@ -566,9 +862,10 @@ export class GameEngine {
             context.costPaymentCard = discarded;
 
         } else if (costType === 'SHUFFLE_HAND_TO_DECK') {
-            const card = this.currentPlayer.hand.splice(handIndex, 1)[0];
-            this.currentPlayer.deck.push(card);
-            this.shuffle(this.currentPlayer.deck);
+            if (handIndex < 0 || handIndex >= payer.hand.length) return;
+            const card = payer.hand.splice(handIndex, 1)[0];
+            payer.deck.push(card);
+            this.shuffle(payer.deck);
             console.log(`Paid cost: Shuffled ${card.name} into deck`);
 
             if (!pending.costPaidCount) pending.costPaidCount = 0;
@@ -609,10 +906,13 @@ export class GameEngine {
             this.state.pendingEffect === pending
         ) {
             const zoneIndex = pending.actionValue.attackerZoneIndex;
-            const zone = this.currentPlayer.unitZones[zoneIndex];
+            const owner = this.getPlayerById(pending.sourcePlayerId) ?? this.currentPlayer;
+            const zone = owner.unitZones[zoneIndex];
             (zone as any)._attackCostPaid = true;
             this.resetInteractionMode();
-            this.attack(zoneIndex); // Resume attack
+            if (owner.id === this.currentPlayer.id) {
+                this.attack(zoneIndex); // Resume attack
+            }
             return;
         }
 
@@ -620,11 +920,13 @@ export class GameEngine {
     }
 
     initiateTargetSelection(effect: any, context: any) {
+        const controllerPlayerId = this.resolveTargetSelectionController(effect, context);
         this.state.interactionMode = 'SELECT_TARGET';
         // Create a PendingEffect state to store context until target is selected
         this.state.pendingEffect = {
             sourceCard: context.sourceCard,
             sourcePlayerId: context.player.id,
+            controllerPlayerId,
             actionType: effect.action.type, // redundant but useful for UI
             actionValue: effect.action.params,
             validTargets: effect.targets.scope, // specific simplified scope for UI
@@ -635,6 +937,7 @@ export class GameEngine {
         // For prototype, we'll attach the ephemeral effect object to the state instance (bad practice for serialization but ok for now)
         (this.state.pendingEffect as any)._fullEffect = effect;
         (this.state.pendingEffect as any)._context = context;
+        this.assignInteractionOwner(controllerPlayerId);
 
         console.log("Entered Selection Mode for " + context.sourceCard.name);
     }
@@ -670,6 +973,7 @@ export class GameEngine {
         this.state.combatStep = 'ATTACK_DECLARATION';
         this.state.phase = Phase.ATTACK; // Ensure phase is set
         this.state.pendingAttackerIndex = attackerZoneIndex;
+        this.assignInteractionOwner(this.currentPlayer.id);
 
         // Trigger ATTACKER effects as one simultaneous event.
         const attackerBatchStep = this.incrementAndGetGlobalStep();
@@ -747,6 +1051,7 @@ export class GameEngine {
                 this.state.combatStep = 'NONE';
                 this.state.pendingAttackerIndex = null;
                 this.state.phase = Phase.ATTACK; // Return to Attack Available
+                this.assignInteractionOwner(this.currentPlayer.id);
                 break;
         }
     }
@@ -771,12 +1076,14 @@ export class GameEngine {
         if (breakthroughActive || !blockerZone.unit) {
             // Direct Attack or Breakthrough -> Skip Blocking
             this.state.combatBlocked = false;
+            this.assignInteractionOwner(this.currentPlayer.id);
             this.advanceCombatStep(); // Go directly to BATTLE
             return;
         }
 
         // 2. Encounter Unit exists -> Potential Block
         this.state.phase = Phase.BLOCK;
+        this.assignInteractionOwner(this.opponentPlayer.id);
         // Wait for user input (resolveBlock)
         console.log("Waiting for Block Declaration...");
 
@@ -971,6 +1278,8 @@ export class GameEngine {
         } else {
             this.state.combatBlocked = false;
         }
+
+        this.assignInteractionOwner(this.currentPlayer.id);
 
         // Advance to next step (Battle Resolution)
         // If effects were added, queue runs. If not, manual advance.
@@ -1216,10 +1525,12 @@ export class GameEngine {
     }
 
     public initiateAttackCostSelection(effect: any, context: any, attackerZoneIndex: number) {
+        const controllerPlayerId = context.player.id;
         this.state.interactionMode = 'SELECT_COST';
         this.state.pendingEffect = {
             sourceCard: context.sourceCard,
             sourcePlayerId: context.player.id,
+            controllerPlayerId,
             actionType: 'ATTACK_COST',
             actionValue: { attackerZoneIndex },
             costToPay: effect.cost || { type: 'TRASH_HAND', amount: 1 },
@@ -1227,6 +1538,7 @@ export class GameEngine {
         } as any;
         (this.state.pendingEffect as any)._fullEffect = effect;
         (this.state.pendingEffect as any)._context = context;
+        this.assignInteractionOwner(controllerPlayerId);
         console.log("Entered Attack Cost Selection Mode for " + context.sourceCard.name);
     }
 
@@ -1428,15 +1740,20 @@ export class GameEngine {
 
 
     public selectTarget(zoneIndex: number, isOpponentZone: boolean) {
+        const targetPlayerId = isOpponentZone ? this.opponentPlayer.id : this.currentPlayer.id;
+        this.selectZoneTargetByPlayerId(zoneIndex, targetPlayerId);
+    }
+
+    public selectZoneTargetByPlayerId(zoneIndex: number, targetPlayerId: string) {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
         // This logic handles the manual selection input from the UI
         const pending = this.state.pendingEffect as any;
         const effect = pending._fullEffect;
         const context = pending._context;
-
-        // UI renders opponent at the top (isOpponentZone=true) and currentPlayer at the bottom (isOpponentZone=false)
-        const targetPlayer = isOpponentZone ? this.opponentPlayer : this.currentPlayer;
+        const targetPlayer = this.getPlayerById(targetPlayerId);
+        if (!targetPlayer) return;
+        if (zoneIndex < 0 || zoneIndex >= targetPlayer.unitZones.length) return;
         const targetZone = targetPlayer.unitZones[zoneIndex];
         const scope = effect.targets?.scope;
 
@@ -1448,8 +1765,8 @@ export class GameEngine {
 
         // Shared Lane validation (extra layer for clarity, though isValidTarget covers it)
         if (scope === 'SHARED_LANE') {
-            const myUnit = this.currentPlayer.unitZones[zoneIndex].unit;
-            const oppUnit = this.opponentPlayer.unitZones[zoneIndex].unit;
+            const myUnit = context.player.unitZones[zoneIndex]?.unit;
+            const oppUnit = context.opponent.unitZones[zoneIndex]?.unit;
             if (!myUnit || !oppUnit) {
                 console.log("Invalid Target: Lane is not shared.");
                 return;
@@ -1537,7 +1854,7 @@ export class GameEngine {
         this.handleEffectCompletion(context, pending);
     }
 
-    public selectTrashTarget(trashIndex: number) {
+    public selectTrashTarget(trashIndex: number, targetPlayerId?: string) {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
         const pending = this.state.pendingEffect as any;
@@ -1549,7 +1866,9 @@ export class GameEngine {
 
         // Use the effect source player's trash, not the current turn player's trash
         // This is important for trigger effects that activate on opponent's turn
-        const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+        const expectedPlayerId = pending.sourcePlayerId;
+        if (targetPlayerId && targetPlayerId !== expectedPlayerId) return;
+        const player = this.state.players.find(p => p.id === expectedPlayerId);
         if (!player) {
             console.log("Source player not found for trash selection.");
             return;
@@ -1579,13 +1898,19 @@ export class GameEngine {
     }
 
     public selectHandTarget(handIndex: number, isOpponentHand: boolean) {
+        const targetPlayerId = isOpponentHand ? this.opponentPlayer.id : this.currentPlayer.id;
+        this.selectHandTargetByPlayerId(handIndex, targetPlayerId);
+    }
+
+    public selectHandTargetByPlayerId(handIndex: number, targetPlayerId: string) {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
         const pending = this.state.pendingEffect as any;
         const effect = pending._fullEffect;
         const context = pending._context;
 
-        const targetPlayer = isOpponentHand ? this.opponentPlayer : this.currentPlayer;
+        const targetPlayer = this.getPlayerById(targetPlayerId);
+        if (!targetPlayer) return;
         if (handIndex < 0 || handIndex >= targetPlayer.hand.length) return;
 
         const targetCard = targetPlayer.hand[handIndex];
@@ -1676,6 +2001,7 @@ export class GameEngine {
     private resetInteractionMode() {
         this.state.interactionMode = 'NORMAL';
         this.state.pendingEffect = null;
+        this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
 
         // Resume global queue
         this.effectManager.resumeQueue();

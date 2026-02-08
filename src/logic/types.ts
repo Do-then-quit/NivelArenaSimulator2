@@ -144,6 +144,22 @@ export interface EffectQueueItem {
     sourcePlayerId: string; // Owner ID for priority sorting
 }
 
+export type EngineAction =
+    | { type: 'NEXT_PHASE'; actorPlayerId: string }
+    | { type: 'PLAY_UNIT'; actorPlayerId: string; handIndex: number; zoneIndex: number }
+    | { type: 'PLAY_SKILL'; actorPlayerId: string; handIndex: number }
+    | { type: 'PLAY_ITEM'; actorPlayerId: string; handIndex: number; zoneIndex: number }
+    | { type: 'ACTIVATE_EFFECT'; actorPlayerId: string; zoneIndex: number; effectIndex: number }
+    | { type: 'ATTACK'; actorPlayerId: string; attackerZoneIndex: number }
+    | { type: 'RESOLVE_BLOCK'; actorPlayerId: string; shouldBlock: boolean }
+    | { type: 'SELECT_COST_HAND'; actorPlayerId: string; handIndex: number }
+    | { type: 'RESOLVE_OPTIONAL'; actorPlayerId: string; confirm: boolean }
+    | { type: 'SELECT_ZONE_TARGET'; actorPlayerId: string; targetPlayerId: string; zoneIndex: number }
+    | { type: 'SELECT_HAND_TARGET'; actorPlayerId: string; targetPlayerId: string; handIndex: number }
+    | { type: 'SELECT_TRASH_TARGET'; actorPlayerId: string; targetPlayerId: string; trashIndex: number }
+    | { type: 'SELECT_REVEALED_TARGET'; actorPlayerId: string; revealedIndex: number }
+    | { type: 'CONFIRM_TARGETS'; actorPlayerId: string };
+
 export type ActionImplementation = (context: GameContext, params: any, targets: any[]) => void;
 
 export interface Effect {
@@ -225,6 +241,7 @@ export interface GameState {
     winner: string | null;
     pendingAttackerIndex: number | null; // Track who is attacking during BLOCK phase
     interactionMode: 'NORMAL' | 'SELECT_TARGET' | 'SELECT_COST' | 'SELECT_OPTIONAL';
+    interactionOwnerPlayerId: string | null; // Player who has input priority in the current interaction window
     pendingEffect: PendingEffect | null;
     attackTerminated?: boolean;
     revealedCards: Card[];
@@ -239,6 +256,7 @@ export interface GameState {
 export interface PendingEffect {
     sourceCard: Card;
     sourcePlayerId: string;
+    controllerPlayerId?: string; // Player who must provide input for this interaction
     actionType: string;
     actionValue: any;
     validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED'; // Simplified target constraint

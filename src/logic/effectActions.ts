@@ -371,6 +371,7 @@ const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
     ctx.machine.state.pendingEffect = {
         sourceCard: ctx.sourceCard,
         sourcePlayerId: player.id,
+        controllerPlayerId: player.id,
         actionType: 'PICK_REVEALED',
         actionValue: params,
         validTargets: 'REVEALED',
@@ -391,6 +392,7 @@ const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
         }
     };
     (ctx.machine.state.pendingEffect as any)._context = ctx;
+    ctx.machine.setInteractionOwner(player.id);
 
     console.log(`Revealed top ${revealed.length} cards. Waiting for selection.`);
 };
@@ -410,6 +412,7 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
     ctx.machine.state.pendingEffect = {
         sourceCard: ctx.sourceCard,
         sourcePlayerId: player.id,
+        controllerPlayerId: player.id,
         actionType: 'TAKE_ALL_REVEALED',
         actionValue: params,
         validTargets: 'REVEALED',
@@ -430,6 +433,7 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
         }
     };
     (ctx.machine.state.pendingEffect as any)._context = ctx;
+    ctx.machine.setInteractionOwner(player.id);
 
     console.log(`Revealed top ${revealed.length} cards for review. Waiting for confirmation.`);
 };
@@ -508,6 +512,7 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
     ctx.machine.state.pendingEffect = {
         sourceCard: ctx.sourceCard,
         sourcePlayerId: ctx.player.id,
+        controllerPlayerId: ctx.player.id,
         actionType: 'DESTROY_UNIT_WITH_HIT_COST',
         actionValue: { hitCost: hit },
         costToPay: { type: 'TRASH_HAND', amount: hit },
@@ -515,6 +520,7 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
         selectedTargets: [targetZone]
     } as any;
     (ctx.machine.state.pendingEffect as any)._context = ctx;
+    ctx.machine.setInteractionOwner(ctx.player.id);
     console.log(`Entered Cost Selection Mode for ${ctx.sourceCard.name}`);
 };
 
@@ -616,6 +622,7 @@ const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => {
     ctx.machine.state.pendingEffect = {
         sourceCard: ctx.sourceCard,
         sourcePlayerId: player.id,
+        controllerPlayerId: player.id,
         actionType: 'DISCARD_FROM_DRAWN',
         actionValue: { discardCount },
         validTargets: 'REVEALED',
@@ -634,6 +641,7 @@ const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => {
         }
     };
     (ctx.machine.state.pendingEffect as any)._context = ctx;
+    ctx.machine.setInteractionOwner(player.id);
 
     console.log(`Waiting for ${player.name} to select ${discardCount} card(s) to discard from drawn cards.`);
 };
