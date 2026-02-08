@@ -1,110 +1,132 @@
-# 🎮 니벨아레나 시뮬레이터 (NivelArena Simulator)
+# NivelArenaSimulator2
 
-[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)](https://vitest.dev/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+니벨아레나 TCG 규칙을 기준으로 동작하는 시뮬레이터 프로젝트입니다.  
+목표는 다음 3가지입니다.
 
-> [!NOTE]
-> **니벨아레나 시뮬레이터**는 니벨아레나 TCG를 위한 고성능 웹 기반 시뮬레이터입니다. 플레이 테스트, 덱 검증, 그리고 게임 엔진 개발을 위해 설계되었습니다.
+- 룰/카드 효과를 엔진으로 재현
+- 회귀 테스트로 동작 안정화
+- 대전 AI 실험을 위한 self-play 기반 마련
 
-> [!IMPORTANT]
-> **저작권 고지**: '니벨아레나(NivelArena)' 게임 시스템 및 모든 카드 데이터, 이미지 자산의 저작권은 **젬블로컴퍼니(Gemblo Company)**에 있습니다. 본 프로젝트는 비영리 목적으로 개발된 팬 메이드 시뮬레이터입니다.
+기준 문서는 `NivelArena_Comprehensive_Rules_Ver.2.0.pdf`이며, 카드 텍스트를 최우선으로 해석합니다.
 
----
+## 현재 구현 범위
 
-## ✨ 핵심 기능
+### 엔진
+- 턴/페이즈(Level Up, Draw, Main, Attack, End) 진행
+- 전투 선언/방어 선언/전투 해결/종료 처리
+- 효과 큐 및 지연 처리(대미지 처리 중 비트리거 효과 지연 등)
+- 상호작용 입력권(`interactionOwnerPlayerId`) 분리
+- 합법 액션 생성(`getLegalActions`) + 단일 실행 진입점(`step`)
+- 시드 기반 RNG 주입 및 직렬화 가능한 상태 관측(`getObservation`, `getSerializableState`)
+- 멀리건(초기 5장 후 1회 전체 교체 또는 유지)
 
-- **🚀 현대적인 엔진**: 모듈화된 데이터 기반 카드 효과 시스템 ("Trigger-Cost-Action")으로 구축되었습니다.
-- **🃏 덱 빌더**: 멀티 덱 저장 및 관리를 지원하는 완전한 덱 빌딩 인터페이스를 제공합니다.
-- **🛠️ 디버그 시스템**: 시나리오 테스트 및 상태 주입을 위한 강력한 `DebugManager`를 포함합니다.
-- **🎨 프리미엄 UI**: 글래스모피즘, 다이내믹 애니메이션, 반응형 좌우 배치 보드 레이아웃을 갖춘 세련된 디자인입니다.
-- **⚡ 빠른 피드백**: 실시간 게임 상태 업데이트 및 즉각적인 흐름 제어가 가능합니다.
+### 카드/팩
+- 카드 데이터: `packs/*.json`
+- 효과 구현: `ST01`, `ST02`, `ST03`, `BT01` 중심
+- 다른 팩은 데이터는 있으나 효과 구현은 진행 중
 
----
+### AI
+- `BaselineBot` 구현
+- Bot vs Bot self-play 유틸 제공
+- soak 회귀 테스트로 진행 불가/데드락 상황 점검
 
-## 🛠️ 기술 스택
+### UI
+- Quick Play, Custom Simulation(PvP), Custom vs Baseline Bot
+- 덱 빌더 및 셋업 화면
+- 멀리건 UI
+- 게임 종료 팝업(승패/대미지/기본 통계 표시)
+- 봇전 시작 시 봇 핸드 공개/비공개 선택
 
-- **Core**: TypeScript (정적 타이핑 및 확장성 확보)
-- **Bundler**: Vite (초고속 개발 서버)
-- **Styling**: Vanilla CSS (정밀한 디자인 제어 및 성능 최적화)
-- **Testing**: Vitest (신뢰성 있는 로직 검증)
+## 실행 방법
 
----
+요구 사항:
+- Node.js 18+ (권장)
+- npm
 
-## 🚀 시작하기
+설치:
 
-### 설치 요구 사항
-
-- [Node.js](https://nodejs.org/) (v18 이상 권장)
-- [npm](https://www.npmjs.com/)
-
-### 실행 방법
-
-1. 저장소 클론:
-   ```bash
-   git clone https://github.com/yourusername/nivel-arena-simulator.git
-   cd nivel-arena-simulator
-   ```
-
-2. 종속성 설치:
-   ```bash
-   npm install
-   ```
-
-3. 개발 서버 실행:
-   ```bash
-   npm run dev
-   ```
-
-4. 브라우저에서 `http://localhost:5173` 접속.
-
----
-
-## 📂 프로젝트 구조
-
-```text
-├── src/
-│   ├── logic/          # 핵심 게임 로직 및 엔진
-│   │   ├── cardEffects/# 카드별 개별 효과 정의
-│   │   ├── GameEngine.ts
-│   │   └── types.ts    # 통합 타입 정의
-│   ├── main.ts         # 엔트리 포인트 및 UI 조율
-│   ├── style.css       # 글로벌 스타일 및 디자인 시스템
-│   └── tests/          # 유닛 및 통합 테스트
-├── public/assets/      # 카드 이미지 및 정적 자산
-└── package.json        # 프로젝트 메타데이터 및 스크립트
+```bash
+npm install
 ```
 
----
+개발 서버:
 
-## 🗺️ 로드맵
+```bash
+npm run dev
+```
 
-- [ ] SB01 카드 세트 전체 지원
-- [ ] 온라인 1v1 매칭 (WebSockets)
-- [ ] 고급 AI 상대 구현
-- [ ] 모바일 반응형 UI 최적화
+빌드:
 
----
+```bash
+npm run build
+```
 
-## 🤝 기여하기
+## 테스트
 
-기여는 언제나 환영합니다! 풀 리퀘스트(PR)를 자유롭게 제출해 주세요.
+전체 테스트:
 
-1. 프로젝트 포크 (Fork)
-2. 기능 브랜치 생성 (`git checkout -b feature/AmazingFeature`)
-3. 변경 사항 커밋 (`git commit -m 'Add some AmazingFeature'`)
-4. 브랜치 푸시 (`git push origin feature/AmazingFeature`)
-5. 풀 리퀘스트 열기
+```bash
+npm test
+```
 
----
+특정 파일 테스트:
 
-## 📄 라이선스
+```bash
+npx vitest run tests/rules_v2_regression/<파일명>.test.ts
+```
 
-본 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 참조하세요.
+Bot self-play quick soak:
 
----
+```bash
+npm run test:bot-soak
+```
 
-<p align="center">
-  니벨아레나 커뮤니티를 위해 ❤️로 제작되었습니다.
-</p>
+Bot self-play extended soak (PowerShell):
+
+```powershell
+$env:BOT_SOAK_ENABLE='1'
+$env:BOT_SOAK_GAMES='120'
+$env:BOT_SOAK_MAX_STEPS='2400'
+npm run test:bot-soak
+```
+
+## 주요 폴더
+
+```text
+src/
+  logic/
+    GameEngine.ts
+    effects.ts
+    effectActions.ts
+    RuleValidator.ts
+    TargetSelector.ts
+    ai/BaselineBot.ts
+    cardEffects/
+  main.ts
+  SetupUI.ts
+tests/
+  rules_v2_regression/
+packs/
+AGENTS.md
+AiReadyTask.md
+```
+
+## 현재 제한 사항
+
+- 전 팩의 카드 효과가 완전히 구현된 상태는 아님
+- 강화학습 파이프라인(PPO 등)은 아직 미연결
+- 멀티플레이/서버 기반 대전은 현재 범위 밖
+
+## 앞으로 할 일
+
+- 카드 효과 커버리지 확장(ST/BT 추가 구현)
+- self-play 로그를 학습용 데이터셋으로 적재하는 파이프라인 정리
+- BaselineBot 개선(평가 지표, 휴리스틱 고도화)
+- 학습 루프 연결(RL 실험 환경/리플레이 평가 자동화)
+
+## 참고
+
+- 운영/개발 가이드: `AGENTS.md`
+- AI 준비 태스크 기록: `AiReadyTask.md`
+
+본 프로젝트는 비공식 시뮬레이터이며, 원작 게임 및 카드 IP는 각 권리자에게 있습니다.
