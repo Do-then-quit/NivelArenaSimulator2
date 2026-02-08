@@ -509,6 +509,15 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
         return;
     }
 
+    const payableCount = ctx.player.hand.length;
+    if (payableCount < hit) {
+        console.log(
+            `Cannot resolve DESTROY_UNIT_WITH_HIT_COST for ${ctx.sourceCard.name}: ` +
+            `insufficient hand cards (${payableCount}/${hit}).`
+        );
+        return;
+    }
+
     // Reuse the engine's unified cost selection flow.
     ctx.machine.state.interactionMode = 'SELECT_COST';
     ctx.machine.state.pendingEffect = {

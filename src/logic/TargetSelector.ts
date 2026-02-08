@@ -229,7 +229,13 @@ export class TargetSelector {
                     case 'EXCLUDE_SELF': if (target === context.unitZone) return false; break;
                     case 'HAS_TRAIT': if (!unit || !unit.traits?.includes(filter.value)) return false; break;
                     case 'HAS_KEYWORD':
-                        if (!unit || !this.hasDynamicKeyword(unit, filter.value, target as UnitZoneState)) return false;
+                        if (!unit) return false;
+                        {
+                            const zone = (target && typeof target === 'object' && 'unit' in target)
+                                ? target as UnitZoneState
+                                : null;
+                            if (!this.hasDynamicKeyword(unit, filter.value, zone)) return false;
+                        }
                         break;
                     case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
                     case 'POWER_LIMIT': if (!unit || engine.getUnitPower(target, this.getOwner(engine, target)) > filter.value) return false; break;
@@ -296,7 +302,8 @@ export class TargetSelector {
         }
 
         if (zone) {
-            for (const item of zone.items) {
+            const items = Array.isArray((zone as any).items) ? zone.items : [];
+            for (const item of items) {
                 if (item.keywords?.includes(keyword)) return true;
                 if (item.effects) {
                     for (const effect of item.effects) {
@@ -304,7 +311,8 @@ export class TargetSelector {
                     }
                 }
             }
-            for (const effect of zone.temporaryEffects) {
+            const temporaryEffects = Array.isArray((zone as any).temporaryEffects) ? zone.temporaryEffects : [];
+            for (const effect of temporaryEffects) {
                 if (effectHasKeyword(effect)) return true;
             }
         }

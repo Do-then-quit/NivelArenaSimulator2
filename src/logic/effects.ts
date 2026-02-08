@@ -171,8 +171,8 @@ export class EffectManager {
 
         if (effect.cost && effect.cost.type !== 'NONE' && !costAlreadyPaid) {
             if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
-                this.engine.initiateCostSelection(effect, context);
-                return true;
+                const started = this.engine.initiateCostSelection(effect, context);
+                return started;
             }
         }
 

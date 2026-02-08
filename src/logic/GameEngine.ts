@@ -330,7 +330,25 @@ export class GameEngine {
     }
 
     public getSerializableState(): GameState {
-        return JSON.parse(JSON.stringify(this.state));
+        return JSON.parse(
+            JSON.stringify(this.state, (key, value) => {
+                // Effect queue contexts contain machine back-references, which create cycles.
+                if (key === 'machine') return undefined;
+                return value;
+            })
+        );
+    }
+
+    private getPayableHandIndexesForCost(player: PlayerState, cost: PendingEffect['costToPay']): number[] {
+        if (!cost) return [];
+        const filter = cost.cardTypeFilter;
+        const indexes: number[] = [];
+        player.hand.forEach((card, handIndex) => {
+            if (!filter || card.type === filter) {
+                indexes.push(handIndex);
+            }
+        });
+        return indexes;
     }
 
     public getObservation(actorPlayerId: string): EngineObservation {
@@ -430,6 +448,30 @@ export class GameEngine {
                         const effectKey = `${unit.id}_${effect.id || effectIndex}`;
                         if (zone.activatedEffectKeys?.[effectKey]) return;
 
+                        const context: GameContext = {
+                            sourceCard: unit,
+                            player: actor,
+                            opponent: this.getOpponentOf(actor),
+                            unitZone: zone,
+                            machine: this,
+                        };
+
+                        if (!this.effectManager.checkCondition(effect, context)) return;
+
+                        if (effect.cost && effect.cost.type !== 'NONE') {
+                            if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
+                                const requiredAmount = effect.cost.amount || 1;
+                                const costFilter = effect.cost.cardTypeFilter;
+                                const payableCount = actor.hand.filter(card => !costFilter || card.type === costFilter).length;
+                                if (payableCount < requiredAmount) return;
+                            }
+                        }
+
+                        if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+                            const candidates = TargetSelector.resolve(this, effect.targets, context);
+                            if (candidates.length === 0) return;
+                        }
+
                         actions.push({ type: 'ACTIVATE_EFFECT', actorPlayerId: id, zoneIndex, effectIndex });
                     });
                 });
@@ -449,11 +491,13 @@ export class GameEngine {
             if (this.state.interactionMode === 'SELECT_COST') {
                 const payer = this.getPlayerById(pending.sourcePlayerId) ?? actor;
                 if (payer.id !== id) return;
-                const costFilter = pending.costCardTypeFilter;
-                payer.hand.forEach((card, handIndex) => {
-                    if (!costFilter || card.type === costFilter) {
-                        actions.push({ type: 'SELECT_COST_HAND', actorPlayerId: id, handIndex });
-                    }
+                const payableHandIndexes = this.getPayableHandIndexesForCost(payer, pending.costToPay ?? {
+                    type: 'TRASH_HAND',
+                    amount: 1,
+                    cardTypeFilter: pending.costCardTypeFilter
+                } as any);
+                payableHandIndexes.forEach(handIndex => {
+                    actions.push({ type: 'SELECT_COST_HAND', actorPlayerId: id, handIndex });
                 });
                 return;
             }
@@ -473,7 +517,10 @@ export class GameEngine {
             const requiredCount = targetSchema.count ?? 1;
 
             const shouldAllowConfirm = (candidateTargets: any[]): boolean => {
-                if (!needsConfirm) return false;
+                if (!needsConfirm) {
+                    // Single-target manual selection can become impossible due state changes.
+                    return candidateTargets.length === 0;
+                }
                 if (targetSchema.selectMode === 'ALL' || pending.actionType === 'TAKE_ALL_REVEALED') return true;
                 if (requiredCount <= 0) return true;
 
@@ -993,7 +1040,17 @@ export class GameEngine {
 
     // checkPotentialTargets moved to RuleValidator
 
-    initiateCostSelection(effect: Effect, context: GameContext) {
+    initiateCostSelection(effect: Effect, context: GameContext): boolean {
+        const requiredAmount = effect.cost?.amount || 1;
+        const payableHandIndexes = this.getPayableHandIndexesForCost(context.player, effect.cost);
+        if (payableHandIndexes.length < requiredAmount) {
+            console.log(
+                `[Cost] Skipping effect "${effect.description}" due to insufficient payable cards ` +
+                `(${payableHandIndexes.length}/${requiredAmount}).`
+            );
+            return false;
+        }
+
         const controllerPlayerId = context.player.id;
         this.state.interactionMode = 'SELECT_COST';
         this.state.pendingEffect = {
@@ -1011,6 +1068,7 @@ export class GameEngine {
         this.assignInteractionOwner(controllerPlayerId);
 
         console.log("Entered Cost Selection Mode for " + context.sourceCard.name);
+        return true;
     }
 
     initiateOptionalSelection(effect: Effect, context: GameContext) {
@@ -1187,13 +1245,14 @@ export class GameEngine {
 
         const attackCostEffect = this.getAttackCostEffect(attackerZone);
         if (attackCostEffect && !(attackerZone as any)._attackCostPaid) {
-            this.initiateAttackCostSelection(attackCostEffect, {
+            const started = this.initiateAttackCostSelection(attackCostEffect, {
                 sourceCard: attackerZone.unit!,
                 player: this.currentPlayer,
                 opponent: this.opponentPlayer,
                 unitZone: attackerZone,
                 machine: this
             }, attackerZoneIndex);
+            if (started) return;
             return;
         }
 
@@ -1758,7 +1817,17 @@ export class GameEngine {
         });
     }
 
-    public initiateAttackCostSelection(effect: Effect, context: GameContext, attackerZoneIndex: number) {
+    public initiateAttackCostSelection(effect: Effect, context: GameContext, attackerZoneIndex: number): boolean {
+        const requiredAmount = effect.cost?.amount || 1;
+        const payableHandIndexes = this.getPayableHandIndexesForCost(context.player, effect.cost);
+        if (payableHandIndexes.length < requiredAmount) {
+            console.log(
+                `[AttackCost] Cannot start attack for ${context.sourceCard.name}. ` +
+                `Insufficient payable cards (${payableHandIndexes.length}/${requiredAmount}).`
+            );
+            return false;
+        }
+
         const controllerPlayerId = context.player.id;
         this.state.interactionMode = 'SELECT_COST';
         this.state.pendingEffect = {
@@ -1775,6 +1844,7 @@ export class GameEngine {
         this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
         console.log("Entered Attack Cost Selection Mode for " + context.sourceCard.name);
+        return true;
     }
 
     public dealDamage(player: PlayerState, amount: number) {

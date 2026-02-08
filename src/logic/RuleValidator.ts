@@ -107,6 +107,22 @@ export class RuleValidator {
         if (zone.hasAttacked) return { valid: false, reason: "Unit already attacked" };
         if (zone.isExhausted) return { valid: false, reason: "Unit is exhausted" };
 
+        const attackCostEffect = zone.unit.effects?.find(effect =>
+            effect.activation === ActivationCondition.PASSIVE &&
+            effect.action?.type === 'NONE' &&
+            effect.action?.params?.requiresAttackCost === true &&
+            !!effect.cost
+        );
+
+        if (attackCostEffect?.cost) {
+            const requiredAmount = attackCostEffect.cost.amount || 1;
+            const costFilter = attackCostEffect.cost.cardTypeFilter;
+            const payableCount = player.hand.filter(card => !costFilter || card.type === costFilter).length;
+            if (payableCount < requiredAmount) {
+                return { valid: false, reason: "Cannot pay attack cost" };
+            }
+        }
+
         return { valid: true };
     }
 
