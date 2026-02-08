@@ -100,24 +100,33 @@ export class BaselineBot {
             return this.pickCostAction(engine, actorPlayerId, costActions);
         }
 
+        const readyConfirmAction = this.pickReadyConfirmAction(engine, actions);
+        if (readyConfirmAction) {
+            return readyConfirmAction;
+        }
+
         const handActions = this.filterByType(actions, 'SELECT_HAND_TARGET');
         if (handActions.length > 0) {
-            return this.pickHandTargetAction(engine, actorPlayerId, handActions);
+            const handAction = this.pickHandTargetAction(engine, actorPlayerId, handActions);
+            if (handAction) return handAction;
         }
 
         const zoneActions = this.filterByType(actions, 'SELECT_ZONE_TARGET');
         if (zoneActions.length > 0) {
-            return this.pickZoneTargetAction(engine, actorPlayerId, zoneActions);
+            const zoneAction = this.pickZoneTargetAction(engine, actorPlayerId, zoneActions);
+            if (zoneAction) return zoneAction;
         }
 
         const trashActions = this.filterByType(actions, 'SELECT_TRASH_TARGET');
         if (trashActions.length > 0) {
-            return this.pickTrashTargetAction(engine, trashActions);
+            const trashAction = this.pickTrashTargetAction(engine, trashActions);
+            if (trashAction) return trashAction;
         }
 
         const revealedActions = this.filterByType(actions, 'SELECT_REVEALED_TARGET');
         if (revealedActions.length > 0) {
-            return this.pickRevealedTargetAction(engine, revealedActions);
+            const revealedAction = this.pickRevealedTargetAction(engine, revealedActions);
+            if (revealedAction) return revealedAction;
         }
 
         const confirmActions = this.filterByType(actions, 'CONFIRM_TARGETS');
@@ -253,44 +262,73 @@ export class BaselineBot {
         }) ?? actions[0];
     }
 
-    private pickHandTargetAction(engine: GameEngine, actorPlayerId: string, actions: SelectHandTargetAction[]): SelectHandTargetAction {
-        return this.pickMax(actions, action => {
+    private pickHandTargetAction(engine: GameEngine, actorPlayerId: string, actions: SelectHandTargetAction[]): SelectHandTargetAction | null {
+        const pendingSelectedTargets = engine.state.pendingEffect?.selectedTargets ?? [];
+        const selectableActions = actions.filter(action => {
+            const targetPlayer = this.getPlayerById(engine, action.targetPlayerId);
+            const card = targetPlayer?.hand[action.handIndex];
+            return !!card && !pendingSelectedTargets.includes(card);
+        });
+        const candidateActions = selectableActions.length > 0 ? selectableActions : [];
+        if (candidateActions.length === 0) return null;
+
+        return this.pickMax(candidateActions, action => {
             const targetPlayer = this.getPlayerById(engine, action.targetPlayerId);
             const card = targetPlayer?.hand[action.handIndex];
             if (!card) return Number.NEGATIVE_INFINITY;
-
             const cardValue = this.getCardValue(card);
             const isOwnHand = action.targetPlayerId === actorPlayerId;
             return isOwnHand ? -cardValue : cardValue;
-        }) ?? actions[0];
+        }) ?? candidateActions[0];
     }
 
-    private pickZoneTargetAction(engine: GameEngine, actorPlayerId: string, actions: SelectZoneTargetAction[]): SelectZoneTargetAction {
+    private pickZoneTargetAction(engine: GameEngine, actorPlayerId: string, actions: SelectZoneTargetAction[]): SelectZoneTargetAction | null {
         const pendingActionType = engine.state.pendingEffect?.actionType;
         const pendingValue = engine.state.pendingEffect?.actionValue?.value;
         const targetBias = this.resolveZoneTargetBias(pendingActionType, pendingValue);
+        const selectedTargets = engine.state.pendingEffect?.selectedTargets ?? [];
 
-        return this.pickMax(actions, action => {
+        const selectableActions = actions.filter(action => {
             const targetPlayer = this.getPlayerById(engine, action.targetPlayerId);
-            if (!targetPlayer) return Number.NEGATIVE_INFINITY;
-            const targetZone = targetPlayer.unitZones[action.zoneIndex];
-            const unit = targetZone.unit;
-            if (!unit) return Number.NEGATIVE_INFINITY;
+            const targetZone = targetPlayer?.unitZones[action.zoneIndex];
+            return !!targetZone && !selectedTargets.includes(targetZone);
+        });
+        const candidateActions = selectableActions.length > 0 ? selectableActions : [];
+        if (candidateActions.length === 0) return null;
 
-            const zoneValue =
-                unit.cost * 10000 +
-                engine.getUnitPower(targetZone, targetPlayer) +
-                engine.getUnitHit(targetZone, targetPlayer) * 100;
+        if (pendingActionType === 'SACRIFICE_TO_BUFF') {
+            const ownCandidateActions = candidateActions.filter(action => action.targetPlayerId === actorPlayerId);
+            if (ownCandidateActions.length > 0) {
+                const selectedCount = selectedTargets.length;
+                if (selectedCount === 0) {
+                    return this.pickMin(ownCandidateActions, action => this.getZoneActionValue(engine, action)) ?? ownCandidateActions[0];
+                }
+                return this.pickMax(ownCandidateActions, action => this.getZoneActionValue(engine, action)) ?? ownCandidateActions[0];
+            }
+        }
+
+        return this.pickMax(candidateActions, action => {
+            const zoneValue = this.getZoneActionValue(engine, action);
+            if (zoneValue === Number.NEGATIVE_INFINITY) return zoneValue;
             const isOwnZone = action.targetPlayerId === actorPlayerId;
 
             if (targetBias === 'offense') return isOwnZone ? -zoneValue : zoneValue;
             if (targetBias === 'support') return isOwnZone ? zoneValue : -zoneValue;
             return zoneValue;
-        }) ?? actions[0];
+        }) ?? candidateActions[0];
     }
 
-    private pickTrashTargetAction(engine: GameEngine, actions: SelectTrashTargetAction[]): SelectTrashTargetAction {
-        return this.pickMax(actions, action => {
+    private pickTrashTargetAction(engine: GameEngine, actions: SelectTrashTargetAction[]): SelectTrashTargetAction | null {
+        const pendingSelectedTargets = engine.state.pendingEffect?.selectedTargets ?? [];
+        const selectableActions = actions.filter(action => {
+            const targetPlayer = this.getPlayerById(engine, action.targetPlayerId);
+            const card = targetPlayer?.trash[action.trashIndex];
+            return !!card && !pendingSelectedTargets.includes(card);
+        });
+        const candidateActions = selectableActions.length > 0 ? selectableActions : [];
+        if (candidateActions.length === 0) return null;
+
+        return this.pickMax(candidateActions, action => {
             const targetPlayer = this.getPlayerById(engine, action.targetPlayerId);
             const card = targetPlayer?.trash[action.trashIndex];
             if (!card) return Number.NEGATIVE_INFINITY;
@@ -298,17 +336,46 @@ export class BaselineBot {
             const actionType = engine.state.pendingEffect?.actionType;
             if (actionType === 'TRASH_SELF') return -cardValue;
             return cardValue;
-        }) ?? actions[0];
+        }) ?? candidateActions[0];
     }
 
-    private pickRevealedTargetAction(engine: GameEngine, actions: SelectRevealedTargetAction[]): SelectRevealedTargetAction {
+    private pickRevealedTargetAction(engine: GameEngine, actions: SelectRevealedTargetAction[]): SelectRevealedTargetAction | null {
+        const pendingSelectedTargets = engine.state.pendingEffect?.selectedTargets ?? [];
+        const selectableActions = actions.filter(action => {
+            const card = engine.state.revealedCards[action.revealedIndex];
+            return !!card && !pendingSelectedTargets.includes(card);
+        });
+        const candidateActions = selectableActions.length > 0 ? selectableActions : [];
+        if (candidateActions.length === 0) return null;
+
         const actionType = engine.state.pendingEffect?.actionType;
         const preferLow = actionType === 'DISCARD_FROM_DRAWN';
 
         return (preferLow
-            ? this.pickMin(actions, action => this.getCardValue(engine.state.revealedCards[action.revealedIndex]))
-            : this.pickMax(actions, action => this.getCardValue(engine.state.revealedCards[action.revealedIndex])))
-            ?? actions[0];
+            ? this.pickMin(candidateActions, action => this.getCardValue(engine.state.revealedCards[action.revealedIndex]))
+            : this.pickMax(candidateActions, action => this.getCardValue(engine.state.revealedCards[action.revealedIndex])))
+            ?? candidateActions[0];
+    }
+
+    private pickReadyConfirmAction(engine: GameEngine, actions: EngineAction[]): Extract<EngineAction, { type: 'CONFIRM_TARGETS' }> | null {
+        const confirmActions = this.filterByType(actions, 'CONFIRM_TARGETS');
+        if (confirmActions.length === 0) return null;
+
+        const pending = engine.state.pendingEffect;
+        const targetSchema = pending?.targetSchema;
+        if (!pending || !targetSchema) return confirmActions[0];
+
+        const requiredCount = targetSchema.count ?? 1;
+        if (targetSchema.selectMode === 'ALL' || pending.actionType === 'TAKE_ALL_REVEALED' || requiredCount <= 0) {
+            return confirmActions[0];
+        }
+
+        const selectedCount = pending.selectedTargets?.length ?? 0;
+        if (selectedCount >= requiredCount) {
+            return confirmActions[0];
+        }
+
+        return null;
     }
 
     private resolveZoneTargetBias(actionType: string | undefined, pendingValue: unknown): 'offense' | 'support' | 'neutral' {
@@ -328,6 +395,15 @@ export class BaselineBot {
         const power = card.power ?? 0;
         const hit = card.hit ?? 0;
         return card.cost * 10000 + power + hit * 100;
+    }
+
+    private getZoneActionValue(engine: GameEngine, action: SelectZoneTargetAction): number {
+        const targetPlayer = this.getPlayerById(engine, action.targetPlayerId);
+        if (!targetPlayer) return Number.NEGATIVE_INFINITY;
+        const targetZone = targetPlayer.unitZones[action.zoneIndex];
+        const unit = targetZone.unit;
+        if (!unit) return Number.NEGATIVE_INFINITY;
+        return unit.cost * 10000 + engine.getUnitPower(targetZone, targetPlayer) + engine.getUnitHit(targetZone, targetPlayer) * 100;
     }
 
     private getPlayerById(engine: GameEngine, playerId: string): PlayerState | undefined {

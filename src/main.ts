@@ -398,12 +398,20 @@ function renderGame() {
             const pending = game!.state.pendingEffect as any;
             const maxCount = pending?.targetSchema?.count || 0;
             const currentCount = pending.selectedTargets?.length || 0;
-            // Disable only if it's manual selection and we haven't reached the count
-            const canConfirm = maxCount === 0 || currentCount === maxCount || pending?.targetSchema?.selectMode === 'ALL';
+            const actorId = getActionOwnerPlayerId(game!);
+            const canConfirm = game!.getLegalActions(actorId).some(action => action.type === 'CONFIRM_TARGETS');
+            const sacrificeHint = pending?.actionType === 'SACRIFICE_TO_BUFF'
+                ? (currentCount === 0
+                    ? 'Step 1/2: Select the unit to trash.'
+                    : currentCount === 1
+                        ? 'Step 2/2: Select the unit to receive +2000 power.'
+                        : 'Selection complete. Confirm to resolve.')
+                : '';
 
             return `
             <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
                 <span style="animation: pulse 1s infinite;">SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
+                ${sacrificeHint ? `<span style="font-size: 0.85rem; opacity: 0.9;">${sacrificeHint}</span>` : ''}
                 <button id="confirm-targets-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'} style="background: ${canConfirm ? '#2ecc71' : '#636e72'}; border: none; padding: 5px 15px;">Confirm</button>
             </div>
             `;

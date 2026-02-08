@@ -469,25 +469,46 @@ export class GameEngine {
                 (targetSchema.count ?? 1) !== 1 ||
                 targetSchema.selectMode === 'ALL' ||
                 pending.actionType === 'TAKE_ALL_REVEALED';
+            const selectedTargets = pending.selectedTargets ?? [];
+            const requiredCount = targetSchema.count ?? 1;
+
+            const shouldAllowConfirm = (candidateTargets: any[]): boolean => {
+                if (!needsConfirm) return false;
+                if (targetSchema.selectMode === 'ALL' || pending.actionType === 'TAKE_ALL_REVEALED') return true;
+                if (requiredCount <= 0) return true;
+
+                const selectedCount = selectedTargets.length;
+                if (selectedCount >= requiredCount) return true;
+
+                // Rule 1.3.2: if remaining valid targets cannot fill the requirement, allow partial confirm.
+                const remainingSelectableCount = candidateTargets.filter(target => !selectedTargets.includes(target)).length;
+                return selectedCount + remainingSelectableCount < requiredCount;
+            };
 
             if (pending.validTargets === 'MY_TRASH') {
                 const targetPlayerId = pending.sourcePlayerId;
                 const targetPlayer = this.getPlayerById(targetPlayerId);
                 if (!targetPlayer) return;
-                targetPlayer.trash.forEach((_card, trashIndex) => {
+                const selectableTrashCards: any[] = [];
+                targetPlayer.trash.forEach((card, trashIndex) => {
+                    if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) return;
+                    selectableTrashCards.push(card);
                     actions.push({ type: 'SELECT_TRASH_TARGET', actorPlayerId: id, targetPlayerId, trashIndex });
                 });
-                if (needsConfirm) {
+                if (shouldAllowConfirm(selectableTrashCards)) {
                     actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
                 }
                 return;
             }
 
             if (pending.validTargets === 'REVEALED') {
-                this.state.revealedCards.forEach((_card, revealedIndex) => {
+                const selectableRevealedCards: any[] = [];
+                this.state.revealedCards.forEach((card, revealedIndex) => {
+                    if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) return;
+                    selectableRevealedCards.push(card);
                     actions.push({ type: 'SELECT_REVEALED_TARGET', actorPlayerId: id, revealedIndex });
                 });
-                if (needsConfirm) {
+                if (shouldAllowConfirm(selectableRevealedCards)) {
                     actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
                 }
                 return;
@@ -502,23 +523,28 @@ export class GameEngine {
                 const targetPlayer = this.getPlayerById(targetPlayerId);
                 if (!targetPlayer) return;
 
-                targetPlayer.hand.forEach((_card, handIndex) => {
+                const selectableHandCards: any[] = [];
+                targetPlayer.hand.forEach((card, handIndex) => {
+                    if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) return;
+                    selectableHandCards.push(card);
                     actions.push({ type: 'SELECT_HAND_TARGET', actorPlayerId: id, targetPlayerId, handIndex });
                 });
-                if (needsConfirm) {
+                if (shouldAllowConfirm(selectableHandCards)) {
                     actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
                 }
                 return;
             }
 
+            const selectableZones: UnitZoneState[] = [];
             this.state.players.forEach(targetPlayer => {
                 targetPlayer.unitZones.forEach((targetZone, zoneIndex) => {
                     if (TargetSelector.isValidTarget(this, targetSchema, context, targetZone)) {
+                        selectableZones.push(targetZone);
                         actions.push({ type: 'SELECT_ZONE_TARGET', actorPlayerId: id, targetPlayerId: targetPlayer.id, zoneIndex });
                     }
                 });
             });
-            if (needsConfirm) {
+            if (shouldAllowConfirm(selectableZones)) {
                 actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
             }
         });
