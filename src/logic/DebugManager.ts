@@ -6,6 +6,7 @@ import { RuleValidator } from './RuleValidator';
 export class DebugManager {
     game: GameEngine;
     renderCallback: () => void;
+    private debugCardCounter = 0;
 
     constructor(game: GameEngine, renderCallback: () => void) {
         this.game = game;
@@ -20,7 +21,8 @@ export class DebugManager {
     private getCard(id: string): Card | null {
         const card = DUMMY_CARDS.find(c => c.id === id);
         if (!card) return null;
-        return { ...card, id: `${card.id}_debug_${Date.now()}` };
+        this.debugCardCounter += 1;
+        return { ...card, id: `${card.id}_debug_${this.debugCardCounter}` };
     }
 
     setLeader(playerIndex: number, cardId: string) {

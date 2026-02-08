@@ -31,7 +31,7 @@ export class EffectManager {
         const item = {
             effect: effect,
             context: context,
-            id: `EPH_${Date.now()}_${Math.random()}`,
+            id: this.engine.createRuntimeId('EPH'),
             creationTime: currentStep,
             sourcePlayerId: context.player.id
         };
@@ -73,7 +73,7 @@ export class EffectManager {
         const queueItems = effectsToProcess.map((e: Effect, index: number) => ({
             effect: e,
             context: context,
-            id: `${sourceCard.id}_${activation}_${index}_${Date.now()}`,
+            id: this.engine.createRuntimeId(`${sourceCard.id}_${activation}_${index}`),
             creationTime: currentStep,
             sourcePlayerId: context.player.id
         }));

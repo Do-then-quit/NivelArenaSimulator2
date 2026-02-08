@@ -134,6 +134,10 @@ export interface GameContext {
     trashedUnit?: Card; // New: relevant for UNIT_TRASHED triggers
     trashedUnitOwner?: PlayerState; // New: identifying whose unit was trashed
     costPaymentCard?: Card;
+    costPaid?: boolean;
+    _optionalConfirmed?: boolean;
+    lastDrawnCards?: Card[];
+    discardedCount?: number;
 }
 
 export interface EffectQueueItem {
@@ -159,6 +163,14 @@ export type EngineAction =
     | { type: 'SELECT_TRASH_TARGET'; actorPlayerId: string; targetPlayerId: string; trashIndex: number }
     | { type: 'SELECT_REVEALED_TARGET'; actorPlayerId: string; revealedIndex: number }
     | { type: 'CONFIRM_TARGETS'; actorPlayerId: string };
+
+export interface EngineObservation {
+    actorPlayerId: string;
+    canAct: boolean;
+    interactionOwnerPlayerId: string | null;
+    legalActions: EngineAction[];
+    state: GameState;
+}
 
 export type ActionImplementation = (context: GameContext, params: any, targets: any[]) => void;
 
@@ -259,8 +271,11 @@ export interface PendingEffect {
     controllerPlayerId?: string; // Player who must provide input for this interaction
     actionType: string;
     actionValue: any;
-    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED'; // Simplified target constraint
+    effectDescription?: string;
+    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED' | 'LAST_DRAWN'; // Simplified target constraint
+    targetSchema?: TargetSchema;
     costToPay?: EffectCost;
+    costCardTypeFilter?: CardType;
     selectedTargets?: any[];
     revealedCards?: Card[];
     costPaidCount?: number; // Track how many items have been paid for the cost

@@ -3,7 +3,6 @@ import { GameEngine } from './logic/GameEngine';
 import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
 import { RuleValidator } from './logic/RuleValidator';
-import { TargetSelector } from './logic/TargetSelector';
 
 import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
@@ -256,11 +255,10 @@ function renderGame() {
         <h1>NivelArena</h1>
         ${game.state.interactionMode === 'SELECT_TARGET' ? (() => {
             const pending = game!.state.pendingEffect as any;
-            const fullEffect = pending._fullEffect;
-            const maxCount = fullEffect?.targets?.count || 0;
+            const maxCount = pending?.targetSchema?.count || 0;
             const currentCount = pending.selectedTargets?.length || 0;
             // Disable only if it's manual selection and we haven't reached the count
-            const canConfirm = maxCount === 0 || currentCount === maxCount || fullEffect?.targets?.selectMode === 'ALL';
+            const canConfirm = maxCount === 0 || currentCount === maxCount || pending?.targetSchema?.selectMode === 'ALL';
 
             return `
             <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
@@ -282,7 +280,7 @@ function renderGame() {
             const pending = game!.state.pendingEffect as any;
             const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
                 pending &&
-                TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
+                game!.isPendingCardTarget(c);
             return `
               <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''}" data-index="${i}">
                   ${renderCard(c)}
@@ -302,7 +300,7 @@ function renderGame() {
                 const pending = game!.state.pendingEffect as any;
                 const isTargetCandidate = game!.state.interactionMode === 'SELECT_TARGET' &&
                     pending &&
-                    TargetSelector.isValidTarget(game!, pending._fullEffect?.targets, pending._context, c);
+                    game!.isPendingCardTarget(c);
 
                 return `
               <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''}" draggable="${isMainPhase && game!.state.interactionMode === 'NORMAL'}" data-index="${i}">
@@ -336,7 +334,7 @@ function renderOptionalEffectModal() {
     if (!pending) return '';
 
     // Attempt to get description from full effect if available
-    const description = pending._fullEffect ? pending._fullEffect.description : 'Activate optional effect?';
+    const description = pending.effectDescription ?? 'Activate optional effect?';
 
     return `
         <div class="modal-overlay">
@@ -389,7 +387,7 @@ function renderRevealedCardsModal() {
     const pending = game.state.pendingEffect as any;
     const isSelecting = game.state.interactionMode === 'SELECT_TARGET' && pending?.validTargets === 'REVEALED';
     const isTakeAll = pending?.actionType === 'TAKE_ALL_REVEALED';
-    const filter = pending?._fullEffect?.targets?.filters?.[0];
+    const filter = pending?.targetSchema?.filters?.[0];
 
     return `
         <div class="modal-overlay">
@@ -761,7 +759,7 @@ function attachListeners() {
     if (game.state.interactionMode === 'SELECT_COST') {
         const handCards = document.querySelectorAll('.hand-zone .card-in-hand');
         const pending = game.state.pendingEffect as any;
-        const costFilter = pending?._fullEffect?.cost?.cardTypeFilter;
+        const costFilter = pending?.costCardTypeFilter;
 
         handCards.forEach((card, i) => {
             const el = card as HTMLElement;

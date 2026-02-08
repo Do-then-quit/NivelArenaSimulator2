@@ -151,7 +151,7 @@ export class TargetSelector {
 
         if (schema.selectMode === 'RANDOM') {
             const count = schema.count || 1;
-            const shuffled = [...candidates].sort(() => 0.5 - Math.random());
+            const shuffled = engine.shuffledCopy(candidates);
             return shuffled.slice(0, count);
         }
 

@@ -42,7 +42,7 @@ const buffPower: ActionImplementation = (ctx, params, targets) => {
             }
 
             target.buffs.push({
-                id: Math.random().toString(36),
+                id: ctx.machine.createRuntimeId('BUFF'),
                 sourceCard: ctx.sourceCard,
                 type: 'POWER',
                 value: value,
@@ -59,7 +59,7 @@ const buffHit: ActionImplementation = (ctx, params, targets) => {
         if (target && target.unit) {
             const value = params.value || 0;
             target.buffs.push({
-                id: Math.random().toString(36),
+                id: ctx.machine.createRuntimeId('BUFF'),
                 sourceCard: ctx.sourceCard,
                 type: 'HIT',
                 value: value,
@@ -156,7 +156,7 @@ const penetration: ActionImplementation = (ctx, params, _targets) => {
     // Penetration usually applies to the sourceCard's zone if it's an ATTACKER effect
     if (ctx.unitZone) {
         ctx.unitZone.buffs.push({
-            id: Math.random().toString(36),
+            id: ctx.machine.createRuntimeId('BUFF'),
             sourceCard: ctx.sourceCard,
             type: 'PENETRATION',
             value: params.value || 0,
@@ -169,7 +169,7 @@ const penetration: ActionImplementation = (ctx, params, _targets) => {
 const plunder: ActionImplementation = (ctx, params, _targets) => {
     if (ctx.unitZone) {
         ctx.unitZone.buffs.push({
-            id: Math.random().toString(36),
+            id: ctx.machine.createRuntimeId('BUFF'),
             sourceCard: ctx.sourceCard,
             type: 'PLUNDER',
             value: params.value || 0,
@@ -315,7 +315,7 @@ const setPower: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(target => {
         if (target && target.unit) {
             target.buffs.push({
-                id: Math.random().toString(36),
+                id: ctx.machine.createRuntimeId('BUFF'),
                 sourceCard: ctx.sourceCard,
                 type: 'POWER',
                 value: params.value,
@@ -334,7 +334,7 @@ const buffPowerAndDrawIfTrashed: ActionImplementation = (ctx, params, targets) =
             const buffValue = params.value || 0;
 
             target.buffs.push({
-                id: Math.random().toString(36),
+                id: ctx.machine.createRuntimeId('BUFF'),
                 sourceCard: ctx.sourceCard,
                 type: 'POWER',
                 value: buffValue,
@@ -366,6 +366,19 @@ const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
     const revealed = deck.splice(-count);
     ctx.machine.state.revealedCards = revealed;
 
+    const selectionEffect = {
+        activation: ActivationCondition.ACTIVE,
+        description: 'Choose card to hand',
+        action: { type: 'NONE', params: {} },
+        targets: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: 1,
+            filters: params.filter ? [params.filter] : [],
+            selectMode: 'MANUAL'
+        }
+    } as any;
+
     // Transition to interactive selection
     ctx.machine.state.interactionMode = 'SELECT_TARGET';
     ctx.machine.state.pendingEffect = {
@@ -374,24 +387,12 @@ const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
         controllerPlayerId: player.id,
         actionType: 'PICK_REVEALED',
         actionValue: params,
+        effectDescription: selectionEffect.description,
         validTargets: 'REVEALED',
+        targetSchema: selectionEffect.targets,
         selectedTargets: []
-    } as any;
-
-    // Attach full effect for validation and execution
-    (ctx.machine.state.pendingEffect as any)._fullEffect = {
-        activation: ActivationCondition.ACTIVE, // pseudo
-        description: "Choose card to hand",
-        action: { type: 'NONE', params: {} }, // The actual move is handled in GameEngine.confirmTargets
-        targets: {
-            scope: 'REVEALED',
-            type: 'CARD',
-            count: 1,
-            filters: params.filter ? [params.filter] : [],
-            selectMode: 'MANUAL'
-        }
     };
-    (ctx.machine.state.pendingEffect as any)._context = ctx;
+    ctx.machine.setPendingRuntime(ctx, selectionEffect);
     ctx.machine.setInteractionOwner(player.id);
 
     console.log(`Revealed top ${revealed.length} cards. Waiting for selection.`);
@@ -407,6 +408,19 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
     const revealed = deck.splice(-count);
     ctx.machine.state.revealedCards = revealed;
 
+    const selectionEffect = {
+        activation: ActivationCondition.ACTIVE,
+        description: 'Review revealed cards',
+        action: { type: 'NONE', params: {} },
+        targets: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: 0,
+            filters: params.filter ? [params.filter] : [],
+            selectMode: 'ALL'
+        }
+    } as any;
+
     // Transition to interactive selection (Review mode)
     ctx.machine.state.interactionMode = 'SELECT_TARGET';
     ctx.machine.state.pendingEffect = {
@@ -415,24 +429,12 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
         controllerPlayerId: player.id,
         actionType: 'TAKE_ALL_REVEALED',
         actionValue: params,
+        effectDescription: selectionEffect.description,
         validTargets: 'REVEALED',
+        targetSchema: selectionEffect.targets,
         selectedTargets: [] // Not used for selection, but for consistency
-    } as any;
-
-    // Attach full effect for UI filtering and execution
-    (ctx.machine.state.pendingEffect as any)._fullEffect = {
-        activation: ActivationCondition.ACTIVE,
-        description: "Review revealed cards",
-        action: { type: 'NONE', params: {} },
-        targets: {
-            scope: 'REVEALED',
-            type: 'CARD',
-            count: 0, // 0 = All (for UI display purposes)
-            filters: params.filter ? [params.filter] : [],
-            selectMode: 'ALL'
-        }
     };
-    (ctx.machine.state.pendingEffect as any)._context = ctx;
+    ctx.machine.setPendingRuntime(ctx, selectionEffect);
     ctx.machine.setInteractionOwner(player.id);
 
     console.log(`Revealed top ${revealed.length} cards for review. Waiting for confirmation.`);
@@ -515,11 +517,12 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
         controllerPlayerId: ctx.player.id,
         actionType: 'DESTROY_UNIT_WITH_HIT_COST',
         actionValue: { hitCost: hit },
+        effectDescription: 'Destroy selected unit after paying hit cost',
         costToPay: { type: 'TRASH_HAND', amount: hit },
         costPaidCount: 0,
         selectedTargets: [targetZone]
-    } as any;
-    (ctx.machine.state.pendingEffect as any)._context = ctx;
+    };
+    ctx.machine.setPendingRuntime(ctx, null);
     ctx.machine.setInteractionOwner(ctx.player.id);
     console.log(`Entered Cost Selection Mode for ${ctx.sourceCard.name}`);
 };
@@ -566,7 +569,7 @@ const sacrificeToBuff: ActionImplementation = (ctx, params, targets) => {
     if (buffTarget && buffTarget.unit) {
         const value = params.powerValue || 0;
         buffTarget.buffs.push({
-            id: Math.random().toString(36),
+            id: ctx.machine.createRuntimeId('BUFF'),
             sourceCard: ctx.sourceCard,
             type: 'POWER',
             value: value,
@@ -616,6 +619,18 @@ const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => {
 
     if (drawnCards.length === 0) return;
 
+    const selectionEffect = {
+        activation: ActivationCondition.ACTIVE,
+        description: 'Choose card to discard',
+        action: { type: 'DISCARD', params: { target: 'SELF', count: discardCount } },
+        targets: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: discardCount,
+            selectMode: 'MANUAL'
+        }
+    } as any;
+
     // Now, initiate discard selection from drawn cards
     ctx.machine.state.revealedCards = drawnCards;
     ctx.machine.state.interactionMode = 'SELECT_TARGET';
@@ -625,22 +640,12 @@ const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => {
         controllerPlayerId: player.id,
         actionType: 'DISCARD_FROM_DRAWN',
         actionValue: { discardCount },
+        effectDescription: selectionEffect.description,
         validTargets: 'REVEALED',
+        targetSchema: selectionEffect.targets,
         selectedTargets: []
-    } as any;
-
-    (ctx.machine.state.pendingEffect as any)._fullEffect = {
-        activation: 'AUTO' as any,
-        description: "Choose card to discard",
-        action: { type: 'DISCARD', params: { target: 'SELF', count: discardCount } },
-        targets: {
-            scope: 'REVEALED',
-            type: 'CARD',
-            count: discardCount,
-            selectMode: 'MANUAL'
-        }
     };
-    (ctx.machine.state.pendingEffect as any)._context = ctx;
+    ctx.machine.setPendingRuntime(ctx, selectionEffect);
     ctx.machine.setInteractionOwner(player.id);
 
     console.log(`Waiting for ${player.name} to select ${discardCount} card(s) to discard from drawn cards.`);

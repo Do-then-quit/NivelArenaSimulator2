@@ -1,15 +1,39 @@
-﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext, Effect } from './types';
+﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext, Effect, TargetSchema, PendingEffect } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
+import { createRandomProvider, RandomProvider } from './random';
 
 type EngineAction = import('./types').EngineAction;
+type EngineObservation = import('./types').EngineObservation;
+
+interface GameEngineOptions {
+    seed?: number;
+    randomProvider?: RandomProvider;
+}
+
+interface PendingRuntimeState {
+    context: GameContext;
+    effect: Effect | null;
+}
 
 export class GameEngine {
     state: GameState;
     effectManager: EffectManager;
+    private readonly random: RandomProvider;
+    private runtimeIdCounter = 0;
+    private pendingRuntime: PendingRuntimeState | null = null;
 
-    constructor(player1Name: string, player2Name: string, deck1: Card[], deck2: Card[], leader1: Card, leader2: Card) {
+    constructor(
+        player1Name: string,
+        player2Name: string,
+        deck1: Card[],
+        deck2: Card[],
+        leader1: Card,
+        leader2: Card,
+        options: GameEngineOptions = {}
+    ) {
+        this.random = createRandomProvider(options.seed, options.randomProvider);
         this.effectManager = new EffectManager(this);
         this.state = {
             players: [
@@ -67,6 +91,32 @@ export class GameEngine {
         // console.log(`[Queue] Sorted. Head: ${this.state.effectQueue[0]?.effect.description}`);
     }
 
+    private nextRandom(): number {
+        return this.random.next();
+    }
+
+    public randomInt(maxExclusive: number): number {
+        if (maxExclusive <= 0) return 0;
+        return Math.floor(this.nextRandom() * maxExclusive);
+    }
+
+    public createRuntimeId(prefix: string): string {
+        this.runtimeIdCounter += 1;
+        return `${prefix}_${this.runtimeIdCounter.toString(36)}_${this.randomInt(0x7fffffff).toString(36)}`;
+    }
+
+    public shuffleInPlace<T>(items: T[]): T[] {
+        for (let i = items.length - 1; i > 0; i--) {
+            const j = this.randomInt(i + 1);
+            [items[i], items[j]] = [items[j], items[i]];
+        }
+        return items;
+    }
+
+    public shuffledCopy<T>(items: T[]): T[] {
+        return this.shuffleInPlace([...items]);
+    }
+
     private createPlayer(name: string, deck: Card[], leader: Card): PlayerState {
         // Strict Rule: Decks cannot contain Leaders.
         const validDeck = deck.filter(c => c.type !== CardType.LEADER);
@@ -75,7 +125,7 @@ export class GameEngine {
         const leaderCopy = JSON.parse(JSON.stringify(leader));
 
         return {
-            id: Math.random().toString(36).substring(7),
+            id: this.createRuntimeId('PLAYER'),
             name,
             deck: this.shuffle([...validDeck]),
             hand: [],
@@ -93,11 +143,7 @@ export class GameEngine {
     }
 
     private shuffle(deck: Card[]): Card[] {
-        for (let i = deck.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [deck[i], deck[j]] = [deck[j], deck[i]];
-        }
-        return deck;
+        return this.shuffleInPlace(deck);
     }
 
     private startGame() {
@@ -175,6 +221,75 @@ export class GameEngine {
         return context.player.id;
     }
 
+    private mapScopeToValidTargets(scope: TargetSchema['scope']): PendingEffect['validTargets'] {
+        switch (scope) {
+            case 'SHARED_LANE':
+            case 'MY_TRASH':
+            case 'MY_HAND':
+            case 'OPP_HAND':
+            case 'REVEALED':
+            case 'LAST_DRAWN':
+                return scope;
+            default:
+                return undefined;
+        }
+    }
+
+    public setPendingRuntime(context: GameContext | null, effect: Effect | null = null) {
+        if (!this.state.pendingEffect || !context) {
+            this.pendingRuntime = null;
+            return;
+        }
+
+        this.pendingRuntime = { context, effect };
+
+        if (effect) {
+            this.state.pendingEffect.effectDescription = effect.description;
+            this.state.pendingEffect.targetSchema = effect.targets;
+            this.state.pendingEffect.costCardTypeFilter = effect.cost?.cardTypeFilter;
+        }
+    }
+
+    private getPendingRuntime(): PendingRuntimeState | null {
+        if (!this.state.pendingEffect) return null;
+        return this.pendingRuntime;
+    }
+
+    private clearPendingRuntime() {
+        this.pendingRuntime = null;
+    }
+
+    public getSerializableState(): GameState {
+        return JSON.parse(JSON.stringify(this.state));
+    }
+
+    public getObservation(actorPlayerId: string): EngineObservation {
+        const legalActions = this.getLegalActions(actorPlayerId);
+        return {
+            actorPlayerId,
+            canAct: legalActions.length > 0,
+            interactionOwnerPlayerId: this.getInteractionOwnerId(),
+            legalActions,
+            state: this.getSerializableState(),
+        };
+    }
+
+    public isPendingCardTarget(card: Card): boolean {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return false;
+        const runtime = this.getPendingRuntime();
+        const schema = this.state.pendingEffect.targetSchema;
+        if (!runtime || !schema) return false;
+        return TargetSelector.isValidTarget(this, schema, runtime.context, card);
+    }
+
+    public isPendingZoneTarget(zone: UnitZoneState): boolean {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return false;
+        const runtime = this.getPendingRuntime();
+        const schema = this.state.pendingEffect.targetSchema;
+        if (!runtime || !schema) return false;
+        return TargetSelector.isValidTarget(this, schema, runtime.context, zone);
+    }
+
     public getLegalActions(actorPlayerId?: string): EngineAction[] {
         if (this.state.winner) return [];
 
@@ -196,7 +311,7 @@ export class GameEngine {
 
                 if (id !== this.currentPlayer.id) return;
 
-                if (RuleValidator.canEndPhase(this, actor).valid && this.state.phase !== Phase.BLOCK) {
+                if (RuleValidator.canEndPhase(this, actor).valid) {
                     actions.push({ type: 'NEXT_PHASE', actorPlayerId: id });
                 }
 
@@ -243,7 +358,7 @@ export class GameEngine {
                 return;
             }
 
-            const pending = this.state.pendingEffect as any;
+            const pending = this.state.pendingEffect;
             if (!pending) return;
 
             if (this.state.interactionMode === 'SELECT_OPTIONAL') {
@@ -255,7 +370,7 @@ export class GameEngine {
             if (this.state.interactionMode === 'SELECT_COST') {
                 const payer = this.getPlayerById(pending.sourcePlayerId) ?? actor;
                 if (payer.id !== id) return;
-                const costFilter = pending?._fullEffect?.cost?.cardTypeFilter;
+                const costFilter = pending.costCardTypeFilter;
                 payer.hand.forEach((card, handIndex) => {
                     if (!costFilter || card.type === costFilter) {
                         actions.push({ type: 'SELECT_COST_HAND', actorPlayerId: id, handIndex });
@@ -266,13 +381,14 @@ export class GameEngine {
 
             if (this.state.interactionMode !== 'SELECT_TARGET') return;
 
-            const effect = pending._fullEffect;
-            const context = pending._context;
-            if (!effect) return;
+            const runtime = this.getPendingRuntime();
+            const context = runtime?.context;
+            const targetSchema = pending.targetSchema;
+            if (!context || !targetSchema) return;
 
             const needsConfirm =
-                (effect.targets?.count ?? 1) !== 1 ||
-                effect.targets?.selectMode === 'ALL' ||
+                (targetSchema.count ?? 1) !== 1 ||
+                targetSchema.selectMode === 'ALL' ||
                 pending.actionType === 'TAKE_ALL_REVEALED';
 
             if (pending.validTargets === 'MY_TRASH') {
@@ -318,7 +434,7 @@ export class GameEngine {
 
             this.state.players.forEach(targetPlayer => {
                 targetPlayer.unitZones.forEach((targetZone, zoneIndex) => {
-                    if (TargetSelector.isValidTarget(this, effect.targets, context, targetZone)) {
+                    if (TargetSelector.isValidTarget(this, targetSchema, context, targetZone)) {
                         actions.push({ type: 'SELECT_ZONE_TARGET', actorPlayerId: id, targetPlayerId: targetPlayer.id, zoneIndex });
                     }
                 });
@@ -770,7 +886,7 @@ export class GameEngine {
 
     // checkPotentialTargets moved to RuleValidator
 
-    initiateCostSelection(effect: any, context: any) {
+    initiateCostSelection(effect: Effect, context: GameContext) {
         const controllerPlayerId = context.player.id;
         this.state.interactionMode = 'SELECT_COST';
         this.state.pendingEffect = {
@@ -779,17 +895,18 @@ export class GameEngine {
             controllerPlayerId,
             actionType: effect.action.type,
             actionValue: effect.action.params,
+            effectDescription: effect.description,
             costToPay: effect.cost,
+            costCardTypeFilter: effect.cost?.cardTypeFilter,
             costPaidCount: 0
         };
-        (this.state.pendingEffect as any)._fullEffect = effect;
-        (this.state.pendingEffect as any)._context = context;
+        this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
 
         console.log("Entered Cost Selection Mode for " + context.sourceCard.name);
     }
 
-    initiateOptionalSelection(effect: any, context: any) {
+    initiateOptionalSelection(effect: Effect, context: GameContext) {
         const controllerPlayerId = context.player.id;
         this.state.interactionMode = 'SELECT_OPTIONAL';
         this.state.pendingEffect = {
@@ -797,10 +914,10 @@ export class GameEngine {
             sourcePlayerId: context.player.id,
             controllerPlayerId,
             actionType: effect.action.type,
-            actionValue: effect.action.params
+            actionValue: effect.action.params,
+            effectDescription: effect.description
         };
-        (this.state.pendingEffect as any)._fullEffect = effect;
-        (this.state.pendingEffect as any)._context = context;
+        this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
         console.log("Entered Optional Selection Mode for " + context.sourceCard.name);
     }
@@ -808,21 +925,22 @@ export class GameEngine {
     resolveOptionalEffect(confirm: boolean) {
         if (this.state.interactionMode !== 'SELECT_OPTIONAL' || !this.state.pendingEffect) return;
 
-        const pending = this.state.pendingEffect as any;
-        const effect = pending._fullEffect;
-        const context = pending._context;
+        const runtime = this.getPendingRuntime();
+        const effect = runtime?.effect;
+        const context = runtime?.context;
 
         // Reset Mode
         this.state.interactionMode = 'NORMAL';
         this.state.pendingEffect = null;
+        this.clearPendingRuntime();
         this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
 
-        if (confirm) {
+        if (confirm && effect && context) {
             console.log("Optional Effect confirmed.");
             // Proceed with effect processing (mark as confirmed to avoid re-looping)
             context._optionalConfirmed = true;
             this.effectManager.processEffect(effect, context);
-        } else {
+        } else if (!confirm) {
             console.log("Optional Effect skipped.");
         }
 
@@ -840,7 +958,10 @@ export class GameEngine {
         if (this.state.interactionMode !== 'SELECT_COST' || !this.state.pendingEffect) return;
         if (!this.canActorInput(payerPlayerId)) return;
 
-        const pending = this.state.pendingEffect as any;
+        const pending = this.state.pendingEffect;
+        const runtime = this.getPendingRuntime();
+        const context = runtime?.context;
+        const effect = runtime?.effect;
         const payer = this.getPlayerById(payerPlayerId);
         if (!payer) return;
         if (pending.sourcePlayerId !== payer.id) return;
@@ -858,8 +979,9 @@ export class GameEngine {
             pending.costPaidCount++;
 
             // Store discarded card for effect context (e.g. for ST03-013 comparison)
-            const context = (this.state.pendingEffect as any)._context;
-            context.costPaymentCard = discarded;
+            if (context) {
+                context.costPaymentCard = discarded;
+            }
 
         } else if (costType === 'SHUFFLE_HAND_TO_DECK') {
             if (handIndex < 0 || handIndex >= payer.hand.length) return;
@@ -872,14 +994,13 @@ export class GameEngine {
             pending.costPaidCount++;
         }
 
-        const requiredAmount = pending.costToPay.amount || 1;
+        const requiredAmount = pending.costToPay?.amount || 1;
         if ((pending.costPaidCount || 0) < requiredAmount) {
             console.log(`Partial cost paid: ${pending.costPaidCount}/${requiredAmount}`);
             return;
         }
 
         if (pending.actionType === 'DESTROY_UNIT_WITH_HIT_COST') {
-            const context = pending._context;
             const targetZone = pending.selectedTargets?.[0];
             if (targetZone && targetZone.unit) {
                 const owner = this.state.players.find(p => p.unitZones.includes(targetZone));
@@ -889,13 +1010,19 @@ export class GameEngine {
                     console.log(`Paid hit cost and destroyed ${targetName}.`);
                 }
             }
-            this.handleEffectCompletion(context, pending);
+            if (context) {
+                this.handleEffectCompletion(context, pending);
+            } else {
+                this.resetInteractionMode();
+            }
             return;
         }
 
         // Resume Effect Execution
-        const effect = pending._fullEffect;
-        const context = pending._context;
+        if (!effect || !context) {
+            this.resetInteractionMode();
+            return;
+        }
         context.costPaid = true; // Mark as paid to avoid loop
 
         this.effectManager.processEffect(effect, context);
@@ -919,7 +1046,9 @@ export class GameEngine {
         this.handleEffectCompletion(context, pending);
     }
 
-    initiateTargetSelection(effect: any, context: any) {
+    initiateTargetSelection(effect: Effect, context: GameContext) {
+        if (!effect.targets) return;
+        const targetSchema = effect.targets;
         const controllerPlayerId = this.resolveTargetSelectionController(effect, context);
         this.state.interactionMode = 'SELECT_TARGET';
         // Create a PendingEffect state to store context until target is selected
@@ -929,14 +1058,12 @@ export class GameEngine {
             controllerPlayerId,
             actionType: effect.action.type, // redundant but useful for UI
             actionValue: effect.action.params,
-            validTargets: effect.targets.scope, // specific simplified scope for UI
+            effectDescription: effect.description,
+            validTargets: this.mapScopeToValidTargets(targetSchema.scope),
+            targetSchema,
             selectedTargets: []
         };
-        // We need to store the full effect object to resume execution
-        // But GameState must be serializable. Ideally we store the Effect ID or index.
-        // For prototype, we'll attach the ephemeral effect object to the state instance (bad practice for serialization but ok for now)
-        (this.state.pendingEffect as any)._fullEffect = effect;
-        (this.state.pendingEffect as any)._context = context;
+        this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
 
         console.log("Entered Selection Mode for " + context.sourceCard.name);
@@ -954,7 +1081,7 @@ export class GameEngine {
         const attackCostEffect = this.getAttackCostEffect(attackerZone);
         if (attackCostEffect && !(attackerZone as any)._attackCostPaid) {
             this.initiateAttackCostSelection(attackCostEffect, {
-                sourceCard: attackerZone.unit,
+                sourceCard: attackerZone.unit!,
                 player: this.currentPlayer,
                 opponent: this.opponentPlayer,
                 unitZone: attackerZone,
@@ -1134,7 +1261,7 @@ export class GameEngine {
                         activation: 'AUTO_RESOLVED_COMBAT' as any, // Pseudo-condition or use ATTACKER
                         action: { type: 'DAMAGE', params: { value: penValue } },
                         description: `Penetration Damage: ${penValue}`,
-                        id: `PEN_${Date.now()}`
+                        id: this.createRuntimeId('PEN')
                     };
                     // Queue it directly? Or use processEffects with source?
                     // Use processEffects with a custom activation? 
@@ -1168,7 +1295,7 @@ export class GameEngine {
                         activation: 'AUTO_RESOLVED_COMBAT' as any,
                         action: { type: 'DRAW', params: { count: pluValue } },
                         description: `Plunder Draw: ${pluValue}`,
-                        id: `PLU_${Date.now()}`
+                        id: this.createRuntimeId('PLU')
                     };
                     this.effectManager.queueEphemeralEffect(pluEffect, {
                         sourceCard: attackerZone.unit!,
@@ -1524,7 +1651,7 @@ export class GameEngine {
         });
     }
 
-    public initiateAttackCostSelection(effect: any, context: any, attackerZoneIndex: number) {
+    public initiateAttackCostSelection(effect: Effect, context: GameContext, attackerZoneIndex: number) {
         const controllerPlayerId = context.player.id;
         this.state.interactionMode = 'SELECT_COST';
         this.state.pendingEffect = {
@@ -1533,11 +1660,12 @@ export class GameEngine {
             controllerPlayerId,
             actionType: 'ATTACK_COST',
             actionValue: { attackerZoneIndex },
+            effectDescription: effect.description,
             costToPay: effect.cost || { type: 'TRASH_HAND', amount: 1 },
+            costCardTypeFilter: effect.cost?.cardTypeFilter,
             selectedTargets: []
-        } as any;
-        (this.state.pendingEffect as any)._fullEffect = effect;
-        (this.state.pendingEffect as any)._context = context;
+        };
+        this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
         console.log("Entered Attack Cost Selection Mode for " + context.sourceCard.name);
     }
@@ -1748,17 +1876,20 @@ export class GameEngine {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
         // This logic handles the manual selection input from the UI
-        const pending = this.state.pendingEffect as any;
-        const effect = pending._fullEffect;
-        const context = pending._context;
+        const pending = this.state.pendingEffect;
+        const runtime = this.getPendingRuntime();
+        const effect = runtime?.effect;
+        const context = runtime?.context;
+        const targetSchema = pending.targetSchema;
+        if (!effect || !context || !targetSchema) return;
         const targetPlayer = this.getPlayerById(targetPlayerId);
         if (!targetPlayer) return;
         if (zoneIndex < 0 || zoneIndex >= targetPlayer.unitZones.length) return;
         const targetZone = targetPlayer.unitZones[zoneIndex];
-        const scope = effect.targets?.scope;
+        const scope = targetSchema.scope;
 
         // NEW: Full validation using TargetSelector
-        if (!TargetSelector.isValidTarget(this, effect.targets, context, targetZone)) {
+        if (!TargetSelector.isValidTarget(this, targetSchema, context, targetZone)) {
             console.log("Invalid Target Selected. Mode maintained.");
             return;
         }
@@ -1780,14 +1911,15 @@ export class GameEngine {
         }
 
         // Multi-target logic
-        const maxCount = effect.targets?.count || 1;
+        const maxCount = targetSchema.count || 1;
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (maxCount > 1) {
-            if (!pending.selectedTargets.includes(targetZone)) {
-                pending.selectedTargets.push(targetZone);
-                console.log(`Target added. ${pending.selectedTargets.length}/${maxCount}`);
+            if (!selectedTargets.includes(targetZone)) {
+                selectedTargets.push(targetZone);
+                console.log(`Target added. ${selectedTargets.length}/${maxCount}`);
             } else {
-                pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== targetZone);
-                console.log(`Target removed. ${pending.selectedTargets.length}/${maxCount}`);
+                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetZone);
+                console.log(`Target removed. ${(pending.selectedTargets ?? []).length}/${maxCount}`);
             }
             // Do not execute yet. Wait for Confirm.
             return;
@@ -1801,9 +1933,12 @@ export class GameEngine {
     public confirmTargets() {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
-        const pending = this.state.pendingEffect as any;
-        const effect = pending._fullEffect;
-        const context = pending._context;
+        const pending = this.state.pendingEffect;
+        const runtime = this.getPendingRuntime();
+        const effect = runtime?.effect;
+        const context = runtime?.context;
+        const targetSchema = pending.targetSchema;
+        if (!effect || !context || !targetSchema) return;
 
         // Validation - can be empty if no valid targets were found among revealed
 
@@ -1811,7 +1946,7 @@ export class GameEngine {
         if (pending.actionType === 'PICK_REVEALED') {
             const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
             if (player) {
-                pending.selectedTargets.forEach((card: any) => {
+                (pending.selectedTargets ?? []).forEach((card: any) => {
                     const idx = this.state.revealedCards.indexOf(card);
                     if (idx !== -1) {
                         player.hand.push(card);
@@ -1831,7 +1966,7 @@ export class GameEngine {
         if (pending.actionType === 'TAKE_ALL_REVEALED') {
             const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
             if (player) {
-                const candidates = TargetSelector.resolve(this, effect.targets, context);
+                const candidates = TargetSelector.resolve(this, targetSchema, context);
                 candidates.forEach(card => {
                     const idx = this.state.revealedCards.indexOf(card);
                     if (idx !== -1) {
@@ -1849,7 +1984,7 @@ export class GameEngine {
         }
 
         // Execute Effect via Manager
-        this.effectManager.executeEffect(effect, context, pending.selectedTargets);
+        this.effectManager.executeEffect(effect, context, pending.selectedTargets ?? []);
 
         this.handleEffectCompletion(context, pending);
     }
@@ -1857,7 +1992,12 @@ export class GameEngine {
     public selectTrashTarget(trashIndex: number, targetPlayerId?: string) {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
-        const pending = this.state.pendingEffect as any;
+        const pending = this.state.pendingEffect;
+        const runtime = this.getPendingRuntime();
+        const effect = runtime?.effect;
+        const context = runtime?.context;
+        const targetSchema = pending.targetSchema;
+        if (!effect || !context || !targetSchema) return;
         // Verify scope is MY_TRASH
         if (pending.validTargets !== 'MY_TRASH') {
             console.log("Invalid Target: Expected Trash selection.");
@@ -1877,23 +2017,24 @@ export class GameEngine {
         const card = player.trash[trashIndex];
 
         // Validate with TargetSelector
-        if (!TargetSelector.isValidTarget(this, pending._fullEffect.targets, pending._context, card)) {
+        if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) {
             console.log("Invalid Trash Target Selected.");
             return;
         }
 
         // Multi-target logic for trash
-        const maxCount = pending._fullEffect.targets?.count || 1;
+        const maxCount = targetSchema.count || 1;
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (maxCount > 1) {
-            if (!pending.selectedTargets.includes(card)) {
-                pending.selectedTargets.push(card);
+            if (!selectedTargets.includes(card)) {
+                selectedTargets.push(card);
             } else {
-                pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== card);
+                pending.selectedTargets = selectedTargets.filter((t: any) => t !== card);
             }
         } else {
             // Execute
-            this.effectManager.executeEffect(pending._fullEffect, pending._context, [card]);
-            this.handleEffectCompletion(pending._context, pending);
+            this.effectManager.executeEffect(effect, context, [card]);
+            this.handleEffectCompletion(context, pending);
         }
     }
 
@@ -1905,9 +2046,12 @@ export class GameEngine {
     public selectHandTargetByPlayerId(handIndex: number, targetPlayerId: string) {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
 
-        const pending = this.state.pendingEffect as any;
-        const effect = pending._fullEffect;
-        const context = pending._context;
+        const pending = this.state.pendingEffect;
+        const runtime = this.getPendingRuntime();
+        const effect = runtime?.effect;
+        const context = runtime?.context;
+        const targetSchema = pending.targetSchema;
+        if (!effect || !context || !targetSchema) return;
 
         const targetPlayer = this.getPlayerById(targetPlayerId);
         if (!targetPlayer) return;
@@ -1916,18 +2060,19 @@ export class GameEngine {
         const targetCard = targetPlayer.hand[handIndex];
 
         // Validate
-        if (!TargetSelector.isValidTarget(this, effect.targets, context, targetCard)) {
+        if (!TargetSelector.isValidTarget(this, targetSchema, context, targetCard)) {
             console.log("Invalid Hand Target Selected.");
             return;
         }
 
         // Multi-target logic for hand
-        const maxCount = effect.targets?.count || 1;
+        const maxCount = targetSchema.count || 1;
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (maxCount > 1) {
-            if (!pending.selectedTargets.includes(targetCard)) {
-                pending.selectedTargets.push(targetCard);
+            if (!selectedTargets.includes(targetCard)) {
+                selectedTargets.push(targetCard);
             } else {
-                pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== targetCard);
+                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetCard);
             }
         } else {
             // Execute Effect via Manager
@@ -1941,25 +2086,29 @@ export class GameEngine {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
         if (index < 0 || index >= this.state.revealedCards.length) return;
 
-        const pending = this.state.pendingEffect as any;
+        const pending = this.state.pendingEffect;
+        const runtime = this.getPendingRuntime();
+        const effect = runtime?.effect;
+        const context = runtime?.context;
+        const targetSchema = pending.targetSchema;
+        if (!effect || !context || !targetSchema) return;
         if (pending.validTargets !== 'REVEALED') return;
 
         const card = this.state.revealedCards[index];
-        const effect = pending._fullEffect;
-        const context = pending._context;
 
         // Validate
-        if (!TargetSelector.isValidTarget(this, effect.targets, context, card)) {
+        if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) {
             console.log("Invalid Revealed Target Selected.");
             return;
         }
 
-        const maxCount = effect.targets?.count || 1;
+        const maxCount = targetSchema.count || 1;
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (maxCount > 1) {
-            if (!pending.selectedTargets.includes(card)) {
-                pending.selectedTargets.push(card);
+            if (!selectedTargets.includes(card)) {
+                selectedTargets.push(card);
             } else {
-                pending.selectedTargets = pending.selectedTargets.filter((t: any) => t !== card);
+                pending.selectedTargets = selectedTargets.filter((t: any) => t !== card);
             }
         } else {
             // Execute
@@ -1986,7 +2135,7 @@ export class GameEngine {
         }
     }
 
-    private handleEffectCompletion(context: any, currentPending: any) {
+    private handleEffectCompletion(context: GameContext, currentPending: GameState['pendingEffect']) {
         console.log(`[GameEngine] Handling completion for ${context.sourceCard.name}`);
         // Queue Architecture: If a new interaction mode started, it means the processed effect caused a trigger.
         // We do NOTHING here. The queue already has the remaining effects.
@@ -2001,6 +2150,7 @@ export class GameEngine {
     private resetInteractionMode() {
         this.state.interactionMode = 'NORMAL';
         this.state.pendingEffect = null;
+        this.clearPendingRuntime();
         this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
 
         // Resume global queue
@@ -2009,4 +2159,6 @@ export class GameEngine {
 
 
 }
+
+
 
