@@ -1,0 +1,63 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+    DEFAULT_PHASE0_MANIFEST,
+    loadPhase0Manifest,
+    resolvePhase0ManifestPath,
+} from '../../scripts/ai/phase0_manifest';
+
+const tempDirs: string[] = [];
+
+afterEach(() => {
+    while (tempDirs.length > 0) {
+        const target = tempDirs.pop();
+        if (!target) continue;
+        fs.rmSync(target, { recursive: true, force: true });
+    }
+});
+
+describe('Phase0 Manifest', () => {
+    it('resolves repository default manifest path when available', () => {
+        const resolved = resolvePhase0ManifestPath();
+        expect(resolved).toBeTruthy();
+        expect(resolved?.endsWith('phase0.manifest.json')).toBe(true);
+    });
+
+    it('loads default values when manifest path is omitted', () => {
+        const manifest = loadPhase0Manifest(undefined);
+        expect(manifest.version).toBe(DEFAULT_PHASE0_MANIFEST.version);
+        expect(manifest.bench.games).toBe(DEFAULT_PHASE0_MANIFEST.bench.games);
+        expect(manifest.ladder.entrants).toEqual(DEFAULT_PHASE0_MANIFEST.ladder.entrants);
+    });
+
+    it('merges partial manifest over defaults', () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'phase0-manifest-'));
+        tempDirs.push(dir);
+
+        const customPath = path.join(dir, 'manifest.json');
+        fs.writeFileSync(
+            customPath,
+            JSON.stringify({
+                version: 'custom-v1',
+                bench: {
+                    games: 3,
+                    outputPath: 'artifacts/custom/bench.json',
+                },
+                regression: {
+                    includeBotSoak: false,
+                },
+            }),
+            'utf8',
+        );
+
+        const manifest = loadPhase0Manifest(customPath);
+        expect(manifest.version).toBe('custom-v1');
+        expect(manifest.bench.games).toBe(3);
+        expect(manifest.bench.startSeed).toBe(DEFAULT_PHASE0_MANIFEST.bench.startSeed);
+        expect(manifest.regression.includeBotSoak).toBe(false);
+        expect(manifest.regression.vitestFiles).toEqual(DEFAULT_PHASE0_MANIFEST.regression.vitestFiles);
+    });
+});
+

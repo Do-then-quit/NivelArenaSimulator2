@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { BaselineBot } from '../../src/logic/ai/BaselineBot';
 import { BotFactory, MatchTerminationReason, runSingleMatch } from './match_harness';
+import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 
 export interface RunEloLadderConfig {
     entrants: string[];
@@ -68,6 +69,20 @@ function parseBoolEnv(name: string, fallback: boolean): boolean {
     if (!raw) return fallback;
     const normalized = raw.trim().toLowerCase();
     return normalized === '1' || normalized === 'true' || normalized === 'yes';
+}
+
+function resolveOutputPath(defaultOutputPath: string): string | undefined {
+    const raw = process.env.AI_LADDER_OUTPUT;
+    if (!raw || raw.trim().length === 0) {
+        return defaultOutputPath;
+    }
+
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === '-' || normalized === 'none' || normalized === 'off') {
+        return undefined;
+    }
+
+    return raw.trim();
 }
 
 function roundTo(value: number, digits: number): number {
@@ -225,7 +240,8 @@ function writeIfRequested(outputPath: string | undefined, report: EloLadderRepor
 }
 
 function runCli(): void {
-    const entrantsRaw = process.env.AI_LADDER_ENTRANTS ?? 'baseline-a,baseline-b';
+    const manifest = loadPhase0Manifest(resolvePhase0ManifestPath());
+    const entrantsRaw = process.env.AI_LADDER_ENTRANTS ?? manifest.ladder.entrants.join(',');
     const entrants = entrantsRaw
         .split(',')
         .map(token => token.trim())
@@ -233,16 +249,16 @@ function runCli(): void {
 
     const config: RunEloLadderConfig = {
         entrants,
-        startSeed: parseIntEnv('AI_LADDER_START_SEED', 2026020900),
-        seedsPerPair: parseIntEnv('AI_LADDER_SEEDS_PER_PAIR', 6),
-        maxSteps: parseIntEnv('AI_LADDER_MAX_STEPS', 2400),
-        enableMulligan: parseBoolEnv('AI_LADDER_ENABLE_MULLIGAN', true),
-        kFactor: parseFloatEnv('AI_LADDER_K_FACTOR', 24),
-        initialRating: parseFloatEnv('AI_LADDER_INITIAL_RATING', 1000),
+        startSeed: parseIntEnv('AI_LADDER_START_SEED', manifest.ladder.startSeed),
+        seedsPerPair: parseIntEnv('AI_LADDER_SEEDS_PER_PAIR', manifest.ladder.seedsPerPair),
+        maxSteps: parseIntEnv('AI_LADDER_MAX_STEPS', manifest.ladder.maxSteps),
+        enableMulligan: parseBoolEnv('AI_LADDER_ENABLE_MULLIGAN', manifest.ladder.enableMulligan),
+        kFactor: parseFloatEnv('AI_LADDER_K_FACTOR', manifest.ladder.kFactor),
+        initialRating: parseFloatEnv('AI_LADDER_INITIAL_RATING', manifest.ladder.initialRating),
     };
 
     const report = runEloLadder(config);
-    writeIfRequested(process.env.AI_LADDER_OUTPUT, report);
+    writeIfRequested(resolveOutputPath(manifest.ladder.outputPath), report);
     console.log(JSON.stringify(report, null, 2));
 }
 
@@ -250,4 +266,3 @@ const maybeMain = process.argv[1] ?? '';
 if (maybeMain.endsWith('elo_ladder.ts') || maybeMain.endsWith('elo_ladder.js')) {
     runCli();
 }
-

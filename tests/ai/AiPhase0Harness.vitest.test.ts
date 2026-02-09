@@ -47,6 +47,10 @@ describe('AI Phase0 Harness', () => {
         expect(reportA.summary.totalGames).toBe(config.games);
         expect(reportA.matches).toHaveLength(config.games);
         expect(reportA.summary.wins.player1 + reportA.summary.wins.player2 + reportA.summary.unfinished).toBe(config.games);
+        expect(reportA.summary.confidence.player1WinRate.ci95Low).toBeGreaterThanOrEqual(0);
+        expect(reportA.summary.confidence.player1WinRate.ci95High).toBeLessThanOrEqual(1);
+        expect(reportA.summary.confidence.player2WinRate.ci95Low).toBeGreaterThanOrEqual(0);
+        expect(reportA.summary.confidence.player2WinRate.ci95High).toBeLessThanOrEqual(1);
     });
 
     it('produces deterministic elo ladder report for same config', () => {

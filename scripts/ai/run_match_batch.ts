@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { MatchReport, MatchTerminationReason, runSingleMatch } from './match_harness';
+import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 
 export interface RunMatchBatchConfig {
     startSeed: number;
@@ -27,7 +28,18 @@ export interface MatchBatchReport {
         avgSteps: number;
         avgTurns: number;
         terminationCounts: Record<MatchTerminationReason, number>;
+        confidence: {
+            player1WinRate: BinomialRateStats;
+            player2WinRate: BinomialRateStats;
+        };
     };
+}
+
+export interface BinomialRateStats {
+    pointEstimate: number;
+    standardError: number;
+    ci95Low: number;
+    ci95High: number;
 }
 
 function safeDivide(numerator: number, denominator: number): number {
@@ -35,9 +47,36 @@ function safeDivide(numerator: number, denominator: number): number {
     return numerator / denominator;
 }
 
+function clamp01(value: number): number {
+    if (value < 0) return 0;
+    if (value > 1) return 1;
+    return value;
+}
+
 function roundTo(value: number, digits: number): number {
     const p = 10 ** digits;
     return Math.round(value * p) / p;
+}
+
+function computeBinomialRateStats(successes: number, total: number): BinomialRateStats {
+    if (total <= 0) {
+        return {
+            pointEstimate: 0,
+            standardError: 0,
+            ci95Low: 0,
+            ci95High: 0,
+        };
+    }
+
+    const pointEstimate = successes / total;
+    const standardError = Math.sqrt(pointEstimate * (1 - pointEstimate) / total);
+    const margin = 1.96 * standardError;
+    return {
+        pointEstimate: roundTo(pointEstimate, 4),
+        standardError: roundTo(standardError, 4),
+        ci95Low: roundTo(clamp01(pointEstimate - margin), 4),
+        ci95High: roundTo(clamp01(pointEstimate + margin), 4),
+    };
 }
 
 export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
@@ -58,6 +97,8 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     const unfinished = matches.length - winsPlayer1 - winsPlayer2;
     const totalSteps = matches.reduce((sum, match) => sum + match.steps, 0);
     const totalTurns = matches.reduce((sum, match) => sum + match.turnCount, 0);
+    const player1Confidence = computeBinomialRateStats(winsPlayer1, matches.length);
+    const player2Confidence = computeBinomialRateStats(winsPlayer2, matches.length);
 
     const terminationCounts = matches.reduce<Record<MatchTerminationReason, number>>(
         (acc, match) => {
@@ -84,6 +125,10 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
             avgSteps: roundTo(safeDivide(totalSteps, matches.length), 2),
             avgTurns: roundTo(safeDivide(totalTurns, matches.length), 2),
             terminationCounts,
+            confidence: {
+                player1WinRate: player1Confidence,
+                player2WinRate: player2Confidence,
+            },
         },
     };
 }
@@ -102,6 +147,20 @@ function parseBoolEnv(name: string, fallback: boolean): boolean {
     return normalized === '1' || normalized === 'true' || normalized === 'yes';
 }
 
+function resolveOutputPath(defaultOutputPath: string): string | undefined {
+    const raw = process.env.AI_BENCH_OUTPUT;
+    if (!raw || raw.trim().length === 0) {
+        return defaultOutputPath;
+    }
+
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === '-' || normalized === 'none' || normalized === 'off') {
+        return undefined;
+    }
+
+    return raw.trim();
+}
+
 function writeIfRequested(outputPath: string | undefined, report: MatchBatchReport): void {
     if (!outputPath) return;
     const resolved = path.resolve(outputPath);
@@ -110,16 +169,17 @@ function writeIfRequested(outputPath: string | undefined, report: MatchBatchRepo
 }
 
 function runCli(): void {
+    const manifest = loadPhase0Manifest(resolvePhase0ManifestPath());
     const config: RunMatchBatchConfig = {
-        startSeed: parseIntEnv('AI_BENCH_START_SEED', 2026020900),
-        games: parseIntEnv('AI_BENCH_GAMES', 12),
-        maxSteps: parseIntEnv('AI_BENCH_MAX_STEPS', 2400),
-        enableMulligan: parseBoolEnv('AI_BENCH_ENABLE_MULLIGAN', true),
-        traceLimit: parseIntEnv('AI_BENCH_TRACE_LIMIT', 18),
+        startSeed: parseIntEnv('AI_BENCH_START_SEED', manifest.bench.startSeed),
+        games: parseIntEnv('AI_BENCH_GAMES', manifest.bench.games),
+        maxSteps: parseIntEnv('AI_BENCH_MAX_STEPS', manifest.bench.maxSteps),
+        enableMulligan: parseBoolEnv('AI_BENCH_ENABLE_MULLIGAN', manifest.bench.enableMulligan),
+        traceLimit: parseIntEnv('AI_BENCH_TRACE_LIMIT', manifest.bench.traceLimit),
     };
 
     const report = runMatchBatch(config);
-    writeIfRequested(process.env.AI_BENCH_OUTPUT, report);
+    writeIfRequested(resolveOutputPath(manifest.bench.outputPath), report);
     console.log(JSON.stringify(report, null, 2));
 }
 
@@ -127,4 +187,3 @@ const maybeMain = process.argv[1] ?? '';
 if (maybeMain.endsWith('run_match_batch.ts') || maybeMain.endsWith('run_match_batch.js')) {
     runCli();
 }
-

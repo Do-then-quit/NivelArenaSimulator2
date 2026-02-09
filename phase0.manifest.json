@@ -1,0 +1,36 @@
+{
+  "version": "phase0-v1",
+  "bench": {
+    "startSeed": 2026020900,
+    "games": 12,
+    "maxSteps": 2400,
+    "enableMulligan": true,
+    "traceLimit": 18,
+    "outputPath": "artifacts/ai/bench/latest.json"
+  },
+  "ladder": {
+    "entrants": [
+      "baseline-a",
+      "baseline-b"
+    ],
+    "startSeed": 2026020900,
+    "seedsPerPair": 6,
+    "maxSteps": 2400,
+    "enableMulligan": true,
+    "kFactor": 24,
+    "initialRating": 1000,
+    "outputPath": "artifacts/ai/ladder/latest.json"
+  },
+  "regression": {
+    "vitestFiles": [
+      "tests/rules_v2_regression/rules_v2_ai_ready_stage1_regression.test.ts",
+      "tests/rules_v2_regression/rules_v2_ai_ready_stage2_stage3_regression.test.ts",
+      "tests/rules_v2_regression/rules_v2_ai_baseline_bot_regression.test.ts",
+      "tests/rules_v2_regression/rules_v2_mulligan_regression.test.ts",
+      "tests/rules_v2_regression/rules_v2_bt01_061_targeting_regression.test.ts",
+      "tests/ai/AiPhase0Harness.vitest.test.ts"
+    ],
+    "includeBotSoak": true
+  }
+}
+
