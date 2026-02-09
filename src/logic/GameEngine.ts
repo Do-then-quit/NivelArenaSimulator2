@@ -23,8 +23,10 @@ export class GameEngine {
     effectManager: EffectManager;
     private readonly random: RandomProvider;
     private readonly enableMulligan: boolean;
+    private readonly endPhaseHandAdjustActionType = 'END_PHASE_HAND_LIMIT_DISCARD';
     private runtimeIdCounter = 0;
     private pendingRuntime: PendingRuntimeState | null = null;
+    private awaitingEndPhaseHandAdjustment = false;
 
     constructor(
         player1Name: string,
@@ -820,15 +822,69 @@ export class GameEngine {
         this.currentPlayer.skillZone.forEach(c => this.currentPlayer.trash.push(c));
         this.currentPlayer.skillZone = [];
 
-        // 4. Hand Adjustment (Limit 7)
-        while (this.currentPlayer.hand.length > 7) {
-            const discarded = this.currentPlayer.hand.pop()!;
-            this.currentPlayer.trash.push(discarded);
-            console.log(`Hand limit: Discarded ${discarded.name}`);
+        // 4. Hand Adjustment (Rule 6.6.1.4): turn player chooses cards to trash until hand is 7.
+        if (this.currentPlayer.hand.length > 7) {
+            if (this.initiateEndPhaseHandAdjustment()) {
+                return;
+            }
         }
 
         // 5. Turn Switch
         this.endTurn();
+    }
+
+    private initiateEndPhaseHandAdjustment(): boolean {
+        const player = this.currentPlayer;
+        const requiredDiscardCount = player.hand.length - 7;
+        if (requiredDiscardCount <= 0) return false;
+
+        const sourceCard = player.levelZone ?? player.hand[0];
+        if (!sourceCard) return false;
+
+        const opponent = this.getOpponentOf(player);
+        const handAdjustEffect: Effect = {
+            activation: ActivationCondition.TURN_END,
+            description: 'Rule 6.6.1.4: End phase hand adjustment',
+            targets: {
+                scope: 'MY_HAND',
+                type: 'CARD',
+                count: requiredDiscardCount,
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'DISCARD',
+                params: {
+                    target: 'SELF',
+                    count: requiredDiscardCount,
+                },
+            },
+        };
+
+        const context: GameContext = {
+            sourceCard,
+            player,
+            opponent,
+            machine: this,
+        };
+
+        this.state.interactionMode = 'SELECT_TARGET';
+        this.state.pendingEffect = {
+            sourceCard,
+            sourcePlayerId: player.id,
+            controllerPlayerId: player.id,
+            actionType: this.endPhaseHandAdjustActionType,
+            actionValue: { requiredDiscardCount },
+            effectDescription: handAdjustEffect.description,
+            validTargets: 'MY_HAND',
+            targetSchema: handAdjustEffect.targets,
+            selectedTargets: [],
+        };
+        this.setPendingRuntime(context, handAdjustEffect);
+        this.assignInteractionOwner(player.id);
+        this.awaitingEndPhaseHandAdjustment = true;
+
+        console.log(`[Rule 6.6.1.4] ${player.name} must discard ${requiredDiscardCount} card(s) to hand size 7.`);
+        return true;
     }
 
     private endTurn() {
@@ -2092,6 +2148,10 @@ export class GameEngine {
         const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (maxCount > 1) {
             if (!selectedTargets.includes(targetZone)) {
+                if (selectedTargets.length >= maxCount) {
+                    console.log(`Cannot select more than ${maxCount} targets.`);
+                    return;
+                }
                 selectedTargets.push(targetZone);
                 console.log(`Target added. ${selectedTargets.length}/${maxCount}`);
             } else {
@@ -2204,6 +2264,10 @@ export class GameEngine {
         const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (maxCount > 1) {
             if (!selectedTargets.includes(card)) {
+                if (selectedTargets.length >= maxCount) {
+                    console.log(`Cannot select more than ${maxCount} targets.`);
+                    return;
+                }
                 selectedTargets.push(card);
             } else {
                 pending.selectedTargets = selectedTargets.filter((t: any) => t !== card);
@@ -2247,6 +2311,10 @@ export class GameEngine {
         const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (maxCount > 1) {
             if (!selectedTargets.includes(targetCard)) {
+                if (selectedTargets.length >= maxCount) {
+                    console.log(`Cannot select more than ${maxCount} targets.`);
+                    return;
+                }
                 selectedTargets.push(targetCard);
             } else {
                 pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetCard);
@@ -2283,6 +2351,10 @@ export class GameEngine {
         const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (maxCount > 1) {
             if (!selectedTargets.includes(card)) {
+                if (selectedTargets.length >= maxCount) {
+                    console.log(`Cannot select more than ${maxCount} targets.`);
+                    return;
+                }
                 selectedTargets.push(card);
             } else {
                 pending.selectedTargets = selectedTargets.filter((t: any) => t !== card);
@@ -2322,6 +2394,12 @@ export class GameEngine {
         } else {
             this.resetInteractionMode();
         }
+
+        if (
+            currentPending?.actionType === this.endPhaseHandAdjustActionType
+        ) {
+            this.finalizeEndPhaseHandAdjustmentIfReady();
+        }
     }
 
     private resetInteractionMode() {
@@ -2332,6 +2410,17 @@ export class GameEngine {
 
         // Resume global queue
         this.effectManager.resumeQueue();
+
+        this.finalizeEndPhaseHandAdjustmentIfReady();
+    }
+
+    private finalizeEndPhaseHandAdjustmentIfReady() {
+        if (!this.awaitingEndPhaseHandAdjustment) return;
+        if (this.state.interactionMode !== 'NORMAL') return;
+        if (this.state.pendingEffect) return;
+
+        this.awaitingEndPhaseHandAdjustment = false;
+        this.endTurn();
     }
 
 

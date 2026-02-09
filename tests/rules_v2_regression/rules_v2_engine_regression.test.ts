@@ -256,5 +256,74 @@ describe('Rules v2 Engine Regression', () => {
         engine.activateEffect(0, 2);
         expect(p1.leaderLevel).toBe(levelBefore + 1);
     });
+
+    it('requires turn player to choose discards to reach 7 cards during end phase (rule 6.6.1.4)', () => {
+        const engine = createEngine(makeLeader('L1'), makeLeader('L2'));
+        const p1 = engine.state.players[0];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.END;
+        engine.state.turnCount = 3;
+        p1.hand = Array(8).fill(null).map((_, i) => makeUnit(`H${i}`));
+
+        engine.nextPhase();
+
+        expect(engine.state.phase).toBe(Phase.END);
+        expect(engine.state.turnPlayerIndex).toBe(0);
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        expect(engine.state.interactionOwnerPlayerId).toBe(p1.id);
+
+        const firstActions = engine.getLegalActions(p1.id);
+        const firstPick = firstActions.find(action => action.type === 'SELECT_HAND_TARGET');
+        expect(firstPick).toBeDefined();
+        if (firstPick?.type === 'SELECT_HAND_TARGET') {
+            expect(firstPick.targetPlayerId).toBe(p1.id);
+        }
+        expect(firstActions.some(action => action.type === 'CONFIRM_TARGETS')).toBe(false);
+        expect(engine.step(firstPick!)).toBe(true);
+
+        expect(p1.hand.length).toBe(7);
+        expect(engine.state.interactionMode).toBe('NORMAL');
+        expect(engine.state.turnPlayerIndex).toBe(1);
+        expect(engine.state.turnCount).toBe(4);
+        expect(engine.state.phase).toBe(Phase.LEVEL_UP);
+    });
+
+    it('requires selecting all required cards before confirm when over hand limit by 2+ (rule 6.6.1.4)', () => {
+        const engine = createEngine(makeLeader('L1'), makeLeader('L2'));
+        const p1 = engine.state.players[0];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.END;
+        p1.hand = Array(9).fill(null).map((_, i) => makeUnit(`N${i}`));
+
+        engine.nextPhase();
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+
+        const actions1 = engine.getLegalActions(p1.id);
+        const firstPick = actions1.find(action => action.type === 'SELECT_HAND_TARGET');
+        expect(firstPick).toBeDefined();
+        expect(engine.step(firstPick!)).toBe(true);
+
+        const actions2 = engine.getLegalActions(p1.id);
+        expect(actions2.some(action => action.type === 'CONFIRM_TARGETS')).toBe(false);
+        const firstPickIndex =
+            firstPick?.type === 'SELECT_HAND_TARGET'
+                ? firstPick.handIndex
+                : -1;
+        const secondPick = actions2.find(
+            action => action.type === 'SELECT_HAND_TARGET' && action.handIndex !== firstPickIndex
+        );
+        expect(secondPick).toBeDefined();
+        expect(engine.step(secondPick!)).toBe(true);
+
+        const actions3 = engine.getLegalActions(p1.id);
+        const confirm = actions3.find(action => action.type === 'CONFIRM_TARGETS');
+        expect(confirm).toBeDefined();
+        expect(engine.step(confirm!)).toBe(true);
+
+        expect(p1.hand.length).toBe(7);
+        expect(engine.state.interactionMode).toBe('NORMAL');
+        expect(engine.state.turnPlayerIndex).toBe(1);
+        expect(engine.state.phase).toBe(Phase.LEVEL_UP);
+    });
 });
 
