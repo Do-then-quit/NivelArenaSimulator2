@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { DUMMY_CARDS } from '../../src/logic/CardDatabase';
 import { GameEngine } from '../../src/logic/GameEngine';
 import { BaselineBot, BaselineTerminationReason } from '../../src/logic/ai/BaselineBot';
-import { createRandomProvider } from '../../src/logic/random';
-import { Card, CardType, EngineAction } from '../../src/logic/types';
+import { EngineAction } from '../../src/logic/types';
+import {
+    buildDeterministicDeckForLeader,
+    getImplementedDeckPool,
+    getImplementedLeaderPool,
+    pickDeterministicLeader,
+    validateDeckAgainstLeader,
+} from '../../scripts/ai/deck_pool';
 
-const IMPLEMENTED_PACK_PREFIXES = ['ST01-', 'ST02-', 'ST03-', 'BT01-'];
-
-const IMPLEMENTED_CARDS = DUMMY_CARDS.filter(card =>
-    IMPLEMENTED_PACK_PREFIXES.some(prefix => card.id.startsWith(prefix))
-);
-const LEADER_POOL = IMPLEMENTED_CARDS.filter(card => card.type === CardType.LEADER);
-const DECK_POOL = IMPLEMENTED_CARDS.filter(card => card.type !== CardType.LEADER);
+const LEADER_POOL = getImplementedLeaderPool();
+const DECK_POOL = getImplementedDeckPool();
 
 interface SoakRunReport {
     seed: number;
@@ -29,29 +29,6 @@ interface SoakRunReport {
     player1LeaderId: string;
     player2LeaderId: string;
     lastActions: string[];
-}
-
-function cloneCard(template: Card, id: string): Card {
-    return { ...template, id };
-}
-
-function makeDeck(seed: number, tag: string): Card[] {
-    const rng = createRandomProvider(seed);
-    const deck: Card[] = [];
-
-    for (let i = 0; i < 40; i++) {
-        const index = Math.floor(rng.next() * DECK_POOL.length);
-        const template = DECK_POOL[index];
-        deck.push(cloneCard(template, `${template.id}_${tag}_${seed}_${i}`));
-    }
-
-    return deck;
-}
-
-function pickLeader(seed: number, salt: number): Card {
-    const index = Math.abs((seed * 37 + salt * 1009) % LEADER_POOL.length);
-    const template = LEADER_POOL[index];
-    return cloneCard(template, `${template.id}_L_${seed}_${salt}`);
 }
 
 function formatAction(action: EngineAction): string {
@@ -86,10 +63,20 @@ function formatAction(action: EngineAction): string {
 }
 
 function makeEngine(seed: number): GameEngine {
-    const deck1 = makeDeck(seed + 101, 'P1');
-    const deck2 = makeDeck(seed + 202, 'P2');
-    const leader1 = pickLeader(seed, 1);
-    const leader2 = pickLeader(seed, 2);
+    const leader1 = pickDeterministicLeader(seed, 1, LEADER_POOL);
+    const leader2 = pickDeterministicLeader(seed, 2, LEADER_POOL);
+    const deck1 = buildDeterministicDeckForLeader(seed + 101, 'P1', leader1, 40, DECK_POOL);
+    const deck2 = buildDeterministicDeckForLeader(seed + 202, 'P2', leader2, 40, DECK_POOL);
+
+    const deck1Legality = validateDeckAgainstLeader(deck1, leader1);
+    if (!deck1Legality.valid) {
+        throw new Error(`Illegal soak deck for P1 seed=${seed}: ${deck1Legality.errors.join(' | ')}`);
+    }
+    const deck2Legality = validateDeckAgainstLeader(deck2, leader2);
+    if (!deck2Legality.valid) {
+        throw new Error(`Illegal soak deck for P2 seed=${seed}: ${deck2Legality.errors.join(' | ')}`);
+    }
+
     return new GameEngine('Bot-P1', 'Bot-P2', deck1, deck2, leader1, leader2, {
         seed,
         enableMulligan: true,

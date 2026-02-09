@@ -1,7 +1,12 @@
 import { GameEngine } from '../../src/logic/GameEngine';
 import { BaselineBot } from '../../src/logic/ai/BaselineBot';
 import { Card, EngineAction } from '../../src/logic/types';
-import { buildDeterministicDeck, materializeDeckForMatch, pickDeterministicLeader } from './deck_pool';
+import {
+    buildDeterministicDeckForLeader,
+    materializeDeckForMatch,
+    pickDeterministicLeader,
+    validateDeckAgainstLeader,
+} from './deck_pool';
 
 export type MatchTerminationReason = 'winner' | 'max_steps' | 'no_action' | 'invalid_action';
 
@@ -131,18 +136,32 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
     const maxSteps = config.maxSteps;
     const traceLimit = config.traceLimit ?? DEFAULT_TRACE_LIMIT;
 
-    const player1Deck = config.player1Deck
-        ? materializeDeckForMatch(config.player1Deck, seed + 101, 'P1')
-        : buildDeterministicDeck(seed + 101, 'P1');
-    const player2Deck = config.player2Deck
-        ? materializeDeckForMatch(config.player2Deck, seed + 202, 'P2')
-        : buildDeterministicDeck(seed + 202, 'P2');
     const player1Leader = config.player1Leader
         ? { ...config.player1Leader, id: `${config.player1Leader.id}_L_${seed}_1` }
         : pickDeterministicLeader(seed, 1);
     const player2Leader = config.player2Leader
         ? { ...config.player2Leader, id: `${config.player2Leader.id}_L_${seed}_2` }
         : pickDeterministicLeader(seed, 2);
+
+    const player1Deck = config.player1Deck
+        ? materializeDeckForMatch(config.player1Deck, seed + 101, 'P1')
+        : buildDeterministicDeckForLeader(seed + 101, 'P1', player1Leader);
+    const player2Deck = config.player2Deck
+        ? materializeDeckForMatch(config.player2Deck, seed + 202, 'P2')
+        : buildDeterministicDeckForLeader(seed + 202, 'P2', player2Leader);
+
+    const player1DeckLegality = validateDeckAgainstLeader(player1Deck, player1Leader);
+    if (!player1DeckLegality.valid) {
+        throw new Error(
+            `Illegal deck for P1 leader ${player1Leader.id}. errors=${player1DeckLegality.errors.join(' | ')}`,
+        );
+    }
+    const player2DeckLegality = validateDeckAgainstLeader(player2Deck, player2Leader);
+    if (!player2DeckLegality.valid) {
+        throw new Error(
+            `Illegal deck for P2 leader ${player2Leader.id}. errors=${player2DeckLegality.errors.join(' | ')}`,
+        );
+    }
 
     const engine = new GameEngine(
         config.player1Name ?? 'Bot-P1',
@@ -195,4 +214,3 @@ export function runSingleMatch(config: SingleMatchConfig): MatchReport {
     }
     return runSingleMatchCore(config);
 }
-

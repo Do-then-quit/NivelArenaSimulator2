@@ -4,6 +4,7 @@ import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
 import { RuleValidator } from './logic/RuleValidator';
 import { BaselineBot } from './logic/ai/BaselineBot';
+import { createQuickPlayLoadout } from './logic/ai/QuickPlayDeckFactory';
 
 import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
@@ -148,18 +149,14 @@ function renderMenu() {
     `;
 
     document.getElementById('start-game-btn')?.addEventListener('click', () => {
-        const deck1 = createDeck();
-        const deck2 = createDeck();
-        const leader1 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
-        const leader2 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
+        const seed = Date.now();
+        const { deck1, deck2, leader1, leader2 } = createQuickPlayLoadout(seed);
         startGame(deck1, deck2, leader1, leader2);
     });
 
     document.getElementById('start-vs-bot-btn')?.addEventListener('click', () => {
-        const deck1 = createDeck();
-        const deck2 = createDeck();
-        const leader1 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
-        const leader2 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
+        const seed = Date.now();
+        const { deck1, deck2, leader1, leader2 } = createQuickPlayLoadout(seed);
         const revealBotHand = window.confirm('Show Baseline Bot hand?\n\nOK: Show hand\nCancel: Hide hand');
         startGame(deck1, deck2, leader1, leader2, HUMAN_VS_BASELINE_CONFIG, { revealBotHand });
     });
