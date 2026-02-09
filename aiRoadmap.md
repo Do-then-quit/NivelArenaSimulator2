@@ -1,5 +1,22 @@
 # AI Roadmap: Strong Play Bot + Strong Deck Search
 
+## Progress Status (2026-02-09)
+
+- [x] Phase 0 complete
+  - Evidence: `Phase0.md`
+  - Added: manifest-based eval, confidence intervals, `ai:regression` gate
+- [x] Phase 1 implementation complete (StrongBot v1)
+  - Evidence: `Phase1.md`
+  - Added: `src/logic/ai/StrongBot.ts`, evaluator/scorer, bot registry integration
+- [~] Phase 1 performance target partially stabilized
+  - Ladder with side swaps (`strong-v1, baseline-a, baseline-b`, seedsPerPair=6):
+    - `strong-v1` 15-9 (62.5%), Elo 1041.06
+  - Head-to-head vs `baseline-b` in fixed-role bench needs tuning
+- [ ] Phase 2 not started
+- [ ] Phase 3 not started
+- [ ] Phase 4 not started
+- [ ] Phase 5 not started
+
 ## 1) Scope
 
 - Goal A: Build a stronger in-game play bot than current `BaselineBot`.

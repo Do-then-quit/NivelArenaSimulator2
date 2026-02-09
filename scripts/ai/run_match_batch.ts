@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { MatchReport, MatchTerminationReason, runSingleMatch } from './match_harness';
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
+import { resolveBotFactory } from './bot_registry';
 
 export interface RunMatchBatchConfig {
     startSeed: number;
@@ -9,6 +10,8 @@ export interface RunMatchBatchConfig {
     maxSteps: number;
     enableMulligan: boolean;
     traceLimit?: number;
+    player1BotId?: string;
+    player2BotId?: string;
 }
 
 export interface MatchBatchReport {
@@ -80,6 +83,8 @@ function computeBinomialRateStats(successes: number, total: number): BinomialRat
 }
 
 export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
+    const player1BotFactory = resolveBotFactory(config.player1BotId ?? 'baseline-a');
+    const player2BotFactory = resolveBotFactory(config.player2BotId ?? 'baseline-b');
     const matches: MatchReport[] = [];
     for (let i = 0; i < config.games; i++) {
         matches.push(
@@ -88,6 +93,8 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
                 maxSteps: config.maxSteps,
                 enableMulligan: config.enableMulligan,
                 traceLimit: config.traceLimit,
+                player1BotFactory,
+                player2BotFactory,
             }),
         );
     }
@@ -176,6 +183,8 @@ function runCli(): void {
         maxSteps: parseIntEnv('AI_BENCH_MAX_STEPS', manifest.bench.maxSteps),
         enableMulligan: parseBoolEnv('AI_BENCH_ENABLE_MULLIGAN', manifest.bench.enableMulligan),
         traceLimit: parseIntEnv('AI_BENCH_TRACE_LIMIT', manifest.bench.traceLimit),
+        player1BotId: process.env.AI_BENCH_P1_BOT ?? 'baseline-a',
+        player2BotId: process.env.AI_BENCH_P2_BOT ?? 'baseline-b',
     };
 
     const report = runMatchBatch(config);

@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { BaselineBot } from '../../src/logic/ai/BaselineBot';
 import { BotFactory, MatchTerminationReason, runSingleMatch } from './match_harness';
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
+import { resolveBotFactory } from './bot_registry';
 
 export interface RunEloLadderConfig {
     entrants: string[];
@@ -39,12 +39,6 @@ export interface EloLadderReport {
     entrants: EloEntrantReport[];
     matches: EloMatchReport[];
 }
-
-const BOT_REGISTRY: Record<string, BotFactory> = {
-    baseline: (name: string) => new BaselineBot(name),
-    'baseline-a': (name: string) => new BaselineBot(name),
-    'baseline-b': (name: string) => new BaselineBot(name),
-};
 
 function expectedScore(ra: number, rb: number): number {
     return 1 / (1 + 10 ** ((rb - ra) / 400));
@@ -91,10 +85,7 @@ function roundTo(value: number, digits: number): number {
 }
 
 function resolveEntrantFactory(entrantId: string): BotFactory {
-    const direct = BOT_REGISTRY[entrantId];
-    if (direct) return direct;
-    if (entrantId.startsWith('baseline')) return BOT_REGISTRY.baseline;
-    throw new Error(`Unknown entrant id: ${entrantId}`);
+    return resolveBotFactory(entrantId);
 }
 
 function toScore(

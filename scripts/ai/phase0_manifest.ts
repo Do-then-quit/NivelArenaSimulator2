@@ -61,6 +61,7 @@ export const DEFAULT_PHASE0_MANIFEST: Phase0Manifest = {
             'tests/rules_v2_regression/rules_v2_mulligan_regression.test.ts',
             'tests/rules_v2_regression/rules_v2_bt01_061_targeting_regression.test.ts',
             'tests/ai/AiPhase0Harness.vitest.test.ts',
+            'tests/ai/StrongBotPhase1.vitest.test.ts',
         ],
         includeBotSoak: true,
     },
