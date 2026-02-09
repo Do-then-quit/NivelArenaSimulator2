@@ -1,42 +1,47 @@
-﻿
-## Progress Status (2026-02-09)
+﻿# AI 로드맵: 강한 플레이 봇 + 강한 덱 탐색
 
-- [x] Phase 0 complete
-  - Evidence: `Phase0.md`
-- [x] Phase 1 implementation complete (StrongBot v1)
-  - Evidence: `Phase1.md`
-- [~] Phase 1 performance partially stabilized
-  - Ladder (strong-v1, baseline-a, baseline-b, seedsPerPair=6): strong-v1 15-9, Elo 1041.06
-  - Fixed-role bench vs baseline-b still needs tuning
-- [ ] Phase 2 not started
-- [ ] Phase 3 not started
-- [ ] Phase 4 not started
-- [ ] Phase 5 not started
-# AI 濡쒕뱶留? 媛뺥븳 ?뚮젅??遊?+ 媛뺥븳 ???먯깋
+## 진행 현황 (2026-02-09)
 
-## 1) 踰붿쐞
+- [x] Phase 0 완료
+  - 근거 문서: `Phase0.md`
+  - 반영: 매니페스트 기반 평가, 신뢰구간, `ai:regression` 게이트
+- [x] Phase 1 구현 완료 (StrongBot v1)
+  - 근거 문서: `Phase1.md`
+  - 반영: `src/logic/ai/StrongBot.ts`, evaluator/scorer, bot registry 연동
+- [~] Phase 1 성능 목표 부분 안정화
+  - 라더(진영 스왑 포함, entrants=`strong-v1,baseline-a,baseline-b`, seedsPerPair=6):
+    - `strong-v1` 15승 9패(62.5%), Elo 1041.06
+  - 고정 역할 벤치에서 `baseline-b` 상대 성능은 추가 튜닝 필요
+- [ ] Phase 2 미착수
+- [ ] Phase 3 미착수
+- [ ] Phase 4 미착수
+- [ ] Phase 5 미착수
 
-- 紐⑺몴 A: ?꾩옱 `BaselineBot`蹂대떎 ??媛뺥븳 ?멸쾶???뚮젅??遊?援ъ텞
-- 紐⑺몴 B: ??媛뺥븳 ?깆쓣 ?먯깋/援ъ꽦?섎뒗 ??鍮뚮뵫 遊?援ъ텞
-- 移대뱶? 踰붿쐞: 援ы쁽??`ST01`, `ST02`, `ST03`, `BT01` 移대뱶留??ъ슜
-- 猷?湲곗? ?곗꽑?쒖쐞:
-  - 移대뱶 ?띿뒪???곗꽑 (Rule 1.3.1)
+## 1) 범위
+
+- 목표 A: 현재 `BaselineBot`보다 더 강한 인게임 플레이 봇 구축
+- 목표 B: 더 강한 덱을 탐색/구성하는 덱 빌딩 봇 구축
+- 카드풀 범위: 구현된 `ST01`, `ST02`, `ST03`, `BT01` 카드만 사용
+- 룰 기준 우선순위:
+  - 카드 텍스트 우선 (Rule 1.3.1)
   - `NivelArena_Comprehensive_Rules_Ver.2.0.pdf`
-  - `tests/rules_v2_regression/`??湲곗〈 ?뚭? 湲곕? ?숈옉
+  - `tests/rules_v2_regression/`의 기존 회귀 기대 동작
 
-## 2) ?쒖빟 諛?媛?쒕젅??
-- AI???붿쭊 吏꾩엯?먯? 怨좎젙 ?좎?:
+## 2) 제약 및 가드레일
+
+- AI용 엔진 진입점은 고정 유지:
   - `getLegalActions(actorPlayerId?)`
   - `step(action)`
   - `getObservation(actorPlayerId)`
   - `getSerializableState()`
-- 踰ㅼ튂留덊겕 寃곗젙濡?蹂댁옣:
-  - seed 湲곕컲 RNG 寃쎈줈???덉젙?곸쑝濡??좎?
-  - ?숈씪 `seed + action sequence`???숈씪 ?곹깭瑜??ы쁽?댁빞 ??- ???먯깋 ?????⑸쾿??洹쒖튃 媛뺤젣:
-  - 由щ뜑 1 + ??40??(Rule 5.1.2)
-  - ?숈씪 ?앸퀎踰덊샇 理쒕? 3??(Rule 5.1.2.2)
-  - ?몃━嫄?移대뱶 理쒕? 8??(Rule 5.1.2.3)
-- AI 蹂寃????꾨옒 ?뚭? 寃뚯씠?몃뒗 諛섎뱶???듦낵:
+- 벤치마크 결정론 보장:
+  - seed 기반 RNG 경로는 안정적으로 유지
+  - 동일 `seed + action sequence`는 동일 상태를 재현해야 함
+- 덱 탐색 시 덱 합법성 규칙 강제:
+  - 리더 1 + 덱 40장 (Rule 5.1.2)
+  - 동일 식별번호 최대 3장 (Rule 5.1.2.2)
+  - 트리거 카드 최대 8장 (Rule 5.1.2.3)
+- AI 변경 시 아래 회귀 게이트는 반드시 통과:
   - `tests/rules_v2_regression/rules_v2_ai_ready_stage1_regression.test.ts`
   - `tests/rules_v2_regression/rules_v2_ai_ready_stage2_stage3_regression.test.ts`
   - `tests/rules_v2_regression/rules_v2_ai_baseline_bot_regression.test.ts`
@@ -44,150 +49,171 @@
   - `tests/rules_v2_regression/rules_v2_bt01_061_targeting_regression.test.ts`
   - `npm run test:bot-soak`
 
-## 3) ?꾨줈洹몃옩 援ъ“
+## 3) 프로그램 구조
 
-- Track P (Play strength): 怨좎젙 ??湲곗? ?뚮젅???뺤콉 媛뺥솕
-- Track D (Deck strength): ?⑸쾿 ???먯깋/?앹꽦 媛뺥솕
-- Track S (Shared infra): ?됯? ?섎꽕?? 由ы뵆?덉씠/濡쒓렇 ?щ㎎, 硫뷀듃由?怨듯넻??
-## 4) ?곗꽑?쒖쐞 濡쒕뱶留?
-## Phase 0: 踰ㅼ튂留덊겕 諛??됯? ?섎꽕??(理쒖슦??
+- Track P (Play strength): 고정 덱 기준 플레이 정책 강화
+- Track D (Deck strength): 합법 덱 탐색/생성 강화
+- Track S (Shared infra): 평가 하네스, 리플레이/로그 포맷, 메트릭 공통화
 
-- ?좏뻾 ?댁쑀:
-  - ?덉젙?곸씤 痢≪젙 ?놁씠 媛쒖꽑 諛⑺뼢??寃利앺븷 ???놁쓬
-- ?곗텧臾?
-  - `scripts/ai/run_match_batch.ts`: 寃곗젙濡좎쟻 諛곗튂 留ㅼ튂 ?됯?湲?  - `scripts/ai/elo_ladder.ts`: ?쇱슫?쒕줈鍮?+ Elo 由ы룷??  - `scripts/ai/deck_pool.ts`: 援ы쁽 移대뱶? ?꾪꽣 (`ST01-`, `ST02-`, `ST03-`, `BT01-`)
-  - 寃곌낵 ?ㅽ궎留? ?밸쪧, ?됯퇏 ?댁닔, ?곕뱶?쎈쪧, invalid action 鍮꾩쑉
-- ?꾨즺 湲곗?:
-  - 媛숈? seed ?명듃 ?ъ떎?????숈씪 由ы룷???ы쁽
-  - quick soak ?듦낵 ?좎?
+## 4) 우선순위 로드맵
 
-## Phase 1: Strong Play Bot v1 (?대━?ㅽ떛 + 1???먯깋)
+## Phase 0: 벤치마크 및 평가 하네스 (최우선)
 
-- 紐⑺몴:
-  - 怨좎젙 ??誘몃윭??援먯감?꾩뿉??`BaselineBot`???덉젙?곸쑝濡??곹쉶
-- 援ы쁽 ?곗꽑?쒖쐞:
-  1. 紐낆떆???곹깭 ?됯??⑥닔 異붽?
-     - ?곕?吏 ?덉씠?? 蹂대뱶 ?쒗룷, ?몃뱶 ?대뱷, ?ш컖 ?꾪삊, ?쇱씤 而⑦듃濡?  2. 1-step lookahead 異붽?
-     - ?⑸쾿 ?≪뀡蹂?利됱떆 ?꾨떖 ?곹깭瑜??먯닔??  3. ?꾩닠 ?ㅻ쾭?쇱씠??洹쒖튃 異붽?
-     - 利됱떆 ?ш컖 媛먯?
-     - ?먮㈇ ?쇱씤 ?뚰뵾
-     - ?먰빐 理쒖냼??釉붾줉 ?먮떒
-  4. ?곹샇?묒슜 ?≪뀡 寃ш퀬???좎?
+- 선행 이유:
+  - 안정적인 측정 없이 개선 방향을 검증할 수 없음
+- 산출물:
+  - `scripts/ai/run_match_batch.ts`: 결정론적 배치 매치 평가기
+  - `scripts/ai/elo_ladder.ts`: 라운드로빈 + Elo 리포트
+  - `scripts/ai/deck_pool.ts`: 구현 카드풀 필터 (`ST01-`, `ST02-`, `ST03-`, `BT01-`)
+  - 결과 스키마: 승률, 평균 턴수, 데드락률, invalid action 비율
+- 완료 기준:
+  - 같은 seed 세트 재실행 시 동일 리포트 재현
+  - quick soak 통과 유지
+
+## Phase 1: Strong Play Bot v1 (휴리스틱 + 1수 탐색)
+
+- 목표:
+  - 고정 덱 미러전/교차전에서 `BaselineBot`을 안정적으로 상회
+- 구현 우선순위:
+  1. 명시적 상태 평가함수 추가
+     - 데미지 레이스, 보드 템포, 핸드 이득, 킬각 위협, 라인 컨트롤
+  2. 1-step lookahead 추가
+     - 합법 액션별 즉시 도달 상태를 점수화
+  3. 전술 오버라이드 규칙 추가
+     - 즉시 킬각 감지
+     - 자멸 라인 회피
+     - 손해 최소화 블록 판단
+  4. 상호작용 액션 견고성 유지
      - `SELECT_TARGET`, `SELECT_COST`, `RESOLVE_OPTIONAL`, mulligan
-- 沅뚯옣 ?뚯씪:
+- 권장 파일:
   - `src/logic/ai/StrongBot.ts`
   - `src/logic/ai/eval/StateEvaluator.ts`
   - `src/logic/ai/eval/ActionScorer.ts`
-- ?꾨즺 湲곗?:
-  - 怨좎젙 踰ㅼ튂留덊겕 ?명듃?먯꽌 `StrongBot`??`BaselineBot` ?鍮??밸쪧 60% ?댁긽
-  - `no_action` / `invalid_action` 醫낅즺 利앷? ?놁쓬
+- 완료 기준:
+  - 고정 벤치마크 세트에서 `StrongBot`이 `BaselineBot` 대비 승률 60% 이상
+  - `no_action` / `invalid_action` 종료 증가 없음
 
-## Phase 2: Strong Play Bot v2 (?먯깋 湲곕컲)
+## Phase 2: Strong Play Bot v2 (탐색 기반)
 
-- 紐⑺몴:
-  - 蹂듭옟???곹샇?묒슜/?④꺼吏??뺣낫 ?곹솴?먯꽌 ?꾩닠 ?덉쭏 ?μ긽
-- 援ы쁽 ?곗꽑?쒖쐞:
-  1. 濡ㅼ븘???쒕??덉씠???섑띁 異붽?
-     - 鍮좊Ⅸ 遺꾧린瑜??꾪븳 clone/snapshot-restore 寃쎈줈
-  2. 源딆씠 ?쒗븳 ?먯깋 異붽?
-     - beam search ?먮뒗 寃쎈웾 MCTS遺???쒖옉
-  3. ?뺣쪧 遺꾧린 泥섎━ 異붽?
-     - ?쒕뜡 遺꾧린 ?ㅼ쨷 seed 濡ㅼ븘??  4. ?쒓컙/?ㅽ뀦 ?덉궛 ?꾩엯
-     - ?덉궛 珥덇낵 ??v1 ?ㅼ퐫?대윭濡?寃곗젙濡좎쟻 fallback
-- ?꾨즺 湲곗?:
-  - ?숈씪 ???명듃?먯꽌 v2媛 v1 ?鍮??밸쪧 55% ?댁긽
-  - 諛곗튂 紐⑤뱶?먯꽌 ?≪뀡???고????덉궛 以??
-## Phase 3: ???먯깋 MVP (吏꾪솕???먯깋)
+- 목표:
+  - 복잡한 상호작용/숨겨진 정보 상황에서 전술 품질 향상
+- 구현 우선순위:
+  1. 롤아웃 시뮬레이션 래퍼 추가
+     - 빠른 분기를 위한 clone/snapshot-restore 경로
+  2. 깊이 제한 탐색 추가
+     - beam search 또는 경량 MCTS부터 시작
+  3. 확률 분기 처리 추가
+     - 랜덤 분기 다중 seed 롤아웃
+  4. 시간/스텝 예산 도입
+     - 예산 초과 시 v1 스코어러로 결정론적 fallback
+- 완료 기준:
+  - 동일 덱 세트에서 v2가 v1 대비 승률 55% 이상
+  - 배치 모드에서 액션당 런타임 예산 준수
 
-- 紐⑺몴:
-  - 由щ뜑 怨좎젙 ?깅????쒖옉???꾩껜 由щ뜑 ?源뚯? 媛뺥븳 ?⑸쾿 ???먯깋
-- 援ы쁽 ?곗꽑?쒖쐞:
-  1. ???몄퐫??     - 由щ뜑 ID + 移대뱶 ID 硫?곗뀑(genome)
-  2. ?⑸쾿 ???앹꽦湲?     - 1/40/3???몃━嫄?=8 ?쒖빟 ?꾧꺽 ?곸슜
-  3. 蹂??援먯감 ?곗궛??     - N??援먯껜, ?ш???鍮꾩쓽議? ?⑸쾿??蹂댁젙(repair)
-  4. ?곹빀???⑥닔
-     - 湲곗? 遊?援곗쭛 ?鍮??밸쪧 + 遺덉븞??寃곌낵 ?⑤꼸??- 沅뚯옣 ?뚯씪:
+## Phase 3: 덱 탐색 MVP (진화형 탐색)
+
+- 목표:
+  - 리더 고정 덱부터 시작해 전체 리더 풀까지 강한 합법 덱 탐색
+- 구현 우선순위:
+  1. 덱 인코딩
+     - 리더 ID + 카드 ID 멀티셋(genome)
+  2. 합법 덱 생성기
+     - 1/40/3장/트리거<=8 제약 엄격 적용
+  3. 변이/교차 연산자
+     - N장 교체, 희귀도 비의존, 합법성 보정(repair)
+  4. 적합도 함수
+     - 기준 봇 군집 대비 승률 + 불안정 결과 패널티
+- 권장 파일:
   - `src/logic/ai/deck/DeckCodec.ts`
   - `src/logic/ai/deck/DeckLegality.ts`
   - `src/logic/ai/deck/DeckSearchGA.ts`
   - `scripts/ai/run_deck_search.ts`
-- ?꾨즺 湲곗?:
-  - seed 湲곗? ?ы쁽 媛?ν븳 top-K ?⑸쾿 ??異쒕젰
-  - ?먯깋 理쒖긽???깆씠 湲곗? ?ㅽ??????鍮?紐⑺몴 ?밸쪧 ?μ긽 ?ъ꽦
+- 완료 기준:
+  - seed 기준 재현 가능한 top-K 합법 덱 출력
+  - 탐색 최상위 덱이 기준 스타터 덱 대비 목표 승률 향상 달성
 
-## Phase 4: 怨듭쭊??Co-evolution) 諛?硫뷀? 寃ш퀬??
-- 紐⑺몴:
-  - ?⑥씪 ?곷?/?⑥씪 ?깆뿉 怨쇱쟻?⑸릺???꾩긽 諛⑹?
-- 援ы쁽 ?곗꽑?쒖쐞:
-  1. ?곷? ? 湲곕컲 ?됯?
-     - baseline, strong v1, strong v2, 怨쇨굅 泥댄겕?ъ씤???ы븿
-  2. ??由ш렇 ?됯?
-     - ?⑥씪 ?곷? ?먯닔 ???league 湲곕컲 ?ㅼ퐫?대쭅
-  3. 媛쒖껜援?硫붾え由?     - 怨쇨굅 媛뺥븳 ?깆쓣 ?ㅼ뼇???덇쾶 蹂댁〈
-  4. 遺뺢눼 諛⑹? 紐⑺몴
-     - fitness???ㅼ뼇??蹂대꼫??諛섏쁺
-- ?꾨즺 湲곗?:
-  - ?곸쐞 ?깆씠 ?뱀젙 1留ㅼ튂?낆씠 ?꾨땶 ?곷? ? ?꾨컲?먯꽌 媛뺥븿 ?좎?
+## Phase 4: 공진화(Co-evolution) 및 메타 견고화
 
-## Phase 5: RL ?듯빀 (?먯깋 ?뚯씠?꾨씪???덉젙???댄썑 ?좏깮)
+- 목표:
+  - 단일 상대/단일 덱에 과적합되는 현상 방지
+- 구현 우선순위:
+  1. 상대 풀 기반 평가
+     - baseline, strong v1, strong v2, 과거 체크포인트 포함
+  2. 덱 리그 평가
+     - 단일 상대 점수 대신 league 기반 스코어링
+  3. 개체군 메모리
+     - 과거 강한 덱을 다양성 있게 보존
+  4. 붕괴 방지 목표
+     - fitness에 다양성 보너스 반영
+- 완료 기준:
+  - 상위 덱이 특정 1매치업이 아닌 상대 풀 전반에서 강함 유지
 
-- ?꾩튂:
-  - RL? ?좏슚?섏?留? 媛뺥븳 ?됯?/?먯깋 ?뚯씠?꾨씪???댄썑媛 ?⑥쑉??- 援ы쁽 ?곗꽑?쒖쐞:
-  1. self-play 諛????먯깋 留ㅼ튂 濡쒓렇???ㅽ봽?쇱씤 ?곗씠?곗뀑 異붿텧
-  2. 媛뺥븳 ?뺤콉 ?몃젅?댁뒪濡?behavior cloning ?뚮컢??  3. legal-action masking 湲곕컲 PPO ?뚯씤?쒕떇
-  4. ?곷? 泥댄겕?ъ씤???섑뵆留?湲곕컲 self-play
-- ?꾨즺 湲곗?:
-  - ?곕뱶???뚭? ?놁씠 RL ?뺤콉???먯깋 湲곕컲 遊뉗쓣 ?듭젣???됯??μ뿉???곹쉶
+## Phase 5: RL 통합 (탐색 파이프라인 안정화 이후 선택)
 
-## 5) 留덉씪?ㅽ넠 諛?醫낅즺 湲곗?
+- 위치:
+  - RL은 유효하지만, 강한 평가/탐색 파이프라인 이후가 효율적
+- 구현 우선순위:
+  1. self-play 및 덱 탐색 매치 로그의 오프라인 데이터셋 추출
+  2. 강한 정책 트레이스로 behavior cloning 워밍업
+  3. legal-action masking 기반 PPO 파인튜닝
+  4. 상대 체크포인트 샘플링 기반 self-play
+- 완료 기준:
+  - 데드락 회귀 없이 RL 정책이 탐색 기반 봇을 통제된 평가장에서 상회
 
-- M1 (Phase 1 醫낅즺):
-  - StrongBot v1 肄붾뱶 諛섏쁺 + 踰ㅼ튂留덊겕 ?섎꽕???ъ슜 媛??- M2 (Phase 2 醫낅즺):
-  - ?고????덉궛???덉젙?곸씤 ?먯깋 湲곕컲 ?뚮젅??遊??뺣낫
-- M3 (Phase 3 醫낅즺):
-  - ST01/ST02/ST03/BT01 移대뱶??먯꽌 ?ы쁽 媛?ν븳 top deck CLI ?뺣낫
-- M4 (Phase 4 醫낅즺):
-  - ???곷? 由ш렇 ?꾨컲?먯꽌 寃ш퀬??怨듭쭊?????뺣낫
-- M5 (?좏깮, Phase 5):
-  - RL ?뺤콉???됯? ?쇰뜑???듯빀
+## 5) 마일스톤 및 종료 기준
 
-## 6) ?쒖븞 而ㅻ㎤???명듃
+- M1 (Phase 1 종료):
+  - StrongBot v1 코드 반영 + 벤치마크 하네스 사용 가능
+- M2 (Phase 2 종료):
+  - 런타임 예산이 안정적인 탐색 기반 플레이 봇 확보
+- M3 (Phase 3 종료):
+  - ST01/ST02/ST03/BT01 카드풀에서 재현 가능한 top deck CLI 확보
+- M4 (Phase 4 종료):
+  - 덱/상대 리그 전반에서 견고한 공진화 덱 확보
+- M5 (선택, Phase 5):
+  - RL 정책이 평가 라더에 통합
+
+## 6) 제안 커맨드 세트
 
 - `npm run ai:bench`
-  - 怨좎젙 seed 湲곕컲 bot-vs-bot 踰ㅼ튂留덊겕 諛?由ы룷???앹꽦
+  - 고정 seed 기반 bot-vs-bot 벤치마크 및 리포트 생성
 - `npm run ai:ladder`
-  - ?ㅼ쨷 遊??쇱슫?쒕줈鍮?+ Elo 怨꾩궛
+  - 다중 봇 라운드로빈 + Elo 계산
 - `npm run ai:deck-search`
-  - GA/ES 湲곕컲 ???먯깋 ?ㅽ뻾
+  - GA/ES 기반 덱 탐색 실행
 - `npm run ai:regression`
-  - AI ?듭떖 ?뚭? ?명듃 + quick soak ?ㅽ뻾
+  - AI 핵심 회귀 세트 + quick soak 실행
 
-## 7) ?④퀎蹂??뚯뒪???꾨왂
+## 7) 단계별 테스트 전략
 
-- 媛??④퀎 援ы쁽 ??
-  - ?ㅽ뙣 ?뚯뒪??癒쇱? ?묒꽦(TDD)
-- 媛??④퀎 援ы쁽 以?
-  - scorer/search/deck legality ?⑥쐞 ?뚯뒪??  - interaction ownership/target selection ?뚭? ?뚯뒪??  - deadlock/no-action ?먯? soak ?뚯뒪??- 媛??④퀎 ?꾨즺 ??
-  - ?꾩껜 `npm test`
-  - quick soak ?ㅽ뻾
-  - seed 紐⑸줉 + commit hash媛 ?ы븿??踰ㅼ튂留덊겕 ?곗텧臾?蹂닿?
+- 각 단계 구현 전:
+  - 실패 테스트 먼저 작성(TDD)
+- 각 단계 구현 중:
+  - scorer/search/deck legality 단위 테스트
+  - interaction ownership/target selection 회귀 테스트
+  - deadlock/no-action 탐지 soak 테스트
+- 각 단계 완료 후:
+  - 전체 `npm test`
+  - quick soak 실행
+  - seed 목록 + commit hash가 포함된 벤치마크 산출물 보관
 
-## 8) 由ъ뒪??諛????
-- 由ъ뒪?? ?섑뵆 ??遺議깆쑝濡??됯? ?몄씠利?諛쒖깮
-  - ??? 怨좎젙 seed ?명듃 + ?좊ː援ш컙 由ы룷??- 由ъ뒪?? ?⑥씪 遊?湲곗? 怨쇱쟻??  - ??? ?곷? ? + 由ш렇 湲곕컲 fitness
-- 由ъ뒪?? ?먯깋 ?쒓컙 ??쬆
-  - ??? budgeted rollout, beam cap, 議곌린 醫낅즺
-- 由ъ뒪?? AI 理쒖쟻??以?猷??뚭? 諛쒖깮
-  - ??? ?꾧꺽???뚭? 寃뚯씠???듦낵瑜?蹂묓빀 議곌굔?쇰줈 ?좎?
+## 8) 리스크 및 대응
 
-## 9) 沅뚯옣 珥덇린 2二??뚮옖
+- 리스크: 샘플 수 부족으로 평가 노이즈 발생
+  - 대응: 고정 seed 세트 + 신뢰구간 리포팅
+- 리스크: 단일 봇 기준 과적합
+  - 대응: 상대 풀 + 리그 기반 fitness
+- 리스크: 탐색 시간 폭증
+  - 대응: budgeted rollout, beam cap, 조기 종료
+- 리스크: AI 최적화 중 룰 회귀 발생
+  - 대응: 엄격한 회귀 게이트 통과를 병합 조건으로 유지
+
+## 9) 권장 초기 2주 플랜
 
 - Week 1:
-  - Phase 0 ?꾨즺
-  - StrongBot v1 ?됯?湲??ㅼ펷?덊넠 + baseline 踰ㅼ튂留덊겕 由ы룷???뺣낫
+  - Phase 0 완료
+  - StrongBot v1 평가기 스켈레톤 + baseline 벤치마크 리포트 확보
 - Week 2:
-  - StrongBot v1 ?꾩닠 ?ㅻ쾭?쇱씠??異붽?
-  - ???⑸쾿??紐⑤뱢 + ?쒕뜡 ?⑸쾿 ???앹꽦湲?異붽?
-  - ?뚭퇋紐?媛쒖껜援??몃?濡????먯깋 dry-run ?섑뻾
-
-
+  - StrongBot v1 전술 오버라이드 추가
+  - 덱 합법성 모듈 + 랜덤 합법 덱 생성기 추가
+  - 소규모 개체군/세대로 덱 탐색 dry-run 수행
