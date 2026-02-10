@@ -1,6 +1,6 @@
 # AI Roadmap: Strong Play Bot + Strong Deck Search
 
-## Progress Status (2026-02-09)
+## Progress Status (2026-02-10)
 
 - [x] Phase 0 complete
   - Evidence: `Phase0.md`
@@ -12,7 +12,16 @@
   - Ladder with side swaps (`strong-v1, baseline-a, baseline-b`, seedsPerPair=6):
     - `strong-v1` 15-9 (62.5%), Elo 1041.06
   - Head-to-head vs `baseline-b` in fixed-role bench needs tuning
-- [ ] Phase 2 not started
+- [~] Phase 2 implementation started
+  - Evidence: `Phase2.md`
+  - Added:
+    - simulation fork infra (`GameEngine.createSimulationFork`, RNG clone)
+    - `StrongBotV2` (beam search + deterministic v1 fallback)
+    - phase2 regression test (`tests/ai/StrongBotPhase2.vitest.test.ts`)
+- [~] Phase 2 acceptance target not met yet
+  - side-swapped ladder (`strong-v2` vs `strong-v1`, seedsPerPair=20): 20-20 (50%)
+  - fixed-role bench (`strong-v2` P1 vs `strong-v1` P2, 119 games): 56-63 (47.06%)
+  - safety remains green: `no_action=0`, `invalid_action=0`
 - [ ] Phase 3 not started
 - [ ] Phase 4 not started
 - [ ] Phase 5 not started
@@ -93,6 +102,27 @@
   - `StrongBot` >= 60% win rate vs `BaselineBot` over fixed benchmark suite.
   - No increase in `no_action` / `invalid_action` terminations.
 
+## Phase 2 Entry Gate (Go/No-Go)
+
+- Gate date baseline: 2026-02-10
+- Must satisfy all checks before Phase 2 implementation starts:
+  1. Stability gate is green:
+     - `npm run ai:regression` passes.
+     - `npm run test:bot-soak` quick mode has `no_action=0` and `invalid_action=0`.
+  2. Measurement gate is reproducible:
+     - `npm run ai:bench` and `npm run ai:ladder` are deterministic on same seed/config.
+     - Keep benchmark artifacts under `artifacts/ai/`.
+  3. Performance baseline for v1 is recorded:
+     - Keep one role-fixed bench artifact and one side-swapped ladder artifact.
+     - Record confidence interval from bench (`summary.confidence.*`).
+  4. Phase 2 simulation prerequisite is implemented first:
+     - Engine simulation fork path (`clone/snapshot-restore`) exists and is tested.
+     - Forked simulation does not mutate the original engine state.
+     - RNG state is forkable/reproducible for branch simulation.
+  5. Fallback safety is enforced:
+     - Search bot must fall back deterministically to v1 scorer when budget is exhausted.
+     - No new `no_action` / `invalid_action` regressions in v2-vs-v1 batch.
+
 ## Phase 2: Strong Play Bot v2 (Search-based)
 
 - Objective:
@@ -107,8 +137,20 @@
   4. Add time/step budget:
      - deterministic fallback to v1 scorer when budget exceeded.
 - Acceptance:
-  - v2 >= 55% win rate vs v1 on same deck set.
-  - Runtime budget respected (target ms/action cap in batch mode).
+  - v2 >= 55% win rate vs v1 on same deck set (side-swapped evaluation).
+  - Runtime budget respected (node/step budget mandatory, ms/action tracking in batch mode).
+  - No regression in termination safety (`no_action=0`, `invalid_action=0` on phase benchmark config).
+
+## Phase 2 Next Work (Immediate)
+
+1. Engine stabilization first:
+   - fix stack overflow reproduction path (seed example: `2026021819`) in passive/exit recursion chain.
+2. v2 strength tuning:
+   - tune search coverage (`MAIN/BLOCK`), node value weights, and fallback threshold.
+3. Runtime KPI instrumentation:
+   - add `ms/action` telemetry to batch reports for hard budget checks.
+4. Re-evaluation protocol:
+   - keep side-swapped ladder + fixed-role bench together, with CI-based promotion checks.
 
 ## Phase 3: Deck Search MVP (Evolutionary Search)
 

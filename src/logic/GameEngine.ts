@@ -1,4 +1,4 @@
-﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, GameContext, Effect, TargetSchema, PendingEffect } from './types';
+﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, Attribute, GameContext, Effect, TargetSchema, PendingEffect } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
@@ -100,6 +100,13 @@ export class GameEngine {
 
     private nextRandom(): number {
         return this.random.next();
+    }
+
+    public advanceRandomState(steps: number): void {
+        const count = Math.max(0, Math.trunc(steps));
+        for (let i = 0; i < count; i++) {
+            this.nextRandom();
+        }
     }
 
     public randomInt(maxExclusive: number): number {
@@ -339,6 +346,62 @@ export class GameEngine {
                 return value;
             })
         );
+    }
+
+    public createSimulationFork(): GameEngine {
+        if (this.pendingRuntime) {
+            throw new Error('Simulation fork is unavailable while pending runtime context exists.');
+        }
+
+        const clonedRandomProvider = this.cloneRandomProvider();
+        const player1 = this.state.players[0];
+        const player2 = this.state.players[1];
+        const leader1 = player1.levelZone ? this.cloneCard(player1.levelZone) : this.createFallbackLeaderCard('SIM_LEADER_P1');
+        const leader2 = player2.levelZone ? this.cloneCard(player2.levelZone) : this.createFallbackLeaderCard('SIM_LEADER_P2');
+
+        const fork = new GameEngine(
+            player1.name,
+            player2.name,
+            [],
+            [],
+            leader1,
+            leader2,
+            {
+                randomProvider: clonedRandomProvider,
+                enableMulligan: false,
+            },
+        );
+
+        fork.state = this.getSerializableState();
+        fork.runtimeIdCounter = this.runtimeIdCounter;
+        fork.awaitingEndPhaseHandAdjustment = this.awaitingEndPhaseHandAdjustment;
+        fork.pendingRuntime = null;
+        fork.assignInteractionOwner(fork.state.interactionOwnerPlayerId);
+
+        return fork;
+    }
+
+    private cloneRandomProvider(): RandomProvider {
+        if (typeof this.random.clone === 'function') {
+            return this.random.clone();
+        }
+        throw new Error('RandomProvider must support clone() for simulation fork.');
+    }
+
+    private cloneCard(card: Card): Card {
+        return JSON.parse(JSON.stringify(card));
+    }
+
+    private createFallbackLeaderCard(id: string): Card {
+        return {
+            id,
+            name: id,
+            type: CardType.LEADER,
+            attribute: Attribute.NONE,
+            cost: 0,
+            text: '',
+            effects: [],
+        };
     }
 
     private getPayableHandIndexesForCost(player: PlayerState, cost: PendingEffect['costToPay']): number[] {
@@ -2425,6 +2488,7 @@ export class GameEngine {
 
 
 }
+
 
 
 

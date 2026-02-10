@@ -1,0 +1,478 @@
+{
+  "config": {
+    "entrants": [
+      "strong-v1",
+      "baseline-a",
+      "baseline-b"
+    ],
+    "startSeed": 2026020900,
+    "seedsPerPair": 6,
+    "maxSteps": 2400,
+    "enableMulligan": true,
+    "kFactor": 24,
+    "initialRating": 1000
+  },
+  "entrants": [
+    {
+      "entrantId": "strong-v1",
+      "rating": 1015.48,
+      "games": 24,
+      "wins": 13,
+      "losses": 11,
+      "draws": 0,
+      "points": 13
+    },
+    {
+      "entrantId": "baseline-a",
+      "rating": 994.15,
+      "games": 24,
+      "wins": 12,
+      "losses": 12,
+      "draws": 0,
+      "points": 12
+    },
+    {
+      "entrantId": "baseline-b",
+      "rating": 990.37,
+      "games": 24,
+      "wins": 11,
+      "losses": 13,
+      "draws": 0,
+      "points": 11
+    }
+  ],
+  "matches": [
+    {
+      "seed": 2026020900,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 111,
+      "turnCount": 11
+    },
+    {
+      "seed": 2026020900,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 84,
+      "turnCount": 9
+    },
+    {
+      "seed": 2026020901,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 87,
+      "turnCount": 10
+    },
+    {
+      "seed": 2026020901,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 84,
+      "turnCount": 10
+    },
+    {
+      "seed": 2026020902,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 94,
+      "turnCount": 11
+    },
+    {
+      "seed": 2026020902,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 107,
+      "turnCount": 11
+    },
+    {
+      "seed": 2026020903,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 126,
+      "turnCount": 15
+    },
+    {
+      "seed": 2026020903,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 147,
+      "turnCount": 17
+    },
+    {
+      "seed": 2026020904,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 109,
+      "turnCount": 12
+    },
+    {
+      "seed": 2026020904,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 130,
+      "turnCount": 14
+    },
+    {
+      "seed": 2026020905,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 173,
+      "turnCount": 18
+    },
+    {
+      "seed": 2026020905,
+      "pair": [
+        "strong-v1",
+        "baseline-a"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 100,
+      "turnCount": 12
+    },
+    {
+      "seed": 2026020906,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 82,
+      "turnCount": 9
+    },
+    {
+      "seed": 2026020906,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 82,
+      "turnCount": 9
+    },
+    {
+      "seed": 2026020907,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 116,
+      "turnCount": 13
+    },
+    {
+      "seed": 2026020907,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 121,
+      "turnCount": 13
+    },
+    {
+      "seed": 2026020908,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 124,
+      "turnCount": 13
+    },
+    {
+      "seed": 2026020908,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 116,
+      "turnCount": 12
+    },
+    {
+      "seed": 2026020909,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 112,
+      "turnCount": 13
+    },
+    {
+      "seed": 2026020909,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 95,
+      "turnCount": 11
+    },
+    {
+      "seed": 2026020910,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 154,
+      "turnCount": 14
+    },
+    {
+      "seed": 2026020910,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 140,
+      "turnCount": 14
+    },
+    {
+      "seed": 2026020911,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 83,
+      "turnCount": 10
+    },
+    {
+      "seed": 2026020911,
+      "pair": [
+        "strong-v1",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "strong-v1",
+      "steps": 135,
+      "turnCount": 14
+    },
+    {
+      "seed": 2026020912,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 136,
+      "turnCount": 17
+    },
+    {
+      "seed": 2026020912,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 136,
+      "turnCount": 17
+    },
+    {
+      "seed": 2026020913,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 112,
+      "turnCount": 12
+    },
+    {
+      "seed": 2026020913,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 112,
+      "turnCount": 12
+    },
+    {
+      "seed": 2026020914,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 123,
+      "turnCount": 13
+    },
+    {
+      "seed": 2026020914,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 123,
+      "turnCount": 13
+    },
+    {
+      "seed": 2026020915,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 97,
+      "turnCount": 11
+    },
+    {
+      "seed": 2026020915,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 97,
+      "turnCount": 11
+    },
+    {
+      "seed": 2026020916,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 103,
+      "turnCount": 10
+    },
+    {
+      "seed": 2026020916,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 103,
+      "turnCount": 10
+    },
+    {
+      "seed": 2026020917,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": false,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-a",
+      "steps": 118,
+      "turnCount": 13
+    },
+    {
+      "seed": 2026020917,
+      "pair": [
+        "baseline-a",
+        "baseline-b"
+      ],
+      "swapped": true,
+      "reason": "winner",
+      "winnerEntrantId": "baseline-b",
+      "steps": 118,
+      "turnCount": 13
+    }
+  ]
+}

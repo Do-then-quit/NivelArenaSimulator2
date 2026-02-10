@@ -1,0 +1,303 @@
+import { GameEngine } from '../GameEngine';
+import { EngineAction, Phase } from '../types';
+import { scoreAction } from './eval/ActionScorer';
+import { evaluateState } from './eval/StateEvaluator';
+import { StrongBot } from './StrongBot';
+
+interface SearchNode {
+    engine: GameEngine;
+    firstAction: EngineAction;
+    depth: number;
+    score: number;
+}
+
+interface SearchResult {
+    action: EngineAction;
+    exhaustedBudget: boolean;
+}
+
+export interface StrongBotV2Options {
+    beamWidth: number;
+    maxDepth: number;
+    expansionBudget: number;
+    rolloutVariants: number;
+    variantRandomJitterSteps: number;
+    discountFactor: number;
+    stateScoreWeight: number;
+    actionScoreWeight: number;
+}
+
+const DEFAULT_OPTIONS: StrongBotV2Options = {
+    beamWidth: 4,
+    maxDepth: 3,
+    expansionBudget: 480,
+    rolloutVariants: 1,
+    variantRandomJitterSteps: 3,
+    discountFactor: 0.92,
+    stateScoreWeight: 1,
+    actionScoreWeight: 0.24,
+};
+
+export class StrongBotV2 {
+    readonly name: string;
+    private readonly fallback: StrongBot;
+    private readonly options: StrongBotV2Options;
+
+    constructor(name: string = 'StrongBot-v2', options: Partial<StrongBotV2Options> = {}) {
+        this.name = name;
+        this.fallback = new StrongBot(`${name}-Fallback-v1`);
+        this.options = {
+            ...DEFAULT_OPTIONS,
+            ...options,
+            beamWidth: Math.max(1, Math.trunc(options.beamWidth ?? DEFAULT_OPTIONS.beamWidth)),
+            maxDepth: Math.max(1, Math.trunc(options.maxDepth ?? DEFAULT_OPTIONS.maxDepth)),
+            expansionBudget: Math.max(1, Math.trunc(options.expansionBudget ?? DEFAULT_OPTIONS.expansionBudget)),
+            rolloutVariants: Math.max(1, Math.trunc(options.rolloutVariants ?? DEFAULT_OPTIONS.rolloutVariants)),
+            variantRandomJitterSteps: Math.max(0, Math.trunc(options.variantRandomJitterSteps ?? DEFAULT_OPTIONS.variantRandomJitterSteps)),
+        };
+    }
+
+    public chooseAction(engine: GameEngine, actorPlayerId?: string): EngineAction | null {
+        const resolvedActorId = actorPlayerId ?? engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
+        const observation = engine.getObservation(resolvedActorId);
+        if (!observation.canAct || observation.legalActions.length === 0) return null;
+
+        const fallbackAction = this.fallback.chooseAction(engine, resolvedActorId);
+
+        if (!this.canSearchCurrentState(engine)) {
+            return fallbackAction;
+        }
+
+        let searchResult: SearchResult;
+        try {
+            searchResult = this.pickByBeamSearch(engine, resolvedActorId, observation.legalActions);
+        } catch {
+            return fallbackAction;
+        }
+
+        if (searchResult.exhaustedBudget) {
+            return fallbackAction;
+        }
+
+        if (!fallbackAction) {
+            return searchResult.action;
+        }
+
+        return this.selectSaferAction(engine, resolvedActorId, searchResult.action, fallbackAction);
+    }
+
+    public step(engine: GameEngine, actorPlayerId?: string): boolean {
+        const action = this.chooseAction(engine, actorPlayerId);
+        if (!action) return false;
+        return engine.step(action);
+    }
+
+    private canSearchCurrentState(engine: GameEngine): boolean {
+        if (engine.state.interactionMode !== 'NORMAL') return false;
+        return engine.state.phase === Phase.ATTACK;
+    }
+
+    private pickByBeamSearch(engine: GameEngine, actorPlayerId: string, legalActions: EngineAction[]): SearchResult {
+        const rootActions = this.sortActions(legalActions);
+        if (rootActions.length === 1) {
+            return { action: rootActions[0], exhaustedBudget: false };
+        }
+
+        let expansions = 0;
+        let exhaustedBudget = false;
+        const initialNodes: SearchNode[] = [];
+
+        for (const rootAction of rootActions) {
+            for (let variant = 0; variant < this.options.rolloutVariants; variant++) {
+                if (expansions >= this.options.expansionBudget) {
+                    exhaustedBudget = true;
+                    break;
+                }
+
+                const fork = engine.createSimulationFork();
+                if (variant > 0 && this.options.variantRandomJitterSteps > 0) {
+                    fork.advanceRandomState(variant * this.options.variantRandomJitterSteps);
+                }
+
+                const ok = fork.step(rootAction);
+                expansions += 1;
+                if (!ok) continue;
+
+                const tactical = scoreAction(engine, actorPlayerId, rootAction).score;
+                initialNodes.push({
+                    engine: fork,
+                    firstAction: rootAction,
+                    depth: 1,
+                    score: this.computeNodeValue(fork, actorPlayerId, tactical),
+                });
+            }
+            if (exhaustedBudget) break;
+        }
+
+        if (initialNodes.length === 0) {
+            return { action: rootActions[0], exhaustedBudget };
+        }
+
+        let frontier = initialNodes;
+        for (let depth = 1; depth < this.options.maxDepth; depth++) {
+            if (frontier.length === 0) break;
+
+            const beam = this.sortNodes(frontier).slice(0, this.options.beamWidth);
+            const nextFrontier: SearchNode[] = [];
+
+            for (const node of beam) {
+                if (this.isTerminal(node.engine, actorPlayerId)) {
+                    nextFrontier.push(node);
+                    continue;
+                }
+
+                const legal = this.sortActions(node.engine.getLegalActions(actorPlayerId));
+                if (legal.length === 0) {
+                    nextFrontier.push(node);
+                    continue;
+                }
+
+                for (const action of legal) {
+                    if (expansions >= this.options.expansionBudget) {
+                        exhaustedBudget = true;
+                        break;
+                    }
+
+                    const childEngine = node.engine.createSimulationFork();
+                    const ok = childEngine.step(action);
+                    expansions += 1;
+                    if (!ok) continue;
+
+                    const tactical = scoreAction(node.engine, actorPlayerId, action).score;
+                    const incremental = this.computeNodeValue(childEngine, actorPlayerId, tactical);
+                    nextFrontier.push({
+                        engine: childEngine,
+                        firstAction: node.firstAction,
+                        depth: node.depth + 1,
+                        score: node.score * this.options.discountFactor + incremental,
+                    });
+                }
+
+                if (exhaustedBudget) break;
+            }
+
+            frontier = nextFrontier.length > 0 ? nextFrontier : beam;
+            if (exhaustedBudget) break;
+        }
+
+        const bestAction = this.pickBestAggregatedAction(rootActions, frontier);
+        return {
+            action: bestAction,
+            exhaustedBudget,
+        };
+    }
+
+    private computeNodeValue(engine: GameEngine, actorPlayerId: string, tacticalScore: number): number {
+        const opponent = engine.state.players.find(player => player.id !== actorPlayerId);
+        const winnerBonus =
+            engine.state.winner === null
+                ? 0
+                : engine.state.winner === actorPlayerId
+                    ? 75000
+                    : -75000;
+        const score = evaluateState(engine, actorPlayerId).total;
+        const ownershipPenalty =
+            engine.state.interactionOwnerPlayerId !== null && engine.state.interactionOwnerPlayerId !== actorPlayerId
+                ? -180
+                : 0;
+        const phasePenalty = engine.state.phase === Phase.END ? -70 : 0;
+        const opponentThreatPenalty =
+            opponent && engine.state.winner === null && opponent.damage.length >= 9
+                ? -120
+                : 0;
+
+        return (
+            score * this.options.stateScoreWeight +
+            tacticalScore * this.options.actionScoreWeight +
+            winnerBonus +
+            ownershipPenalty +
+            phasePenalty +
+            opponentThreatPenalty
+        );
+    }
+
+    private isTerminal(engine: GameEngine, actorPlayerId: string): boolean {
+        if (engine.state.winner) return true;
+        if (engine.state.interactionMode !== 'NORMAL') return true;
+        const ownerId = engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
+        if (ownerId !== actorPlayerId) return true;
+        return engine.state.phase !== Phase.MAIN && engine.state.phase !== Phase.ATTACK && engine.state.phase !== Phase.BLOCK;
+    }
+
+    private pickBestAggregatedAction(rootActions: EngineAction[], nodes: SearchNode[]): EngineAction {
+        const aggregate = new Map<string, { action: EngineAction; scoreSum: number; count: number }>();
+
+        for (const node of nodes) {
+            const key = this.toActionKey(node.firstAction);
+            const current = aggregate.get(key);
+            if (!current) {
+                aggregate.set(key, { action: node.firstAction, scoreSum: node.score, count: 1 });
+            } else {
+                current.scoreSum += node.score;
+                current.count += 1;
+            }
+        }
+
+        let bestAction = rootActions[0];
+        let bestScore = Number.NEGATIVE_INFINITY;
+        let bestKey = this.toActionKey(bestAction);
+
+        for (const action of rootActions) {
+            const key = this.toActionKey(action);
+            const entry = aggregate.get(key);
+            const score = entry ? entry.scoreSum / entry.count : Number.NEGATIVE_INFINITY;
+            if (score > bestScore) {
+                bestScore = score;
+                bestAction = action;
+                bestKey = key;
+                continue;
+            }
+
+            if (score === bestScore && key < bestKey) {
+                bestAction = action;
+                bestKey = key;
+            }
+        }
+
+        return bestAction;
+    }
+
+    private sortNodes(nodes: SearchNode[]): SearchNode[] {
+        return [...nodes].sort((a, b) => {
+            if (a.score !== b.score) return b.score - a.score;
+            if (a.depth !== b.depth) return b.depth - a.depth;
+            return this.toActionKey(a.firstAction).localeCompare(this.toActionKey(b.firstAction));
+        });
+    }
+
+    private sortActions(actions: EngineAction[]): EngineAction[] {
+        return [...actions].sort((a, b) => this.toActionKey(a).localeCompare(this.toActionKey(b)));
+    }
+
+    private selectSaferAction(
+        engine: GameEngine,
+        actorPlayerId: string,
+        searchAction: EngineAction,
+        fallbackAction: EngineAction,
+    ): EngineAction {
+        const searchImmediate = scoreAction(engine, actorPlayerId, searchAction).score;
+        const fallbackImmediate = scoreAction(engine, actorPlayerId, fallbackAction).score;
+        if (searchImmediate + 80 < fallbackImmediate) {
+            return fallbackAction;
+        }
+        return searchAction;
+    }
+
+    private toActionKey(action: EngineAction): string {
+        const payload = Object.entries(action)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, value]) => `${key}=${String(value)}`)
+            .join('|');
+        return `${action.type}|${payload}`;
+    }
+}

@@ -1,6 +1,6 @@
 ﻿# AI 로드맵: 강한 플레이 봇 + 강한 덱 탐색
 
-## 진행 현황 (2026-02-09)
+## 진행 현황 (2026-02-10)
 
 - [x] Phase 0 완료
   - 근거 문서: `Phase0.md`
@@ -12,7 +12,16 @@
   - 라더(진영 스왑 포함, entrants=`strong-v1,baseline-a,baseline-b`, seedsPerPair=6):
     - `strong-v1` 15승 9패(62.5%), Elo 1041.06
   - 고정 역할 벤치에서 `baseline-b` 상대 성능은 추가 튜닝 필요
-- [ ] Phase 2 미착수
+- [~] Phase 2 구현 착수
+  - 근거 문서: `Phase2.md`
+  - 반영:
+    - 시뮬레이션 포크 인프라(`GameEngine.createSimulationFork`, RNG clone)
+    - `StrongBotV2` (beam search + 결정론적 v1 fallback)
+    - Phase2 회귀 테스트(`tests/ai/StrongBotPhase2.vitest.test.ts`)
+- [~] Phase 2 완료 기준은 미충족
+  - 진영 스왑 라더(`strong-v2` vs `strong-v1`, seedsPerPair=20): 20승 20패(50%)
+  - 고정 역할 벤치(`strong-v2` P1 vs `strong-v1` P2, 119게임): 56승 63패(47.06%)
+  - 안정성은 유지(`no_action=0`, `invalid_action=0`)
 - [ ] Phase 3 미착수
 - [ ] Phase 4 미착수
 - [ ] Phase 5 미착수
@@ -93,6 +102,27 @@
   - 고정 벤치마크 세트에서 `StrongBot`이 `BaselineBot` 대비 승률 60% 이상
   - `no_action` / `invalid_action` 종료 증가 없음
 
+## Phase 2 착수 게이트 (Go/No-Go)
+
+- 기준일: 2026-02-10
+- Phase 2 구현 착수 전 아래 조건을 모두 충족해야 함:
+  1. 안정성 게이트 통과:
+     - `npm run ai:regression` 통과
+     - `npm run test:bot-soak` quick에서 `no_action=0`, `invalid_action=0`
+  2. 측정 재현성 확보:
+     - 동일 seed/config에서 `npm run ai:bench`, `npm run ai:ladder` 결과 재현
+     - 벤치 아티팩트를 `artifacts/ai/`에 보관
+  3. v1 기준선 기록:
+     - 역할 고정 bench 1개 + 진영 스왑 ladder 1개를 기준선으로 저장
+     - bench 신뢰구간(`summary.confidence.*`) 포함
+  4. 시뮬레이션 선행 요건 구현:
+     - 엔진 포크 경로(`clone/snapshot-restore`)를 먼저 구현/테스트
+     - 포크 시뮬레이션이 원본 엔진 상태를 오염시키지 않아야 함
+     - 분기 시뮬레이션용 RNG 상태 포크/재현 가능해야 함
+  5. fallback 안전장치:
+     - 탐색 예산 초과 시 v1 스코어러로 결정론적 fallback
+     - v2-vs-v1 배치에서 `no_action` / `invalid_action` 회귀 없음
+
 ## Phase 2: Strong Play Bot v2 (탐색 기반)
 
 - 목표:
@@ -107,8 +137,20 @@
   4. 시간/스텝 예산 도입
      - 예산 초과 시 v1 스코어러로 결정론적 fallback
 - 완료 기준:
-  - 동일 덱 세트에서 v2가 v1 대비 승률 55% 이상
-  - 배치 모드에서 액션당 런타임 예산 준수
+  - 동일 덱 세트(진영 스왑 평가)에서 v2가 v1 대비 승률 55% 이상
+  - 런타임 예산 준수(노드/스텝 예산 필수, 배치에서 ms/action 추적)
+  - 종료 안정성 회귀 없음(`no_action=0`, `invalid_action=0`)
+
+## Phase 2 다음 즉시 작업
+
+1. 엔진 안정화 선행:
+   - passive/exit 재귀 체인의 stack overflow 재현 경로(예: seed `2026021819`) 수정
+2. v2 성능 튜닝:
+   - 탐색 적용 구간(`MAIN/BLOCK`) 재조정, 노드 평가 가중치/폴백 임계치 튜닝
+3. 런타임 KPI 계측:
+   - 배치 리포트에 `ms/action`을 추가해 예산 준수 여부를 수치화
+4. 재평가 프로토콜 고정:
+   - 진영 스왑 라더 + 고정 역할 벤치를 함께 사용하고 CI 기준으로 승격 판정
 
 ## Phase 3: 덱 탐색 MVP (진화형 탐색)
 
