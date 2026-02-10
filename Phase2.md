@@ -261,3 +261,56 @@ This section is the canonical summary for the fixed protocol results.
 
 ### 7.5 Aggregated Summary Artifact
 - `artifacts/ai/bench/phase2_protocol_v1_summary.json`
+
+## 8. Phase 2.1 Plan Before Deck Search (Priority)
+
+Goal: finish a stronger play bot before entering Phase 3 deck search.
+
+### 8.1 Interaction Search Coverage
+- Expand search beyond `NORMAL` to include:
+  - `SELECT_TARGET`
+  - `SELECT_COST`
+  - `SELECT_OPTIONAL`
+- Branch only when `interactionOwnerPlayerId` is the acting bot.
+- Keep current fork safety constraint (`pendingRuntime` must block fork).
+
+### 8.2 Interaction-Specific Budgeting
+- Add separate controls:
+  - `interactionDepth`
+  - `interactionBudget`
+- Prevent interaction-heavy turns from starving main-phase search budget.
+- Keep deterministic fallback when coverage is low or budget is exhausted.
+
+### 8.3 Effect-Aware Scoring
+- Score interaction actions from `pendingEffect` fields:
+  - `actionType`
+  - `actionValue`
+  - `targetSchema`
+  - `validTargets`
+- Split target-value policies by effect intent:
+  - removal
+  - buff
+  - revive
+  - hand disruption
+  - trash manipulation
+- Reweight away from pure `cost/power/hit` heuristics toward state-transition value:
+  - lethal swing
+  - lane control
+  - hand tempo
+
+### 8.4 Tests and Validation
+- Add interaction-search unit tests:
+  - `tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`
+- Add card-level high-value target regressions under `tests/cards/*`.
+- Validation gate:
+  - `npm run ai:regression`
+  - `npm run test:bot-soak`
+  - protocol rerun (200+200, runtime 50+50, ladder 100)
+
+### 8.5 Promotion Gate for Phase 2 Completion
+- Keep current promotion criteria unchanged:
+  - combined win rate `>= 55%`
+  - combined 95% CI low `>= 50%`
+  - `no_action = 0`
+  - `invalid_action = 0`
+- Start Phase 3 only after this gate passes.

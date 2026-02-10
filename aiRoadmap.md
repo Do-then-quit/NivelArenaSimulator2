@@ -175,6 +175,22 @@
      - result: `57-43 (57.0%)`, Elo `1045.36`
    - Aggregated summary: `artifacts/ai/bench/phase2_protocol_v1_summary.json`
    - Decision: keep v2 as non-promoted until criteria (`>=55%` and CI low `>=50%`) are met
+5. [ ] Phase 2.1 interaction-search expansion (play strength first):
+   - include `SELECT_TARGET` / `SELECT_COST` / `SELECT_OPTIONAL` in search space
+   - expand branches only when `interactionOwnerPlayerId` is the bot actor
+   - separate interaction budget (`interactionDepth`, `interactionBudget`) to protect main search budget
+6. [ ] Effect-aware decision upgrade:
+   - score interaction actions from `pendingEffect` (`actionType`, `actionValue`, `targetSchema`, `validTargets`)
+   - split target-value policies by effect intent (removal / buff / revive / hand-disruption / trash)
+   - reduce pure `cost/power/hit` bias and increase state-transition value (lethal swing / lane control / hand tempo)
+7. [ ] Add tests and regression gates:
+   - interaction-search unit tests (`tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`)
+   - high-value target-choice regressions per card family (`tests/cards/*`)
+   - run `npm run ai:regression`, `npm run test:bot-soak`, and re-run Phase 2 protocol
+8. [ ] Promotion re-evaluation (v1.1):
+   - re-run 200+200 bench + runtime 50+50 + ladder 100 with same criteria
+   - promotion criteria unchanged: combined win rate `>=55%`, CI low `>=50%`, `no_action=0`, `invalid_action=0`
+   - keep Phase 3 (deck search) gated until this passes
 
 ## Phase 3: Deck Search MVP (Evolutionary Search)
 

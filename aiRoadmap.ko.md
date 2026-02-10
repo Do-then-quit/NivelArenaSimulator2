@@ -175,6 +175,22 @@
      - 결과: `57승 43패 (57.0%)`, Elo `1045.36`
    - 집계 요약: `artifacts/ai/bench/phase2_protocol_v1_summary.json`
    - 판정: 승격 기준(`합산 승률>=55%` + `CI 하한>=50%`) 미충족으로 v2 승격 보류
+5. [ ] Phase 2.1 인터랙션 탐색 확장 (플레이 봇 완성 우선):
+   - `SELECT_TARGET`/`SELECT_COST`/`SELECT_OPTIONAL` 구간도 탐색 대상으로 포함
+   - 입력권(`interactionOwnerPlayerId`)이 봇 자신일 때만 분기 확장
+   - 인터랙션 전용 예산(`interactionDepth`, `interactionBudget`)을 분리해 메인 탐색 예산 보호
+6. [ ] 카드 효과 인지형 의사결정 강화:
+   - `pendingEffect` 기반 점수화(`actionType`, `actionValue`, `targetSchema`, `validTargets`)
+   - 타겟 가치 함수 분리(제거/버프/부활/핸드개입/트래시)
+   - 기존 `cost/power/hit` 편향을 낮추고, 상태 변화(킬각/라인 주도권/핸드 템포) 비중 상향
+7. [ ] 테스트/회귀 게이트 추가:
+   - 인터랙션 탐색 단위 테스트(`tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`)
+   - 카드별 고밸류 타겟 선택 회귀(`tests/cards/*`)
+   - `npm run ai:regression` + `npm run test:bot-soak` + Phase2 프로토콜 재실행
+8. [ ] 승격 재평가 (v1.1):
+   - 프로토콜 v1.0과 동일한 200+200 + runtime 50+50 + ladder 100 재측정
+   - 승격 기준 동일: 합산 승률 `>=55%`, 95% CI 하한 `>=50%`, `no_action=0`, `invalid_action=0`
+   - 통과 전까지 Phase 3(덱 탐색) 착수 보류
 
 ## Phase 3: 덱 탐색 MVP (진화형 탐색)
 
