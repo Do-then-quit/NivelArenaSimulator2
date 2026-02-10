@@ -23,11 +23,12 @@
     - runtime KPI telemetry in batch summary (`summary.runtime.msPerAction`)
       via `AI_BENCH_MEASURE_RUNTIME=1`
     - v2 tuning applied (search-phase expansion, coverage-based fallback, aggregation rebalance)
-- [~] Phase 2 acceptance target provisionally met (needs larger confirmation sample)
-  - side-swapped 120-game baseline: `60/120 = 50.00%`
-  - side-swapped 120-game tuned run: `66/120 = 55.00%`
-  - cross-check ladder (40 games): `21-19 (52.5%)` for `strong-v2`
-  - safety remains green: `no_action=0`, `invalid_action=0`
+- [~] Phase 2 re-evaluation completed (promotion deferred)
+  - protocol v1.0 bench 200+200: `213/400 = 53.25%`, 95% CI `[48.36%, 58.14%]`
+  - safety gate: `no_action=0`, `invalid_action=0` (pass)
+  - runtime sample 50+50: `ms/action=2.4074` (`P1=v2=2.3446`, `P2=v2=2.4726`)
+  - ladder cross-check 100 games: `57-43 (57.0%)`, Elo `1045.36`
+  - conclusion: promotion criteria (`combined >=55%` and `CI low >=50%`) not met
 - [ ] Phase 3 not started
 - [ ] Phase 4 not started
 - [ ] Phase 5 not started
@@ -159,8 +160,21 @@
    - expanded search phases to `MAIN/BLOCK/ATTACK`.
    - applied coverage-based fallback and root aggregation rebalance (`mean + 0.18 * max`).
    - reached `55.00%` in side-swapped 120-game run.
-4. [ ] Re-evaluation protocol:
-   - keep side-swapped ladder + fixed-role bench together, with CI-based promotion checks.
+4. [x] Re-evaluation protocol v1.0 executed and recorded:
+   - Side-swapped bench 200+200:
+     - artifacts: `artifacts/ai/bench/phase2_protocol_v1_p1v2_200.json`,
+       `artifacts/ai/bench/phase2_protocol_v1_p2v2_200.json`
+     - result: `213/400 = 53.25%`, 95% CI `[48.36%, 58.14%]`
+   - Safety criteria: `no_action=0`, `invalid_action=0` (pass)
+   - Runtime 50+50:
+     - artifacts: `artifacts/ai/bench/phase2_protocol_v1_runtime_p1v2_50.json`,
+       `artifacts/ai/bench/phase2_protocol_v1_runtime_p2v2_50.json`
+     - result: `ms/action=2.4074`, `avgMsPerGame=258.70`
+   - Ladder cross-check 100 games:
+     - artifact: `artifacts/ai/ladder/phase2_protocol_v1_ladder_100.json`
+     - result: `57-43 (57.0%)`, Elo `1045.36`
+   - Aggregated summary: `artifacts/ai/bench/phase2_protocol_v1_summary.json`
+   - Decision: keep v2 as non-promoted until criteria (`>=55%` and CI low `>=50%`) are met
 
 ## Phase 3: Deck Search MVP (Evolutionary Search)
 

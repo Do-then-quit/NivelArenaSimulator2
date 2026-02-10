@@ -199,7 +199,18 @@ Phase 2의 목표는 v1 휴리스틱 정책 위에 탐색 기반 의사결정을
 
 1. 재평가 프로토콜 고정
 - side-swap 라더 + 고정 역할 벤치를 모두 필수로 사용
-- 최소 샘플 수(예: 200+200)와 CI 기준을 명문화
+- Phase 2 재평가 프로토콜 v1.0 (고정):
+  - Bench(진영 스왑): `AI_BENCH_GAMES=200` x 2회 (P1=v2/P2=v1, P1=v1/P2=v2)
+  - 승격 기준:
+    - 합산 승률 `v2 >= 55%`
+    - 합산 95% CI 하한 `>= 50%`
+    - 종료 안정성 `no_action=0`, `invalid_action=0`
+  - Runtime 계측:
+    - `AI_BENCH_MEASURE_RUNTIME=1`로 50+50 샘플 계측
+    - `summary.runtime.msPerAction`, `avgMsPerGame` 기록
+  - Ladder 교차 확인:
+    - `AI_LADDER_SEEDS_PER_PAIR=50` (총 100게임)
+    - 승격 판정의 참고 지표로 기록 (필수 하한 조건은 아님)
 
 2. 평가 지표 운영 고정
 - 배치 리포트 runtime KPI(`ms/action`)를 Phase 2 승격 실험의 필수 지표로 사용
@@ -208,3 +219,45 @@ Phase 2의 목표는 v1 휴리스틱 정책 위에 탐색 기반 의사결정을
 3. 후속 튜닝 트랙
 - 확증 샘플에서 55% 미만으로 내려가면, `BLOCK` 응답 라인과
   `NEXT_PHASE` 페널티 주변 가중치를 우선 재튜닝
+
+## 7. Phase 2 Re-evaluation Protocol v1.0 (2026-02-10)
+
+This section is the canonical summary for the fixed protocol results.
+
+### 7.1 Bench (Side-Swapped 200+200)
+- Files:
+  - `artifacts/ai/bench/phase2_protocol_v1_p1v2_200.json`
+  - `artifacts/ai/bench/phase2_protocol_v1_p2v2_200.json`
+- Combined result (v2):
+  - wins: `213 / 400`
+  - win rate: `53.25%`
+  - 95% CI: `[48.36%, 58.14%]`
+- Safety:
+  - `no_action = 0`
+  - `invalid_action = 0`
+
+### 7.2 Runtime Profile (50+50, MEASURE_RUNTIME=1)
+- Files:
+  - `artifacts/ai/bench/phase2_protocol_v1_runtime_p1v2_50.json`
+  - `artifacts/ai/bench/phase2_protocol_v1_runtime_p2v2_50.json`
+- Combined runtime:
+  - `ms/action = 2.4074`
+  - `avgMsPerGame = 258.70`
+  - per-role sample: `P1=v2 -> 2.3446`, `P2=v2 -> 2.4726`
+
+### 7.3 Ladder Cross-check (100 games)
+- File: `artifacts/ai/ladder/phase2_protocol_v1_ladder_100.json`
+- Result (v2): `57-43 (57.0%)`, Elo `1045.36`
+
+### 7.4 Gate Decision
+- Promotion criteria:
+  - combined win rate `>= 55%`
+  - combined 95% CI lower bound `>= 50%`
+  - stability: `no_action=0`, `invalid_action=0`
+- Decision:
+  - stability: pass
+  - performance gate: fail (`53.25%`, CI low `48.36%`)
+  - promotion: **deferred**
+
+### 7.5 Aggregated Summary Artifact
+- `artifacts/ai/bench/phase2_protocol_v1_summary.json`

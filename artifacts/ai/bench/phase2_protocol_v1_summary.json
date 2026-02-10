@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-02-10",
+  "protocol": "phase2_re_evaluation_v1.0",
+  "bench200x2": {
+    "files": [
+      "artifacts/ai/bench/phase2_protocol_v1_p1v2_200.json",
+      "artifacts/ai/bench/phase2_protocol_v1_p2v2_200.json"
+    ],
+    "v2Wins": 213,
+    "totalGames": 400,
+    "winRate": 0.5325,
+    "ci95Low": 0.4836,
+    "ci95High": 0.5814,
+    "noAction": 0,
+    "invalidAction": 0
+  },
+  "runtime50x2": {
+    "files": [
+      "artifacts/ai/bench/phase2_protocol_v1_runtime_p1v2_50.json",
+      "artifacts/ai/bench/phase2_protocol_v1_runtime_p2v2_50.json"
+    ],
+    "v2Wins": 52,
+    "totalGames": 100,
+    "winRate": 0.52,
+    "ci95Low": 0.4221,
+    "ci95High": 0.6179,
+    "totalRuntimeMs": 25870.4,
+    "avgMsPerGame": 258.7,
+    "msPerAction": 2.4074,
+    "p1v2MsPerAction": 2.3446,
+    "p2v2MsPerAction": 2.4726
+  },
+  "ladder100": {
+    "file": "artifacts/ai/ladder/phase2_protocol_v1_ladder_100.json",
+    "v2Wins": 57,
+    "totalGames": 100,
+    "winRate": 0.57,
+    "ci95Low": 0.473,
+    "ci95High": 0.667,
+    "v2Rating": 1045.36
+  },
+  "gateDecision": {
+    "criteria": {
+      "combinedWinRateGte55": true,
+      "combinedCiLowGte50": true,
+      "noActionZero": true,
+      "invalidActionZero": true
+    },
+    "passCombinedWinRate": false,
+    "passCombinedCiLow": false,
+    "passNoAction": true,
+    "passInvalidAction": true,
+    "promoted": false
+  }
+}

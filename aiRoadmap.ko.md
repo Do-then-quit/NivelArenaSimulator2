@@ -23,11 +23,12 @@
     - 배치 리포트 runtime KPI(`summary.runtime.msPerAction`) 계측 추가
       (`AI_BENCH_MEASURE_RUNTIME=1`)
     - v2 튜닝(탐색 phase 확장/커버리지 기반 fallback/집계식 보정) 반영
-- [~] Phase 2 완료 기준 1차 충족(확증 필요)
-  - 튜닝 전 side-swapped 120게임: `60/120 = 50.00%`
-  - 튜닝 후 side-swapped 120게임: `66/120 = 55.00%`
-  - 교차 확인 라더(40게임): `21승 19패 (52.5%)`
-  - 안정성은 유지(`no_action=0`, `invalid_action=0`)
+- [~] Phase 2 재평가 완료 (승격 보류)
+  - 프로토콜 v1.0 bench 200+200: `213/400 = 53.25%`, 95% CI `[48.36%, 58.14%]`
+  - 안정성 게이트: `no_action=0`, `invalid_action=0` (통과)
+  - runtime 샘플 50+50: `ms/action=2.4074` (`P1=v2=2.3446`, `P2=v2=2.4726`)
+  - ladder 교차 확인 100게임: `57승 43패 (57.0%)`, Elo `1045.36`
+  - 결론: 승격 기준(`합산 승률>=55%` + `CI 하한>=50%`) 미충족으로 v2 승격 보류
 - [ ] Phase 3 미착수
 - [ ] Phase 4 미착수
 - [ ] Phase 5 미착수
@@ -159,8 +160,21 @@
    - 탐색 적용 구간을 `MAIN/BLOCK/ATTACK`으로 확장
    - 루트 커버리지 기반 fallback, 노드 집계식(`mean + 0.18 * max`) 적용
    - side-swapped 120게임에서 `55.00%` 달성
-4. [ ] 재평가 프로토콜 고정:
-   - 진영 스왑 라더 + 고정 역할 벤치를 함께 사용하고 CI 기준으로 승격 판정
+4. [x] 재평가 프로토콜 v1.0 실행 및 결과 정리:
+   - Bench(진영 스왑) 200+200:
+     - 산출물: `artifacts/ai/bench/phase2_protocol_v1_p1v2_200.json`,
+       `artifacts/ai/bench/phase2_protocol_v1_p2v2_200.json`
+     - 결과: `213/400 = 53.25%`, 95% CI `[48.36%, 58.14%]`
+   - 안정성 기준: `no_action=0`, `invalid_action=0` (통과)
+   - Runtime 50+50:
+     - 산출물: `artifacts/ai/bench/phase2_protocol_v1_runtime_p1v2_50.json`,
+       `artifacts/ai/bench/phase2_protocol_v1_runtime_p2v2_50.json`
+     - 결과: `ms/action=2.4074`, `avgMsPerGame=258.70`
+   - Ladder 교차 확인 100게임:
+     - 산출물: `artifacts/ai/ladder/phase2_protocol_v1_ladder_100.json`
+     - 결과: `57승 43패 (57.0%)`, Elo `1045.36`
+   - 집계 요약: `artifacts/ai/bench/phase2_protocol_v1_summary.json`
+   - 판정: 승격 기준(`합산 승률>=55%` + `CI 하한>=50%`) 미충족으로 v2 승격 보류
 
 ## Phase 3: 덱 탐색 MVP (진화형 탐색)
 
