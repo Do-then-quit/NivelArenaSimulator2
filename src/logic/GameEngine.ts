@@ -27,6 +27,9 @@ export class GameEngine {
     private runtimeIdCounter = 0;
     private pendingRuntime: PendingRuntimeState | null = null;
     private awaitingEndPhaseHandAdjustment = false;
+    private readonly destroyInProgressKeys = new Set<string>();
+    private isRuleProcessing = false;
+    private pendingRuleProcessing = false;
 
     constructor(
         player1Name: string,
@@ -1849,91 +1852,136 @@ export class GameEngine {
         if (!zone.unit) return;
 
         const unit = zone.unit;
-        const opponent = this.getOpponentOf(player);
+        const destroyKey = this.getDestroyGuardKey(player, zone, unit);
+        if (this.destroyInProgressKeys.has(destroyKey)) {
+            return;
+        }
 
-        // Apply passive "grant EXIT effect" auras before removing the unit from the zone.
-        this.processPassiveGrantedExitEffects(player, zone, unit, killerCard);
+        this.destroyInProgressKeys.add(destroyKey);
+        try {
+            const opponent = this.getOpponentOf(player);
 
-        // Remove from zone first to avoid recursive state inconsistencies while effects resolve.
-        zone.unit = null;
+            // Apply passive "grant EXIT effect" auras before removing the unit from the zone.
+            this.processPassiveGrantedExitEffects(player, zone, unit, killerCard);
 
-        // 1) Queue EXIT effects in a single batch.
-        const exitBatchStep = this.incrementAndGetGlobalStep();
-        this.effectManager.processEffects(ActivationCondition.EXIT, {
-            sourceCard: unit,
-            player: player,
-            opponent: opponent,
-            unitZone: zone,
-            machine: this,
-            destroyedBy: killerCard
-        }, { enqueueOnly: true, batchStep: exitBatchStep });
+            // Remove from zone first to avoid recursive state inconsistencies while effects resolve.
+            zone.unit = null;
 
-        zone.items.forEach(item => {
+            // 1) Queue EXIT effects in a single batch.
+            const exitBatchStep = this.incrementAndGetGlobalStep();
             this.effectManager.processEffects(ActivationCondition.EXIT, {
-                sourceCard: item,
+                sourceCard: unit,
                 player: player,
                 opponent: opponent,
                 unitZone: zone,
                 machine: this,
-                destroyedBy: killerCard,
-                trashedUnit: unit
+                destroyedBy: killerCard
             }, { enqueueOnly: true, batchStep: exitBatchStep });
-        });
 
-        // 2) Move cards to trash and clear lane state.
-        player.trash.push(unit);
-        const trashedUnit = unit;
-        zone.items.forEach(i => player.trash.push(i));
-        zone.items = [];
-        zone.buffs = [];
-        zone.temporaryEffects = [];
-
-        // 3) Queue UNIT_TRASHED effects as one simultaneous event in turn-player priority order.
-        const trashedBatchStep = this.incrementAndGetGlobalStep();
-        const [turnPlayer, nonTurnPlayer] = this.getPlayersInTurnOrder();
-        [turnPlayer, nonTurnPlayer].forEach(p => {
-            const sourceOpponent = this.getOpponentOf(p);
-
-            if (p.levelZone) {
-                this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
-                    sourceCard: p.levelZone,
-                    player: p,
-                    opponent: sourceOpponent,
+            zone.items.forEach(item => {
+                this.effectManager.processEffects(ActivationCondition.EXIT, {
+                    sourceCard: item,
+                    player: player,
+                    opponent: opponent,
+                    unitZone: zone,
                     machine: this,
-                    trashedUnit: trashedUnit,
-                    trashedUnitOwner: player
-                }, { enqueueOnly: true, batchStep: trashedBatchStep });
-            }
-
-            p.unitZones.forEach(z => {
-                if (!z.unit) return;
-                this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
-                    sourceCard: z.unit,
-                    player: p,
-                    opponent: sourceOpponent,
-                    unitZone: z,
-                    machine: this,
-                    trashedUnit: trashedUnit,
-                    trashedUnitOwner: player
-                }, { enqueueOnly: true, batchStep: trashedBatchStep });
+                    destroyedBy: killerCard,
+                    trashedUnit: unit
+                }, { enqueueOnly: true, batchStep: exitBatchStep });
             });
-        });
 
-        this.effectManager.processQueue();
+            // 2) Move cards to trash and clear lane state.
+            player.trash.push(unit);
+            const trashedUnit = unit;
+            zone.items.forEach(i => player.trash.push(i));
+            zone.items = [];
+            zone.buffs = [];
+            zone.temporaryEffects = [];
+
+            // 3) Queue UNIT_TRASHED effects as one simultaneous event in turn-player priority order.
+            const trashedBatchStep = this.incrementAndGetGlobalStep();
+            const [turnPlayer, nonTurnPlayer] = this.getPlayersInTurnOrder();
+            [turnPlayer, nonTurnPlayer].forEach(p => {
+                const sourceOpponent = this.getOpponentOf(p);
+
+                if (p.levelZone) {
+                    this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
+                        sourceCard: p.levelZone,
+                        player: p,
+                        opponent: sourceOpponent,
+                        machine: this,
+                        trashedUnit: trashedUnit,
+                        trashedUnitOwner: player
+                    }, { enqueueOnly: true, batchStep: trashedBatchStep });
+                }
+
+                p.unitZones.forEach(z => {
+                    if (!z.unit) return;
+                    this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
+                        sourceCard: z.unit,
+                        player: p,
+                        opponent: sourceOpponent,
+                        unitZone: z,
+                        machine: this,
+                        trashedUnit: trashedUnit,
+                        trashedUnitOwner: player
+                    }, { enqueueOnly: true, batchStep: trashedBatchStep });
+                });
+            });
+
+            this.effectManager.processQueue();
+        } finally {
+            this.destroyInProgressKeys.delete(destroyKey);
+        }
     }
 
     public checkRuleProcessing() {
-        this.state.players.forEach(player => {
-            player.unitZones.forEach((zone) => {
-                if (zone.unit) {
-                    const power = this.getUnitPower(zone, player);
-                    if (power <= 0) {
+        if (this.isRuleProcessing) {
+            this.pendingRuleProcessing = true;
+            return;
+        }
+
+        this.isRuleProcessing = true;
+        try {
+            let guardLoop = 0;
+            do {
+                this.pendingRuleProcessing = false;
+                let destroyedAny = false;
+
+                this.state.players.forEach(player => {
+                    player.unitZones.forEach((zone) => {
+                        if (!zone.unit) return;
+                        const currentUnitId = zone.unit.id;
+                        const power = this.getUnitPower(zone, player);
+                        if (power > 0) return;
+
                         console.log(`Rule Processing: Trashing ${zone.unit.name} due to 0 or less ATK (${power})`);
                         this.destroyUnit(player, zone);
-                    }
+                        if (zone.unit?.id !== currentUnitId) {
+                            destroyedAny = true;
+                        }
+                    });
+                });
+
+                if (destroyedAny) {
+                    this.pendingRuleProcessing = true;
                 }
-            });
-        });
+
+                guardLoop += 1;
+                if (guardLoop > 256) {
+                    console.warn('[RuleProcessing] Safety guard triggered after 256 loops.');
+                    break;
+                }
+            } while (this.pendingRuleProcessing);
+        } finally {
+            this.isRuleProcessing = false;
+            this.pendingRuleProcessing = false;
+        }
+    }
+
+    private getDestroyGuardKey(player: PlayerState, zone: UnitZoneState, unit: Card): string {
+        const zoneIndex = player.unitZones.indexOf(zone);
+        return `${player.id}|${zoneIndex}|${unit.id}`;
     }
 
     public initiateAttackCostSelection(effect: Effect, context: GameContext, attackerZoneIndex: number): boolean {

@@ -18,9 +18,15 @@
     - 시뮬레이션 포크 인프라(`GameEngine.createSimulationFork`, RNG clone)
     - `StrongBotV2` (beam search + 결정론적 v1 fallback)
     - Phase2 회귀 테스트(`tests/ai/StrongBotPhase2.vitest.test.ts`)
-- [~] Phase 2 완료 기준은 미충족
-  - 진영 스왑 라더(`strong-v2` vs `strong-v1`, seedsPerPair=20): 20승 20패(50%)
-  - 고정 역할 벤치(`strong-v2` P1 vs `strong-v1` P2, 119게임): 56승 63패(47.06%)
+    - 엔진 stack overflow hotfix(`seed=2026021819`) + 회귀 추가
+      (`tests/rules_v2_regression/rules_v2_ai_seed_2026021819_stack_regression.test.ts`)
+    - 배치 리포트 runtime KPI(`summary.runtime.msPerAction`) 계측 추가
+      (`AI_BENCH_MEASURE_RUNTIME=1`)
+    - v2 튜닝(탐색 phase 확장/커버리지 기반 fallback/집계식 보정) 반영
+- [~] Phase 2 완료 기준 1차 충족(확증 필요)
+  - 튜닝 전 side-swapped 120게임: `60/120 = 50.00%`
+  - 튜닝 후 side-swapped 120게임: `66/120 = 55.00%`
+  - 교차 확인 라더(40게임): `21승 19패 (52.5%)`
   - 안정성은 유지(`no_action=0`, `invalid_action=0`)
 - [ ] Phase 3 미착수
 - [ ] Phase 4 미착수
@@ -120,7 +126,7 @@
      - 포크 시뮬레이션이 원본 엔진 상태를 오염시키지 않아야 함
      - 분기 시뮬레이션용 RNG 상태 포크/재현 가능해야 함
   5. fallback 안전장치:
-     - 탐색 예산 초과 시 v1 스코어러로 결정론적 fallback
+     - 탐색 예산 소진 시 루트 커버리지가 낮으면 v1 스코어러로 결정론적 fallback
      - v2-vs-v1 배치에서 `no_action` / `invalid_action` 회귀 없음
 
 ## Phase 2: Strong Play Bot v2 (탐색 기반)
@@ -143,13 +149,17 @@
 
 ## Phase 2 다음 즉시 작업
 
-1. 엔진 안정화 선행:
+1. [x] 엔진 안정화 선행 완료:
    - passive/exit 재귀 체인의 stack overflow 재현 경로(예: seed `2026021819`) 수정
-2. v2 성능 튜닝:
-   - 탐색 적용 구간(`MAIN/BLOCK`) 재조정, 노드 평가 가중치/폴백 임계치 튜닝
-3. 런타임 KPI 계측:
-   - 배치 리포트에 `ms/action`을 추가해 예산 준수 여부를 수치화
-4. 재평가 프로토콜 고정:
+   - 신규 회귀: `tests/rules_v2_regression/rules_v2_ai_seed_2026021819_stack_regression.test.ts`
+2. [x] 런타임 KPI 계측 완료:
+   - 배치 리포트에 `summary.runtime.msPerAction` 추가
+   - 재현성 보존을 위해 기본값은 비활성(`AI_BENCH_MEASURE_RUNTIME=0`)
+3. [x] v2 성능 튜닝:
+   - 탐색 적용 구간을 `MAIN/BLOCK/ATTACK`으로 확장
+   - 루트 커버리지 기반 fallback, 노드 집계식(`mean + 0.18 * max`) 적용
+   - side-swapped 120게임에서 `55.00%` 달성
+4. [ ] 재평가 프로토콜 고정:
    - 진영 스왑 라더 + 고정 역할 벤치를 함께 사용하고 CI 기준으로 승격 판정
 
 ## Phase 3: 덱 탐색 MVP (진화형 탐색)

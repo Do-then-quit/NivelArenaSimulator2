@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { MatchReport, MatchTerminationReason, runSingleMatch } from './match_harness';
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 import { resolveBotFactory } from './bot_registry';
@@ -12,6 +13,7 @@ export interface RunMatchBatchConfig {
     traceLimit?: number;
     player1BotId?: string;
     player2BotId?: string;
+    measureRuntime?: boolean;
 }
 
 export interface MatchBatchReport {
@@ -34,6 +36,12 @@ export interface MatchBatchReport {
         confidence: {
             player1WinRate: BinomialRateStats;
             player2WinRate: BinomialRateStats;
+        };
+        runtime: {
+            enabled: boolean;
+            totalMs: number;
+            avgMsPerGame: number;
+            msPerAction: number;
         };
     };
 }
@@ -85,18 +93,28 @@ function computeBinomialRateStats(successes: number, total: number): BinomialRat
 export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     const player1BotFactory = resolveBotFactory(config.player1BotId ?? 'baseline-a');
     const player2BotFactory = resolveBotFactory(config.player2BotId ?? 'baseline-b');
+    const measureRuntime = config.measureRuntime ?? false;
     const matches: MatchReport[] = [];
+    let totalRuntimeMs = 0;
     for (let i = 0; i < config.games; i++) {
-        matches.push(
-            runSingleMatch({
-                seed: config.startSeed + i,
-                maxSteps: config.maxSteps,
-                enableMulligan: config.enableMulligan,
-                traceLimit: config.traceLimit,
-                player1BotFactory,
-                player2BotFactory,
-            }),
-        );
+        const matchConfig = {
+            seed: config.startSeed + i,
+            maxSteps: config.maxSteps,
+            enableMulligan: config.enableMulligan,
+            traceLimit: config.traceLimit,
+            player1BotFactory,
+            player2BotFactory,
+        };
+
+        if (!measureRuntime) {
+            matches.push(runSingleMatch(matchConfig));
+            continue;
+        }
+
+        const startMs = performance.now();
+        const match = runSingleMatch(matchConfig);
+        totalRuntimeMs += performance.now() - startMs;
+        matches.push(match);
     }
 
     const winsPlayer1 = matches.filter(match => match.reason === 'winner' && match.winnerPlayer === 1).length;
@@ -106,6 +124,19 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     const totalTurns = matches.reduce((sum, match) => sum + match.turnCount, 0);
     const player1Confidence = computeBinomialRateStats(winsPlayer1, matches.length);
     const player2Confidence = computeBinomialRateStats(winsPlayer2, matches.length);
+    const runtimeSummary = measureRuntime
+        ? {
+            enabled: true,
+            totalMs: roundTo(totalRuntimeMs, 2),
+            avgMsPerGame: roundTo(safeDivide(totalRuntimeMs, matches.length), 2),
+            msPerAction: roundTo(safeDivide(totalRuntimeMs, totalSteps), 4),
+        }
+        : {
+            enabled: false,
+            totalMs: 0,
+            avgMsPerGame: 0,
+            msPerAction: 0,
+        };
 
     const terminationCounts = matches.reduce<Record<MatchTerminationReason, number>>(
         (acc, match) => {
@@ -136,6 +167,7 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
                 player1WinRate: player1Confidence,
                 player2WinRate: player2Confidence,
             },
+            runtime: runtimeSummary,
         },
     };
 }
@@ -185,6 +217,7 @@ function runCli(): void {
         traceLimit: parseIntEnv('AI_BENCH_TRACE_LIMIT', manifest.bench.traceLimit),
         player1BotId: process.env.AI_BENCH_P1_BOT ?? 'baseline-a',
         player2BotId: process.env.AI_BENCH_P2_BOT ?? 'baseline-b',
+        measureRuntime: parseBoolEnv('AI_BENCH_MEASURE_RUNTIME', false),
     };
 
     const report = runMatchBatch(config);

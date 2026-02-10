@@ -14,6 +14,8 @@ interface SearchNode {
 interface SearchResult {
     action: EngineAction;
     exhaustedBudget: boolean;
+    evaluatedRootActions: number;
+    totalRootActions: number;
 }
 
 export interface StrongBotV2Options {
@@ -28,14 +30,14 @@ export interface StrongBotV2Options {
 }
 
 const DEFAULT_OPTIONS: StrongBotV2Options = {
-    beamWidth: 4,
+    beamWidth: 5,
     maxDepth: 3,
-    expansionBudget: 480,
+    expansionBudget: 720,
     rolloutVariants: 1,
     variantRandomJitterSteps: 3,
     discountFactor: 0.92,
     stateScoreWeight: 1,
-    actionScoreWeight: 0.24,
+    actionScoreWeight: 0.28,
 };
 
 export class StrongBotV2 {
@@ -75,7 +77,7 @@ export class StrongBotV2 {
             return fallbackAction;
         }
 
-        if (searchResult.exhaustedBudget) {
+        if (fallbackAction && this.shouldFallbackByCoverage(searchResult)) {
             return fallbackAction;
         }
 
@@ -94,20 +96,22 @@ export class StrongBotV2 {
 
     private canSearchCurrentState(engine: GameEngine): boolean {
         if (engine.state.interactionMode !== 'NORMAL') return false;
-        return engine.state.phase === Phase.ATTACK;
+        return engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK || engine.state.phase === Phase.BLOCK;
     }
 
     private pickByBeamSearch(engine: GameEngine, actorPlayerId: string, legalActions: EngineAction[]): SearchResult {
-        const rootActions = this.sortActions(legalActions);
+        const rootActions = this.sortActions(engine, actorPlayerId, legalActions);
         if (rootActions.length === 1) {
-            return { action: rootActions[0], exhaustedBudget: false };
+            return { action: rootActions[0], exhaustedBudget: false, evaluatedRootActions: 1, totalRootActions: 1 };
         }
 
         let expansions = 0;
         let exhaustedBudget = false;
+        let evaluatedRootActions = 0;
         const initialNodes: SearchNode[] = [];
 
         for (const rootAction of rootActions) {
+            let evaluatedThisRoot = false;
             for (let variant = 0; variant < this.options.rolloutVariants; variant++) {
                 if (expansions >= this.options.expansionBudget) {
                     exhaustedBudget = true;
@@ -121,6 +125,7 @@ export class StrongBotV2 {
 
                 const ok = fork.step(rootAction);
                 expansions += 1;
+                evaluatedThisRoot = true;
                 if (!ok) continue;
 
                 const tactical = scoreAction(engine, actorPlayerId, rootAction).score;
@@ -131,11 +136,17 @@ export class StrongBotV2 {
                     score: this.computeNodeValue(fork, actorPlayerId, tactical),
                 });
             }
+            if (evaluatedThisRoot) evaluatedRootActions += 1;
             if (exhaustedBudget) break;
         }
 
         if (initialNodes.length === 0) {
-            return { action: rootActions[0], exhaustedBudget };
+            return {
+                action: rootActions[0],
+                exhaustedBudget,
+                evaluatedRootActions,
+                totalRootActions: rootActions.length,
+            };
         }
 
         let frontier = initialNodes;
@@ -151,7 +162,7 @@ export class StrongBotV2 {
                     continue;
                 }
 
-                const legal = this.sortActions(node.engine.getLegalActions(actorPlayerId));
+                const legal = this.sortActions(node.engine, actorPlayerId, node.engine.getLegalActions(actorPlayerId));
                 if (legal.length === 0) {
                     nextFrontier.push(node);
                     continue;
@@ -189,6 +200,8 @@ export class StrongBotV2 {
         return {
             action: bestAction,
             exhaustedBudget,
+            evaluatedRootActions,
+            totalRootActions: rootActions.length,
         };
     }
 
@@ -230,16 +243,17 @@ export class StrongBotV2 {
     }
 
     private pickBestAggregatedAction(rootActions: EngineAction[], nodes: SearchNode[]): EngineAction {
-        const aggregate = new Map<string, { action: EngineAction; scoreSum: number; count: number }>();
+        const aggregate = new Map<string, { action: EngineAction; scoreSum: number; count: number; maxScore: number }>();
 
         for (const node of nodes) {
             const key = this.toActionKey(node.firstAction);
             const current = aggregate.get(key);
             if (!current) {
-                aggregate.set(key, { action: node.firstAction, scoreSum: node.score, count: 1 });
+                aggregate.set(key, { action: node.firstAction, scoreSum: node.score, count: 1, maxScore: node.score });
             } else {
                 current.scoreSum += node.score;
                 current.count += 1;
+                if (node.score > current.maxScore) current.maxScore = node.score;
             }
         }
 
@@ -250,7 +264,7 @@ export class StrongBotV2 {
         for (const action of rootActions) {
             const key = this.toActionKey(action);
             const entry = aggregate.get(key);
-            const score = entry ? entry.scoreSum / entry.count : Number.NEGATIVE_INFINITY;
+            const score = entry ? entry.scoreSum / entry.count + entry.maxScore * 0.18 : Number.NEGATIVE_INFINITY;
             if (score > bestScore) {
                 bestScore = score;
                 bestAction = action;
@@ -275,8 +289,20 @@ export class StrongBotV2 {
         });
     }
 
-    private sortActions(actions: EngineAction[]): EngineAction[] {
-        return [...actions].sort((a, b) => this.toActionKey(a).localeCompare(this.toActionKey(b)));
+    private sortActions(engine: GameEngine, actorPlayerId: string, actions: EngineAction[]): EngineAction[] {
+        return [...actions].sort((a, b) => {
+            const scoreA = scoreAction(engine, actorPlayerId, a).score;
+            const scoreB = scoreAction(engine, actorPlayerId, b).score;
+            if (scoreA !== scoreB) return scoreB - scoreA;
+            return this.toActionKey(a).localeCompare(this.toActionKey(b));
+        });
+    }
+
+    private shouldFallbackByCoverage(searchResult: SearchResult): boolean {
+        if (!searchResult.exhaustedBudget) return false;
+        if (searchResult.totalRootActions <= 2) return false;
+        const rootCoverage = searchResult.evaluatedRootActions / searchResult.totalRootActions;
+        return rootCoverage < 0.45;
     }
 
     private selectSaferAction(
@@ -287,10 +313,18 @@ export class StrongBotV2 {
     ): EngineAction {
         const searchImmediate = scoreAction(engine, actorPlayerId, searchAction).score;
         const fallbackImmediate = scoreAction(engine, actorPlayerId, fallbackAction).score;
-        if (searchImmediate + 80 < fallbackImmediate) {
+        const tolerance = this.getFallbackTolerance(engine.state.phase);
+        if (searchImmediate + tolerance < fallbackImmediate) {
             return fallbackAction;
         }
         return searchAction;
+    }
+
+    private getFallbackTolerance(phase: Phase): number {
+        if (phase === Phase.BLOCK) return 80;
+        if (phase === Phase.ATTACK) return 220;
+        if (phase === Phase.MAIN) return 260;
+        return 120;
     }
 
     private toActionKey(action: EngineAction): string {

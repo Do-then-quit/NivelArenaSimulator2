@@ -51,6 +51,23 @@ describe('AI Phase0 Harness', () => {
         expect(reportA.summary.confidence.player1WinRate.ci95High).toBeLessThanOrEqual(1);
         expect(reportA.summary.confidence.player2WinRate.ci95Low).toBeGreaterThanOrEqual(0);
         expect(reportA.summary.confidence.player2WinRate.ci95High).toBeLessThanOrEqual(1);
+        expect(reportA.summary.runtime.enabled).toBe(false);
+        expect(reportA.summary.runtime.msPerAction).toBe(0);
+    });
+
+    it('reports runtime telemetry when enabled', () => {
+        const report = runMatchBatch({
+            startSeed: 2026020999,
+            games: 2,
+            maxSteps: 1200,
+            enableMulligan: true,
+            measureRuntime: true,
+        });
+
+        expect(report.summary.runtime.enabled).toBe(true);
+        expect(report.summary.runtime.totalMs).toBeGreaterThan(0);
+        expect(report.summary.runtime.avgMsPerGame).toBeGreaterThan(0);
+        expect(report.summary.runtime.msPerAction).toBeGreaterThan(0);
     });
 
     it('produces deterministic elo ladder report for same config', () => {

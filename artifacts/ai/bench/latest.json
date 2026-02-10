@@ -6,7 +6,8 @@
     "enableMulligan": true,
     "traceLimit": 18,
     "player1BotId": "baseline-a",
-    "player2BotId": "baseline-b"
+    "player2BotId": "baseline-b",
+    "measureRuntime": false
   },
   "matches": [
     {
@@ -462,6 +463,12 @@
         "ci95Low": 0.0666,
         "ci95High": 0.6001
       }
+    },
+    "runtime": {
+      "enabled": false,
+      "totalMs": 0,
+      "avgMsPerGame": 0,
+      "msPerAction": 0
     }
   }
 }

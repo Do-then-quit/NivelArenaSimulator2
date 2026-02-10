@@ -18,9 +18,15 @@
     - simulation fork infra (`GameEngine.createSimulationFork`, RNG clone)
     - `StrongBotV2` (beam search + deterministic v1 fallback)
     - phase2 regression test (`tests/ai/StrongBotPhase2.vitest.test.ts`)
-- [~] Phase 2 acceptance target not met yet
-  - side-swapped ladder (`strong-v2` vs `strong-v1`, seedsPerPair=20): 20-20 (50%)
-  - fixed-role bench (`strong-v2` P1 vs `strong-v1` P2, 119 games): 56-63 (47.06%)
+    - engine stack-overflow hotfix (`seed=2026021819`) + regression
+      (`tests/rules_v2_regression/rules_v2_ai_seed_2026021819_stack_regression.test.ts`)
+    - runtime KPI telemetry in batch summary (`summary.runtime.msPerAction`)
+      via `AI_BENCH_MEASURE_RUNTIME=1`
+    - v2 tuning applied (search-phase expansion, coverage-based fallback, aggregation rebalance)
+- [~] Phase 2 acceptance target provisionally met (needs larger confirmation sample)
+  - side-swapped 120-game baseline: `60/120 = 50.00%`
+  - side-swapped 120-game tuned run: `66/120 = 55.00%`
+  - cross-check ladder (40 games): `21-19 (52.5%)` for `strong-v2`
   - safety remains green: `no_action=0`, `invalid_action=0`
 - [ ] Phase 3 not started
 - [ ] Phase 4 not started
@@ -120,7 +126,7 @@
      - Forked simulation does not mutate the original engine state.
      - RNG state is forkable/reproducible for branch simulation.
   5. Fallback safety is enforced:
-     - Search bot must fall back deterministically to v1 scorer when budget is exhausted.
+     - Search bot must fall back deterministically to v1 scorer when budget is exhausted and root-coverage is low.
      - No new `no_action` / `invalid_action` regressions in v2-vs-v1 batch.
 
 ## Phase 2: Strong Play Bot v2 (Search-based)
@@ -143,13 +149,17 @@
 
 ## Phase 2 Next Work (Immediate)
 
-1. Engine stabilization first:
-   - fix stack overflow reproduction path (seed example: `2026021819`) in passive/exit recursion chain.
-2. v2 strength tuning:
-   - tune search coverage (`MAIN/BLOCK`), node value weights, and fallback threshold.
-3. Runtime KPI instrumentation:
-   - add `ms/action` telemetry to batch reports for hard budget checks.
-4. Re-evaluation protocol:
+1. [x] Engine stabilization completed:
+   - fixed passive/exit recursion stack-overflow path (seed example: `2026021819`).
+   - added regression: `tests/rules_v2_regression/rules_v2_ai_seed_2026021819_stack_regression.test.ts`.
+2. [x] Runtime KPI instrumentation completed:
+   - added `summary.runtime.msPerAction` telemetry to batch reports.
+   - kept reproducibility by defaulting runtime measurement off (`AI_BENCH_MEASURE_RUNTIME=0`).
+3. [x] v2 strength tuning:
+   - expanded search phases to `MAIN/BLOCK/ATTACK`.
+   - applied coverage-based fallback and root aggregation rebalance (`mean + 0.18 * max`).
+   - reached `55.00%` in side-swapped 120-game run.
+4. [ ] Re-evaluation protocol:
    - keep side-swapped ladder + fixed-role bench together, with CI-based promotion checks.
 
 ## Phase 3: Deck Search MVP (Evolutionary Search)
