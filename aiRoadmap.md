@@ -239,7 +239,12 @@
   3. Card-effect outcome modeling:
      - extend `pendingEffect`-aware scoring with zone transition value (field/hand/trash/damage).
      - add lane-pressure and follow-up playable-value features.
-  4. Anti-oscillation / anti-stall safeguards:
+  4. Resource-economy value modeling (card advantage aware):
+     - explicitly score board-hand advantage proxy: `(# own units on board + # own hand cards) - (# opp units + # opp hand cards)`.
+     - add a "wasteful upgrade" penalty when an upgrade consumes a hand card but does not improve:
+       immediate damage pressure, combat survival probability, or next-turn lethal setup.
+     - add "empty-lane over-upgrade" penalty for upgrades into an uncontested lane with low incremental value.
+  5. Anti-oscillation / anti-stall safeguards:
      - detect repetitive interaction loops in search branches and down-rank them.
      - keep deterministic fallback path when branch confidence is low.
 - Suggested files:
@@ -251,6 +256,7 @@
   - v3 >= 55% vs v2 (side-swapped bench 200+200) with CI low >= 50%.
   - v3 >= 60% vs strong-v1 (side-swapped bench 200+200).
   - `max_steps=0`, `no_action=0`, `invalid_action=0` on promotion protocol.
+  - wasteful-upgrade frequency decreases vs v2 on replay audit seed set.
 
 ## Phase 4: Play Bot Hardening and Pre-Deck-Search Gate
 
@@ -261,6 +267,7 @@
   1. Regression expansion:
      - broaden high-value targeting regressions across ST01/ST02/ST03/BT01.
      - add optional/cost-choice regressions for high-impact card effects.
+     - add no-value-upgrade regressions (empty lane / no damage gain / no survivability gain cases).
   2. Stress and soak matrix:
      - run long-horizon soak across bot pairs (`baseline`, `strong-v1`, `strong-v2`, `strong-v3`).
      - include heavy-interaction seed suites and monitor termination reasons.
