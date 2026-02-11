@@ -40,9 +40,11 @@
   - 검증:
     - `tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`
     - `tests/ai/ActionScorerEffectAware.vitest.test.ts`
-- [ ] Phase 3 미착수
-- [ ] Phase 4 미착수
-- [ ] Phase 5 미착수
+- [ ] Phase 3 미착수 (플레이 봇 v3 강화)
+- [ ] Phase 4 미착수 (플레이 봇 하드닝 게이트)
+- [ ] Phase 5 미착수 (덱 탐색 MVP)
+- [ ] Phase 6 미착수
+- [ ] Phase 7 미착수
 
 ## 1) 범위
 
@@ -222,7 +224,57 @@
      - `max_steps=0`, `no_action=0`, `invalid_action=0`
    - 판정: Phase 2 승격 게이트 통과 (Phase 3 착수 계획 가능)
 
-## Phase 3: 덱 탐색 MVP (진화형 탐색)
+## Phase 3: Strong Play Bot v3 (카드 효과 인지형 다중 턴 탐색)
+
+- 목표:
+  - 덱 탐색 전에 플레이 강도를 추가로 끌어올리기 위해, 카드 효과 이해와 인터랙션 정밀도를 강화한다.
+  - `SELECT_TARGET` / `SELECT_COST` / optional 응답 구간에서 전술 미스를 최소화한다.
+- 구현 우선순위:
+  1. 인터랙션 롤아웃 확장
+     - `SELECT_TARGET`, `SELECT_COST`, `SELECT_OPTIONAL`, `RESOLVE_OPTIONAL` 분기 깊이 강화
+     - 전술 액션 + 인터랙션 응답을 하나의 의사결정 패키지로 묶어 점수화
+  2. 상대 응답 1수 예측
+     - 전투/인터랙션 핵심 노드에서 경량 1-ply 상대 응답 탐색 추가
+     - 즉시 킬각 허용/고밸류 템포 손실 라인에 패널티 부여
+  3. 카드 효과 결과 모델링
+     - `pendingEffect` 기반 점수화에 영역 전이 가치(필드/핸드/트래시/데미지) 반영
+     - 라인 압박과 후속 플레이 가능 가치(feature) 추가
+  4. 진동/정체 방지 안전장치
+     - 탐색 분기 내 반복 인터랙션 루프를 감지해 감점
+     - 분기 신뢰도가 낮을 때 결정론적 폴백 유지
+- 권장 파일:
+  - `src/logic/ai/StrongBotV3.ts`
+  - `src/logic/ai/eval/InteractionValueModel.ts`
+  - `src/logic/ai/eval/CounterfactualRollout.ts`
+  - `tests/ai/StrongBotV3.vitest.test.ts`
+- 완료 기준:
+  - v3가 v2 대비 side-swapped 200+200에서 승률 `>=55%`, CI 하한 `>=50%`
+  - v3가 strong-v1 대비 side-swapped 200+200에서 승률 `>=60%`
+  - 승격 프로토콜에서 `max_steps=0`, `no_action=0`, `invalid_action=0`
+
+## Phase 4: 플레이 봇 하드닝 및 덱 탐색 전 게이트
+
+- 목표:
+  - 덱 탐색 착수 전에 견고한 플레이 봇 체크포인트를 고정한다.
+  - 최근 카드 효과/인터랙션 개선을 강제 회귀 게이트로 승격한다.
+- 구현 우선순위:
+  1. 회귀 세트 확장
+     - ST01/ST02/ST03/BT01 전반으로 고밸류 타겟팅 회귀 확대
+     - 고영향 카드 효과의 optional/cost 선택 회귀 추가
+  2. 스트레스/소크 매트릭스
+     - 봇 조합(`baseline`, `strong-v1`, `strong-v2`, `strong-v3`) 장기 소크 실행
+     - 인터랙션 밀집 seed 묶음을 포함해 종료 사유 모니터링
+  3. 런타임/품질 릴리스 게이트
+     - p50/p95 `ms/action`, `avgMsPerGame`, 안전성 카운터 추적
+     - 체크포인트 동결 전 런타임 분산 안정성 충족 필수
+  4. 체크포인트 동결
+     - 승격된 `strong-v3` 프로파일을 bot registry/manifest에 반영
+- 완료 기준:
+  - `npm run ai:regression` 및 강화된 소크 매트릭스 통과
+  - `strong-v3`가 고정 프로토콜에서 `strong-v2`를 상회하고 스트레스 조건에서도 안정
+  - `artifacts/ai/`에 재현 가능한 산출물 세트와 함께 덱 탐색 전 게이트 승인
+
+## Phase 5: 덱 탐색 MVP (진화형 탐색)
 
 - 목표:
   - 리더 고정 덱부터 시작해 전체 리더 풀까지 강한 합법 덱 탐색
@@ -244,13 +296,13 @@
   - seed 기준 재현 가능한 top-K 합법 덱 출력
   - 탐색 최상위 덱이 기준 스타터 덱 대비 목표 승률 향상 달성
 
-## Phase 4: 공진화(Co-evolution) 및 메타 견고화
+## Phase 6: 공진화(Co-evolution) 및 메타 견고화
 
 - 목표:
   - 단일 상대/단일 덱에 과적합되는 현상 방지
 - 구현 우선순위:
   1. 상대 풀 기반 평가
-     - baseline, strong v1, strong v2, 과거 체크포인트 포함
+     - baseline, strong v1/v2/v3, 과거 체크포인트 포함
   2. 덱 리그 평가
      - 단일 상대 점수 대신 league 기반 스코어링
   3. 개체군 메모리
@@ -260,7 +312,7 @@
 - 완료 기준:
   - 상위 덱이 특정 1매치업이 아닌 상대 풀 전반에서 강함 유지
 
-## Phase 5: RL 통합 (탐색 파이프라인 안정화 이후 선택)
+## Phase 7: RL 통합 (탐색 파이프라인 안정화 이후 선택)
 
 - 위치:
   - RL은 유효하지만, 강한 평가/탐색 파이프라인 이후가 효율적
@@ -279,10 +331,14 @@
 - M2 (Phase 2 종료):
   - 런타임 예산이 안정적인 탐색 기반 플레이 봇 확보
 - M3 (Phase 3 종료):
-  - ST01/ST02/ST03/BT01 카드풀에서 재현 가능한 top deck CLI 확보
+  - StrongBot v3가 고정 프로토콜에서 v2를 상회(카드 효과 인지형 다중 턴 의사결정 강화)
 - M4 (Phase 4 종료):
+  - 플레이 봇 하드닝 게이트 통과 + `strong-v3` 체크포인트 동결 완료
+- M5 (Phase 5 종료):
+  - ST01/ST02/ST03/BT01 카드풀에서 재현 가능한 top deck CLI 확보
+- M6 (Phase 6 종료):
   - 덱/상대 리그 전반에서 견고한 공진화 덱 확보
-- M5 (선택, Phase 5):
+- M7 (선택, Phase 7):
   - RL 정책이 평가 라더에 통합
 
 ## 6) 제안 커맨드 세트
@@ -313,6 +369,8 @@
 
 - 리스크: 샘플 수 부족으로 평가 노이즈 발생
   - 대응: 고정 seed 세트 + 신뢰구간 리포팅
+- 리스크: 플레이 봇 탐색 복잡도 증가로 반복 속도 저하
+  - 대응: 단계별 런타임 예산, p95 모니터링, 결정론적 폴백 유지
 - 리스크: 단일 봇 기준 과적합
   - 대응: 상대 풀 + 리그 기반 fitness
 - 리스크: 탐색 시간 폭증
@@ -323,9 +381,8 @@
 ## 9) 권장 초기 2주 플랜
 
 - Week 1:
-  - Phase 0 완료
-  - StrongBot v1 평가기 스켈레톤 + baseline 벤치마크 리포트 확보
+  - Phase 3 착수: v3 인터랙션 롤아웃 + 상대 1수 응답 스캐폴드 구축
+  - v3-v2 고정 프로토콜 벤치 프리셋 스크립트 정리
 - Week 2:
-  - StrongBot v1 전술 오버라이드 추가
-  - 덱 합법성 모듈 + 랜덤 합법 덱 생성기 추가
-  - 소규모 개체군/세대로 덱 탐색 dry-run 수행
+  - Phase 4 착수: 고밸류 타겟/optional/cost 회귀 세트 확장
+  - 강화된 소크 매트릭스 실행 후 `strong-v3` 후보 체크포인트 동결

@@ -40,9 +40,11 @@
   - validation:
     - `tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`
     - `tests/ai/ActionScorerEffectAware.vitest.test.ts`
-- [ ] Phase 3 not started
-- [ ] Phase 4 not started
-- [ ] Phase 5 not started
+- [ ] Phase 3 not started (Play bot v3 uplift)
+- [ ] Phase 4 not started (Play bot hardening gate)
+- [ ] Phase 5 not started (Deck search MVP)
+- [ ] Phase 6 not started
+- [ ] Phase 7 not started
 
 ## 1) Scope
 
@@ -222,7 +224,57 @@
      - `max_steps=0`, `no_action=0`, `invalid_action=0`
    - decision: Phase 2 promotion gate passed (Phase 3 can be planned)
 
-## Phase 3: Deck Search MVP (Evolutionary Search)
+## Phase 3: Strong Play Bot v3 (Card-Effect Aware Multi-Turn Search)
+
+- Objective:
+  - Improve play strength before deck search by increasing effect comprehension and interaction precision.
+  - Minimize tactical misses in `SELECT_TARGET` / `SELECT_COST` / optional-response turns.
+- Implementation priority:
+  1. Interaction rollout expansion:
+     - deepen branch evaluation for `SELECT_TARGET`, `SELECT_COST`, `SELECT_OPTIONAL`, `RESOLVE_OPTIONAL`.
+     - bundle tactical action + interaction response as a single scored decision package.
+  2. Opponent-response lookahead:
+     - add lightweight opponent 1-ply reply in critical combat/interaction nodes.
+     - penalize lines that open immediate lethal or high-value tempo loss.
+  3. Card-effect outcome modeling:
+     - extend `pendingEffect`-aware scoring with zone transition value (field/hand/trash/damage).
+     - add lane-pressure and follow-up playable-value features.
+  4. Anti-oscillation / anti-stall safeguards:
+     - detect repetitive interaction loops in search branches and down-rank them.
+     - keep deterministic fallback path when branch confidence is low.
+- Suggested files:
+  - `src/logic/ai/StrongBotV3.ts`
+  - `src/logic/ai/eval/InteractionValueModel.ts`
+  - `src/logic/ai/eval/CounterfactualRollout.ts`
+  - `tests/ai/StrongBotV3.vitest.test.ts`
+- Acceptance:
+  - v3 >= 55% vs v2 (side-swapped bench 200+200) with CI low >= 50%.
+  - v3 >= 60% vs strong-v1 (side-swapped bench 200+200).
+  - `max_steps=0`, `no_action=0`, `invalid_action=0` on promotion protocol.
+
+## Phase 4: Play Bot Hardening and Pre-Deck-Search Gate
+
+- Objective:
+  - Freeze a robust play bot checkpoint before starting deck search.
+  - Convert recent card-effect and interaction improvements into hard regression gates.
+- Implementation priority:
+  1. Regression expansion:
+     - broaden high-value targeting regressions across ST01/ST02/ST03/BT01.
+     - add optional/cost-choice regressions for high-impact card effects.
+  2. Stress and soak matrix:
+     - run long-horizon soak across bot pairs (`baseline`, `strong-v1`, `strong-v2`, `strong-v3`).
+     - include heavy-interaction seed suites and monitor termination reasons.
+  3. Runtime/quality release gate:
+     - track p50/p95 `ms/action`, `avgMsPerGame`, and safety counters.
+     - require stable runtime spread before freezing checkpoint.
+  4. Checkpoint freeze:
+     - register promoted `strong-v3` profile in bot registry and benchmark manifest.
+- Acceptance:
+  - `npm run ai:regression` and strengthened soak matrix pass.
+  - `strong-v3` outperforms `strong-v2` on fixed protocol and remains stable under stress.
+  - Pre-deck-search gate signed off with reproducible artifact set under `artifacts/ai/`.
+
+## Phase 5: Deck Search MVP (Evolutionary Search)
 
 - Objective:
   - Find stronger legal decks for a fixed leader and then for full leader pool.
@@ -244,13 +296,13 @@
   - Search run produces top-K legal decks with reproducible ranking by seed.
   - Best found deck > reference starter deck win rate by target margin.
 
-## Phase 4: Co-evolution and Meta Robustness
+## Phase 6: Co-evolution and Meta Robustness
 
 - Objective:
   - Prevent overfitting to one opponent bot or one deck.
 - Implementation priority:
   1. Opponent pool evaluation:
-     - baseline, strong v1, strong v2, previous checkpoints.
+     - baseline, strong v1/v2/v3, previous checkpoints.
   2. Deck league:
      - league scoring instead of single-opponent score.
   3. Population memory:
@@ -260,7 +312,7 @@
 - Acceptance:
   - Top decks maintain strength across opponent pool, not one matchup only.
 
-## Phase 5: RL Integration (Optional after search is stable)
+## Phase 7: RL Integration (Optional after search is stable)
 
 - Positioning:
   - RL is valuable, but should come after strong evaluator + search pipeline.
@@ -279,10 +331,14 @@
 - M2 (end of Phase 2):
   - Search-based play bot with stable runtime budget.
 - M3 (end of Phase 3):
-  - Deck search CLI returns reproducible top decks from ST01/ST02/ST03/BT01 pool.
+  - StrongBot v3 beats v2 on fixed protocol with interaction/effect-aware multi-turn gains.
 - M4 (end of Phase 4):
+  - Play-bot hardening gate passed and `strong-v3` checkpoint frozen for deck search.
+- M5 (end of Phase 5):
+  - Deck search CLI returns reproducible top decks from ST01/ST02/ST03/BT01 pool.
+- M6 (end of Phase 6):
   - Co-evolved decks robust across deck/opponent league.
-- M5 (Phase 5 optional):
+- M7 (Phase 7 optional):
   - RL policy integrated into evaluation ladder.
 
 ## 6) Proposed Command Set
@@ -313,6 +369,8 @@
 
 - Risk: Evaluation noise due to small sample sizes.
   - Mitigation: fixed seed suites + confidence interval reporting.
+- Risk: Play-bot search complexity hurts iteration speed.
+  - Mitigation: phase-specific runtime budgets, p95 monitoring, deterministic fallback.
 - Risk: Deck search overfits one bot.
   - Mitigation: opponent pool and league-based fitness.
 - Risk: Runtime explosion in search.
@@ -323,9 +381,8 @@
 ## 9) Recommended First 2 Weeks
 
 - Week 1:
-  - Phase 0 complete.
-  - StrongBot v1 evaluator skeleton + benchmark baseline report.
+  - Phase 3 kickoff: v3 interaction rollout + opponent 1-ply response scaffold.
+  - Build v3-v2 fixed-protocol benchmark script preset.
 - Week 2:
-  - StrongBot v1 tactical overrides.
-  - Deck legality module + random legal deck generator.
-  - First deck search dry-run with small population and short generations.
+  - Phase 4 kickoff: expand high-value target/optional/cost regression set.
+  - Run strengthened soak matrix and freeze candidate `strong-v3` checkpoint.
