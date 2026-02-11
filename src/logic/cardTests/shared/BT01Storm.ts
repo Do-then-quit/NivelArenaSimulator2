@@ -483,7 +483,7 @@ const tests: UnifiedTestCase[] = [
     {
         cardId: 'BT01-073 TriggerDiscard',
         name: 'Damage trigger: opponent discards 1 if hand>=3',
-        description: 'When triggered from damage, opponent should discard 1 card if hand has 3+ cards.',
+        description: 'When triggered from damage, opponent discards 1 and this card moves from damage zone to trash.',
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
             const p2 = engine.opponentPlayer;
@@ -500,7 +500,9 @@ const tests: UnifiedTestCase[] = [
                 engine.selectHandTarget(0, true);
             }
             return [
-                { pass: p2.hand.length === oppHandBefore - 1, message: `Opponent hand -1 (${p2.hand.length})` }
+                { pass: p2.hand.length === oppHandBefore - 1, message: `Opponent hand -1 (${p2.hand.length})` },
+                { pass: p1.damage.every(card => card.id !== 'BT01-073'), message: 'Card removed from damage zone' },
+                { pass: p1.trash.some(card => card.id === 'BT01-073'), message: 'Card moved to trash by trigger self-trash' }
             ];
         }
     },

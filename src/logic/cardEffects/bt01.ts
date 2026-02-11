@@ -709,6 +709,11 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
             condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
             action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } },
             targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "BT01-074": [
