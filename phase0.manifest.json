@@ -31,7 +31,8 @@
       "tests/rules_v2_regression/rules_v2_ai_seed_2026021819_stack_regression.test.ts",
       "tests/ai/AiPhase0Harness.vitest.test.ts",
       "tests/ai/StrongBotPhase1.vitest.test.ts",
-      "tests/ai/StrongBotPhase2.vitest.test.ts"
+      "tests/ai/StrongBotPhase2.vitest.test.ts",
+      "tests/ai/StrongBotV2InteractionSearch.vitest.test.ts"
     ],
     "includeBotSoak": true
   }

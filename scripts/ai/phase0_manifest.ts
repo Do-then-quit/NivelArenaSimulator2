@@ -64,6 +64,7 @@ export const DEFAULT_PHASE0_MANIFEST: Phase0Manifest = {
             'tests/ai/AiPhase0Harness.vitest.test.ts',
             'tests/ai/StrongBotPhase1.vitest.test.ts',
             'tests/ai/StrongBotPhase2.vitest.test.ts',
+            'tests/ai/StrongBotV2InteractionSearch.vitest.test.ts',
         ],
         includeBotSoak: true,
     },

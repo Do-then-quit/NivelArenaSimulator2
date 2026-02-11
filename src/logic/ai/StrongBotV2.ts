@@ -22,6 +22,8 @@ export interface StrongBotV2Options {
     beamWidth: number;
     maxDepth: number;
     expansionBudget: number;
+    interactionDepth: number;
+    interactionExpansionBudget: number;
     rolloutVariants: number;
     variantRandomJitterSteps: number;
     discountFactor: number;
@@ -33,6 +35,8 @@ const DEFAULT_OPTIONS: StrongBotV2Options = {
     beamWidth: 5,
     maxDepth: 3,
     expansionBudget: 720,
+    interactionDepth: 3,
+    interactionExpansionBudget: 220,
     rolloutVariants: 1,
     variantRandomJitterSteps: 3,
     discountFactor: 0.92,
@@ -54,6 +58,8 @@ export class StrongBotV2 {
             beamWidth: Math.max(1, Math.trunc(options.beamWidth ?? DEFAULT_OPTIONS.beamWidth)),
             maxDepth: Math.max(1, Math.trunc(options.maxDepth ?? DEFAULT_OPTIONS.maxDepth)),
             expansionBudget: Math.max(1, Math.trunc(options.expansionBudget ?? DEFAULT_OPTIONS.expansionBudget)),
+            interactionDepth: Math.max(1, Math.trunc(options.interactionDepth ?? DEFAULT_OPTIONS.interactionDepth)),
+            interactionExpansionBudget: Math.max(1, Math.trunc(options.interactionExpansionBudget ?? DEFAULT_OPTIONS.interactionExpansionBudget)),
             rolloutVariants: Math.max(1, Math.trunc(options.rolloutVariants ?? DEFAULT_OPTIONS.rolloutVariants)),
             variantRandomJitterSteps: Math.max(0, Math.trunc(options.variantRandomJitterSteps ?? DEFAULT_OPTIONS.variantRandomJitterSteps)),
         };
@@ -66,7 +72,7 @@ export class StrongBotV2 {
 
         const fallbackAction = this.fallback.chooseAction(engine, resolvedActorId);
 
-        if (!this.canSearchCurrentState(engine)) {
+        if (!this.canSearchCurrentState(engine, resolvedActorId)) {
             return fallbackAction;
         }
 
@@ -94,9 +100,24 @@ export class StrongBotV2 {
         return engine.step(action);
     }
 
-    private canSearchCurrentState(engine: GameEngine): boolean {
-        if (engine.state.interactionMode !== 'NORMAL') return false;
-        return engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK || engine.state.phase === Phase.BLOCK;
+    private canSearchCurrentState(engine: GameEngine, actorPlayerId: string): boolean {
+        return this.isSearchableState(engine, actorPlayerId);
+    }
+
+    private isSearchableState(engine: GameEngine, actorPlayerId: string): boolean {
+        if (engine.state.winner) return false;
+        const ownerId = engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
+        if (ownerId !== actorPlayerId) return false;
+
+        if (engine.state.interactionMode === 'NORMAL') {
+            return engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK || engine.state.phase === Phase.BLOCK;
+        }
+
+        return (
+            engine.state.interactionMode === 'SELECT_TARGET' ||
+            engine.state.interactionMode === 'SELECT_COST' ||
+            engine.state.interactionMode === 'SELECT_OPTIONAL'
+        );
     }
 
     private pickByBeamSearch(engine: GameEngine, actorPlayerId: string, legalActions: EngineAction[]): SearchResult {
@@ -104,6 +125,10 @@ export class StrongBotV2 {
         if (rootActions.length === 1) {
             return { action: rootActions[0], exhaustedBudget: false, evaluatedRootActions: 1, totalRootActions: 1 };
         }
+
+        const isInteractionRoot = engine.state.interactionMode !== 'NORMAL';
+        const maxDepth = isInteractionRoot ? this.options.interactionDepth : this.options.maxDepth;
+        const expansionBudget = isInteractionRoot ? this.options.interactionExpansionBudget : this.options.expansionBudget;
 
         let expansions = 0;
         let exhaustedBudget = false;
@@ -113,7 +138,7 @@ export class StrongBotV2 {
         for (const rootAction of rootActions) {
             let evaluatedThisRoot = false;
             for (let variant = 0; variant < this.options.rolloutVariants; variant++) {
-                if (expansions >= this.options.expansionBudget) {
+                if (expansions >= expansionBudget) {
                     exhaustedBudget = true;
                     break;
                 }
@@ -150,7 +175,7 @@ export class StrongBotV2 {
         }
 
         let frontier = initialNodes;
-        for (let depth = 1; depth < this.options.maxDepth; depth++) {
+        for (let depth = 1; depth < maxDepth; depth++) {
             if (frontier.length === 0) break;
 
             const beam = this.sortNodes(frontier).slice(0, this.options.beamWidth);
@@ -169,7 +194,7 @@ export class StrongBotV2 {
                 }
 
                 for (const action of legal) {
-                    if (expansions >= this.options.expansionBudget) {
+                    if (expansions >= expansionBudget) {
                         exhaustedBudget = true;
                         break;
                     }
@@ -235,11 +260,7 @@ export class StrongBotV2 {
     }
 
     private isTerminal(engine: GameEngine, actorPlayerId: string): boolean {
-        if (engine.state.winner) return true;
-        if (engine.state.interactionMode !== 'NORMAL') return true;
-        const ownerId = engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
-        if (ownerId !== actorPlayerId) return true;
-        return engine.state.phase !== Phase.MAIN && engine.state.phase !== Phase.ATTACK && engine.state.phase !== Phase.BLOCK;
+        return !this.isSearchableState(engine, actorPlayerId);
     }
 
     private pickBestAggregatedAction(rootActions: EngineAction[], nodes: SearchNode[]): EngineAction {

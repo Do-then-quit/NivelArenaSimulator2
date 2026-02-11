@@ -18,6 +18,20 @@ interface PendingRuntimeState {
     effect: Effect | null;
 }
 
+type CardReferenceArea = 'LEVEL' | 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'ZONE_UNIT' | 'ZONE_ITEM';
+
+interface CardReferenceLocator {
+    playerIndex: number;
+    area: CardReferenceArea;
+    zoneIndex?: number;
+    index?: number;
+}
+
+interface ZoneReferenceLocator {
+    playerIndex: number;
+    zoneIndex: number;
+}
+
 export class GameEngine {
     state: GameState;
     effectManager: EffectManager;
@@ -352,10 +366,6 @@ export class GameEngine {
     }
 
     public createSimulationFork(): GameEngine {
-        if (this.pendingRuntime) {
-            throw new Error('Simulation fork is unavailable while pending runtime context exists.');
-        }
-
         const clonedRandomProvider = this.cloneRandomProvider();
         const player1 = this.state.players[0];
         const player2 = this.state.players[1];
@@ -378,10 +388,157 @@ export class GameEngine {
         fork.state = this.getSerializableState();
         fork.runtimeIdCounter = this.runtimeIdCounter;
         fork.awaitingEndPhaseHandAdjustment = this.awaitingEndPhaseHandAdjustment;
-        fork.pendingRuntime = null;
+        fork.pendingRuntime = this.clonePendingRuntimeForFork(fork);
         fork.assignInteractionOwner(fork.state.interactionOwnerPlayerId);
 
         return fork;
+    }
+
+    private clonePendingRuntimeForFork(fork: GameEngine): PendingRuntimeState | null {
+        if (!this.pendingRuntime) return null;
+
+        return {
+            context: this.clonePendingRuntimeContextForFork(fork, this.pendingRuntime.context),
+            effect: this.pendingRuntime.effect ? JSON.parse(JSON.stringify(this.pendingRuntime.effect)) : null,
+        };
+    }
+
+    private clonePendingRuntimeContextForFork(fork: GameEngine, context: GameContext): GameContext {
+        const mappedPlayer = this.mapPlayerForFork(fork, context.player.id) ?? fork.state.players[0];
+        const mappedOpponent = this.mapPlayerForFork(fork, context.opponent.id)
+            ?? fork.state.players.find(player => player.id !== mappedPlayer.id)
+            ?? mappedPlayer;
+
+        const mappedContext: GameContext = {
+            player: mappedPlayer,
+            opponent: mappedOpponent,
+            sourceCard: this.mapCardForFork(fork, context.sourceCard),
+            machine: fork,
+        };
+
+        const mappedZone = this.mapZoneForFork(fork, context.unitZone);
+        if (mappedZone) mappedContext.unitZone = mappedZone;
+        if (context.selectedLaneIndex !== undefined) mappedContext.selectedLaneIndex = context.selectedLaneIndex;
+        if (context.destroyedBy) mappedContext.destroyedBy = this.mapCardForFork(fork, context.destroyedBy);
+        if (context.trashedUnit) mappedContext.trashedUnit = this.mapCardForFork(fork, context.trashedUnit);
+        if (context.trashedUnitOwner) {
+            mappedContext.trashedUnitOwner = this.mapPlayerForFork(fork, context.trashedUnitOwner.id) ?? mappedPlayer;
+        }
+        if (context.costPaymentCard) {
+            mappedContext.costPaymentCard = this.mapCardForFork(fork, context.costPaymentCard);
+        }
+        if (context.costPaid !== undefined) mappedContext.costPaid = context.costPaid;
+        if (context._optionalConfirmed !== undefined) mappedContext._optionalConfirmed = context._optionalConfirmed;
+        if (context.lastDrawnCards) {
+            mappedContext.lastDrawnCards = context.lastDrawnCards.map(card => this.mapCardForFork(fork, card));
+        }
+        if (context.discardedCount !== undefined) mappedContext.discardedCount = context.discardedCount;
+
+        return mappedContext;
+    }
+
+    private mapPlayerForFork(fork: GameEngine, playerId: string): PlayerState | undefined {
+        return fork.state.players.find(player => player.id === playerId);
+    }
+
+    private mapCardForFork(fork: GameEngine, card: Card): Card {
+        const locator = this.locateCardReference(card);
+        if (locator) {
+            const mapped = this.resolveCardReferenceInFork(fork, locator);
+            if (mapped) return mapped;
+        }
+        return this.cloneCard(card);
+    }
+
+    private mapZoneForFork(fork: GameEngine, zone: UnitZoneState | undefined): UnitZoneState | undefined {
+        if (!zone) return undefined;
+        const locator = this.locateZoneReference(zone);
+        if (!locator) return undefined;
+
+        const player = fork.state.players[locator.playerIndex];
+        if (!player) return undefined;
+        return player.unitZones[locator.zoneIndex];
+    }
+
+    private locateCardReference(card: Card): CardReferenceLocator | null {
+        for (let playerIndex = 0; playerIndex < this.state.players.length; playerIndex++) {
+            const player = this.state.players[playerIndex];
+
+            if (player.levelZone === card) {
+                return { playerIndex, area: 'LEVEL' };
+            }
+
+            const handIndex = player.hand.indexOf(card);
+            if (handIndex !== -1) {
+                return { playerIndex, area: 'HAND', index: handIndex };
+            }
+
+            const deckIndex = player.deck.indexOf(card);
+            if (deckIndex !== -1) {
+                return { playerIndex, area: 'DECK', index: deckIndex };
+            }
+
+            const damageIndex = player.damage.indexOf(card);
+            if (damageIndex !== -1) {
+                return { playerIndex, area: 'DAMAGE', index: damageIndex };
+            }
+
+            const trashIndex = player.trash.indexOf(card);
+            if (trashIndex !== -1) {
+                return { playerIndex, area: 'TRASH', index: trashIndex };
+            }
+
+            for (let zoneIndex = 0; zoneIndex < player.unitZones.length; zoneIndex++) {
+                const zone = player.unitZones[zoneIndex];
+                if (zone.unit === card) {
+                    return { playerIndex, area: 'ZONE_UNIT', zoneIndex };
+                }
+
+                const itemIndex = zone.items.indexOf(card);
+                if (itemIndex !== -1) {
+                    return { playerIndex, area: 'ZONE_ITEM', zoneIndex, index: itemIndex };
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private resolveCardReferenceInFork(fork: GameEngine, locator: CardReferenceLocator): Card | null {
+        const player = fork.state.players[locator.playerIndex];
+        if (!player) return null;
+
+        switch (locator.area) {
+            case 'LEVEL':
+                return player.levelZone ?? null;
+            case 'HAND':
+                return locator.index === undefined ? null : (player.hand[locator.index] ?? null);
+            case 'DECK':
+                return locator.index === undefined ? null : (player.deck[locator.index] ?? null);
+            case 'DAMAGE':
+                return locator.index === undefined ? null : (player.damage[locator.index] ?? null);
+            case 'TRASH':
+                return locator.index === undefined ? null : (player.trash[locator.index] ?? null);
+            case 'ZONE_UNIT':
+                return locator.zoneIndex === undefined ? null : (player.unitZones[locator.zoneIndex]?.unit ?? null);
+            case 'ZONE_ITEM':
+                if (locator.zoneIndex === undefined || locator.index === undefined) return null;
+                return player.unitZones[locator.zoneIndex]?.items[locator.index] ?? null;
+            default:
+                return null;
+        }
+    }
+
+    private locateZoneReference(zone: UnitZoneState): ZoneReferenceLocator | null {
+        for (let playerIndex = 0; playerIndex < this.state.players.length; playerIndex++) {
+            const player = this.state.players[playerIndex];
+            for (let zoneIndex = 0; zoneIndex < player.unitZones.length; zoneIndex++) {
+                if (player.unitZones[zoneIndex] === zone) {
+                    return { playerIndex, zoneIndex };
+                }
+            }
+        }
+        return null;
     }
 
     private cloneRandomProvider(): RandomProvider {
