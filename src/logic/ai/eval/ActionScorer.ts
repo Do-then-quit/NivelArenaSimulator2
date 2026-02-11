@@ -1,5 +1,5 @@
 import { GameEngine } from '../../GameEngine';
-import { Card, EngineAction, PlayerState } from '../../types';
+import { Card, CardType, EngineAction, PendingEffect, PlayerState } from '../../types';
 
 export interface ActionScoreResult {
     score: number;
@@ -25,9 +25,67 @@ const SUPPORTIVE_TARGET_ACTIONS = new Set([
     'BUFF_POWER_AND_DRAW_IF_TRASHED',
 ]);
 
-function getCardTacticalValue(card: Card | undefined): number {
+const TRASH_RECOVERY_ACTIONS = new Set([
+    'MOVE_FROM_TRASH_TO_HAND',
+    'RETURN_FROM_TRASH_AT_TURN_END',
+]);
+
+const OPTIONAL_POSITIVE_ACTIONS = new Set([
+    'DRAW',
+    'GAIN_LEVEL',
+    'MOVE_FROM_TRASH_TO_HAND',
+    'PICK_REVEALED',
+    'TAKE_ALL_REVEALED',
+    'DESTROY_UNIT',
+    'DESTROY_ENCOUNTER',
+    'DESTROY_UNIT_AND_DRAW',
+    'DESTROY_UNIT_AND_DRAW_BY_HIT',
+    'DAMAGE',
+]);
+
+const OPTIONAL_NEGATIVE_ACTIONS = new Set([
+    'TRASH_SELF',
+    'DISCARD_ALL',
+]);
+
+function getCurrentFieldCost(player: PlayerState): number {
+    return player.unitZones.reduce((sum, zone) => {
+        if (!zone.unit) return sum;
+        const itemCost = zone.items.reduce((itemSum, item) => itemSum + item.cost, 0);
+        return sum + zone.unit.cost + itemCost;
+    }, 0);
+}
+
+function getImmediatePlayableBudget(player: PlayerState): number {
+    const size = player.leaderLevel + player.damage.length;
+    return Math.max(0, size - getCurrentFieldCost(player));
+}
+
+function getCardIntrinsicValue(card: Card | undefined): number {
     if (!card) return Number.NEGATIVE_INFINITY;
-    return card.cost * 130 + (card.power ?? 0) / 220 + (card.hit ?? 0) * 90;
+    const power = card.power ?? 0;
+    const hit = card.hit ?? 0;
+
+    let value = card.cost * 120 + power / 200 + hit * 95;
+    if (card.type === CardType.UNIT) value += 80;
+    if (card.type === CardType.ITEM) value += 35;
+    if (card.type === CardType.SKILL) value += 50;
+    if (card.effects && card.effects.length > 0) value += card.effects.length * 14;
+    return value;
+}
+
+function getCardTempoAdjustment(card: Card | undefined, owner: PlayerState | null): number {
+    if (!card || !owner) return 0;
+
+    const immediateBudget = getImmediatePlayableBudget(owner);
+    const boardSize = owner.leaderLevel + owner.damage.length;
+    if (card.cost <= immediateBudget) return 420;
+    if (card.cost <= boardSize) return 130;
+    return -260 - (card.cost - boardSize) * 45;
+}
+
+function getCardTacticalValue(card: Card | undefined, owner: PlayerState | null = null): number {
+    return getCardIntrinsicValue(card) + getCardTempoAdjustment(card, owner);
 }
 
 function getZoneTacticalValue(engine: GameEngine, targetPlayer: PlayerState, zoneIndex: number): number {
@@ -37,6 +95,62 @@ function getZoneTacticalValue(engine: GameEngine, targetPlayer: PlayerState, zon
         + engine.getUnitPower(zone, targetPlayer) / 220
         + engine.getUnitHit(zone, targetPlayer) * 130
         + zone.items.length * 18;
+}
+
+function getLaneThreatToActor(
+    engine: GameEngine,
+    actor: PlayerState,
+    targetPlayer: PlayerState,
+    zoneIndex: number,
+): number {
+    const zone = targetPlayer.unitZones[zoneIndex];
+    if (!zone.unit) return 0;
+
+    const actorZone = actor.unitZones[zoneIndex];
+    if (actorZone.unit) return 0;
+
+    const hit = Math.max(0, engine.getUnitHit(zone, targetPlayer));
+    let score = hit * 220;
+    if (actor.damage.length + hit >= 10) {
+        score += 3200;
+    }
+    return score;
+}
+
+function getLanePressureForActor(
+    engine: GameEngine,
+    actor: PlayerState,
+    opponent: PlayerState,
+    zoneIndex: number,
+): number {
+    const ownZone = actor.unitZones[zoneIndex];
+    if (!ownZone.unit) return 0;
+
+    const ownHit = Math.max(0, engine.getUnitHit(ownZone, actor));
+    const ownPower = Math.max(0, engine.getUnitPower(ownZone, actor));
+    const oppZone = opponent.unitZones[zoneIndex];
+
+    if (!oppZone.unit) {
+        let score = ownHit * 170;
+        if (opponent.damage.length + ownHit >= 10) {
+            score += 2200;
+        }
+        return score;
+    }
+
+    const oppPower = Math.max(0, engine.getUnitPower(oppZone, opponent));
+    if (ownPower <= oppPower) {
+        return 200;
+    }
+    return 60;
+}
+
+function extractPendingNumericValue(pending: PendingEffect | null): number | null {
+    if (!pending || typeof pending.actionValue !== 'object' || pending.actionValue === null) return null;
+    const value = pending.actionValue as Record<string, unknown>;
+    if (typeof value.value === 'number') return value.value;
+    if (typeof value.powerValue === 'number') return value.powerValue;
+    return null;
 }
 
 function resolveZoneTargetBias(actionType: string | undefined, pendingValue: unknown): 'offense' | 'support' | 'neutral' {
@@ -170,16 +284,71 @@ function scoreActivateEffectAction(_engine: GameEngine, actor: PlayerState, acti
     return { score, reason: 'activate-effect' };
 }
 
-function scoreSelectCostHandAction(actor: PlayerState, action: Extract<EngineAction, { type: 'SELECT_COST_HAND' }>): ActionScoreResult {
+function scoreSelectCostHandAction(
+    engine: GameEngine,
+    actor: PlayerState,
+    action: Extract<EngineAction, { type: 'SELECT_COST_HAND' }>,
+): ActionScoreResult {
     const card = actor.hand[action.handIndex];
     if (!card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-cost-card' };
-    const score = 260 - card.cost * 55 - (card.power ?? 0) / 280 - (card.hit ?? 0) * 40;
+
+    const preserveValue = getCardTacticalValue(card, actor);
+    let score = 330 - preserveValue * 0.8;
+    if (actor.hand.length <= 2) score -= 100;
+    if (card.type === CardType.UNIT && actor.unitZones.every(zone => !zone.unit)) score -= 80;
+    if (engine.state.pendingEffect?.actionType === 'DESTROY_UNIT_WITH_HIT_COST') score += 35;
+
     return { score, reason: 'select-cost-hand' };
 }
 
-function scoreResolveOptionalAction(action: Extract<EngineAction, { type: 'RESOLVE_OPTIONAL' }>): ActionScoreResult {
+function resolveOptionalConfirmBias(engine: GameEngine, actor: PlayerState): number {
+    const pending = engine.state.pendingEffect;
+    if (!pending) return 40;
+
+    const actionType = pending.actionType;
+    let bias = 40;
+
+    if (OPTIONAL_POSITIVE_ACTIONS.has(actionType)) bias += 140;
+    if (OPTIONAL_NEGATIVE_ACTIONS.has(actionType)) bias -= 260;
+
+    const pendingValue = extractPendingNumericValue(pending);
+    if ((actionType === 'BUFF_POWER' || actionType === 'BUFF_HIT') && typeof pendingValue === 'number') {
+        bias += pendingValue >= 0 ? 140 : -240;
+    }
+
+    if (actionType === 'DRAW') {
+        if (actor.hand.length >= 7) bias -= 90;
+        if (actor.deck.length === 0) bias -= 500;
+    }
+
+    if (actionType === 'DISCARD') {
+        const target = pending.actionValue?.target as string | undefined;
+        if (target === 'SELF') bias -= 190;
+        if (target === 'OPPONENT') bias += 70;
+    }
+
+    if (actionType === 'MOVE_FROM_TRASH_TO_HAND') {
+        bias += actor.trash.length > 0 ? 120 : -120;
+    }
+
+    if (actionType === 'DAMAGE') {
+        const opponent = engine.state.players.find(player => player.id !== actor.id);
+        const damageValue = typeof pending.actionValue?.value === 'number' ? pending.actionValue.value : 0;
+        if (opponent && opponent.damage.length + damageValue >= 10) bias += 600;
+    }
+
+    return bias;
+}
+
+function scoreResolveOptionalAction(
+    engine: GameEngine,
+    actor: PlayerState,
+    action: Extract<EngineAction, { type: 'RESOLVE_OPTIONAL' }>,
+): ActionScoreResult {
+    const confirmBias = resolveOptionalConfirmBias(engine, actor);
+    const score = action.confirm ? confirmBias : -confirmBias * 0.8;
     return {
-        score: action.confirm ? 90 : -70,
+        score,
         reason: action.confirm ? 'resolve-optional-confirm' : 'resolve-optional-skip',
     };
 }
@@ -192,11 +361,26 @@ function scoreSelectHandTargetAction(
     const targetPlayer = engine.state.players.find(player => player.id === action.targetPlayerId);
     const card = targetPlayer?.hand[action.handIndex];
     if (!targetPlayer || !card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-hand-target' };
+    const selectedTargets = engine.state.pendingEffect?.selectedTargets ?? [];
+    const targetSchema = engine.state.pendingEffect?.targetSchema;
+    const requiredCount = targetSchema?.count ?? 1;
+    if (requiredCount > 0 && selectedTargets.length >= requiredCount && !selectedTargets.includes(card)) {
+        return { score: -1800, reason: 'hand-target-over-cap' };
+    }
+    if (selectedTargets.includes(card)) {
+        return { score: -1600, reason: 'hand-target-unselect' };
+    }
 
-    const tactical = getCardTacticalValue(card);
+    const pending = engine.state.pendingEffect;
+    const tactical = getCardTacticalValue(card, targetPlayer);
     const isOwnHand = targetPlayer.id === actor.id;
+    if (pending?.actionType === 'DISCARD') {
+        if (isOwnHand) return { score: -tactical - 80, reason: 'discard-own-low' };
+        return { score: tactical + 80, reason: 'discard-opp-high' };
+    }
+
     return {
-        score: isOwnHand ? -tactical : tactical,
+        score: isOwnHand ? -tactical : tactical + 40,
         reason: isOwnHand ? 'select-own-hand-target' : 'select-opp-hand-target',
     };
 }
@@ -209,14 +393,19 @@ function scoreSelectZoneTargetAction(
     const pending = engine.state.pendingEffect;
     const targetPlayer = engine.state.players.find(player => player.id === action.targetPlayerId);
     if (!targetPlayer) return { score: Number.NEGATIVE_INFINITY, reason: 'no-zone-target-player' };
+    const opponent = engine.state.players.find(player => player.id !== actor.id) ?? null;
 
     const targetZone = targetPlayer.unitZones[action.zoneIndex];
     if (!targetZone) return { score: Number.NEGATIVE_INFINITY, reason: 'no-zone-target' };
 
     const selectedTargets = pending?.selectedTargets ?? [];
+    const requiredCount = pending?.targetSchema?.count ?? 1;
+    if (requiredCount > 0 && selectedTargets.length >= requiredCount && !selectedTargets.includes(targetZone)) {
+        return { score: -2000, reason: 'zone-target-over-cap' };
+    }
     const alreadySelected = selectedTargets.includes(targetZone);
     if (alreadySelected) {
-        return { score: -180, reason: 'zone-target-unselect' };
+        return { score: -1600, reason: 'zone-target-unselect' };
     }
 
     const zoneValue = getZoneTacticalValue(engine, targetPlayer, action.zoneIndex);
@@ -227,39 +416,60 @@ function scoreSelectZoneTargetAction(
     if (pending?.actionType === 'SACRIFICE_TO_BUFF') {
         const selectedCount = selectedTargets.length;
         if (targetPlayer.id !== actor.id) return { score: -260, reason: 'sacrifice-to-buff-invalid-owner' };
+        const lanePressureBonus = opponent ? getLanePressureForActor(engine, actor, opponent, action.zoneIndex) : 0;
         return selectedCount === 0
             ? { score: -zoneValue + 160, reason: 'sacrifice-low-first' }
-            : { score: zoneValue + 160, reason: 'buff-high-second' };
+            : { score: zoneValue + lanePressureBonus + 160, reason: 'buff-high-second' };
     }
 
-    const targetBias = resolveZoneTargetBias(pending?.actionType, pending?.actionValue?.value);
+    const targetBias = resolveZoneTargetBias(pending?.actionType, extractPendingNumericValue(pending ?? null));
     const isOwnZone = targetPlayer.id === actor.id;
     if (targetBias === 'offense') {
+        const lethalDefenseBonus = !isOwnZone ? getLaneThreatToActor(engine, actor, targetPlayer, action.zoneIndex) : 0;
         return {
-            score: isOwnZone ? -zoneValue : zoneValue,
+            score: isOwnZone ? -zoneValue - 180 : zoneValue + lethalDefenseBonus,
             reason: isOwnZone ? 'offense-own-zone-penalty' : 'offense-opp-zone',
         };
     }
     if (targetBias === 'support') {
+        const lanePressureBonus =
+            isOwnZone && opponent
+                ? getLanePressureForActor(engine, actor, opponent, action.zoneIndex)
+                : 0;
         return {
-            score: isOwnZone ? zoneValue : -zoneValue,
+            score: isOwnZone ? zoneValue + lanePressureBonus : -zoneValue - 120,
             reason: isOwnZone ? 'support-own-zone' : 'support-opp-zone-penalty',
         };
     }
 
-    return { score: zoneValue, reason: 'neutral-zone-target' };
+    return { score: isOwnZone ? zoneValue + 20 : zoneValue, reason: 'neutral-zone-target' };
 }
 
 function scoreSelectTrashTargetAction(
     engine: GameEngine,
+    actor: PlayerState,
     action: Extract<EngineAction, { type: 'SELECT_TRASH_TARGET' }>,
 ): ActionScoreResult {
     const targetPlayer = engine.state.players.find(player => player.id === action.targetPlayerId);
     const card = targetPlayer?.trash[action.trashIndex];
     if (!targetPlayer || !card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-trash-target' };
+    const selectedTargets = engine.state.pendingEffect?.selectedTargets ?? [];
+    const targetSchema = engine.state.pendingEffect?.targetSchema;
+    const requiredCount = targetSchema?.count ?? 1;
+    if (requiredCount > 0 && selectedTargets.length >= requiredCount && !selectedTargets.includes(card)) {
+        return { score: -1800, reason: 'trash-target-over-cap' };
+    }
+    if (selectedTargets.includes(card)) {
+        return { score: -1600, reason: 'trash-target-unselect' };
+    }
 
-    const tactical = getCardTacticalValue(card);
+    const tactical = getCardTacticalValue(card, targetPlayer);
     const actionType = engine.state.pendingEffect?.actionType;
+    if (actionType && TRASH_RECOVERY_ACTIONS.has(actionType)) {
+        const score = tactical + (targetPlayer.id === actor.id ? 120 : -220);
+        return { score, reason: 'select-trash-recovery' };
+    }
+
     return {
         score: actionType === 'TRASH_SELF' ? -tactical : tactical,
         reason: actionType === 'TRASH_SELF' ? 'select-trash-self-low' : 'select-trash-target',
@@ -268,12 +478,22 @@ function scoreSelectTrashTargetAction(
 
 function scoreSelectRevealedTargetAction(
     engine: GameEngine,
+    actor: PlayerState,
     action: Extract<EngineAction, { type: 'SELECT_REVEALED_TARGET' }>,
 ): ActionScoreResult {
     const card = engine.state.revealedCards[action.revealedIndex];
     if (!card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-revealed-target' };
+    const selectedTargets = engine.state.pendingEffect?.selectedTargets ?? [];
+    const targetSchema = engine.state.pendingEffect?.targetSchema;
+    const requiredCount = targetSchema?.count ?? 1;
+    if (requiredCount > 0 && selectedTargets.length >= requiredCount && !selectedTargets.includes(card)) {
+        return { score: -1800, reason: 'revealed-target-over-cap' };
+    }
+    if (selectedTargets.includes(card)) {
+        return { score: -1600, reason: 'revealed-target-unselect' };
+    }
 
-    const tactical = getCardTacticalValue(card);
+    const tactical = getCardTacticalValue(card, actor);
     const actionType = engine.state.pendingEffect?.actionType;
     const preferLow = actionType === 'DISCARD_FROM_DRAWN';
     return {
@@ -296,10 +516,16 @@ function scoreConfirmTargetsAction(engine: GameEngine): ActionScoreResult {
 
     const selectedCount = pending.selectedTargets?.length ?? 0;
     if (selectedCount >= requiredCount) {
-        return { score: 180, reason: 'confirm-targets-ready' };
+        return { score: 2800, reason: 'confirm-targets-ready' };
     }
 
-    return { score: -260, reason: 'confirm-targets-insufficient' };
+    // Rule 1.3.2 handling in legal-action generation can expose CONFIRM even below required count.
+    // When that happens, prefer resolving over oscillating on already-selected targets.
+    if (selectedCount > 0) {
+        return { score: 320, reason: 'confirm-targets-partial' };
+    }
+
+    return { score: 40, reason: 'confirm-targets-empty' };
 }
 
 export function scoreAction(engine: GameEngine, actorPlayerId: string, action: EngineAction): ActionScoreResult {
@@ -325,17 +551,17 @@ export function scoreAction(engine: GameEngine, actorPlayerId: string, action: E
         case 'ACTIVATE_EFFECT':
             return scoreActivateEffectAction(engine, actor, action);
         case 'SELECT_COST_HAND':
-            return scoreSelectCostHandAction(actor, action);
+            return scoreSelectCostHandAction(engine, actor, action);
         case 'RESOLVE_OPTIONAL':
-            return scoreResolveOptionalAction(action);
+            return scoreResolveOptionalAction(engine, actor, action);
         case 'SELECT_HAND_TARGET':
             return scoreSelectHandTargetAction(engine, actor, action);
         case 'SELECT_ZONE_TARGET':
             return scoreSelectZoneTargetAction(engine, actor, action);
         case 'SELECT_TRASH_TARGET':
-            return scoreSelectTrashTargetAction(engine, action);
+            return scoreSelectTrashTargetAction(engine, actor, action);
         case 'SELECT_REVEALED_TARGET':
-            return scoreSelectRevealedTargetAction(engine, action);
+            return scoreSelectRevealedTargetAction(engine, actor, action);
         case 'CONFIRM_TARGETS':
             return scoreConfirmTargetsAction(engine);
         case 'NEXT_PHASE':

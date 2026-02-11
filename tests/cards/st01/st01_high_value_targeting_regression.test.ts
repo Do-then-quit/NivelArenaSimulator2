@@ -1,0 +1,113 @@
+import { describe, expect, it } from 'vitest';
+import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
+import { GameEngine } from '../../../src/logic/GameEngine';
+import { StrongBotV2 } from '../../../src/logic/ai/StrongBotV2';
+import { Card, Phase } from '../../../src/logic/types';
+
+function getCard(id: string): Card {
+    const card = DUMMY_CARDS.find(c => c.id === id);
+    if (!card) throw new Error(`Card ${id} not found`);
+    return JSON.parse(JSON.stringify(card));
+}
+
+function createEngine(seed: number): GameEngine {
+    const deck1 = Array.from({ length: 30 }, (_v, i) => getCard(i % 2 === 0 ? 'ST01-002' : 'BT01-057'));
+    const deck2 = Array.from({ length: 30 }, (_v, i) => getCard(i % 2 === 0 ? 'ST01-002' : 'BT01-057'));
+    const engine = new GameEngine('P1', 'P2', deck1, deck2, getCard('ST01-001'), getCard('ST01-001'), { seed });
+    engine.state.winner = null;
+    engine.state.turnPlayerIndex = 0;
+    engine.state.phase = Phase.MAIN;
+    return engine;
+}
+
+function createSearchOnlyBot(name: string): StrongBotV2 {
+    const bot = new StrongBotV2(name, {
+        beamWidth: 4,
+        maxDepth: 3,
+        expansionBudget: 100,
+        interactionDepth: 3,
+        interactionExpansionBudget: 100,
+        rolloutVariants: 1,
+    });
+    (bot as any).fallback = { chooseAction: () => null };
+    return bot;
+}
+
+describe('ST01 High Value Targeting Regression', () => {
+    it('ST01-012 active debuff prioritizes immediate lethal lane threat', () => {
+        const engine = createEngine(9401);
+        const bot = createSearchOnlyBot('Strong-v2-ST01-012');
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.damage = Array.from({ length: 9 }, (_v, i) => getCard(i % 2 === 0 ? 'ST01-002' : 'BT01-057'));
+        p1.unitZones[0].unit = getCard('ST01-002');
+
+        const stableThreat = getCard('ST01-009');
+        stableThreat.cost = 6;
+        stableThreat.power = 8000;
+        stableThreat.hit = 1;
+        p2.unitZones[0].unit = stableThreat;
+
+        const lethalThreat = getCard('BT01-057');
+        lethalThreat.cost = 1;
+        lethalThreat.power = 1200;
+        lethalThreat.hit = 2;
+        p2.unitZones[1].unit = lethalThreat;
+
+        const sourceCard = getCard('ST01-012');
+        const effect = sourceCard.effects?.[0];
+        expect(effect).toBeDefined();
+        engine.initiateTargetSelection(effect!, {
+            sourceCard,
+            player: p1,
+            opponent: p2,
+            machine: engine,
+        } as any);
+
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+
+        const action = bot.chooseAction(engine, p1.id);
+        expect(action?.type).toBe('SELECT_ZONE_TARGET');
+        expect(action?.type === 'SELECT_ZONE_TARGET' ? action.zoneIndex : -1).toBe(1);
+    });
+
+    it('ST01-013 active recovery prefers higher tactical-value trash card', () => {
+        const engine = createEngine(9402);
+        const bot = createSearchOnlyBot('Strong-v2-ST01-013');
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.leaderLevel = 3;
+        p1.damage = [];
+
+        const lowValue = getCard('ST01-006');
+        lowValue.cost = 2;
+        lowValue.power = 500;
+        lowValue.hit = 1;
+
+        const highValue = getCard('ST01-002');
+        highValue.cost = 1;
+        highValue.power = 6000;
+        highValue.hit = 2;
+
+        p1.trash = [lowValue, highValue];
+
+        const sourceCard = getCard('ST01-013');
+        const effect = sourceCard.effects?.[0];
+        expect(effect).toBeDefined();
+        engine.initiateTargetSelection(effect!, {
+            sourceCard,
+            player: p1,
+            opponent: p2,
+            machine: engine,
+        } as any);
+
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        expect(engine.state.interactionOwnerPlayerId).toBe(p1.id);
+
+        const action = bot.chooseAction(engine, p1.id);
+        expect(action?.type).toBe('SELECT_TRASH_TARGET');
+        expect(action?.type === 'SELECT_TRASH_TARGET' ? action.trashIndex : -1).toBe(1);
+    });
+});

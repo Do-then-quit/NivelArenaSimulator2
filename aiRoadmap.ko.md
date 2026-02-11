@@ -1,6 +1,6 @@
 ﻿# AI 로드맵: 강한 플레이 봇 + 강한 덱 탐색
 
-## 진행 현황 (2026-02-10)
+## 진행 현황 (2026-02-11)
 
 - [x] Phase 0 완료
   - 근거 문서: `Phase0.md`
@@ -23,12 +23,23 @@
     - 배치 리포트 runtime KPI(`summary.runtime.msPerAction`) 계측 추가
       (`AI_BENCH_MEASURE_RUNTIME=1`)
     - v2 튜닝(탐색 phase 확장/커버리지 기반 fallback/집계식 보정) 반영
-- [~] Phase 2 재평가 완료 (승격 보류)
-  - 프로토콜 v1.0 bench 200+200: `213/400 = 53.25%`, 95% CI `[48.36%, 58.14%]`
-  - 안정성 게이트: `no_action=0`, `invalid_action=0` (통과)
-  - runtime 샘플 50+50: `ms/action=2.4074` (`P1=v2=2.3446`, `P2=v2=2.4726`)
-  - ladder 교차 확인 100게임: `57승 43패 (57.0%)`, Elo `1045.36`
-  - 결론: 승격 기준(`합산 승률>=55%` + `CI 하한>=50%`) 미충족으로 v2 승격 보류
+- [x] Phase 2 재평가 완료 (v1.1에서 승격 통과)
+  - 프로토콜 v1.0(참고): `213/400 = 53.25%`, 95% CI `[48.36%, 58.14%]` -> 승격 보류
+  - 프로토콜 v1.1 bench 200+200: `225/400 = 56.25%`, 95% CI `[51.39%, 61.11%]`
+  - 안정성 게이트: `max_steps=0`, `no_action=0`, `invalid_action=0` (통과)
+  - runtime 샘플 50+50: `ms/action=2.7520`, `avgMsPerGame=273.61`
+  - ladder 교차 확인 100게임: `54승 46패 (54.0%)`
+  - 결론: 승격 기준(`합산 승률>=55%` + `CI 하한>=50%`) 충족
+- [~] Phase 2.1 인터랙션/효과 인지 강화 1차 반영
+  - `StrongBotV2` 탐색 상태 확장:
+    - `SELECT_TARGET` / `SELECT_COST` / `SELECT_OPTIONAL` 탐색 분기 활성화
+    - `interactionOwnerPlayerId` 일치 시에만 탐색 허용 + 인터랙션 예산 분리
+  - `ActionScorer` 세분화:
+    - `pendingEffect(actionType/actionValue/targetSchema/validTargets)` 기반 가치 계산 강화
+    - 치명 위협 라인 우선 제거, 트래시 복구 시 템포(즉시 플레이 가능성) 반영, optional 자해 효과 스킵 반영
+  - 검증:
+    - `tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`
+    - `tests/ai/ActionScorerEffectAware.vitest.test.ts`
 - [ ] Phase 3 미착수
 - [ ] Phase 4 미착수
 - [ ] Phase 5 미착수
@@ -175,22 +186,41 @@
      - 결과: `57승 43패 (57.0%)`, Elo `1045.36`
    - 집계 요약: `artifacts/ai/bench/phase2_protocol_v1_summary.json`
    - 판정: 승격 기준(`합산 승률>=55%` + `CI 하한>=50%`) 미충족으로 v2 승격 보류
-5. [ ] Phase 2.1 인터랙션 탐색 확장 (플레이 봇 완성 우선):
+5. [x] Phase 2.1 인터랙션 탐색 확장 (플레이 봇 완성 우선):
    - `SELECT_TARGET`/`SELECT_COST`/`SELECT_OPTIONAL` 구간도 탐색 대상으로 포함
    - 입력권(`interactionOwnerPlayerId`)이 봇 자신일 때만 분기 확장
    - 인터랙션 전용 예산(`interactionDepth`, `interactionBudget`)을 분리해 메인 탐색 예산 보호
-6. [ ] 카드 효과 인지형 의사결정 강화:
+6. [x] 카드 효과 인지형 의사결정 강화:
    - `pendingEffect` 기반 점수화(`actionType`, `actionValue`, `targetSchema`, `validTargets`)
    - 타겟 가치 함수 분리(제거/버프/부활/핸드개입/트래시)
    - 기존 `cost/power/hit` 편향을 낮추고, 상태 변화(킬각/라인 주도권/핸드 템포) 비중 상향
-7. [ ] 테스트/회귀 게이트 추가:
+7. [x] 테스트/회귀 게이트 추가:
    - 인터랙션 탐색 단위 테스트(`tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`)
-   - 카드별 고밸류 타겟 선택 회귀(`tests/cards/*`)
-   - `npm run ai:regression` + `npm run test:bot-soak` + Phase2 프로토콜 재실행
-8. [ ] 승격 재평가 (v1.1):
-   - 프로토콜 v1.0과 동일한 200+200 + runtime 50+50 + ladder 100 재측정
-   - 승격 기준 동일: 합산 승률 `>=55%`, 95% CI 하한 `>=50%`, `no_action=0`, `invalid_action=0`
-   - 통과 전까지 Phase 3(덱 탐색) 착수 보류
+   - 효과 인지형 가치함수 단위 테스트(`tests/ai/ActionScorerEffectAware.vitest.test.ts`)
+   - 카드별 고밸류 타겟 선택 회귀:
+     - `tests/cards/st01/st01_high_value_targeting_regression.test.ts`
+     - `tests/cards/st02/st02_high_value_targeting_regression.test.ts`
+     - `tests/cards/st03/st03_high_value_targeting_regression.test.ts`
+     - `tests/cards/bt01/bt01_high_value_targeting_regression.test.ts`
+   - `phase0.manifest.json` 회귀 목록에 새 테스트 반영
+   - 2026-02-11 검증 통과: `npm run ai:regression`, `npm run build`
+   - 장기 실행처럼 보였던 재평가 점검 완료:
+     - `SELECT_TARGET` 구간 상호작용 진동 리스크를 추적/완화
+     - v1.1 고정 프로토콜에서는 `max_steps=0`으로 무한루프 징후 미검출
+8. [x] 승격 재평가 (v1.1):
+   - 200+200 + runtime 50+50 + ladder 100 재측정 완료
+   - 산출물:
+     - `artifacts/ai/bench/phase2_protocol_v1_1_p1v2_200.json`
+     - `artifacts/ai/bench/phase2_protocol_v1_1_p2v2_200.json`
+     - `artifacts/ai/bench/phase2_protocol_v1_1_runtime_p1v2_50.json`
+     - `artifacts/ai/bench/phase2_protocol_v1_1_runtime_p2v2_50.json`
+     - `artifacts/ai/ladder/phase2_protocol_v1_1_ladder_100.json`
+     - `artifacts/ai/bench/phase2_protocol_v1_1_summary.json`
+   - 결과:
+     - 합산 승률 `56.25%` (`225/400`)
+     - 95% CI `[51.39%, 61.11%]`
+     - `max_steps=0`, `no_action=0`, `invalid_action=0`
+   - 판정: Phase 2 승격 게이트 통과 (Phase 3 착수 계획 가능)
 
 ## Phase 3: 덱 탐색 MVP (진화형 탐색)
 

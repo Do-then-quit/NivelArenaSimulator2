@@ -32,6 +32,11 @@
       "tests/ai/AiPhase0Harness.vitest.test.ts",
       "tests/ai/StrongBotPhase1.vitest.test.ts",
       "tests/ai/StrongBotPhase2.vitest.test.ts",
+      "tests/ai/ActionScorerEffectAware.vitest.test.ts",
+      "tests/cards/st01/st01_high_value_targeting_regression.test.ts",
+      "tests/cards/st02/st02_high_value_targeting_regression.test.ts",
+      "tests/cards/st03/st03_high_value_targeting_regression.test.ts",
+      "tests/cards/bt01/bt01_high_value_targeting_regression.test.ts",
       "tests/ai/StrongBotV2InteractionSearch.vitest.test.ts"
     ],
     "includeBotSoak": true

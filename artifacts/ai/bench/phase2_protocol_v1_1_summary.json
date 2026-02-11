@@ -1,0 +1,91 @@
+{
+    "protocol":  "phase2_protocol_v1.1",
+    "generatedAt":  "2026-02-11",
+    "inputs":  {
+                   "bench":  [
+                                 "artifacts/ai/bench/phase2_protocol_v1_1_p1v2_200.json",
+                                 "artifacts/ai/bench/phase2_protocol_v1_1_p2v2_200.json"
+                             ],
+                   "runtime":  [
+                                   "artifacts/ai/bench/phase2_protocol_v1_1_runtime_p1v2_50.json",
+                                   "artifacts/ai/bench/phase2_protocol_v1_1_runtime_p2v2_50.json"
+                               ],
+                   "ladder":  "artifacts/ai/ladder/phase2_protocol_v1_1_ladder_100.json"
+               },
+    "bench":  {
+                  "combined":  {
+                                   "games":  400,
+                                   "winsV2":  225,
+                                   "winRateV2":  0.5625,
+                                   "confidence95":  {
+                                                        "low":  0.5139,
+                                                        "high":  0.6111
+                                                    },
+                                   "termination":  {
+                                                       "max_steps":  0,
+                                                       "no_action":  0,
+                                                       "invalid_action":  0
+                                                   }
+                               },
+                  "p1v2":  {
+                               "winsV2":  113,
+                               "games":  200,
+                               "winRateV2":  0.565,
+                               "confidence95":  {
+                                                    "pointEstimate":  0.565,
+                                                    "standardError":  0.0351,
+                                                    "ci95Low":  0.4963,
+                                                    "ci95High":  0.6337
+                                                }
+                           },
+                  "p2v2":  {
+                               "winsV2":  112,
+                               "games":  200,
+                               "winRateV2":  0.56,
+                               "confidence95":  {
+                                                    "pointEstimate":  0.56,
+                                                    "standardError":  0.0351,
+                                                    "ci95Low":  0.4912,
+                                                    "ci95High":  0.6288
+                                                }
+                           }
+              },
+    "runtime":  {
+                    "combined":  {
+                                     "games":  100,
+                                     "totalMs":  27360.71,
+                                     "avgMsPerGame":  273.61,
+                                     "msPerAction":  2.752
+                                 },
+                    "p1v2":  {
+                                 "msPerAction":  2.6518,
+                                 "avgMsPerGame":  269.37
+                             },
+                    "p2v2":  {
+                                 "msPerAction":  2.8567,
+                                 "avgMsPerGame":  277.85
+                             }
+                },
+    "ladder":  {
+                   "games":  100,
+                   "winsV2":  54,
+                   "lossesV2":  46,
+                   "winRateV2":  0.54,
+                   "ratingV2":  995.52
+               },
+    "promotion":  {
+                      "criteria":  {
+                                       "combined_win_rate_ge_55":  0.55,
+                                       "combined_ci_low_ge_50":  0.5,
+                                       "no_action_eq_0":  0,
+                                       "invalid_action_eq_0":  0
+                                   },
+                      "result":  {
+                                     "combined_win_rate_ok":  true,
+                                     "combined_ci_low_ok":  true,
+                                     "no_action_ok":  true,
+                                     "invalid_action_ok":  true,
+                                     "pass":  true
+                                 }
+                  }
+}

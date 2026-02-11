@@ -1,6 +1,6 @@
 # AI Roadmap: Strong Play Bot + Strong Deck Search
 
-## Progress Status (2026-02-10)
+## Progress Status (2026-02-11)
 
 - [x] Phase 0 complete
   - Evidence: `Phase0.md`
@@ -23,12 +23,23 @@
     - runtime KPI telemetry in batch summary (`summary.runtime.msPerAction`)
       via `AI_BENCH_MEASURE_RUNTIME=1`
     - v2 tuning applied (search-phase expansion, coverage-based fallback, aggregation rebalance)
-- [~] Phase 2 re-evaluation completed (promotion deferred)
-  - protocol v1.0 bench 200+200: `213/400 = 53.25%`, 95% CI `[48.36%, 58.14%]`
-  - safety gate: `no_action=0`, `invalid_action=0` (pass)
-  - runtime sample 50+50: `ms/action=2.4074` (`P1=v2=2.3446`, `P2=v2=2.4726`)
-  - ladder cross-check 100 games: `57-43 (57.0%)`, Elo `1045.36`
-  - conclusion: promotion criteria (`combined >=55%` and `CI low >=50%`) not met
+- [x] Phase 2 re-evaluation completed (promotion passed in protocol v1.1)
+  - protocol v1.0 (reference): `213/400 = 53.25%`, 95% CI `[48.36%, 58.14%]` -> deferred
+  - protocol v1.1 bench 200+200: `225/400 = 56.25%`, 95% CI `[51.39%, 61.11%]`
+  - safety gate: `max_steps=0`, `no_action=0`, `invalid_action=0` (pass)
+  - runtime sample 50+50: `ms/action=2.7520`, `avgMsPerGame=273.61`
+  - ladder cross-check 100 games: `54-46 (54.0%)`
+  - conclusion: promotion criteria (`combined >=55%` and `CI low >=50%`) met
+- [~] Phase 2.1 interaction/effect-aware upgrade pass 1 applied
+  - `StrongBotV2` search scope:
+    - added interaction-branch search for `SELECT_TARGET` / `SELECT_COST` / `SELECT_OPTIONAL`
+    - gated by `interactionOwnerPlayerId` ownership with separate interaction budget
+  - `ActionScorer` refinement:
+    - stronger `pendingEffect`-aware scoring (`actionType`, `actionValue`, `targetSchema`, `validTargets`)
+    - lethal-lane removal priority, tempo-aware trash recovery, optional self-harm skip preference
+  - validation:
+    - `tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`
+    - `tests/ai/ActionScorerEffectAware.vitest.test.ts`
 - [ ] Phase 3 not started
 - [ ] Phase 4 not started
 - [ ] Phase 5 not started
@@ -175,22 +186,41 @@
      - result: `57-43 (57.0%)`, Elo `1045.36`
    - Aggregated summary: `artifacts/ai/bench/phase2_protocol_v1_summary.json`
    - Decision: keep v2 as non-promoted until criteria (`>=55%` and CI low `>=50%`) are met
-5. [ ] Phase 2.1 interaction-search expansion (play strength first):
+5. [x] Phase 2.1 interaction-search expansion (play strength first):
    - include `SELECT_TARGET` / `SELECT_COST` / `SELECT_OPTIONAL` in search space
    - expand branches only when `interactionOwnerPlayerId` is the bot actor
    - separate interaction budget (`interactionDepth`, `interactionBudget`) to protect main search budget
-6. [ ] Effect-aware decision upgrade:
+6. [x] Effect-aware decision upgrade:
    - score interaction actions from `pendingEffect` (`actionType`, `actionValue`, `targetSchema`, `validTargets`)
    - split target-value policies by effect intent (removal / buff / revive / hand-disruption / trash)
    - reduce pure `cost/power/hit` bias and increase state-transition value (lethal swing / lane control / hand tempo)
-7. [ ] Add tests and regression gates:
+7. [x] Add tests and regression gates:
    - interaction-search unit tests (`tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`)
-   - high-value target-choice regressions per card family (`tests/cards/*`)
-   - run `npm run ai:regression`, `npm run test:bot-soak`, and re-run Phase 2 protocol
-8. [ ] Promotion re-evaluation (v1.1):
-   - re-run 200+200 bench + runtime 50+50 + ladder 100 with same criteria
-   - promotion criteria unchanged: combined win rate `>=55%`, CI low `>=50%`, `no_action=0`, `invalid_action=0`
-   - keep Phase 3 (deck search) gated until this passes
+   - effect-aware scoring unit tests (`tests/ai/ActionScorerEffectAware.vitest.test.ts`)
+   - high-value target selection regressions:
+     - `tests/cards/st01/st01_high_value_targeting_regression.test.ts`
+     - `tests/cards/st02/st02_high_value_targeting_regression.test.ts`
+     - `tests/cards/st03/st03_high_value_targeting_regression.test.ts`
+     - `tests/cards/bt01/bt01_high_value_targeting_regression.test.ts`
+   - included in `phase0.manifest.json` AI regression list
+   - validated on 2026-02-11: `npm run ai:regression`, `npm run build`
+   - stress symptom review completed:
+     - prior long-running evaluation traced to interaction oscillation risk under `SELECT_TARGET`
+     - no infinite-loop repro on fixed protocol rerun (`max_steps=0` in v1.1 summary)
+8. [x] Promotion re-evaluation (v1.1):
+   - bench 200+200 + runtime 50+50 + ladder 100 rerun completed
+   - artifacts:
+     - `artifacts/ai/bench/phase2_protocol_v1_1_p1v2_200.json`
+     - `artifacts/ai/bench/phase2_protocol_v1_1_p2v2_200.json`
+     - `artifacts/ai/bench/phase2_protocol_v1_1_runtime_p1v2_50.json`
+     - `artifacts/ai/bench/phase2_protocol_v1_1_runtime_p2v2_50.json`
+     - `artifacts/ai/ladder/phase2_protocol_v1_1_ladder_100.json`
+     - `artifacts/ai/bench/phase2_protocol_v1_1_summary.json`
+   - result:
+     - combined win rate `56.25%` (`225/400`)
+     - 95% CI `[51.39%, 61.11%]`
+     - `max_steps=0`, `no_action=0`, `invalid_action=0`
+   - decision: Phase 2 promotion gate passed (Phase 3 can be planned)
 
 ## Phase 3: Deck Search MVP (Evolutionary Search)
 
