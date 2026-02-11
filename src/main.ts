@@ -3,8 +3,24 @@ import { GameEngine } from './logic/GameEngine';
 import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
 import { RuleValidator } from './logic/RuleValidator';
-import { BaselineBot } from './logic/ai/BaselineBot';
 import { createQuickPlayLoadout } from './logic/ai/QuickPlayDeckFactory';
+import { DeckPersistence, SavedDeck } from './logic/DeckPersistence';
+import {
+    BotModelId,
+    BotLike,
+    createBotForModel,
+    getAvailableBotModels,
+    getBotModelLabel,
+} from './logic/ai/BotRegistry';
+import {
+    BotReplayActionLog,
+    BotReplayDeckLoadout,
+    BotReplaySimulationResult,
+    createRandomLegalLoadout,
+    createReplayPlaybackEngine,
+    runBotVsBotReplaySimulation,
+} from './logic/ai/BotVsBotReplay';
+import { materializeDeckForMatch } from '../scripts/ai/deck_pool';
 
 import { DebugManager } from './logic/DebugManager';
 import { HoverPreview } from './HoverPreview';
@@ -18,6 +34,7 @@ enum Screen {
     MENU,
     DECK_BUILDER,
     SETUP,
+    BOT_REPLAY_SETUP,
     GAME,
     TEST
 }
@@ -31,12 +48,15 @@ const cardTester = new CardTester();
 let testResults: any[] = [];
 let testRunning = false;
 
-type PlayerControlMode = 'HUMAN' | 'BASELINE_BOT';
+type PlayerControlMode = 'HUMAN' | 'BOT';
+type ReplayDeckMode = 'CUSTOM' | 'RANDOM';
 
 interface MatchControlConfig {
     label: string;
     player1Control: PlayerControlMode;
     player2Control: PlayerControlMode;
+    player1BotId?: BotModelId;
+    player2BotId?: BotModelId;
 }
 
 interface MatchViewConfig {
@@ -52,15 +72,59 @@ const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
 const HUMAN_VS_BASELINE_CONFIG: MatchControlConfig = {
     label: 'HUMAN vs BASELINE BOT',
     player1Control: 'HUMAN',
-    player2Control: 'BASELINE_BOT',
+    player2Control: 'BOT',
+    player2BotId: 'baseline',
 };
 
 let pendingSetupConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG;
 let activeMatchConfig: MatchControlConfig = HUMAN_VS_HUMAN_CONFIG;
 let pendingMatchViewConfig: MatchViewConfig = { revealBotHand: true };
 let activeMatchViewConfig: MatchViewConfig = { revealBotHand: true };
-const botByPlayerId = new Map<string, BaselineBot>();
+const botByPlayerId = new Map<string, BotLike>();
+const botLabelByPlayerId = new Map<string, string>();
 let botStepTimer: number | null = null;
+const availableBotModels = getAvailableBotModels();
+
+interface BotReplaySetupState {
+    player1BotId: BotModelId;
+    player2BotId: BotModelId;
+    deckMode: ReplayDeckMode;
+    player1DeckId: string | null;
+    player2DeckId: string | null;
+    randomSeed: number;
+    randomMirrorDeck: boolean;
+    maxSteps: number;
+    running: boolean;
+    progressSteps: number;
+    statusText: string;
+}
+
+interface BotReplaySession {
+    loadout: BotReplayDeckLoadout;
+    result: BotReplaySimulationResult;
+    actions: BotReplayActionLog[];
+    currentActionIndex: number;
+    player1BotId: BotModelId;
+    player2BotId: BotModelId;
+    playerBotModelById: Record<string, BotModelId>;
+    playerBotLabelById: Record<string, string>;
+}
+
+let botReplaySetupState: BotReplaySetupState = {
+    player1BotId: 'baseline',
+    player2BotId: 'strong-v1',
+    deckMode: 'RANDOM',
+    player1DeckId: null,
+    player2DeckId: null,
+    randomSeed: Date.now(),
+    randomMirrorDeck: false,
+    maxSteps: 2400,
+    running: false,
+    progressSteps: 0,
+    statusText: '',
+};
+
+let replaySession: BotReplaySession | null = null;
 
 function clearBotStepTimer() {
     if (botStepTimer !== null) {
@@ -74,11 +138,12 @@ function getActionOwnerPlayerId(engine: GameEngine): string {
 }
 
 function isBotControlledPlayer(playerId: string): boolean {
+    if (replaySession?.playerBotModelById[playerId]) return true;
     return botByPlayerId.has(playerId);
 }
 
 function hasBotPlayer(controlConfig: MatchControlConfig): boolean {
-    return controlConfig.player1Control === 'BASELINE_BOT' || controlConfig.player2Control === 'BASELINE_BOT';
+    return controlConfig.player1Control === 'BOT' || controlConfig.player2Control === 'BOT';
 }
 
 function getDefaultViewConfig(controlConfig: MatchControlConfig): MatchViewConfig {
@@ -94,12 +159,20 @@ function shouldRevealHandForPlayer(playerId: string): boolean {
 
 function canLocalHumanInput(): boolean {
     if (!game || game.state.winner) return false;
+    if (replaySession) return false;
     const actorId = getActionOwnerPlayerId(game);
     return !isBotControlledPlayer(actorId);
 }
 
+function getBotLabelForPlayerId(playerId: string): string {
+    if (replaySession?.playerBotLabelById[playerId]) {
+        return replaySession.playerBotLabelById[playerId];
+    }
+    return botLabelByPlayerId.get(playerId) ?? 'Bot';
+}
+
 function runBotStep() {
-    if (!game || currentScreen !== Screen.GAME || game.state.winner) return;
+    if (!game || currentScreen !== Screen.GAME || game.state.winner || replaySession) return;
 
     const actorId = getActionOwnerPlayerId(game);
     const bot = botByPlayerId.get(actorId);
@@ -107,13 +180,13 @@ function runBotStep() {
 
     const action = bot.chooseAction(game, actorId);
     if (!action) {
-        console.warn(`[BaselineBot] No legal action for actor: ${actorId}`);
+        console.warn(`[Bot] No legal action for actor: ${actorId}`);
         return;
     }
 
     const ok = game.step(action);
     if (!ok) {
-        console.warn(`[BaselineBot] Invalid action from actor ${actorId}: ${JSON.stringify(action)}`);
+        console.warn(`[Bot] Invalid action from actor ${actorId}: ${JSON.stringify(action)}`);
         return;
     }
 
@@ -123,7 +196,7 @@ function runBotStep() {
 function scheduleBotStep(delayMs: number = 220) {
     clearBotStepTimer();
 
-    if (!game || currentScreen !== Screen.GAME || game.state.winner) return;
+    if (!game || currentScreen !== Screen.GAME || game.state.winner || replaySession) return;
     const actorId = getActionOwnerPlayerId(game);
     if (!isBotControlledPlayer(actorId)) return;
 
@@ -142,6 +215,7 @@ function renderMenu() {
                 <button id="start-vs-bot-btn" class="primary-btn">Quick Play vs Baseline Bot</button>
                 <button id="custom-sim-btn" class="primary-btn">Custom Simulation (PvP)</button>
                 <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Baseline Bot</button>
+                <button id="bot-replay-btn" class="primary-btn">Simulate Bot vs Bot (Replay)</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
                 <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Tests (ST01 & ST02)</button>
             </div>
@@ -176,6 +250,21 @@ function renderMenu() {
         render();
     });
 
+    document.getElementById('bot-replay-btn')?.addEventListener('click', () => {
+        const savedDecks = DeckPersistence.getAllDecks();
+        botReplaySetupState = {
+            ...botReplaySetupState,
+            player1DeckId: savedDecks[0]?.id ?? null,
+            player2DeckId: savedDecks[1]?.id ?? savedDecks[0]?.id ?? null,
+            randomSeed: Date.now(),
+            running: false,
+            progressSteps: 0,
+            statusText: '',
+        };
+        currentScreen = Screen.BOT_REPLAY_SETUP;
+        render();
+    });
+
     document.getElementById('deck-builder-btn')?.addEventListener('click', () => {
         currentScreen = Screen.DECK_BUILDER;
         render();
@@ -196,6 +285,7 @@ function startGame(
     viewConfig?: MatchViewConfig
 ) {
     clearBotStepTimer();
+    replaySession = null;
     activeMatchConfig = controlConfig;
     activeMatchViewConfig = {
         ...getDefaultViewConfig(controlConfig),
@@ -203,12 +293,17 @@ function startGame(
     };
     game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2, { enableMulligan: true });
     botByPlayerId.clear();
+    botLabelByPlayerId.clear();
     const [player1, player2] = game.state.players;
-    if (controlConfig.player1Control === 'BASELINE_BOT') {
-        botByPlayerId.set(player1.id, new BaselineBot('BaselineBot-P1'));
+    if (controlConfig.player1Control === 'BOT') {
+        const botId = controlConfig.player1BotId ?? 'baseline';
+        botByPlayerId.set(player1.id, createBotForModel(botId, `${getBotModelLabel(botId)}-P1`));
+        botLabelByPlayerId.set(player1.id, getBotModelLabel(botId));
     }
-    if (controlConfig.player2Control === 'BASELINE_BOT') {
-        botByPlayerId.set(player2.id, new BaselineBot('BaselineBot-P2'));
+    if (controlConfig.player2Control === 'BOT') {
+        const botId = controlConfig.player2BotId ?? 'baseline';
+        botByPlayerId.set(player2.id, createBotForModel(botId, `${getBotModelLabel(botId)}-P2`));
+        botLabelByPlayerId.set(player2.id, getBotModelLabel(botId));
     }
 
     // Initialize Debug System
@@ -259,18 +354,354 @@ function renderSetup() {
 
     const title = app.querySelector('.setup-screen h1');
     if (title) {
-        title.textContent = pendingSetupConfig.player2Control === 'BASELINE_BOT'
-            ? 'Simulation Setup (vs Baseline Bot)'
+        const p2BotLabel = pendingSetupConfig.player2BotId ? getBotModelLabel(pendingSetupConfig.player2BotId) : 'Bot';
+        title.textContent = pendingSetupConfig.player2Control === 'BOT'
+            ? `Simulation Setup (vs ${p2BotLabel})`
             : 'Simulation Setup';
     }
 
     const playerHeaders = app.querySelectorAll('.player-setup h3');
     const p2Header = playerHeaders.item(1) as HTMLElement | null;
     if (p2Header) {
-        p2Header.textContent = pendingSetupConfig.player2Control === 'BASELINE_BOT'
-            ? 'Player 2 (Baseline Bot)'
+        const p2BotLabel = pendingSetupConfig.player2BotId ? getBotModelLabel(pendingSetupConfig.player2BotId) : 'Bot';
+        p2Header.textContent = pendingSetupConfig.player2Control === 'BOT'
+            ? `Player 2 (${p2BotLabel})`
             : 'Player 2';
     }
+}
+
+function parsePositiveInt(value: string, fallback: number): number {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+    return parsed;
+}
+
+function resolveSavedDeckCards(savedDeck: SavedDeck): Card[] {
+    return savedDeck.cardIds
+        .map(cardId => DUMMY_CARDS.find(card => card.id === cardId))
+        .filter((card): card is Card => !!card);
+}
+
+function resolveCustomReplayLoadout(seed: number, player1DeckId: string | null, player2DeckId: string | null): BotReplayDeckLoadout | null {
+    const savedDecks = DeckPersistence.getAllDecks();
+    if (savedDecks.length === 0) {
+        alert('No saved decks found. Create decks in Deck Builder first.');
+        return null;
+    }
+
+    const savedDeck1 = savedDecks.find(deck => deck.id === player1DeckId) ?? null;
+    const savedDeck2 = savedDecks.find(deck => deck.id === player2DeckId) ?? null;
+    if (!savedDeck1 || !savedDeck2) {
+        alert('Please select valid saved decks for both players.');
+        return null;
+    }
+
+    const leader1Template = savedDeck1.leaderId ? DUMMY_CARDS.find(card => card.id === savedDeck1.leaderId) ?? null : null;
+    const leader2Template = savedDeck2.leaderId ? DUMMY_CARDS.find(card => card.id === savedDeck2.leaderId) ?? null : null;
+    if (!leader1Template || !leader2Template || leader1Template.type !== CardType.LEADER || leader2Template.type !== CardType.LEADER) {
+        alert('Both custom decks must have a valid leader.');
+        return null;
+    }
+
+    const deck1Source = resolveSavedDeckCards(savedDeck1);
+    const deck2Source = resolveSavedDeckCards(savedDeck2);
+    if (deck1Source.length !== savedDeck1.cardIds.length || deck2Source.length !== savedDeck2.cardIds.length) {
+        alert('Some cards from selected decks could not be resolved from current card database.');
+        return null;
+    }
+
+    const leader1: Card = { ...leader1Template, id: `${leader1Template.id}_L_${seed}_1` };
+    const leader2: Card = { ...leader2Template, id: `${leader2Template.id}_L_${seed}_2` };
+    const deck1 = materializeDeckForMatch(deck1Source, seed + 901, 'CUSTOM_P1');
+    const deck2 = materializeDeckForMatch(deck2Source, seed + 902, 'CUSTOM_P2');
+
+    return {
+        seed,
+        leader1,
+        leader2,
+        deck1,
+        deck2,
+        description: `Custom decks: ${savedDeck1.name} vs ${savedDeck2.name}`,
+    };
+}
+
+function renderBotReplaySetup() {
+    const savedDecks = DeckPersistence.getAllDecks();
+    const usingCustomDecks = botReplaySetupState.deckMode === 'CUSTOM';
+
+    if (!botReplaySetupState.player1DeckId && savedDecks[0]) {
+        botReplaySetupState.player1DeckId = savedDecks[0].id;
+    }
+    if (!botReplaySetupState.player2DeckId) {
+        botReplaySetupState.player2DeckId = savedDecks[1]?.id ?? savedDecks[0]?.id ?? null;
+    }
+
+    app.innerHTML = `
+        <div class="setup-screen bot-replay-setup">
+            <h1>Bot vs Bot Replay Setup</h1>
+            <div class="setup-main">
+                <div class="player-setup">
+                    <h3>Player 1 Bot</h3>
+                    <div class="deck-select">
+                        <label>Bot Model:</label>
+                        <select id="bot-replay-p1-model" ${botReplaySetupState.running ? 'disabled' : ''}>
+                            ${availableBotModels.map(bot => `<option value="${bot.id}" ${botReplaySetupState.player1BotId === bot.id ? 'selected' : ''}>${bot.label}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="deck-preview-small">
+                        <div class="preview-info"><strong>Model:</strong> ${getBotModelLabel(botReplaySetupState.player1BotId)}</div>
+                    </div>
+                </div>
+                <div class="vs-divider">VS</div>
+                <div class="player-setup">
+                    <h3>Player 2 Bot</h3>
+                    <div class="deck-select">
+                        <label>Bot Model:</label>
+                        <select id="bot-replay-p2-model" ${botReplaySetupState.running ? 'disabled' : ''}>
+                            ${availableBotModels.map(bot => `<option value="${bot.id}" ${botReplaySetupState.player2BotId === bot.id ? 'selected' : ''}>${bot.label}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="deck-preview-small">
+                        <div class="preview-info"><strong>Model:</strong> ${getBotModelLabel(botReplaySetupState.player2BotId)}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setup-extra-options">
+                <h3>Deck Source</h3>
+                <label class="setup-radio-option">
+                    <input type="radio" name="replay-deck-mode" value="CUSTOM" ${usingCustomDecks ? 'checked' : ''} ${botReplaySetupState.running ? 'disabled' : ''}>
+                    <span>Saved Custom Decks</span>
+                </label>
+                <label class="setup-radio-option">
+                    <input type="radio" name="replay-deck-mode" value="RANDOM" ${usingCustomDecks ? '' : 'checked'} ${botReplaySetupState.running ? 'disabled' : ''}>
+                    <span>Random Legal Deck Generator</span>
+                </label>
+
+                <div class="bot-replay-options-grid">
+                    ${usingCustomDecks ? `
+                        <div class="deck-select">
+                            <label>Player 1 Deck:</label>
+                            <select id="bot-replay-p1-deck" ${savedDecks.length === 0 || botReplaySetupState.running ? 'disabled' : ''}>
+                                ${savedDecks.map(deck => `<option value="${deck.id}" ${botReplaySetupState.player1DeckId === deck.id ? 'selected' : ''}>${deck.name}</option>`).join('')}
+                                ${savedDecks.length === 0 ? '<option value="">No saved decks</option>' : ''}
+                            </select>
+                        </div>
+                        <div class="deck-select">
+                            <label>Player 2 Deck:</label>
+                            <select id="bot-replay-p2-deck" ${savedDecks.length === 0 || botReplaySetupState.running ? 'disabled' : ''}>
+                                ${savedDecks.map(deck => `<option value="${deck.id}" ${botReplaySetupState.player2DeckId === deck.id ? 'selected' : ''}>${deck.name}</option>`).join('')}
+                                ${savedDecks.length === 0 ? '<option value="">No saved decks</option>' : ''}
+                            </select>
+                        </div>
+                    ` : `
+                        <div class="deck-select">
+                            <label>Random Seed:</label>
+                            <input id="bot-replay-seed" type="number" value="${botReplaySetupState.randomSeed}" ${botReplaySetupState.running ? 'disabled' : ''} />
+                        </div>
+                        <label class="setup-radio-option bot-replay-inline">
+                            <input id="bot-replay-mirror" type="checkbox" ${botReplaySetupState.randomMirrorDeck ? 'checked' : ''} ${botReplaySetupState.running ? 'disabled' : ''}>
+                            <span>Use Same Random Deck for Both Bots (Mirror)</span>
+                        </label>
+                    `}
+                </div>
+
+                <div class="deck-select">
+                    <label>Simulation Max Steps:</label>
+                    <input id="bot-replay-max-steps" type="number" min="50" value="${botReplaySetupState.maxSteps}" ${botReplaySetupState.running ? 'disabled' : ''} />
+                </div>
+            </div>
+
+            ${botReplaySetupState.running ? `<div class="bot-replay-running">Simulating... steps=${botReplaySetupState.progressSteps}${botReplaySetupState.statusText ? ` (${botReplaySetupState.statusText})` : ''}</div>` : ''}
+
+            <div class="setup-actions">
+                <button id="bot-replay-back" class="secondary-btn" ${botReplaySetupState.running ? 'disabled' : ''}>Back to Menu</button>
+                <button id="bot-replay-start" class="primary-btn" ${(botReplaySetupState.running || (usingCustomDecks && savedDecks.length === 0)) ? 'disabled' : ''}>Run 1 Game & Prepare Replay</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('bot-replay-back')?.addEventListener('click', () => {
+        if (botReplaySetupState.running) return;
+        currentScreen = Screen.MENU;
+        render();
+    });
+
+    document.getElementById('bot-replay-p1-model')?.addEventListener('change', (event) => {
+        const target = event.target as HTMLSelectElement;
+        botReplaySetupState.player1BotId = target.value as BotModelId;
+    });
+
+    document.getElementById('bot-replay-p2-model')?.addEventListener('change', (event) => {
+        const target = event.target as HTMLSelectElement;
+        botReplaySetupState.player2BotId = target.value as BotModelId;
+    });
+
+    document.querySelectorAll<HTMLInputElement>('input[name="replay-deck-mode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            botReplaySetupState.deckMode = radio.value as ReplayDeckMode;
+            renderBotReplaySetup();
+        });
+    });
+
+    document.getElementById('bot-replay-p1-deck')?.addEventListener('change', (event) => {
+        const target = event.target as HTMLSelectElement;
+        botReplaySetupState.player1DeckId = target.value || null;
+    });
+
+    document.getElementById('bot-replay-p2-deck')?.addEventListener('change', (event) => {
+        const target = event.target as HTMLSelectElement;
+        botReplaySetupState.player2DeckId = target.value || null;
+    });
+
+    document.getElementById('bot-replay-seed')?.addEventListener('change', (event) => {
+        const target = event.target as HTMLInputElement;
+        botReplaySetupState.randomSeed = parsePositiveInt(target.value, Date.now());
+    });
+
+    document.getElementById('bot-replay-mirror')?.addEventListener('change', (event) => {
+        const target = event.target as HTMLInputElement;
+        botReplaySetupState.randomMirrorDeck = target.checked;
+    });
+
+    document.getElementById('bot-replay-max-steps')?.addEventListener('change', (event) => {
+        const target = event.target as HTMLInputElement;
+        botReplaySetupState.maxSteps = parsePositiveInt(target.value, 2400);
+    });
+
+    document.getElementById('bot-replay-start')?.addEventListener('click', () => {
+        if (botReplaySetupState.running) return;
+        void startBotReplayFromSetup();
+    });
+}
+
+function initializeReplaySession(
+    loadout: BotReplayDeckLoadout,
+    result: BotReplaySimulationResult,
+    player1BotId: BotModelId,
+    player2BotId: BotModelId,
+) {
+    const playbackEngine = createReplayPlaybackEngine(loadout, true);
+    const [player1, player2] = playbackEngine.state.players;
+
+    replaySession = {
+        loadout,
+        result,
+        actions: result.actions,
+        currentActionIndex: 0,
+        player1BotId,
+        player2BotId,
+        playerBotModelById: {
+            [player1.id]: player1BotId,
+            [player2.id]: player2BotId,
+        },
+        playerBotLabelById: {
+            [player1.id]: getBotModelLabel(player1BotId),
+            [player2.id]: getBotModelLabel(player2BotId),
+        },
+    };
+
+    clearBotStepTimer();
+    botByPlayerId.clear();
+    botLabelByPlayerId.clear();
+    activeMatchConfig = {
+        label: `${getBotModelLabel(player1BotId)} vs ${getBotModelLabel(player2BotId)} Replay`,
+        player1Control: 'BOT',
+        player2Control: 'BOT',
+        player1BotId,
+        player2BotId,
+    };
+    activeMatchViewConfig = { revealBotHand: true };
+    game = playbackEngine;
+
+    (window as any).debug = new DebugManager(playbackEngine, render);
+    currentScreen = Screen.GAME;
+    render();
+}
+
+async function startBotReplayFromSetup() {
+    const seed = parsePositiveInt(String(botReplaySetupState.randomSeed), Date.now());
+    const maxSteps = Math.max(50, parsePositiveInt(String(botReplaySetupState.maxSteps), 2400));
+    const player1BotId = botReplaySetupState.player1BotId;
+    const player2BotId = botReplaySetupState.player2BotId;
+
+    let loadout: BotReplayDeckLoadout | null = null;
+    if (botReplaySetupState.deckMode === 'RANDOM') {
+        loadout = createRandomLegalLoadout(seed, botReplaySetupState.randomMirrorDeck);
+    } else {
+        loadout = resolveCustomReplayLoadout(seed, botReplaySetupState.player1DeckId, botReplaySetupState.player2DeckId);
+    }
+
+    if (!loadout) return;
+
+    botReplaySetupState = {
+        ...botReplaySetupState,
+        running: true,
+        progressSteps: 0,
+        statusText: `seed=${loadout.seed}`,
+        randomSeed: loadout.seed,
+        maxSteps,
+    };
+    renderBotReplaySetup();
+
+    try {
+        const result = await runBotVsBotReplaySimulation({
+            seed: loadout.seed,
+            maxSteps,
+            enableMulligan: true,
+            player1BotId,
+            player2BotId,
+            loadout,
+            onProgress: (steps) => {
+                if (currentScreen !== Screen.BOT_REPLAY_SETUP) return;
+                if (steps % 20 !== 0) return;
+                botReplaySetupState = {
+                    ...botReplaySetupState,
+                    progressSteps: steps,
+                    statusText: `seed=${loadout.seed}, maxSteps=${maxSteps}`,
+                };
+                renderBotReplaySetup();
+            },
+        });
+
+        initializeReplaySession(loadout, result, player1BotId, player2BotId);
+    } catch (error) {
+        console.error(error);
+        alert(`Bot replay simulation failed: ${(error as Error).message}`);
+        if (currentScreen === Screen.BOT_REPLAY_SETUP) {
+            botReplaySetupState = {
+                ...botReplaySetupState,
+                running: false,
+            };
+            renderBotReplaySetup();
+        }
+        return;
+    }
+}
+
+function stepReplayForward() {
+    if (!replaySession || !game) return;
+    if (replaySession.currentActionIndex >= replaySession.actions.length) return;
+
+    const entry = replaySession.actions[replaySession.currentActionIndex];
+    const ok = game.step(entry.action);
+    if (!ok) {
+        alert(`Replay desync at step ${entry.step}: ${entry.summary}`);
+        return;
+    }
+
+    replaySession.currentActionIndex += 1;
+    render();
+}
+
+function restartReplayFromBeginning() {
+    if (!replaySession) return;
+    initializeReplaySession(
+        replaySession.loadout,
+        replaySession.result,
+        replaySession.player1BotId,
+        replaySession.player2BotId,
+    );
 }
 
 // Track selected packs
@@ -381,6 +812,8 @@ function renderTestScreen() {
             const { engine, instructions } = cardTester.setupScenario(cardId);
             clearBotStepTimer();
             botByPlayerId.clear();
+            botLabelByPlayerId.clear();
+            replaySession = null;
             activeMatchConfig = HUMAN_VS_HUMAN_CONFIG;
             game = engine;
             (window as any).debug = new DebugManager(game, render);
@@ -402,6 +835,8 @@ function render() {
         renderDeckBuilder();
     } else if (currentScreen === Screen.SETUP) {
         renderSetup();
+    } else if (currentScreen === Screen.BOT_REPLAY_SETUP) {
+        renderBotReplaySetup();
     } else if (currentScreen === Screen.GAME && game) {
         renderGame();
     } else if (currentScreen === Screen.TEST) {
@@ -418,7 +853,9 @@ function renderGame() {
     const inputOwnerId = getActionOwnerPlayerId(game);
     const inputOwner = game.state.players.find(player => player.id === inputOwnerId) ?? null;
     const localHumanCanInput = canLocalHumanInput();
-    const inputOwnerControl = inputOwner && isBotControlledPlayer(inputOwner.id) ? 'Baseline Bot' : 'Human';
+    const inputOwnerControl = inputOwner
+        ? (isBotControlledPlayer(inputOwner.id) ? getBotLabelForPlayerId(inputOwner.id) : 'Human')
+        : 'N/A';
 
 
     // Helper to determine if a zone is a valid drop target
@@ -501,7 +938,7 @@ function renderGame() {
           <div class="status-item"><span>Bot Hand</span> <strong>${activeMatchViewConfig.revealBotHand ? 'Shown' : 'Hidden'}</strong></div>
           <div class="status-item"><span>Input</span> <strong>${inputOwner?.name ?? 'N/A'} (${inputOwnerControl})</strong></div>
         </div>
-        <button id="next-phase" class="primary-btn" ${game.state.phase === Phase.BLOCK || game.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}>Next Phase</button>
+        ${renderGameControlButtons(localHumanCanInput)}
       </div>
 
       ${renderOptionalEffectModal()}
@@ -509,11 +946,73 @@ function renderGame() {
       ${renderTrashModal()}
       ${renderRevealedCardsModal()}
       ${renderGameOverModal()}
+      ${renderReplayOverlayControls()}
     </div>
   `;
 
     attachListeners();
     scheduleBotStep();
+}
+
+function getReplayTerminationLabel(reason: string): string {
+    switch (reason) {
+        case 'winner':
+            return 'Winner reached';
+        case 'max_steps':
+            return 'Stopped by max steps';
+        case 'no_action':
+            return 'Stopped: bot had no legal action';
+        case 'invalid_action':
+            return 'Stopped: invalid action';
+        default:
+            return reason;
+    }
+}
+
+function renderGameControlButtons(localHumanCanInput: boolean): string {
+    if (!replaySession || !game) {
+        return `<button id="next-phase" class="primary-btn" ${game?.state.phase === Phase.BLOCK || game?.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}>Next Phase</button>`;
+    }
+
+    const replay = replaySession;
+    const consumed = replay.currentActionIndex;
+    const total = replay.actions.length;
+    const lastAction = consumed > 0 ? replay.actions[consumed - 1].summary : 'Not started';
+    const nextAction = consumed < total ? replay.actions[consumed].summary : 'Replay complete';
+    const winnerName = replay.result.winnerId
+        ? game.state.players.find(player => player.id === replay.result.winnerId)?.name ?? 'Winner'
+        : 'None';
+    const disabledNext = consumed >= total ? 'disabled' : '';
+
+    return `
+        <div class="replay-controls">
+            <div class="replay-status">
+                <div><strong>Replay:</strong> ${consumed} / ${total}</div>
+                <div><strong>Last:</strong> ${lastAction}</div>
+                <div><strong>Next:</strong> ${nextAction}</div>
+                <div><strong>Result:</strong> ${getReplayTerminationLabel(replay.result.terminationReason)} / Winner: ${winnerName}</div>
+            </div>
+            <div class="replay-actions">
+                <button id="replay-restart" class="secondary-btn">Restart Replay</button>
+                <button id="replay-next-action" class="primary-btn" ${disabledNext}>Next Action</button>
+            </div>
+        </div>
+    `;
+}
+
+function renderReplayOverlayControls(): string {
+    if (!replaySession) return '';
+
+    const consumed = replaySession.currentActionIndex;
+    const total = replaySession.actions.length;
+    const disabledNext = consumed >= total ? 'disabled' : '';
+
+    return `
+        <div class="replay-overlay-controls">
+            <button id="replay-overlay-restart" class="secondary-btn">Restart Replay</button>
+            <button id="replay-overlay-next-action" class="primary-btn" ${disabledNext}>Next Action</button>
+        </div>
+    `;
 }
 
 function renderOptionalEffectModal() {
@@ -616,6 +1115,9 @@ function renderMulliganModal() {
 
     const localHumanCanInput = canLocalHumanInput();
     const revealActorHand = shouldRevealHandForPlayer(actor.id);
+    const waitingLabel = isBotControlledPlayer(actor.id)
+        ? `${getBotLabelForPlayerId(actor.id)} is deciding...`
+        : 'Waiting for input...';
 
     return `
         <div class="modal-overlay mulligan-overlay">
@@ -631,7 +1133,7 @@ function renderMulliganModal() {
                     <button id="mulligan-keep-btn" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'} style="background:#636e72;">Keep Hand</button>
                     <button id="mulligan-redraw-btn" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'}>Full Mulligan</button>
                 </div>
-                ${!localHumanCanInput ? '<p class="mulligan-waiting">Baseline Bot is deciding...</p>' : ''}
+                ${!localHumanCanInput ? `<p class="mulligan-waiting">${waitingLabel}</p>` : ''}
             </div>
         </div>
     `;
@@ -856,6 +1358,7 @@ function attachListeners() {
 
     document.getElementById('db-back-to-menu')?.addEventListener('click', () => {
         clearBotStepTimer();
+        replaySession = null;
         game = null;
         currentScreen = Screen.MENU;
         render();
@@ -863,9 +1366,26 @@ function attachListeners() {
 
     document.getElementById('game-over-menu-btn')?.addEventListener('click', () => {
         clearBotStepTimer();
+        replaySession = null;
         game = null;
         currentScreen = Screen.MENU;
         render();
+    });
+
+    document.getElementById('replay-next-action')?.addEventListener('click', () => {
+        stepReplayForward();
+    });
+
+    document.getElementById('replay-restart')?.addEventListener('click', () => {
+        restartReplayFromBeginning();
+    });
+
+    document.getElementById('replay-overlay-next-action')?.addEventListener('click', () => {
+        stepReplayForward();
+    });
+
+    document.getElementById('replay-overlay-restart')?.addEventListener('click', () => {
+        restartReplayFromBeginning();
     });
 
     document.getElementById('next-phase')?.addEventListener('click', () => {
