@@ -1,11 +1,11 @@
 import { GameEngine } from '../GameEngine';
-import { EngineAction } from '../types';
+import { EngineAction, GameState } from '../types';
 import { StrongBotV2 } from './StrongBotV2';
 import {
-    evaluateObservedState,
     ObservationEvaluatorOptions,
     scoreObservedAction,
 } from './eval/ObservationEvaluator';
+import { runCounterfactualRollout } from './eval/CounterfactualRollout';
 
 export interface StrongBotV3Options {
     beamWidth: number;
@@ -15,6 +15,12 @@ export interface StrongBotV3Options {
     enableOpponentReplyPly: boolean;
     enableResourceEconomyModel: boolean;
     enableAntiOscillationPenalty: boolean;
+    interactionRolloutDepth: number;
+    interactionDiscount: number;
+    rolloutInteractionScoreWeight: number;
+    opponentReplyBlend: number;
+    repeatMemoryDecay: number;
+    repeatMemoryCapacity: number;
 }
 
 const DEFAULT_OPTIONS: StrongBotV3Options = {
@@ -25,12 +31,19 @@ const DEFAULT_OPTIONS: StrongBotV3Options = {
     enableOpponentReplyPly: true,
     enableResourceEconomyModel: true,
     enableAntiOscillationPenalty: true,
+    interactionRolloutDepth: 4,
+    interactionDiscount: 0.88,
+    rolloutInteractionScoreWeight: 0.34,
+    opponentReplyBlend: 0.62,
+    repeatMemoryDecay: 1,
+    repeatMemoryCapacity: 96,
 };
 
 export class StrongBotV3 {
     readonly name: string;
     private readonly fallback: StrongBotV2;
     private readonly options: StrongBotV3Options;
+    private readonly interactionRepeatMemory = new Map<string, number>();
 
     constructor(name: string = 'StrongBot-v3', options: Partial<StrongBotV3Options> = {}) {
         this.name = name;
@@ -39,6 +52,9 @@ export class StrongBotV3 {
             ...DEFAULT_OPTIONS,
             ...options,
             beamWidth: Math.max(1, Math.trunc(options.beamWidth ?? DEFAULT_OPTIONS.beamWidth)),
+            interactionRolloutDepth: Math.max(0, Math.trunc(options.interactionRolloutDepth ?? DEFAULT_OPTIONS.interactionRolloutDepth)),
+            repeatMemoryDecay: Math.max(0, Math.trunc(options.repeatMemoryDecay ?? DEFAULT_OPTIONS.repeatMemoryDecay)),
+            repeatMemoryCapacity: Math.max(8, Math.trunc(options.repeatMemoryCapacity ?? DEFAULT_OPTIONS.repeatMemoryCapacity)),
         };
     }
 
@@ -46,6 +62,7 @@ export class StrongBotV3 {
         const resolvedActorId = actorPlayerId ?? this.resolveActorPlayerId(engine);
         const observation = engine.getObservation(resolvedActorId);
         if (!observation.canAct || observation.legalActions.length === 0) return null;
+        this.prepareRepeatMemory(observation.state);
 
         const evalOptions = this.getEvalOptions();
         const rankedActions = this.sortActions(observation.state, resolvedActorId, observation.legalActions, evalOptions)
@@ -57,8 +74,17 @@ export class StrongBotV3 {
         let bestKey = this.toActionKey(bestAction);
 
         for (const action of rankedActions) {
-            const immediate = scoreObservedAction(observation.state, resolvedActorId, action, evalOptions).score;
-            const rollout = this.rolloutScore(engine, resolvedActorId, action, evalOptions);
+            const repeatCount = this.getRepeatCount(observation.state, action);
+            const immediate = scoreObservedAction(observation.state, resolvedActorId, action, evalOptions, repeatCount).score;
+            const rollout = runCounterfactualRollout(engine, resolvedActorId, action, {
+                ...evalOptions,
+                enableInteractionRollout: this.options.enableInteractionRollout,
+                enableOpponentReplyPly: this.options.enableOpponentReplyPly,
+                maxInteractionDepth: this.options.interactionRolloutDepth,
+                interactionDiscount: this.options.interactionDiscount,
+                interactionScoreWeight: this.options.rolloutInteractionScoreWeight,
+                opponentReplyBlend: this.options.opponentReplyBlend,
+            }).score;
             const total = immediate * this.options.actionScoreWeight + rollout * this.options.stateScoreWeight;
             const actionKey = this.toActionKey(action);
             if (total > bestScore || (total === bestScore && actionKey < bestKey)) {
@@ -68,72 +94,18 @@ export class StrongBotV3 {
             }
         }
 
-        if (Number.isFinite(bestScore)) {
-            return bestAction;
+        if (!Number.isFinite(bestScore)) {
+            return rankedActions[0] ?? this.fallback.chooseAction(engine, resolvedActorId);
         }
-        return this.fallback.chooseAction(engine, resolvedActorId);
+
+        this.rememberInteractionAction(observation.state, bestAction);
+        return bestAction;
     }
 
     public step(engine: GameEngine, actorPlayerId?: string): boolean {
         const action = this.chooseAction(engine, actorPlayerId);
         if (!action) return false;
         return engine.step(action);
-    }
-
-    private rolloutScore(
-        engine: GameEngine,
-        actorPlayerId: string,
-        rootAction: EngineAction,
-        evalOptions: ObservationEvaluatorOptions,
-    ): number {
-        try {
-            const fork = engine.createSimulationFork();
-            const rootOk = fork.step(rootAction);
-            if (!rootOk) return Number.NEGATIVE_INFINITY;
-
-            if (!this.options.enableInteractionRollout) {
-                return evaluateObservedState(fork.getObservation(actorPlayerId).state, actorPlayerId, evalOptions).total;
-            }
-
-            let stateScore = evaluateObservedState(fork.getObservation(actorPlayerId).state, actorPlayerId, evalOptions).total;
-            if (!this.options.enableOpponentReplyPly) return stateScore;
-
-            const afterRootObservation = fork.getObservation(actorPlayerId);
-            const nextActorId = afterRootObservation.interactionOwnerPlayerId
-                ?? afterRootObservation.state.players[afterRootObservation.state.turnPlayerIndex].id;
-            if (nextActorId === actorPlayerId) return stateScore;
-
-            const opponentObservation = fork.getObservation(nextActorId);
-            if (!opponentObservation.canAct || opponentObservation.legalActions.length === 0) return stateScore;
-            const opponentBest = this.pickBestObservedAction(
-                opponentObservation.state,
-                nextActorId,
-                opponentObservation.legalActions,
-                evalOptions,
-            );
-            if (!opponentBest) return stateScore;
-
-            const replyOk = fork.step(opponentBest);
-            if (!replyOk) return stateScore;
-
-            const afterReplyState = fork.getObservation(actorPlayerId).state;
-            const afterReplyScore = evaluateObservedState(afterReplyState, actorPlayerId, evalOptions).total;
-            stateScore = stateScore * 0.4 + afterReplyScore * 0.6;
-            return stateScore;
-        } catch {
-            return Number.NEGATIVE_INFINITY;
-        }
-    }
-
-    private pickBestObservedAction(
-        state: ReturnType<GameEngine['getObservation']>['state'],
-        actorPlayerId: string,
-        actions: EngineAction[],
-        evalOptions: ObservationEvaluatorOptions,
-    ): EngineAction | null {
-        if (actions.length === 0) return null;
-        const sorted = this.sortActions(state, actorPlayerId, actions, evalOptions);
-        return sorted[0] ?? null;
     }
 
     private sortActions(
@@ -143,8 +115,10 @@ export class StrongBotV3 {
         evalOptions: ObservationEvaluatorOptions,
     ): EngineAction[] {
         return [...actions].sort((a, b) => {
-            const scoreA = scoreObservedAction(state, actorPlayerId, a, evalOptions).score;
-            const scoreB = scoreObservedAction(state, actorPlayerId, b, evalOptions).score;
+            const repeatA = this.getRepeatCount(state, a);
+            const repeatB = this.getRepeatCount(state, b);
+            const scoreA = scoreObservedAction(state, actorPlayerId, a, evalOptions, repeatA).score;
+            const scoreB = scoreObservedAction(state, actorPlayerId, b, evalOptions, repeatB).score;
             if (scoreA !== scoreB) return scoreB - scoreA;
             return this.toActionKey(a).localeCompare(this.toActionKey(b));
         });
@@ -155,6 +129,48 @@ export class StrongBotV3 {
             enableResourceEconomyModel: this.options.enableResourceEconomyModel,
             enableAntiOscillationPenalty: this.options.enableAntiOscillationPenalty,
         };
+    }
+
+    private prepareRepeatMemory(state: GameState): void {
+        if (state.interactionMode === 'NORMAL') {
+            this.interactionRepeatMemory.clear();
+            return;
+        }
+
+        if (this.options.repeatMemoryDecay <= 0 || this.interactionRepeatMemory.size === 0) return;
+        for (const [key, value] of this.interactionRepeatMemory.entries()) {
+            const next = value - this.options.repeatMemoryDecay;
+            if (next <= 0) {
+                this.interactionRepeatMemory.delete(key);
+            } else {
+                this.interactionRepeatMemory.set(key, next);
+            }
+        }
+    }
+
+    private getRepeatCount(state: GameState, action: EngineAction): number {
+        if (!this.options.enableAntiOscillationPenalty) return 0;
+        if (state.interactionMode === 'NORMAL') return 0;
+        const key = this.toInteractionSignature(state, action);
+        return this.interactionRepeatMemory.get(key) ?? 0;
+    }
+
+    private rememberInteractionAction(state: GameState, action: EngineAction): void {
+        if (state.interactionMode === 'NORMAL') return;
+        const key = this.toInteractionSignature(state, action);
+        this.interactionRepeatMemory.set(key, (this.interactionRepeatMemory.get(key) ?? 0) + 1);
+        while (this.interactionRepeatMemory.size > this.options.repeatMemoryCapacity) {
+            const oldest = this.interactionRepeatMemory.keys().next().value;
+            if (!oldest) break;
+            this.interactionRepeatMemory.delete(oldest);
+        }
+    }
+
+    private toInteractionSignature(state: GameState, action: EngineAction): string {
+        const pending = state.pendingEffect;
+        const actionType = pending?.actionType ?? 'NONE';
+        const selectedCount = pending?.selectedTargets?.length ?? 0;
+        return `${state.interactionMode}|${actionType}|${selectedCount}|${this.toActionKey(action)}`;
     }
 
     private resolveActorPlayerId(engine: GameEngine): string {

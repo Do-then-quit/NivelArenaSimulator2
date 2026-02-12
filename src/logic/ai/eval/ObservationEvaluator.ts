@@ -1,4 +1,5 @@
 import { Card, CardType, EngineAction, GameState, PlayerState, UnitZoneState } from '../../types';
+import { scoreInteractionAction } from './InteractionValueModel';
 
 export interface ObservedStateScoreBreakdown {
     total: number;
@@ -83,6 +84,43 @@ function estimatePotentialLethalDamage(attacker: PlayerState, defender: PlayerSt
             if (defender.unitZones[laneIndex].unit) return sum;
             return sum + getObservedZoneHit(zone);
         }, 0);
+}
+
+function estimateLanePressureFromStats(
+    power: number,
+    hit: number,
+    defender: PlayerState,
+    defenderZone: UnitZoneState,
+): number {
+    if (!defenderZone.unit) {
+        let score = hit * 170;
+        if (defender.damage.length + hit >= 10) {
+            score += 2200;
+        }
+        return score;
+    }
+
+    const defenderPower = getObservedZonePower(defenderZone);
+    return power > defenderPower ? 120 : 20;
+}
+
+function estimateLanePressureForCard(
+    card: Card,
+    defender: PlayerState,
+    defenderZone: UnitZoneState,
+): number {
+    const power = Math.max(0, card.power ?? 0);
+    const hit = Math.max(0, card.hit ?? 0);
+    if (!defenderZone.unit) {
+        let score = hit * 170;
+        if (defender.damage.length + hit >= 10) {
+            score += 2200;
+        }
+        return score;
+    }
+
+    const defenderPower = getObservedZonePower(defenderZone);
+    return power > defenderPower ? 120 : 20;
 }
 
 export function evaluateObservedState(
@@ -194,22 +232,48 @@ function scorePlayUnitAction(
 
     const opponent = state.players.find(player => player.id !== actor.id);
     const ownZone = actor.unitZones[action.zoneIndex];
+    const isUpgrade = !!ownZone.unit;
     let score = card.cost * 40 + (card.power ?? 0) / 220 + (card.hit ?? 0) * 90 + 120;
 
-    if (ownZone.unit && options.enableResourceEconomyModel) {
-        const oldValue = getCardHeuristicValue(ownZone.unit);
+    if (isUpgrade && options.enableResourceEconomyModel) {
+        const oldValue = getCardHeuristicValue(ownZone.unit ?? undefined);
         const newValue = getCardHeuristicValue(card);
-        score += newValue >= oldValue ? 60 : -160;
+        score += newValue >= oldValue ? 45 : -190;
+
+        const basePowerDelta = (card.power ?? 0) - (ownZone.unit?.power ?? 0);
+        const baseHitDelta = (card.hit ?? 0) - (ownZone.unit?.hit ?? 0);
+        if (basePowerDelta <= 0 && baseHitDelta <= 0) {
+            score -= 90;
+        }
     }
 
     if (!opponent) return { score, reason: 'play-unit' };
 
     const opposingZone = opponent.unitZones[action.zoneIndex];
+    const currentLanePressure = isUpgrade
+        ? estimateLanePressureFromStats(
+            getObservedZonePower(ownZone),
+            getObservedZoneHit(ownZone),
+            opponent,
+            opposingZone,
+        )
+        : 0;
+    const nextLanePressure = estimateLanePressureForCard(card, opponent, opposingZone);
+    const lanePressureDelta = nextLanePressure - currentLanePressure;
+
+    score += lanePressureDelta * 0.32;
+    if (isUpgrade && lanePressureDelta <= 0) {
+        score -= options.enableResourceEconomyModel ? 210 : 140;
+    }
+    if (isUpgrade && !opposingZone.unit && lanePressureDelta < 120) {
+        score -= 170;
+    }
+
     if (opposingZone.unit) {
         const opposingPower = getObservedZonePower(opposingZone);
         if ((card.power ?? 0) >= opposingPower) score += 130;
     } else {
-        score += 70;
+        score += isUpgrade ? 40 : 95;
     }
 
     return { score, reason: 'play-unit' };
@@ -247,6 +311,7 @@ export function scoreObservedAction(
     actorPlayerId: string,
     action: EngineAction,
     options: ObservationEvaluatorOptions,
+    repeatCount: number = 0,
 ): ObservedActionScoreResult {
     const actor = getPlayerById(state, actorPlayerId);
     if (!actor) return { score: Number.NEGATIVE_INFINITY, reason: 'no-actor' };
@@ -274,46 +339,20 @@ export function scoreObservedAction(
         }
         case 'RESOLVE_BLOCK':
             return scoreResolveBlockAction(state, actor, action);
-        case 'SELECT_COST_HAND': {
-            const card = actor.hand[action.handIndex];
-            if (!card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-cost-card' };
-            return { score: 350 - getCardHeuristicValue(card) * 0.8, reason: 'select-cost' };
-        }
+        case 'SELECT_COST_HAND':
         case 'RESOLVE_OPTIONAL':
-            return { score: action.confirm ? 140 : -70, reason: action.confirm ? 'optional-yes' : 'optional-no' };
-        case 'SELECT_HAND_TARGET': {
-            const targetPlayer = getPlayerById(state, action.targetPlayerId);
-            const card = targetPlayer?.hand[action.handIndex];
-            if (!targetPlayer || !card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-hand-target' };
-            const own = targetPlayer.id === actor.id;
-            const tactical = getCardHeuristicValue(card);
-            return { score: own ? -tactical : tactical, reason: own ? 'own-hand-target' : 'opp-hand-target' };
-        }
-        case 'SELECT_ZONE_TARGET': {
-            const targetPlayer = getPlayerById(state, action.targetPlayerId);
-            const zone = targetPlayer?.unitZones[action.zoneIndex];
-            if (!targetPlayer || !zone?.unit) return { score: Number.NEGATIVE_INFINITY, reason: 'no-zone-target' };
-            const tactical = getZonePresenceValue(zone);
-            const own = targetPlayer.id === actor.id;
-            return { score: own ? tactical : tactical + 40, reason: own ? 'own-zone-target' : 'opp-zone-target' };
-        }
-        case 'SELECT_TRASH_TARGET': {
-            const targetPlayer = getPlayerById(state, action.targetPlayerId);
-            const card = targetPlayer?.trash[action.trashIndex];
-            if (!targetPlayer || !card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-trash-target' };
-            const own = targetPlayer.id === actor.id;
-            const tactical = getCardHeuristicValue(card);
-            return { score: own ? tactical : tactical + 50, reason: own ? 'own-trash-target' : 'opp-trash-target' };
-        }
-        case 'SELECT_REVEALED_TARGET': {
-            const card = state.revealedCards[action.revealedIndex];
-            return { score: getCardHeuristicValue(card), reason: 'revealed-target' };
-        }
-        case 'CONFIRM_TARGETS': {
-            const selectedCount = state.pendingEffect?.selectedTargets?.length ?? 0;
-            const oscillationPenalty = options.enableAntiOscillationPenalty && selectedCount === 0 ? -60 : 0;
-            return { score: 80 + selectedCount * 40 + oscillationPenalty, reason: 'confirm-targets' };
-        }
+        case 'SELECT_HAND_TARGET':
+        case 'SELECT_ZONE_TARGET':
+        case 'SELECT_TRASH_TARGET':
+        case 'SELECT_REVEALED_TARGET':
+        case 'CONFIRM_TARGETS':
+            return scoreInteractionAction(
+                state,
+                actorPlayerId,
+                action,
+                { enableAntiOscillationPenalty: options.enableAntiOscillationPenalty },
+                repeatCount,
+            );
         case 'RESOLVE_MULLIGAN':
             return { score: action.shouldMulligan ? -50 : 50, reason: action.shouldMulligan ? 'mulligan-yes' : 'mulligan-no' };
         case 'NEXT_PHASE':
