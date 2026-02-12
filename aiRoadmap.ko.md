@@ -1,6 +1,6 @@
 ﻿# AI 로드맵: 강한 플레이 봇 + 강한 덱 탐색
 
-## 진행 현황 (2026-02-11)
+## 진행 현황 (2026-02-12)
 
 - [x] Phase 0 완료
   - 근거 문서: `Phase0.md`
@@ -40,7 +40,37 @@
   - 검증:
     - `tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`
     - `tests/ai/ActionScorerEffectAware.vitest.test.ts`
-- [ ] Phase 3 미착수 (플레이 봇 v3 강화)
+- [x] Phase 3 착수 게이트 완료 (2026-02-12)
+  - Seed 세트 동결:
+    - `artifacts/ai/seeds/phase3_v1.json` (`tuning`, `dev`, `promotion-holdout`)
+    - bench 실행기의 seed 세트 입력 지원 추가:
+      - `AI_BENCH_SEED_SUITE`
+      - `AI_BENCH_SEED_SUITE_PATH`
+      - `AI_BENCH_SEED_LIST`
+  - 관측 모델 준수:
+    - `tests/ai/StrongBotObservationModel.vitest.test.ts` 추가
+  - 전술 KPI 파이프라인 준비:
+    - 배치 리포트에 `summary.tacticalKPIs` 추가:
+      - `wasteful_upgrade_rate`
+      - `lethal_miss_rate`
+      - `self_lethal_open_rate`
+    - 리플레이 리포트에 동일 KPI 계열 `tacticalMetrics` 추가
+  - Ablation 프리셋 준비:
+    - `artifacts/ai/ablation/phase3_v1_presets.json` 추가
+    - 검증 테스트 추가:
+      - `tests/ai/SeedSuites.vitest.test.ts`
+      - `tests/ai/AblationPresets.vitest.test.ts`
+- [~] Phase 3 착수 (플레이 봇 v3 강화)
+  - 관측 기반 v3 스캐폴드 추가:
+    - `src/logic/ai/StrongBotV3.ts`
+    - `src/logic/ai/eval/ObservationEvaluator.ts`
+  - `strong-v3` bot registry 연동:
+    - `src/logic/ai/BotRegistry.ts`
+    - `scripts/ai/bot_registry.ts`
+  - 검증(2026-02-12):
+    - `npm run build`
+    - `npm test`
+    - `AI_REGRESSION_SKIP_SOAK=1 npm run ai:regression`
 - [ ] Phase 4 미착수 (플레이 봇 하드닝 게이트)
 - [ ] Phase 5 미착수 (덱 탐색 MVP)
 - [ ] Phase 6 미착수

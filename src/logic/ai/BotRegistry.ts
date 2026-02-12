@@ -3,8 +3,9 @@ import { EngineAction } from '../types';
 import { BaselineBot } from './BaselineBot';
 import { StrongBot } from './StrongBot';
 import { StrongBotV2 } from './StrongBotV2';
+import { StrongBotV3 } from './StrongBotV3';
 
-export type BotModelId = 'baseline' | 'strong-v1' | 'strong-v2';
+export type BotModelId = 'baseline' | 'strong-v1' | 'strong-v2' | 'strong-v3';
 
 export interface BotLike {
     name: string;
@@ -15,18 +16,20 @@ const BOT_LABEL_BY_ID: Record<BotModelId, string> = {
     baseline: 'Baseline',
     'strong-v1': 'Strong v1',
     'strong-v2': 'Strong v2',
+    'strong-v3': 'Strong v3',
 };
 
 export function normalizeBotModelId(input: string): BotModelId {
     const raw = input.trim().toLowerCase();
     if (raw === 'baseline' || raw === 'baseline-a' || raw === 'baseline-b') return 'baseline';
+    if (raw === 'strong-v3' || raw === 'strong3' || raw === 'strong-3') return 'strong-v3';
     if (raw === 'strong-v2' || raw === 'strong2' || raw === 'strong-2') return 'strong-v2';
     if (raw === 'strong-v1' || raw === 'strong' || raw === 'strong1' || raw === 'strong-1') return 'strong-v1';
     throw new Error(`Unsupported bot model: ${input}`);
 }
 
 export function getAvailableBotModels(): Array<{ id: BotModelId; label: string }> {
-    return (['baseline', 'strong-v1', 'strong-v2'] as BotModelId[]).map(id => ({
+    return (['baseline', 'strong-v1', 'strong-v2', 'strong-v3'] as BotModelId[]).map(id => ({
         id,
         label: BOT_LABEL_BY_ID[id],
     }));
@@ -44,6 +47,8 @@ export function createBotForModel(botId: BotModelId, name: string): BotLike {
             return new StrongBot(name);
         case 'strong-v2':
             return new StrongBotV2(name);
+        case 'strong-v3':
+            return new StrongBotV3(name);
         default: {
             const _never: never = botId;
             throw new Error(`Unhandled bot model: ${_never}`);

@@ -53,6 +53,12 @@ describe('AI Phase0 Harness', () => {
         expect(reportA.summary.confidence.player2WinRate.ci95High).toBeLessThanOrEqual(1);
         expect(reportA.summary.runtime.enabled).toBe(false);
         expect(reportA.summary.runtime.msPerAction).toBe(0);
+        expect(reportA.summary.tacticalKPIs.wasteful_upgrade_rate).toBeGreaterThanOrEqual(0);
+        expect(reportA.summary.tacticalKPIs.wasteful_upgrade_rate).toBeLessThanOrEqual(1);
+        expect(reportA.summary.tacticalKPIs.lethal_miss_rate).toBeGreaterThanOrEqual(0);
+        expect(reportA.summary.tacticalKPIs.lethal_miss_rate).toBeLessThanOrEqual(1);
+        expect(reportA.summary.tacticalKPIs.self_lethal_open_rate).toBeGreaterThanOrEqual(0);
+        expect(reportA.summary.tacticalKPIs.self_lethal_open_rate).toBeLessThanOrEqual(1);
     });
 
     it('reports runtime telemetry when enabled', () => {
@@ -68,6 +74,21 @@ describe('AI Phase0 Harness', () => {
         expect(report.summary.runtime.totalMs).toBeGreaterThan(0);
         expect(report.summary.runtime.avgMsPerGame).toBeGreaterThan(0);
         expect(report.summary.runtime.msPerAction).toBeGreaterThan(0);
+    });
+
+    it('uses explicit seed list when provided', () => {
+        const report = runMatchBatch({
+            startSeed: 1,
+            games: 99,
+            maxSteps: 1200,
+            enableMulligan: true,
+            seedList: [2026031001, 2026031007, 2026031013],
+        });
+
+        expect(report.summary.totalGames).toBe(3);
+        expect(report.config.games).toBe(3);
+        expect(report.config.seedList).toEqual([2026031001, 2026031007, 2026031013]);
+        expect(report.matches.map(match => match.seed)).toEqual([2026031001, 2026031007, 2026031013]);
     });
 
     it('produces deterministic elo ladder report for same config', () => {

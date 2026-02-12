@@ -4,6 +4,7 @@ import { performance } from 'node:perf_hooks';
 import { MatchReport, MatchTerminationReason, runSingleMatch } from './match_harness';
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 import { resolveBotFactory } from './bot_registry';
+import { parseSeedListCsv, resolveSeedSuiteSeeds, SeedSuiteName } from './seed_suites';
 
 export interface RunMatchBatchConfig {
     startSeed: number;
@@ -14,6 +15,9 @@ export interface RunMatchBatchConfig {
     player1BotId?: string;
     player2BotId?: string;
     measureRuntime?: boolean;
+    seedList?: number[];
+    seedSuiteName?: SeedSuiteName;
+    seedSuitePath?: string;
 }
 
 export interface MatchBatchReport {
@@ -42,6 +46,19 @@ export interface MatchBatchReport {
             totalMs: number;
             avgMsPerGame: number;
             msPerAction: number;
+        };
+        tacticalKPIs: {
+            wasteful_upgrade_rate: number;
+            lethal_miss_rate: number;
+            self_lethal_open_rate: number;
+            counts: {
+                upgradeActionCount: number;
+                wastefulUpgradeCount: number;
+                lethalOpportunityCount: number;
+                lethalMissCount: number;
+                selfLethalCheckCount: number;
+                selfLethalOpenCount: number;
+            };
         };
     };
 }
@@ -94,11 +111,15 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     const player1BotFactory = resolveBotFactory(config.player1BotId ?? 'baseline-a');
     const player2BotFactory = resolveBotFactory(config.player2BotId ?? 'baseline-b');
     const measureRuntime = config.measureRuntime ?? false;
+    const seeds = (config.seedList && config.seedList.length > 0)
+        ? [...config.seedList]
+        : Array.from({ length: config.games }, (_v, i) => config.startSeed + i);
+
     const matches: MatchReport[] = [];
     let totalRuntimeMs = 0;
-    for (let i = 0; i < config.games; i++) {
+    for (let i = 0; i < seeds.length; i++) {
         const matchConfig = {
-            seed: config.startSeed + i,
+            seed: seeds[i],
             maxSteps: config.maxSteps,
             enableMulligan: config.enableMulligan,
             traceLimit: config.traceLimit,
@@ -122,6 +143,25 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     const unfinished = matches.length - winsPlayer1 - winsPlayer2;
     const totalSteps = matches.reduce((sum, match) => sum + match.steps, 0);
     const totalTurns = matches.reduce((sum, match) => sum + match.turnCount, 0);
+    const tacticalCounts = matches.reduce(
+        (acc, match) => {
+            acc.upgradeActionCount += match.tacticalMetrics.upgradeActionCount;
+            acc.wastefulUpgradeCount += match.tacticalMetrics.wastefulUpgradeCount;
+            acc.lethalOpportunityCount += match.tacticalMetrics.lethalOpportunityCount;
+            acc.lethalMissCount += match.tacticalMetrics.lethalMissCount;
+            acc.selfLethalCheckCount += match.tacticalMetrics.selfLethalCheckCount;
+            acc.selfLethalOpenCount += match.tacticalMetrics.selfLethalOpenCount;
+            return acc;
+        },
+        {
+            upgradeActionCount: 0,
+            wastefulUpgradeCount: 0,
+            lethalOpportunityCount: 0,
+            lethalMissCount: 0,
+            selfLethalCheckCount: 0,
+            selfLethalOpenCount: 0,
+        },
+    );
     const player1Confidence = computeBinomialRateStats(winsPlayer1, matches.length);
     const player2Confidence = computeBinomialRateStats(winsPlayer2, matches.length);
     const runtimeSummary = measureRuntime
@@ -137,6 +177,12 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
             avgMsPerGame: 0,
             msPerAction: 0,
         };
+    const tacticalKPIs = {
+        wasteful_upgrade_rate: roundTo(safeDivide(tacticalCounts.wastefulUpgradeCount, tacticalCounts.upgradeActionCount), 4),
+        lethal_miss_rate: roundTo(safeDivide(tacticalCounts.lethalMissCount, tacticalCounts.lethalOpportunityCount), 4),
+        self_lethal_open_rate: roundTo(safeDivide(tacticalCounts.selfLethalOpenCount, tacticalCounts.selfLethalCheckCount), 4),
+        counts: tacticalCounts,
+    };
 
     const terminationCounts = matches.reduce<Record<MatchTerminationReason, number>>(
         (acc, match) => {
@@ -147,7 +193,11 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     );
 
     return {
-        config: { ...config },
+        config: {
+            ...config,
+            games: seeds.length,
+            seedList: [...seeds],
+        },
         matches,
         summary: {
             totalGames: matches.length,
@@ -168,6 +218,7 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
                 player2WinRate: player2Confidence,
             },
             runtime: runtimeSummary,
+            tacticalKPIs,
         },
     };
 }
@@ -209,6 +260,25 @@ function writeIfRequested(outputPath: string | undefined, report: MatchBatchRepo
 
 function runCli(): void {
     const manifest = loadPhase0Manifest(resolvePhase0ManifestPath());
+    const envSeedList = parseSeedListCsv(process.env.AI_BENCH_SEED_LIST);
+    const envSeedSuiteNameRaw = process.env.AI_BENCH_SEED_SUITE?.trim().toLowerCase();
+    const envSeedSuiteName = (envSeedSuiteNameRaw && (
+        envSeedSuiteNameRaw === 'tuning'
+        || envSeedSuiteNameRaw === 'dev'
+        || envSeedSuiteNameRaw === 'promotion-holdout'
+    ))
+        ? envSeedSuiteNameRaw as SeedSuiteName
+        : undefined;
+    if (envSeedSuiteNameRaw && !envSeedSuiteName) {
+        throw new Error(`Unsupported AI_BENCH_SEED_SUITE value: "${envSeedSuiteNameRaw}"`);
+    }
+    const envSeedSuitePath = process.env.AI_BENCH_SEED_SUITE_PATH?.trim()
+        || 'artifacts/ai/seeds/phase3_v1.json';
+
+    const resolvedSeedSuite = (!envSeedList && envSeedSuiteName)
+        ? resolveSeedSuiteSeeds(envSeedSuitePath, envSeedSuiteName)
+        : null;
+
     const config: RunMatchBatchConfig = {
         startSeed: parseIntEnv('AI_BENCH_START_SEED', manifest.bench.startSeed),
         games: parseIntEnv('AI_BENCH_GAMES', manifest.bench.games),
@@ -218,6 +288,9 @@ function runCli(): void {
         player1BotId: process.env.AI_BENCH_P1_BOT ?? 'baseline-a',
         player2BotId: process.env.AI_BENCH_P2_BOT ?? 'baseline-b',
         measureRuntime: parseBoolEnv('AI_BENCH_MEASURE_RUNTIME', false),
+        seedList: envSeedList ?? resolvedSeedSuite?.seeds,
+        seedSuiteName: envSeedSuiteName,
+        seedSuitePath: envSeedSuiteName ? envSeedSuitePath : undefined,
     };
 
     const report = runMatchBatch(config);

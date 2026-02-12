@@ -1,0 +1,21 @@
+{
+  "version": "phase3_v1",
+  "description": "Phase3 seed suites for tuning/dev/promotion holdout. Promotion decisions must use promotion-holdout only.",
+  "suites": {
+    "tuning": {
+      "startSeed": 2026031000,
+      "count": 80,
+      "step": 1
+    },
+    "dev": {
+      "startSeed": 2026032000,
+      "count": 120,
+      "step": 1
+    },
+    "promotion-holdout": {
+      "startSeed": 2026033000,
+      "count": 220,
+      "step": 1
+    }
+  }
+}

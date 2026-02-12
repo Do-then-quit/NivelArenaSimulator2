@@ -35,6 +35,12 @@ describe('BotVsBotReplay', () => {
         expect(resultA).toEqual(resultB);
         expect(resultA.terminationReason).not.toBe('invalid_action');
         expect(resultA.terminationReason).not.toBe('no_action');
+        expect(resultA.tacticalMetrics.wastefulUpgradeRate).toBeGreaterThanOrEqual(0);
+        expect(resultA.tacticalMetrics.wastefulUpgradeRate).toBeLessThanOrEqual(1);
+        expect(resultA.tacticalMetrics.lethalMissRate).toBeGreaterThanOrEqual(0);
+        expect(resultA.tacticalMetrics.lethalMissRate).toBeLessThanOrEqual(1);
+        expect(resultA.tacticalMetrics.selfLethalOpenRate).toBeGreaterThanOrEqual(0);
+        expect(resultA.tacticalMetrics.selfLethalOpenRate).toBeLessThanOrEqual(1);
 
         const playback = createReplayPlaybackEngine(loadout, true);
         for (const step of resultA.actions.slice(0, 8)) {
@@ -57,5 +63,6 @@ describe('BotVsBotReplay', () => {
         expect(result.steps).toBe(1);
         expect(result.actions.length).toBe(1);
         expect(result.terminationReason).toBe('max_steps');
+        expect(result.tacticalMetrics.lethalMissRate).toBeGreaterThanOrEqual(0);
     });
 });

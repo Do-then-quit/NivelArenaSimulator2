@@ -1,5 +1,5 @@
 import { GameEngine } from '../GameEngine';
-import { Card, EngineAction } from '../types';
+import { Card, EngineAction, PlayerState } from '../types';
 import {
     buildDeterministicDeckForLeader,
     materializeDeckForMatch,
@@ -47,6 +47,39 @@ export interface BotReplaySimulationResult {
     finalPhase: string;
     finalInteractionMode: string;
     actions: BotReplayActionLog[];
+    tacticalMetrics: ReplayTacticalMetrics;
+}
+
+interface ReplayTacticalMetricCounters {
+    upgradeActionCount: number;
+    wastefulUpgradeCount: number;
+    lethalOpportunityCount: number;
+    lethalMissCount: number;
+    selfLethalCheckCount: number;
+    selfLethalOpenCount: number;
+}
+
+interface ReplayUpgradeActionContext {
+    actorPlayerId: string;
+    zoneIndex: number;
+    oldPower: number;
+    oldHit: number;
+    laneHadOpponentUnit: boolean;
+    opposingPower: number;
+    preDirectPotential: number;
+    opponentDamage: number;
+}
+
+export interface ReplayTacticalMetrics {
+    upgradeActionCount: number;
+    wastefulUpgradeCount: number;
+    lethalOpportunityCount: number;
+    lethalMissCount: number;
+    selfLethalCheckCount: number;
+    selfLethalOpenCount: number;
+    wastefulUpgradeRate: number;
+    lethalMissRate: number;
+    selfLethalOpenRate: number;
 }
 
 function cloneCard(card: Card): Card {
@@ -105,6 +138,121 @@ function sleepFrame(): Promise<void> {
     return new Promise(resolve => {
         globalThis.setTimeout(resolve, 0);
     });
+}
+
+function roundTo(value: number, digits: number): number {
+    const p = 10 ** digits;
+    return Math.round(value * p) / p;
+}
+
+function safeDivide(numerator: number, denominator: number): number {
+    if (denominator <= 0) return 0;
+    return numerator / denominator;
+}
+
+function getPlayerById(engine: GameEngine, playerId: string): PlayerState | null {
+    return engine.state.players.find(player => player.id === playerId) ?? null;
+}
+
+function getOpponentById(engine: GameEngine, playerId: string): PlayerState | null {
+    return engine.state.players.find(player => player.id !== playerId) ?? null;
+}
+
+function getDirectUnblockedHitPotential(engine: GameEngine, attacker: PlayerState, defender: PlayerState): number {
+    let total = 0;
+    for (let lane = 0; lane < attacker.unitZones.length; lane++) {
+        const attackerZone = attacker.unitZones[lane];
+        if (!attackerZone?.unit) continue;
+        if (defender.unitZones[lane]?.unit) continue;
+        total += Math.max(0, engine.getUnitHit(attackerZone, attacker));
+    }
+    return total;
+}
+
+function getDirectLethalAttackLanes(engine: GameEngine, actorPlayerId: string): Set<number> {
+    const actor = getPlayerById(engine, actorPlayerId);
+    const opponent = getOpponentById(engine, actorPlayerId);
+    if (!actor || !opponent) return new Set<number>();
+
+    const legalActions = engine.getLegalActions(actorPlayerId);
+    const lethalLanes = new Set<number>();
+    for (const action of legalActions) {
+        if (action.type !== 'ATTACK') continue;
+        const lane = action.attackerZoneIndex;
+        const attackerZone = actor.unitZones[lane];
+        if (!attackerZone?.unit) continue;
+        if (opponent.unitZones[lane]?.unit) continue;
+        const hit = Math.max(0, engine.getUnitHit(attackerZone, actor));
+        if (opponent.damage.length + hit >= 10) {
+            lethalLanes.add(lane);
+        }
+    }
+    return lethalLanes;
+}
+
+function hasImmediateDirectLethal(engine: GameEngine, actorPlayerId: string): boolean {
+    return getDirectLethalAttackLanes(engine, actorPlayerId).size > 0;
+}
+
+function captureUpgradeContext(
+    engine: GameEngine,
+    actorPlayerId: string,
+    action: EngineAction,
+): ReplayUpgradeActionContext | null {
+    if (action.type !== 'PLAY_UNIT') return null;
+    const actor = getPlayerById(engine, actorPlayerId);
+    const opponent = getOpponentById(engine, actorPlayerId);
+    if (!actor || !opponent) return null;
+
+    const existingZone = actor.unitZones[action.zoneIndex];
+    if (!existingZone?.unit) return null;
+
+    const opposingZone = opponent.unitZones[action.zoneIndex];
+    const laneHadOpponentUnit = !!opposingZone?.unit;
+    const opposingPower = laneHadOpponentUnit ? engine.getUnitPower(opposingZone, opponent) : 0;
+
+    return {
+        actorPlayerId,
+        zoneIndex: action.zoneIndex,
+        oldPower: engine.getUnitPower(existingZone, actor),
+        oldHit: engine.getUnitHit(existingZone, actor),
+        laneHadOpponentUnit,
+        opposingPower,
+        preDirectPotential: getDirectUnblockedHitPotential(engine, actor, opponent),
+        opponentDamage: opponent.damage.length,
+    };
+}
+
+function isWastefulUpgrade(engine: GameEngine, context: ReplayUpgradeActionContext): boolean {
+    const actor = getPlayerById(engine, context.actorPlayerId);
+    const opponent = getOpponentById(engine, context.actorPlayerId);
+    if (!actor || !opponent) return true;
+
+    const upgradedZone = actor.unitZones[context.zoneIndex];
+    if (!upgradedZone?.unit) return true;
+
+    const newPower = engine.getUnitPower(upgradedZone, actor);
+    const newHit = engine.getUnitHit(upgradedZone, actor);
+    const postDirectPotential = getDirectUnblockedHitPotential(engine, actor, opponent);
+
+    const immediatePressureImproved = (!context.laneHadOpponentUnit && newHit > context.oldHit)
+        || postDirectPotential > context.preDirectPotential;
+    const combatSurvivalImproved = context.laneHadOpponentUnit
+        && context.oldPower <= context.opposingPower
+        && newPower > context.opposingPower;
+    const lethalSetupImproved = context.opponentDamage + context.preDirectPotential < 10
+        && context.opponentDamage + postDirectPotential >= 10;
+
+    return !(immediatePressureImproved || combatSurvivalImproved || lethalSetupImproved);
+}
+
+function buildReplayTacticalMetrics(counters: ReplayTacticalMetricCounters): ReplayTacticalMetrics {
+    return {
+        ...counters,
+        wastefulUpgradeRate: roundTo(safeDivide(counters.wastefulUpgradeCount, counters.upgradeActionCount), 4),
+        lethalMissRate: roundTo(safeDivide(counters.lethalMissCount, counters.lethalOpportunityCount), 4),
+        selfLethalOpenRate: roundTo(safeDivide(counters.selfLethalOpenCount, counters.selfLethalCheckCount), 4),
+    };
 }
 
 export function createRandomLegalLoadout(seed: number, mirrorDeck: boolean): BotReplayDeckLoadout {
@@ -172,6 +320,14 @@ export async function runBotVsBotReplaySimulation(config: RunBotReplayConfig): P
         const bot2 = createBotForModel(config.player2BotId, 'Bot-P2');
 
         const actions: BotReplayActionLog[] = [];
+        const tacticalCounters: ReplayTacticalMetricCounters = {
+            upgradeActionCount: 0,
+            wastefulUpgradeCount: 0,
+            lethalOpportunityCount: 0,
+            lethalMissCount: 0,
+            selfLethalCheckCount: 0,
+            selfLethalOpenCount: 0,
+        };
         let steps = 0;
 
         while (!engine.state.winner && steps < config.maxSteps) {
@@ -179,6 +335,13 @@ export async function runBotVsBotReplaySimulation(config: RunBotReplayConfig): P
             const actorIsPlayer1 = actorPlayerId === engine.state.players[0].id;
             const actor = actorIsPlayer1 ? engine.state.players[0] : engine.state.players[1];
             const actingBot = actorIsPlayer1 ? bot1 : bot2;
+            const opponentPlayerId = engine.state.players.find(player => player.id !== actorPlayerId)?.id ?? null;
+            const lethalAttackLanes = getDirectLethalAttackLanes(engine, actorPlayerId);
+            const hadLethalOpportunity = lethalAttackLanes.size > 0;
+            if (hadLethalOpportunity) {
+                tacticalCounters.lethalOpportunityCount += 1;
+            }
+            const preOpponentImmediateLethal = opponentPlayerId ? hasImmediateDirectLethal(engine, opponentPlayerId) : false;
 
             const action = actingBot.chooseAction(engine, actorPlayerId);
             if (!action) {
@@ -191,7 +354,13 @@ export async function runBotVsBotReplaySimulation(config: RunBotReplayConfig): P
                     finalPhase: engine.state.phase,
                     finalInteractionMode: engine.state.interactionMode,
                     actions,
+                    tacticalMetrics: buildReplayTacticalMetrics(tacticalCounters),
                 };
+            }
+
+            const upgradeContext = captureUpgradeContext(engine, actorPlayerId, action);
+            if (upgradeContext) {
+                tacticalCounters.upgradeActionCount += 1;
             }
 
             const ok = engine.step(action);
@@ -205,7 +374,30 @@ export async function runBotVsBotReplaySimulation(config: RunBotReplayConfig): P
                     finalPhase: engine.state.phase,
                     finalInteractionMode: engine.state.interactionMode,
                     actions,
+                    tacticalMetrics: buildReplayTacticalMetrics(tacticalCounters),
                 };
+            }
+
+            if (hadLethalOpportunity) {
+                const resolvedAsLethalAttack = action.type === 'ATTACK' && lethalAttackLanes.has(action.attackerZoneIndex);
+                if (!resolvedAsLethalAttack) {
+                    tacticalCounters.lethalMissCount += 1;
+                }
+            }
+
+            if (upgradeContext && isWastefulUpgrade(engine, upgradeContext)) {
+                tacticalCounters.wastefulUpgradeCount += 1;
+            }
+
+            if (opponentPlayerId) {
+                const nextActorPlayerId = engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
+                if (nextActorPlayerId === opponentPlayerId) {
+                    tacticalCounters.selfLethalCheckCount += 1;
+                    const postOpponentImmediateLethal = hasImmediateDirectLethal(engine, opponentPlayerId);
+                    if (!preOpponentImmediateLethal && postOpponentImmediateLethal) {
+                        tacticalCounters.selfLethalOpenCount += 1;
+                    }
+                }
             }
 
             steps += 1;
@@ -235,6 +427,7 @@ export async function runBotVsBotReplaySimulation(config: RunBotReplayConfig): P
             finalPhase: engine.state.phase,
             finalInteractionMode: engine.state.interactionMode,
             actions,
+            tacticalMetrics: buildReplayTacticalMetrics(tacticalCounters),
         };
     } finally {
         if (muteEngineLogs) {

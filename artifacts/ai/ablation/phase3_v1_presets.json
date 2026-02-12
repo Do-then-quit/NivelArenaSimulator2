@@ -1,0 +1,62 @@
+{
+  "version": "phase3_v1",
+  "seedSuiteVersion": "phase3_v1",
+  "description": "Phase3 ablation presets. Run each preset on the same dev seed suite and compare against v3_full.",
+  "presets": [
+    {
+      "id": "v3_full",
+      "botId": "strong-v3",
+      "description": "All Phase3 features enabled.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": true,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": true
+      }
+    },
+    {
+      "id": "v3_no_interaction_rollout",
+      "botId": "strong-v3",
+      "description": "Disable deep interaction rollout bundle scoring.",
+      "options": {
+        "enableInteractionRollout": false,
+        "enableOpponentReplyPly": true,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": true
+      }
+    },
+    {
+      "id": "v3_no_opponent_reply",
+      "botId": "strong-v3",
+      "description": "Disable opponent 1-ply reply modeling.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": false,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": true
+      }
+    },
+    {
+      "id": "v3_no_resource_model",
+      "botId": "strong-v3",
+      "description": "Disable board-hand economy and upgrade-value modeling.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": true,
+        "enableResourceEconomyModel": false,
+        "enableAntiOscillationPenalty": true
+      }
+    },
+    {
+      "id": "v3_no_anti_oscillation",
+      "botId": "strong-v3",
+      "description": "Disable anti-oscillation scoring guard.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": true,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": false
+      }
+    }
+  ]
+}

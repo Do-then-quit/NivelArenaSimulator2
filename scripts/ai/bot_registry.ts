@@ -1,6 +1,7 @@
 import { BaselineBot } from '../../src/logic/ai/BaselineBot';
 import { StrongBot } from '../../src/logic/ai/StrongBot';
 import { StrongBotV2 } from '../../src/logic/ai/StrongBotV2';
+import { StrongBotV3 } from '../../src/logic/ai/StrongBotV3';
 import { BotFactory } from './match_harness';
 
 const BOT_REGISTRY: Record<string, BotFactory> = {
@@ -10,12 +11,14 @@ const BOT_REGISTRY: Record<string, BotFactory> = {
     strong: (name: string) => new StrongBot(name),
     'strong-v1': (name: string) => new StrongBot(name),
     'strong-v2': (name: string) => new StrongBotV2(name),
+    'strong-v3': (name: string) => new StrongBotV3(name),
 };
 
 export function resolveBotFactory(botId: string): BotFactory {
     const direct = BOT_REGISTRY[botId];
     if (direct) return direct;
     if (botId.startsWith('baseline')) return BOT_REGISTRY.baseline;
+    if (botId.startsWith('strong-v3')) return BOT_REGISTRY['strong-v3'];
     if (botId.startsWith('strong-v2')) return BOT_REGISTRY['strong-v2'];
     if (botId.startsWith('strong')) return BOT_REGISTRY['strong-v1'];
     throw new Error(`Unknown bot id: ${botId}. Available: ${Object.keys(BOT_REGISTRY).join(', ')}`);

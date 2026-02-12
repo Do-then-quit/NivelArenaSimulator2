@@ -1,6 +1,6 @@
 # AI Roadmap: Strong Play Bot + Strong Deck Search
 
-## Progress Status (2026-02-11)
+## Progress Status (2026-02-12)
 
 - [x] Phase 0 complete
   - Evidence: `Phase0.md`
@@ -40,7 +40,37 @@
   - validation:
     - `tests/ai/StrongBotV2InteractionSearch.vitest.test.ts`
     - `tests/ai/ActionScorerEffectAware.vitest.test.ts`
-- [ ] Phase 3 not started (Play bot v3 uplift)
+- [x] Phase 3 entry gate completed (2026-02-12)
+  - Seed-suite freeze:
+    - `artifacts/ai/seeds/phase3_v1.json` (`tuning`, `dev`, `promotion-holdout`)
+    - bench runner now supports seed suite controls:
+      - `AI_BENCH_SEED_SUITE`
+      - `AI_BENCH_SEED_SUITE_PATH`
+      - `AI_BENCH_SEED_LIST`
+  - Observation-model compliance:
+    - added `tests/ai/StrongBotObservationModel.vitest.test.ts`
+  - Tactical KPI pipeline readiness:
+    - batch report now includes `summary.tacticalKPIs`:
+      - `wasteful_upgrade_rate`
+      - `lethal_miss_rate`
+      - `self_lethal_open_rate`
+    - replay report now includes `tacticalMetrics` with the same KPI family
+  - Ablation preset readiness:
+    - added `artifacts/ai/ablation/phase3_v1_presets.json`
+    - added validation tests:
+      - `tests/ai/SeedSuites.vitest.test.ts`
+      - `tests/ai/AblationPresets.vitest.test.ts`
+- [~] Phase 3 started (Play bot v3 uplift)
+  - Added observation-limited v3 scaffold:
+    - `src/logic/ai/StrongBotV3.ts`
+    - `src/logic/ai/eval/ObservationEvaluator.ts`
+  - Registered `strong-v3` in bot registries:
+    - `src/logic/ai/BotRegistry.ts`
+    - `scripts/ai/bot_registry.ts`
+  - Validation (2026-02-12):
+    - `npm run build`
+    - `npm test`
+    - `AI_REGRESSION_SKIP_SOAK=1 npm run ai:regression`
 - [ ] Phase 4 not started (Play bot hardening gate)
 - [ ] Phase 5 not started (Deck search MVP)
 - [ ] Phase 6 not started
