@@ -33,7 +33,9 @@ export interface Phase0Manifest {
     regression: Phase0RegressionConfig;
 }
 
-export const DEFAULT_PHASE0_MANIFEST: Phase0Manifest = {
+const REPO_DEFAULT_MANIFEST_FILENAME = 'phase0.manifest.json';
+
+const FALLBACK_PHASE0_MANIFEST: Phase0Manifest = {
     version: 'phase0-v1',
     bench: {
         startSeed: 2026020900,
@@ -64,27 +66,32 @@ export const DEFAULT_PHASE0_MANIFEST: Phase0Manifest = {
             'tests/ai/AiPhase0Harness.vitest.test.ts',
             'tests/ai/StrongBotPhase1.vitest.test.ts',
             'tests/ai/StrongBotPhase2.vitest.test.ts',
+            'tests/ai/ActionScorerEffectAware.vitest.test.ts',
+            'tests/cards/st01/st01_high_value_targeting_regression.test.ts',
+            'tests/cards/st02/st02_high_value_targeting_regression.test.ts',
+            'tests/cards/st03/st03_high_value_targeting_regression.test.ts',
+            'tests/cards/bt01/bt01_high_value_targeting_regression.test.ts',
             'tests/ai/StrongBotV2InteractionSearch.vitest.test.ts',
         ],
         includeBotSoak: true,
     },
 };
 
-function mergeWithDefaults(input: Partial<Phase0Manifest>): Phase0Manifest {
+function mergeManifest(base: Phase0Manifest, input: Partial<Phase0Manifest>): Phase0Manifest {
     return {
-        version: input.version ?? DEFAULT_PHASE0_MANIFEST.version,
+        version: input.version ?? base.version,
         bench: {
-            ...DEFAULT_PHASE0_MANIFEST.bench,
+            ...base.bench,
             ...(input.bench ?? {}),
         },
         ladder: {
-            ...DEFAULT_PHASE0_MANIFEST.ladder,
+            ...base.ladder,
             ...(input.ladder ?? {}),
         },
         regression: {
-            ...DEFAULT_PHASE0_MANIFEST.regression,
+            ...base.regression,
             ...(input.regression ?? {}),
-            vitestFiles: input.regression?.vitestFiles ?? DEFAULT_PHASE0_MANIFEST.regression.vitestFiles,
+            vitestFiles: input.regression?.vitestFiles ?? base.regression.vitestFiles,
         },
     };
 }
@@ -95,13 +102,34 @@ function parseManifestFile(manifestPath: string): Partial<Phase0Manifest> {
     return JSON.parse(raw) as Partial<Phase0Manifest>;
 }
 
+function loadRepositoryDefaultManifest(): Phase0Manifest {
+    const repoDefaultPath = path.resolve(REPO_DEFAULT_MANIFEST_FILENAME);
+    if (!fs.existsSync(repoDefaultPath)) {
+        return mergeManifest(FALLBACK_PHASE0_MANIFEST, {});
+    }
+
+    try {
+        const parsed = parseManifestFile(repoDefaultPath);
+        return mergeManifest(FALLBACK_PHASE0_MANIFEST, parsed);
+    } catch (error) {
+        const details = error instanceof Error ? error.message : String(error);
+        throw new Error(`Failed to load repository default phase0 manifest "${repoDefaultPath}": ${details}`);
+    }
+}
+
+export const DEFAULT_PHASE0_MANIFEST: Phase0Manifest = loadRepositoryDefaultManifest();
+
+function mergeWithDefaults(input: Partial<Phase0Manifest>): Phase0Manifest {
+    return mergeManifest(DEFAULT_PHASE0_MANIFEST, input);
+}
+
 export function resolvePhase0ManifestPath(): string | undefined {
     const envPath = process.env.AI_PHASE0_MANIFEST;
     if (envPath && envPath.trim().length > 0) {
         return envPath.trim();
     }
 
-    const repoDefaultPath = path.resolve('phase0.manifest.json');
+    const repoDefaultPath = path.resolve(REPO_DEFAULT_MANIFEST_FILENAME);
     if (fs.existsSync(repoDefaultPath)) {
         return repoDefaultPath;
     }

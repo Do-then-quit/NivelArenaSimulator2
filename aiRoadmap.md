@@ -66,6 +66,14 @@
 - Preserve deterministic behavior for benchmarking:
   - Seeded RNG path must remain stable.
   - Same `seed + action sequence` must produce same state.
+- Information-model guardrail (Phase 3+ promotion profiles):
+  - Promoted play bots are observation-limited. Decision logic must be based on `getObservation(actorPlayerId)` + legal actions + deterministic rollout outputs.
+  - Direct reads of hidden opponent zones from live engine state (for example opponent hand or unrevealed deck order) are not allowed for promotion benchmarks.
+  - If full-information debug bots are needed, keep them as explicit `*-omniscient` profiles and exclude them from promotion/ladders.
+- Evaluation seed governance (Phase 3+):
+  - Maintain three fixed seed suites: `tuning`, `dev`, `promotion-holdout`.
+  - Promotion Go/No-Go decisions must use `promotion-holdout` only.
+  - Seed suites must be versioned and stored as artifacts (recommended: `artifacts/ai/seeds/phase3_v1.json`).
 - Deck legality rules (must be enforced by deck search):
   - Leader 1 + deck 40 (Rule 5.1.2)
   - Max 3 copies of same identifier (Rule 5.1.2.2)
@@ -224,39 +232,61 @@
      - `max_steps=0`, `no_action=0`, `invalid_action=0`
    - decision: Phase 2 promotion gate passed (Phase 3 can be planned)
 
+## Phase 3 Entry Gate (Go/No-Go)
+
+- Must satisfy all checks before Phase 3 promotion evaluation:
+  1. Seed-suite freeze:
+     - lock `tuning`, `dev`, `promotion-holdout` suites with version tag (for example `phase3_v1`)
+     - store suite file and generation rule under `artifacts/ai/seeds/`
+  2. Observation-model compliance:
+     - promoted bot profile must not rely on hidden-opponent information from live engine state
+     - add compliance regression for representative hidden-info scenarios
+  3. Tactical KPI pipeline readiness:
+     - bench/replay report must include at least `wasteful_upgrade_rate`, `lethal_miss_rate`, `self_lethal_open_rate`
+  4. Ablation preset readiness:
+     - prepare reproducible on/off presets for each major v3 feature and output schema under `artifacts/ai/ablation/`
+
 ## Phase 3: Strong Play Bot v3 (Card-Effect Aware Multi-Turn Search)
 
 - Objective:
   - Improve play strength before deck search by increasing effect comprehension and interaction precision.
   - Minimize tactical misses in `SELECT_TARGET` / `SELECT_COST` / optional-response turns.
 - Implementation priority:
-  1. Interaction rollout expansion:
+  1. Observation-limited policy boundary:
+     - route decision features through actor observation view, not raw omniscient state reads.
+     - keep explicit debug-only profile for omniscient experiments (`*-omniscient`).
+  2. Interaction rollout expansion:
      - deepen branch evaluation for `SELECT_TARGET`, `SELECT_COST`, `SELECT_OPTIONAL`, `RESOLVE_OPTIONAL`.
      - bundle tactical action + interaction response as a single scored decision package.
-  2. Opponent-response lookahead:
+  3. Opponent-response lookahead:
      - add lightweight opponent 1-ply reply in critical combat/interaction nodes.
      - penalize lines that open immediate lethal or high-value tempo loss.
-  3. Card-effect outcome modeling:
+  4. Card-effect outcome modeling:
      - extend `pendingEffect`-aware scoring with zone transition value (field/hand/trash/damage).
      - add lane-pressure and follow-up playable-value features.
-  4. Resource-economy value modeling (card advantage aware):
+  5. Resource-economy value modeling (card advantage aware):
      - explicitly score board-hand advantage proxy: `(# own units on board + # own hand cards) - (# opp units + # opp hand cards)`.
      - add a "wasteful upgrade" penalty when an upgrade consumes a hand card but does not improve:
        immediate damage pressure, combat survival probability, or next-turn lethal setup.
      - add "empty-lane over-upgrade" penalty for upgrades into an uncontested lane with low incremental value.
-  5. Anti-oscillation / anti-stall safeguards:
+  6. Anti-oscillation / anti-stall safeguards:
      - detect repetitive interaction loops in search branches and down-rank them.
      - keep deterministic fallback path when branch confidence is low.
 - Suggested files:
   - `src/logic/ai/StrongBotV3.ts`
   - `src/logic/ai/eval/InteractionValueModel.ts`
   - `src/logic/ai/eval/CounterfactualRollout.ts`
+  - `tests/ai/StrongBotObservationModel.vitest.test.ts`
   - `tests/ai/StrongBotV3.vitest.test.ts`
 - Acceptance:
-  - v3 >= 55% vs v2 (side-swapped bench 200+200) with CI low >= 50%.
-  - v3 >= 60% vs strong-v1 (side-swapped bench 200+200).
+  - v3 >= 55% vs v2 (side-swapped bench 200+200, promotion-holdout suite) with CI low >= 50%.
+  - v3 >= 60% vs strong-v1 (side-swapped bench 200+200, promotion-holdout suite).
   - `max_steps=0`, `no_action=0`, `invalid_action=0` on promotion protocol.
-  - wasteful-upgrade frequency decreases vs v2 on replay audit seed set.
+  - tactical KPI improvement on replay audit holdout:
+    - `wasteful_upgrade_rate <= v2 baseline`
+    - `lethal_miss_rate <= v2 * 0.85`
+    - `self_lethal_open_rate <= v2 * 0.80`
+  - ablation report is produced and stored; each major v3 feature must be non-negative on dev suite (or explicitly rolled back).
 
 ## Phase 4: Play Bot Hardening and Pre-Deck-Search Gate
 
@@ -273,12 +303,17 @@
      - include heavy-interaction seed suites and monitor termination reasons.
   3. Runtime/quality release gate:
      - track p50/p95 `ms/action`, `avgMsPerGame`, and safety counters.
-     - require stable runtime spread before freezing checkpoint.
+     - quantitative gate vs v2 promotion baseline:
+       - `p50 ms/action <= 1.25x`
+       - `p95 ms/action <= 1.60x`
+       - `avgMsPerGame <= 1.40x`
+     - keep `max_steps=0`, `no_action=0`, `invalid_action=0` on stress matrix.
   4. Checkpoint freeze:
      - register promoted `strong-v3` profile in bot registry and benchmark manifest.
 - Acceptance:
   - `npm run ai:regression` and strengthened soak matrix pass.
   - `strong-v3` outperforms `strong-v2` on fixed protocol and remains stable under stress.
+  - runtime gate passes with the quantitative thresholds above.
   - Pre-deck-search gate signed off with reproducible artifact set under `artifacts/ai/`.
 
 ## Phase 5: Deck Search MVP (Evolutionary Search)
@@ -338,9 +373,9 @@
 - M2 (end of Phase 2):
   - Search-based play bot with stable runtime budget.
 - M3 (end of Phase 3):
-  - StrongBot v3 beats v2 on fixed protocol with interaction/effect-aware multi-turn gains.
+  - Observation-limited StrongBot v3 beats v2 on fixed protocol with interaction/effect-aware multi-turn gains.
 - M4 (end of Phase 4):
-  - Play-bot hardening gate passed and `strong-v3` checkpoint frozen for deck search.
+  - Play-bot hardening gate passed (runtime/tactical KPI gates included) and `strong-v3` checkpoint frozen for deck search.
 - M5 (end of Phase 5):
   - Deck search CLI returns reproducible top decks from ST01/ST02/ST03/BT01 pool.
 - M6 (end of Phase 6):
@@ -355,7 +390,7 @@
 - `npm run ai:ladder`:
   - multi-bot round robin with Elo.
 - `npm run ai:deck-search`:
-  - run GA/ES deck search with config.
+  - run GA/ES deck search with config (placeholder CLI until Phase 5 implementation is complete).
 - `npm run ai:regression`:
   - AI-required regression subset + soak quick run.
 
@@ -365,12 +400,14 @@
   - Add failing tests first (rule/behavior specific).
 - During each phase:
   - Unit tests for scorer/search/deck legality.
+  - Observation-model compliance tests for promoted bot profiles.
   - Regression tests for interaction ownership and target selection.
   - Soak tests for deadlock/no-action detection.
 - After each phase:
   - Run full `npm test`.
   - Run quick soak.
-  - Store benchmark artifact with seed list and commit hash.
+  - Store benchmark artifact with seed suite version + commit hash.
+  - For Phase 3+, store ablation report and tactical KPI summary with the same seed suite version.
 
 ## 8) Risks and Mitigations
 

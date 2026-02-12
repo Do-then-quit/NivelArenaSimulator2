@@ -25,6 +25,13 @@ describe('Phase0 Manifest', () => {
         expect(resolved?.endsWith('phase0.manifest.json')).toBe(true);
     });
 
+    it('keeps exported defaults synchronized with repository manifest', () => {
+        const resolved = resolvePhase0ManifestPath();
+        expect(resolved).toBeTruthy();
+        const fromRepo = loadPhase0Manifest(resolved);
+        expect(DEFAULT_PHASE0_MANIFEST).toEqual(fromRepo);
+    });
+
     it('loads default values when manifest path is omitted', () => {
         const manifest = loadPhase0Manifest(undefined);
         expect(manifest.version).toBe(DEFAULT_PHASE0_MANIFEST.version);
@@ -60,4 +67,3 @@ describe('Phase0 Manifest', () => {
         expect(manifest.regression.vitestFiles).toEqual(DEFAULT_PHASE0_MANIFEST.regression.vitestFiles);
     });
 });
-

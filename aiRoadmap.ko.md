@@ -66,6 +66,14 @@
 - 벤치마크 결정론 보장:
   - seed 기반 RNG 경로는 안정적으로 유지
   - 동일 `seed + action sequence`는 동일 상태를 재현해야 함
+- 정보 모델 가드레일 (Phase 3+ 승격 프로파일):
+  - 승격 대상 플레이 봇은 관측 기반(Observation-limited)으로 동작해야 한다. 의사결정은 `getObservation(actorPlayerId)` + 합법 액션 + 결정론적 롤아웃 결과만 사용한다.
+  - 라이브 엔진 상태에서 상대 비공개 정보(예: 상대 손패, 미공개 덱 순서)를 직접 읽는 로직은 승격 벤치에서 금지한다.
+  - 완전정보 실험이 필요하면 `*-omniscient` 디버그 프로파일로 분리하고 승격/라더 산출물에서 제외한다.
+- 평가 seed 운영 규칙 (Phase 3+):
+  - 고정 seed 세트를 `tuning`, `dev`, `promotion-holdout` 3종으로 분리 유지한다.
+  - 승격 Go/No-Go 판정은 `promotion-holdout` 세트만 사용한다.
+  - seed 세트는 버전 태그와 함께 산출물로 관리한다(권장: `artifacts/ai/seeds/phase3_v1.json`).
 - 덱 탐색 시 덱 합법성 규칙 강제:
   - 리더 1 + 덱 40장 (Rule 5.1.2)
   - 동일 식별번호 최대 3장 (Rule 5.1.2.2)
@@ -224,40 +232,62 @@
      - `max_steps=0`, `no_action=0`, `invalid_action=0`
    - 판정: Phase 2 승격 게이트 통과 (Phase 3 착수 계획 가능)
 
+## Phase 3 착수 게이트 (Go/No-Go)
+
+- Phase 3 승격 평가 전에 아래를 모두 충족:
+  1. Seed 세트 동결:
+     - `tuning`, `dev`, `promotion-holdout`를 버전 태그(예: `phase3_v1`)로 고정
+     - 세트 파일과 생성 규칙을 `artifacts/ai/seeds/`에 보관
+  2. 관측 모델 준수:
+     - 승격 대상 봇 프로파일은 라이브 엔진의 상대 비공개 정보에 의존하지 않아야 함
+     - 대표적인 숨은 정보 시나리오에 대한 준수 회귀 테스트 추가
+  3. 전술 KPI 파이프라인 준비:
+     - bench/replay 리포트에 최소 `wasteful_upgrade_rate`, `lethal_miss_rate`, `self_lethal_open_rate` 집계 포함
+  4. Ablation 프리셋 준비:
+     - v3 핵심 기능별 on/off 재현 프리셋과 결과 스키마를 `artifacts/ai/ablation/`에 정리
+
 ## Phase 3: Strong Play Bot v3 (카드 효과 인지형 다중 턴 탐색)
 
 - 목표:
   - 덱 탐색 전에 플레이 강도를 추가로 끌어올리기 위해, 카드 효과 이해와 인터랙션 정밀도를 강화한다.
   - `SELECT_TARGET` / `SELECT_COST` / optional 응답 구간에서 전술 미스를 최소화한다.
 - 구현 우선순위:
-  1. 인터랙션 롤아웃 확장
+  1. 관측 기반 정책 경계 확립
+     - 의사결정 feature 입력을 actor 관측 뷰 기준으로 정리하고, 원시 완전정보 상태 직접 참조를 배제
+     - 완전정보 실험은 `*-omniscient` 디버그 프로파일로 분리
+  2. 인터랙션 롤아웃 확장
      - `SELECT_TARGET`, `SELECT_COST`, `SELECT_OPTIONAL`, `RESOLVE_OPTIONAL` 분기 깊이 강화
      - 전술 액션 + 인터랙션 응답을 하나의 의사결정 패키지로 묶어 점수화
-  2. 상대 응답 1수 예측
+  3. 상대 응답 1수 예측
      - 전투/인터랙션 핵심 노드에서 경량 1-ply 상대 응답 탐색 추가
      - 즉시 킬각 허용/고밸류 템포 손실 라인에 패널티 부여
-  3. 카드 효과 결과 모델링
+  4. 카드 효과 결과 모델링
      - `pendingEffect` 기반 점수화에 영역 전이 가치(필드/핸드/트래시/데미지) 반영
      - 라인 압박과 후속 플레이 가능 가치(feature) 추가
-  4. 자원 경제성 가치 모델링(아드 인지)
+  5. 자원 경제성 가치 모델링(아드 인지)
      - 보드-핸드 아드 프록시를 명시적으로 점수화:
        `(#내 필드 유닛 + #내 핸드) - (#상대 필드 유닛 + #상대 핸드)`
      - 업그레이드에 패 1장을 소모했는데 아래 항목이 개선되지 않으면 "무의미 업그레이드" 패널티 부여:
        즉시 데미지 압박, 전투 생존 확률, 다음 턴 킬각 세팅.
      - 상대 유닛이 없는 라인에서 증가 가치가 낮은 과투자 업그레이드(빈 라인 과업글) 패널티 추가.
-  5. 진동/정체 방지 안전장치
+  6. 진동/정체 방지 안전장치
      - 탐색 분기 내 반복 인터랙션 루프를 감지해 감점
      - 분기 신뢰도가 낮을 때 결정론적 폴백 유지
 - 권장 파일:
   - `src/logic/ai/StrongBotV3.ts`
   - `src/logic/ai/eval/InteractionValueModel.ts`
   - `src/logic/ai/eval/CounterfactualRollout.ts`
+  - `tests/ai/StrongBotObservationModel.vitest.test.ts`
   - `tests/ai/StrongBotV3.vitest.test.ts`
 - 완료 기준:
-  - v3가 v2 대비 side-swapped 200+200에서 승률 `>=55%`, CI 하한 `>=50%`
-  - v3가 strong-v1 대비 side-swapped 200+200에서 승률 `>=60%`
+  - v3가 v2 대비 side-swapped 200+200(승격 holdout seed 세트)에서 승률 `>=55%`, CI 하한 `>=50%`
+  - v3가 strong-v1 대비 side-swapped 200+200(승격 holdout seed 세트)에서 승률 `>=60%`
   - 승격 프로토콜에서 `max_steps=0`, `no_action=0`, `invalid_action=0`
-  - 리플레이 감사 seed 세트에서 무의미 업그레이드 빈도가 v2 대비 감소
+  - 전술 KPI 개선:
+    - `wasteful_upgrade_rate <= v2 기준선`
+    - `lethal_miss_rate <= v2 * 0.85`
+    - `self_lethal_open_rate <= v2 * 0.80`
+  - Ablation 리포트 산출 및 보관, v3 핵심 기능별 dev 세트 비열화(열화 시 롤백 근거 기록)
 
 ## Phase 4: 플레이 봇 하드닝 및 덱 탐색 전 게이트
 
@@ -274,12 +304,17 @@
      - 인터랙션 밀집 seed 묶음을 포함해 종료 사유 모니터링
   3. 런타임/품질 릴리스 게이트
      - p50/p95 `ms/action`, `avgMsPerGame`, 안전성 카운터 추적
-     - 체크포인트 동결 전 런타임 분산 안정성 충족 필수
+     - v2 승격 기준선 대비 정량 게이트 적용:
+       - `p50 ms/action <= 1.25x`
+       - `p95 ms/action <= 1.60x`
+       - `avgMsPerGame <= 1.40x`
+     - 스트레스 매트릭스에서도 `max_steps=0`, `no_action=0`, `invalid_action=0` 유지
   4. 체크포인트 동결
      - 승격된 `strong-v3` 프로파일을 bot registry/manifest에 반영
 - 완료 기준:
   - `npm run ai:regression` 및 강화된 소크 매트릭스 통과
   - `strong-v3`가 고정 프로토콜에서 `strong-v2`를 상회하고 스트레스 조건에서도 안정
+  - 런타임 정량 게이트 충족
   - `artifacts/ai/`에 재현 가능한 산출물 세트와 함께 덱 탐색 전 게이트 승인
 
 ## Phase 5: 덱 탐색 MVP (진화형 탐색)
@@ -339,9 +374,9 @@
 - M2 (Phase 2 종료):
   - 런타임 예산이 안정적인 탐색 기반 플레이 봇 확보
 - M3 (Phase 3 종료):
-  - StrongBot v3가 고정 프로토콜에서 v2를 상회(카드 효과 인지형 다중 턴 의사결정 강화)
+  - 관측 기반(Observation-limited) StrongBot v3가 고정 프로토콜에서 v2를 상회(카드 효과 인지형 다중 턴 의사결정 강화)
 - M4 (Phase 4 종료):
-  - 플레이 봇 하드닝 게이트 통과 + `strong-v3` 체크포인트 동결 완료
+  - 플레이 봇 하드닝 게이트(런타임/전술 KPI 포함) 통과 + `strong-v3` 체크포인트 동결 완료
 - M5 (Phase 5 종료):
   - ST01/ST02/ST03/BT01 카드풀에서 재현 가능한 top deck CLI 확보
 - M6 (Phase 6 종료):
@@ -356,7 +391,7 @@
 - `npm run ai:ladder`
   - 다중 봇 라운드로빈 + Elo 계산
 - `npm run ai:deck-search`
-  - GA/ES 기반 덱 탐색 실행
+  - GA/ES 기반 덱 탐색 실행(Phase 5 전까지는 placeholder CLI)
 - `npm run ai:regression`
   - AI 핵심 회귀 세트 + quick soak 실행
 
@@ -366,12 +401,14 @@
   - 실패 테스트 먼저 작성(TDD)
 - 각 단계 구현 중:
   - scorer/search/deck legality 단위 테스트
+  - 승격 대상 봇의 관측 모델 준수 테스트
   - interaction ownership/target selection 회귀 테스트
   - deadlock/no-action 탐지 soak 테스트
 - 각 단계 완료 후:
   - 전체 `npm test`
   - quick soak 실행
-  - seed 목록 + commit hash가 포함된 벤치마크 산출물 보관
+  - seed 세트 버전 + commit hash가 포함된 벤치마크 산출물 보관
+  - Phase 3+에서는 ablation 결과와 전술 KPI 요약도 동일 seed 세트 버전으로 보관
 
 ## 8) 리스크 및 대응
 
