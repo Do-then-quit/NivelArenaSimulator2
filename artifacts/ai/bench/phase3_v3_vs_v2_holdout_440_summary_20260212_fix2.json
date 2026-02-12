@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-02-12T13:04:43.723Z",
+  "suite": "promotion-holdout",
+  "files": {
+    "p1": "artifacts/ai/bench/phase3_v3_vs_v2_p1v3_holdout_220_20260212_fix2.json",
+    "p2": "artifacts/ai/bench/phase3_v3_vs_v2_p2v3_holdout_220_20260212_fix2.json"
+  },
+  "totals": {
+    "totalGames": 440,
+    "v3Wins": 250,
+    "v2Wins": 190,
+    "v3WinRate": 0.5682,
+    "confidence95": {
+      "ciLow": 0.5219,
+      "ciHigh": 0.6145,
+      "standardError": 0.0236
+    },
+    "terminationCounts": {
+      "winner": 440,
+      "max_steps": 0,
+      "no_action": 0,
+      "invalid_action": 0
+    }
+  },
+  "sideReports": {
+    "p1v3": {
+      "totalGames": 220,
+      "winRatePlayer1": 0.5091,
+      "terminationCounts": {
+        "winner": 220,
+        "max_steps": 0,
+        "no_action": 0,
+        "invalid_action": 0
+      },
+      "avgSteps": 103.18,
+      "avgTurns": 11.31,
+      "tacticalKPIs": {
+        "wasteful_upgrade_rate": 0.4303,
+        "lethal_miss_rate": 0,
+        "self_lethal_open_rate": 0.0007,
+        "counts": {
+          "upgradeActionCount": 904,
+          "wastefulUpgradeCount": 389,
+          "lethalOpportunityCount": 220,
+          "lethalMissCount": 0,
+          "selfLethalCheckCount": 5883,
+          "selfLethalOpenCount": 4
+        }
+      }
+    },
+    "p2v3": {
+      "totalGames": 220,
+      "winRatePlayer2": 0.6273,
+      "terminationCounts": {
+        "winner": 220,
+        "max_steps": 0,
+        "no_action": 0,
+        "invalid_action": 0
+      },
+      "avgSteps": 105.77,
+      "avgTurns": 11.52,
+      "tacticalKPIs": {
+        "wasteful_upgrade_rate": 0.4667,
+        "lethal_miss_rate": 0,
+        "self_lethal_open_rate": 0.0008,
+        "counts": {
+          "upgradeActionCount": 900,
+          "wastefulUpgradeCount": 420,
+          "lethalOpportunityCount": 219,
+          "lethalMissCount": 0,
+          "selfLethalCheckCount": 6319,
+          "selfLethalOpenCount": 5
+        }
+      }
+    }
+  }
+}

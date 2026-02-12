@@ -18,7 +18,7 @@ interface PendingRuntimeState {
     effect: Effect | null;
 }
 
-type CardReferenceArea = 'LEVEL' | 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'ZONE_UNIT' | 'ZONE_ITEM';
+type CardReferenceArea = 'LEVEL' | 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'ZONE_UNIT' | 'ZONE_ITEM' | 'REVEALED';
 
 interface CardReferenceLocator {
     playerIndex: number;
@@ -356,13 +356,53 @@ export class GameEngine {
     }
 
     public getSerializableState(): GameState {
-        return JSON.parse(
+        const clonedState = JSON.parse(
             JSON.stringify(this.state, (key, value) => {
                 // Effect queue contexts contain machine back-references, which create cycles.
                 if (key === 'machine') return undefined;
                 return value;
             })
         );
+        this.remapPendingSelectedTargetsForStateClone(clonedState);
+        return clonedState;
+    }
+
+    private remapPendingSelectedTargetsForStateClone(clonedState: GameState): void {
+        const originalSelectedTargets = this.state.pendingEffect?.selectedTargets;
+        const clonedPendingEffect = clonedState.pendingEffect;
+        if (!clonedPendingEffect || !Array.isArray(originalSelectedTargets) || originalSelectedTargets.length === 0) {
+            return;
+        }
+
+        const clonedFallbackTargets = Array.isArray(clonedPendingEffect.selectedTargets)
+            ? clonedPendingEffect.selectedTargets
+            : [];
+
+        clonedPendingEffect.selectedTargets = originalSelectedTargets.map((target, index) => {
+            const mapped = this.mapTargetReferenceForStateClone(clonedState, target);
+            if (mapped !== null && mapped !== undefined) return mapped;
+            if (index < clonedFallbackTargets.length) return clonedFallbackTargets[index];
+            if (target === null || target === undefined) return target;
+            if (typeof target !== 'object') return target;
+            return null;
+        }).filter(target => target !== null);
+    }
+
+    private mapTargetReferenceForStateClone(clonedState: GameState, target: unknown): unknown {
+        if (target === null || target === undefined) return target;
+        if (typeof target !== 'object') return target;
+
+        const zoneLocator = this.locateZoneReference(target as UnitZoneState);
+        if (zoneLocator) {
+            return clonedState.players[zoneLocator.playerIndex]?.unitZones[zoneLocator.zoneIndex] ?? null;
+        }
+
+        const cardLocator = this.locateCardReference(target as Card);
+        if (cardLocator) {
+            return this.resolveCardReferenceInState(clonedState, cardLocator);
+        }
+
+        return null;
     }
 
     public createSimulationFork(): GameEngine {
@@ -501,11 +541,24 @@ export class GameEngine {
             }
         }
 
+        const revealedIndex = this.state.revealedCards.indexOf(card);
+        if (revealedIndex !== -1) {
+            return { playerIndex: -1, area: 'REVEALED', index: revealedIndex };
+        }
+
         return null;
     }
 
     private resolveCardReferenceInFork(fork: GameEngine, locator: CardReferenceLocator): Card | null {
-        const player = fork.state.players[locator.playerIndex];
+        return this.resolveCardReferenceInState(fork.state, locator);
+    }
+
+    private resolveCardReferenceInState(state: GameState, locator: CardReferenceLocator): Card | null {
+        if (locator.area === 'REVEALED') {
+            return locator.index === undefined ? null : (state.revealedCards[locator.index] ?? null);
+        }
+
+        const player = state.players[locator.playerIndex];
         if (!player) return null;
 
         switch (locator.area) {

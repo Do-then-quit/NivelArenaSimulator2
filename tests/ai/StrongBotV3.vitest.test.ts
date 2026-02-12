@@ -44,6 +44,20 @@ function makeSacrificeToBuffUnit(): Card {
     });
 }
 
+function makeTwoTargetDebuffUnit(): Card {
+    return makeUnit('BTX-TWO-TARGET', {
+        cost: 3,
+        effects: [
+            {
+                activation: ActivationCondition.ACTIVE_MAIN,
+                description: 'Choose up to 2 enemy units: they get -2000 power this turn.',
+                targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 2, selectMode: 'MANUAL' },
+                action: { type: 'BUFF_POWER', params: { value: -2000 } },
+            },
+        ],
+    });
+}
+
 function createEngine(seed: number = 20260314): GameEngine {
     const deck1 = Array.from({ length: 30 }, (_v, i) => makeUnit(`P1_${i}`));
     const deck2 = Array.from({ length: 30 }, (_v, i) => makeUnit(`P2_${i}`));
@@ -99,6 +113,44 @@ describe('StrongBotV3', () => {
         expect(action?.type).toBe('RESOLVE_OPTIONAL');
         if (action?.type === 'RESOLVE_OPTIONAL') {
             expect(action.confirm).toBe(false);
+        }
+    });
+
+    it('prefers CONFIRM_TARGETS over toggling same target when required count cannot be met (Rule 1.3.2)', () => {
+        const engine = createEngine(9303);
+        const actor = engine.state.players[0];
+        actor.unitZones[0].unit = makeSacrificeToBuffUnit();
+
+        engine.activateEffect(0, 0);
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        engine.selectZoneTargetByPlayerId(0, actor.id);
+        expect(engine.state.pendingEffect?.selectedTargets?.length).toBe(1);
+
+        const bot = new StrongBotV3('Strong-v3-Confirm-Partial-Test');
+        const action = bot.chooseAction(engine, actor.id);
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('CONFIRM_TARGETS');
+    });
+
+    it('selects a distinct second target instead of toggling already selected target in count=2 selection', () => {
+        const engine = createEngine(9304);
+        const actor = engine.state.players[0];
+        const opponent = engine.state.players[1];
+        actor.unitZones[0].unit = makeTwoTargetDebuffUnit();
+        opponent.unitZones[0].unit = makeUnit('OPP_A', { cost: 2, power: 3000, hit: 1 });
+        opponent.unitZones[2].unit = makeUnit('OPP_B', { cost: 2, power: 2500, hit: 1 });
+
+        engine.activateEffect(0, 0);
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        engine.selectZoneTargetByPlayerId(0, opponent.id);
+        expect(engine.state.pendingEffect?.selectedTargets?.length).toBe(1);
+
+        const bot = new StrongBotV3('Strong-v3-Distinct-Second-Target-Test');
+        const action = bot.chooseAction(engine, actor.id);
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('SELECT_ZONE_TARGET');
+        if (action?.type === 'SELECT_ZONE_TARGET') {
+            expect(action.zoneIndex).toBe(2);
         }
     });
 });

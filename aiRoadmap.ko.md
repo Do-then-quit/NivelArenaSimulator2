@@ -71,6 +71,19 @@
     - `npm run build`
     - `npm test`
     - `AI_REGRESSION_SKIP_SOAK=1 npm run ai:regression`
+  - Phase 3 안정성 핫픽스 반영 (인터랙션 정체/진동 대응):
+    - `src/logic/GameEngine.ts`: `getSerializableState()`에서 시뮬레이션 clone 상태의 `pendingEffect.selectedTargets` 참조를 재매핑하도록 보강(`REVEALED` 매핑 포함).
+    - `src/logic/ai/eval/InteractionValueModel.ts`: `SELECT_HAND_TARGET` / `SELECT_ZONE_TARGET` / `SELECT_TRASH_TARGET` / `SELECT_REVEALED_TARGET`에 대해 unselect-toggle 강한 패널티(`-50000`) 적용.
+    - `tests/ai/StrongBotV3.vitest.test.ts`:
+      - 부분 타겟 선택 후 confirm fallback 회귀 추가 (Rule 1.3.2)
+      - `count=2` 선택에서 동일 타겟 토글 대신 서로 다른 2번째 타겟 선택 회귀 추가
+  - 승격 holdout 체크포인트 재실행 (2026-02-12, `fix2`, 진영 스왑 220+220):
+    - `250/440 = 56.82%`, 95% CI `[52.19%, 61.45%]`
+    - 종료 안정성: `winner=440`, `max_steps=0`, `no_action=0`, `invalid_action=0`
+    - 산출물:
+      - `artifacts/ai/bench/phase3_v3_vs_v2_p1v3_holdout_220_20260212_fix2.json`
+      - `artifacts/ai/bench/phase3_v3_vs_v2_p2v3_holdout_220_20260212_fix2.json`
+      - `artifacts/ai/bench/phase3_v3_vs_v2_holdout_440_summary_20260212_fix2.json`
 - [ ] Phase 4 미착수 (플레이 봇 하드닝 게이트)
 - [ ] Phase 5 미착수 (덱 탐색 MVP)
 - [ ] Phase 6 미착수

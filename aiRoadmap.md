@@ -71,6 +71,19 @@
     - `npm run build`
     - `npm test`
     - `AI_REGRESSION_SKIP_SOAK=1 npm run ai:regression`
+  - Phase 3 stability hotfix applied (interaction stall / oscillation):
+    - `src/logic/GameEngine.ts`: `getSerializableState()` now remaps `pendingEffect.selectedTargets` references for cloned simulation state (including `REVEALED` mapping support).
+    - `src/logic/ai/eval/InteractionValueModel.ts`: heavy unselect-toggle penalty (`-50000`) added for `SELECT_HAND_TARGET` / `SELECT_ZONE_TARGET` / `SELECT_TRASH_TARGET` / `SELECT_REVEALED_TARGET`.
+    - `tests/ai/StrongBotV3.vitest.test.ts`:
+      - added partial-target confirm fallback regression (Rule 1.3.2)
+      - added distinct second-target selection regression for `count=2` effects
+  - Promotion-holdout checkpoint rerun (2026-02-12, `fix2`, side-swapped 220+220):
+    - `250/440 = 56.82%`, 95% CI `[52.19%, 61.45%]`
+    - termination safety: `winner=440`, `max_steps=0`, `no_action=0`, `invalid_action=0`
+    - artifacts:
+      - `artifacts/ai/bench/phase3_v3_vs_v2_p1v3_holdout_220_20260212_fix2.json`
+      - `artifacts/ai/bench/phase3_v3_vs_v2_p2v3_holdout_220_20260212_fix2.json`
+      - `artifacts/ai/bench/phase3_v3_vs_v2_holdout_440_summary_20260212_fix2.json`
 - [ ] Phase 4 not started (Play bot hardening gate)
 - [ ] Phase 5 not started (Deck search MVP)
 - [ ] Phase 6 not started
