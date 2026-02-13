@@ -42,6 +42,24 @@ function makeReport(msPerAction: number, avgMsPerGame: number): MatchBatchReport
                     selfLethalCheckCount: 0,
                     selfLethalOpenCount: 0,
                 },
+                byPlayer: {
+                    player1: {
+                        upgradeActionCount: 0,
+                        wastefulUpgradeCount: 0,
+                        lethalOpportunityCount: 0,
+                        lethalMissCount: 0,
+                        selfLethalCheckCount: 0,
+                        selfLethalOpenCount: 0,
+                    },
+                    player2: {
+                        upgradeActionCount: 0,
+                        wastefulUpgradeCount: 0,
+                        lethalOpportunityCount: 0,
+                        lethalMissCount: 0,
+                        selfLethalCheckCount: 0,
+                        selfLethalOpenCount: 0,
+                    },
+                },
             },
         },
     };

@@ -52,15 +52,43 @@ export interface MatchBatchReport {
             wasteful_upgrade_rate: number;
             lethal_miss_rate: number;
             self_lethal_open_rate: number;
-            counts: {
-                upgradeActionCount: number;
-                wastefulUpgradeCount: number;
-                lethalOpportunityCount: number;
-                lethalMissCount: number;
-                selfLethalCheckCount: number;
-                selfLethalOpenCount: number;
+            counts: TacticalKpiCounts;
+            byPlayer: {
+                player1: TacticalKpiCounts;
+                player2: TacticalKpiCounts;
             };
         };
+    };
+}
+
+export interface TacticalKpiCounts {
+    upgradeActionCount: number;
+    wastefulUpgradeCount: number;
+    lethalOpportunityCount: number;
+    lethalMissCount: number;
+    selfLethalCheckCount: number;
+    selfLethalOpenCount: number;
+}
+
+function emptyTacticalKpiCounts(): TacticalKpiCounts {
+    return {
+        upgradeActionCount: 0,
+        wastefulUpgradeCount: 0,
+        lethalOpportunityCount: 0,
+        lethalMissCount: 0,
+        selfLethalCheckCount: 0,
+        selfLethalOpenCount: 0,
+    };
+}
+
+function mergeTacticalKpiCounts(left: TacticalKpiCounts, right: TacticalKpiCounts): TacticalKpiCounts {
+    return {
+        upgradeActionCount: left.upgradeActionCount + right.upgradeActionCount,
+        wastefulUpgradeCount: left.wastefulUpgradeCount + right.wastefulUpgradeCount,
+        lethalOpportunityCount: left.lethalOpportunityCount + right.lethalOpportunityCount,
+        lethalMissCount: left.lethalMissCount + right.lethalMissCount,
+        selfLethalCheckCount: left.selfLethalCheckCount + right.selfLethalCheckCount,
+        selfLethalOpenCount: left.selfLethalOpenCount + right.selfLethalOpenCount,
     };
 }
 
@@ -145,25 +173,18 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     const unfinished = matches.length - winsPlayer1 - winsPlayer2;
     const totalSteps = matches.reduce((sum, match) => sum + match.steps, 0);
     const totalTurns = matches.reduce((sum, match) => sum + match.turnCount, 0);
-    const tacticalCounts = matches.reduce(
+    const tacticalCountsByPlayer = matches.reduce(
         (acc, match) => {
-            acc.upgradeActionCount += match.tacticalMetrics.upgradeActionCount;
-            acc.wastefulUpgradeCount += match.tacticalMetrics.wastefulUpgradeCount;
-            acc.lethalOpportunityCount += match.tacticalMetrics.lethalOpportunityCount;
-            acc.lethalMissCount += match.tacticalMetrics.lethalMissCount;
-            acc.selfLethalCheckCount += match.tacticalMetrics.selfLethalCheckCount;
-            acc.selfLethalOpenCount += match.tacticalMetrics.selfLethalOpenCount;
+            acc.player1 = mergeTacticalKpiCounts(acc.player1, match.tacticalMetrics.byPlayer.player1);
+            acc.player2 = mergeTacticalKpiCounts(acc.player2, match.tacticalMetrics.byPlayer.player2);
             return acc;
         },
         {
-            upgradeActionCount: 0,
-            wastefulUpgradeCount: 0,
-            lethalOpportunityCount: 0,
-            lethalMissCount: 0,
-            selfLethalCheckCount: 0,
-            selfLethalOpenCount: 0,
+            player1: emptyTacticalKpiCounts(),
+            player2: emptyTacticalKpiCounts(),
         },
     );
+    const tacticalCounts = mergeTacticalKpiCounts(tacticalCountsByPlayer.player1, tacticalCountsByPlayer.player2);
     const player1Confidence = computeBinomialRateStats(winsPlayer1, matches.length);
     const player2Confidence = computeBinomialRateStats(winsPlayer2, matches.length);
     const runtimeSummary = measureRuntime
@@ -184,6 +205,7 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
         lethal_miss_rate: roundTo(safeDivide(tacticalCounts.lethalMissCount, tacticalCounts.lethalOpportunityCount), 4),
         self_lethal_open_rate: roundTo(safeDivide(tacticalCounts.selfLethalOpenCount, tacticalCounts.selfLethalCheckCount), 4),
         counts: tacticalCounts,
+        byPlayer: tacticalCountsByPlayer,
     };
 
     const terminationCounts = matches.reduce<Record<MatchTerminationReason, number>>(

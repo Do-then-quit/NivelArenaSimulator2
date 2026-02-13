@@ -83,6 +83,10 @@ export interface MatchTacticalMetrics {
     wastefulUpgradeRate: number;
     lethalMissRate: number;
     selfLethalOpenRate: number;
+    byPlayer: {
+        player1: TacticalMetricCounters;
+        player2: TacticalMetricCounters;
+    };
 }
 
 export function createBaselineBotFactory(): BotFactory {
@@ -200,12 +204,24 @@ function isWastefulUpgrade(engine: GameEngine, context: UpgradeActionContext): b
     return !(immediatePressureImproved || combatSurvivalImproved || lethalSetupImproved);
 }
 
-function buildMatchTacticalMetrics(counters: TacticalMetricCounters): MatchTacticalMetrics {
+function buildMatchTacticalMetrics(
+    countersByPlayer: { player1: TacticalMetricCounters; player2: TacticalMetricCounters },
+): MatchTacticalMetrics {
+    const counters: TacticalMetricCounters = {
+        upgradeActionCount: countersByPlayer.player1.upgradeActionCount + countersByPlayer.player2.upgradeActionCount,
+        wastefulUpgradeCount: countersByPlayer.player1.wastefulUpgradeCount + countersByPlayer.player2.wastefulUpgradeCount,
+        lethalOpportunityCount: countersByPlayer.player1.lethalOpportunityCount + countersByPlayer.player2.lethalOpportunityCount,
+        lethalMissCount: countersByPlayer.player1.lethalMissCount + countersByPlayer.player2.lethalMissCount,
+        selfLethalCheckCount: countersByPlayer.player1.selfLethalCheckCount + countersByPlayer.player2.selfLethalCheckCount,
+        selfLethalOpenCount: countersByPlayer.player1.selfLethalOpenCount + countersByPlayer.player2.selfLethalOpenCount,
+    };
+
     return {
         ...counters,
         wastefulUpgradeRate: roundTo(safeDivide(counters.wastefulUpgradeCount, counters.upgradeActionCount), 4),
         lethalMissRate: roundTo(safeDivide(counters.lethalMissCount, counters.lethalOpportunityCount), 4),
         selfLethalOpenRate: roundTo(safeDivide(counters.selfLethalOpenCount, counters.selfLethalCheckCount), 4),
+        byPlayer: countersByPlayer,
     };
 }
 
@@ -252,7 +268,7 @@ function snapshot(
     steps: number,
     actorPlayerId: string | null,
     trace: string[],
-    tacticalCounters: TacticalMetricCounters,
+    tacticalCountersByPlayer: { player1: TacticalMetricCounters; player2: TacticalMetricCounters },
 ): MatchReport {
     return {
         seed,
@@ -269,7 +285,7 @@ function snapshot(
         player1LeaderId: engine.state.players[0].levelZone?.id ?? 'NONE',
         player2LeaderId: engine.state.players[1].levelZone?.id ?? 'NONE',
         lastActions: [...trace],
-        tacticalMetrics: buildMatchTacticalMetrics(tacticalCounters),
+        tacticalMetrics: buildMatchTacticalMetrics(tacticalCountersByPlayer),
     };
 }
 
@@ -334,35 +350,46 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
     const bot2 = player2Factory('P2-Bot');
 
     const trace: string[] = [];
-    const tacticalCounters: TacticalMetricCounters = {
-        upgradeActionCount: 0,
-        wastefulUpgradeCount: 0,
-        lethalOpportunityCount: 0,
-        lethalMissCount: 0,
-        selfLethalCheckCount: 0,
-        selfLethalOpenCount: 0,
+    const tacticalCountersByPlayer = {
+        player1: {
+            upgradeActionCount: 0,
+            wastefulUpgradeCount: 0,
+            lethalOpportunityCount: 0,
+            lethalMissCount: 0,
+            selfLethalCheckCount: 0,
+            selfLethalOpenCount: 0,
+        },
+        player2: {
+            upgradeActionCount: 0,
+            wastefulUpgradeCount: 0,
+            lethalOpportunityCount: 0,
+            lethalMissCount: 0,
+            selfLethalCheckCount: 0,
+            selfLethalOpenCount: 0,
+        },
     };
     let steps = 0;
     while (!engine.state.winner && steps < maxSteps) {
         const actorPlayerId = engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
         const actorIsPlayer1 = engine.state.players[0].id === actorPlayerId;
         const actingBot = actorIsPlayer1 ? bot1 : bot2;
+        const actorCounters = actorIsPlayer1 ? tacticalCountersByPlayer.player1 : tacticalCountersByPlayer.player2;
         const opponentPlayerId = engine.state.players.find(player => player.id !== actorPlayerId)?.id ?? null;
         const lethalAttackLanes = getDirectLethalAttackLanes(engine, actorPlayerId);
         const hadLethalOpportunity = lethalAttackLanes.size > 0;
         if (hadLethalOpportunity) {
-            tacticalCounters.lethalOpportunityCount += 1;
+            actorCounters.lethalOpportunityCount += 1;
         }
         const preOpponentImmediateLethal = opponentPlayerId ? hasImmediateDirectLethal(engine, opponentPlayerId) : false;
 
         const action = actingBot.chooseAction(engine, actorPlayerId);
         if (!action) {
-            return snapshot(engine, seed, 'no_action', steps, actorPlayerId, trace, tacticalCounters);
+            return snapshot(engine, seed, 'no_action', steps, actorPlayerId, trace, tacticalCountersByPlayer);
         }
 
         const upgradeContext = captureUpgradeContext(engine, actorPlayerId, action);
         if (upgradeContext) {
-            tacticalCounters.upgradeActionCount += 1;
+            actorCounters.upgradeActionCount += 1;
         }
 
         trace.push(formatAction(action));
@@ -370,27 +397,27 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
 
         const ok = engine.step(action);
         if (!ok) {
-            return snapshot(engine, seed, 'invalid_action', steps, actorPlayerId, trace, tacticalCounters);
+            return snapshot(engine, seed, 'invalid_action', steps, actorPlayerId, trace, tacticalCountersByPlayer);
         }
 
         if (hadLethalOpportunity) {
             const resolvedAsLethalAttack = action.type === 'ATTACK' && lethalAttackLanes.has(action.attackerZoneIndex);
             if (!resolvedAsLethalAttack) {
-                tacticalCounters.lethalMissCount += 1;
+                actorCounters.lethalMissCount += 1;
             }
         }
 
         if (upgradeContext && isWastefulUpgrade(engine, upgradeContext)) {
-            tacticalCounters.wastefulUpgradeCount += 1;
+            actorCounters.wastefulUpgradeCount += 1;
         }
 
         if (opponentPlayerId) {
             const nextActorPlayerId = engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
             if (nextActorPlayerId === opponentPlayerId) {
-                tacticalCounters.selfLethalCheckCount += 1;
+                actorCounters.selfLethalCheckCount += 1;
                 const postOpponentImmediateLethal = hasImmediateDirectLethal(engine, opponentPlayerId);
                 if (!preOpponentImmediateLethal && postOpponentImmediateLethal) {
-                    tacticalCounters.selfLethalOpenCount += 1;
+                    actorCounters.selfLethalOpenCount += 1;
                 }
             }
         }
@@ -406,7 +433,7 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
             steps,
             engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id,
             trace,
-            tacticalCounters,
+            tacticalCountersByPlayer,
         );
     }
 
@@ -417,7 +444,7 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
         steps,
         engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id,
         trace,
-        tacticalCounters,
+        tacticalCountersByPlayer,
     );
 }
 

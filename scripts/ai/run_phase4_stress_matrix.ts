@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { MatchBatchReport, runMatchBatch } from './run_match_batch';
+import { MatchBatchReport, runMatchBatch, TacticalKpiCounts } from './run_match_batch';
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 import { checkPhase4RuntimeGate, Phase4RuntimeBaseline, Phase4RuntimeGateThresholds } from './phase4_runtime_gate';
 
@@ -25,15 +25,6 @@ interface Phase4MatrixConfig {
         candidateBotId: string;
         baselineBotId: string;
     };
-}
-
-interface TacticalKpiCounts {
-    upgradeActionCount: number;
-    wastefulUpgradeCount: number;
-    lethalOpportunityCount: number;
-    lethalMissCount: number;
-    selfLethalCheckCount: number;
-    selfLethalOpenCount: number;
 }
 
 interface TacticalKpiSnapshot {
@@ -243,7 +234,9 @@ function collectTacticalCountsByOpponent(
 
         if (!opponentId) continue;
 
-        const counts = run.report.summary.tacticalKPIs.counts;
+        const counts = pairing.player1BotId === botId
+            ? run.report.summary.tacticalKPIs.byPlayer.player1
+            : run.report.summary.tacticalKPIs.byPlayer.player2;
         const previous = map.get(opponentId) ?? emptyTacticalKpiCounts();
         map.set(opponentId, mergeTacticalKpiCounts(previous, counts));
     }

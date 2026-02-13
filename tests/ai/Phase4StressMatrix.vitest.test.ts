@@ -1,22 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { MatchBatchReport } from '../../scripts/ai/run_match_batch';
+import { MatchBatchReport, TacticalKpiCounts } from '../../scripts/ai/run_match_batch';
 import { evaluatePhase41TacticalKpiDelta } from '../../scripts/ai/run_phase4_stress_matrix';
-
-interface TacticalCounts {
-    upgradeActionCount: number;
-    wastefulUpgradeCount: number;
-    lethalOpportunityCount: number;
-    lethalMissCount: number;
-    selfLethalCheckCount: number;
-    selfLethalOpenCount: number;
-}
 
 function safeDivide(numerator: number, denominator: number): number {
     if (denominator <= 0) return 0;
     return numerator / denominator;
 }
 
-function makeReport(counts: TacticalCounts): MatchBatchReport {
+function emptyCounts(): TacticalKpiCounts {
+    return {
+        upgradeActionCount: 0,
+        wastefulUpgradeCount: 0,
+        lethalOpportunityCount: 0,
+        lethalMissCount: 0,
+        selfLethalCheckCount: 0,
+        selfLethalOpenCount: 0,
+    };
+}
+
+function makeReport(player1: TacticalKpiCounts, player2: TacticalKpiCounts): MatchBatchReport {
+    const counts: TacticalKpiCounts = {
+        upgradeActionCount: player1.upgradeActionCount + player2.upgradeActionCount,
+        wastefulUpgradeCount: player1.wastefulUpgradeCount + player2.wastefulUpgradeCount,
+        lethalOpportunityCount: player1.lethalOpportunityCount + player2.lethalOpportunityCount,
+        lethalMissCount: player1.lethalMissCount + player2.lethalMissCount,
+        selfLethalCheckCount: player1.selfLethalCheckCount + player2.selfLethalCheckCount,
+        selfLethalOpenCount: player1.selfLethalOpenCount + player2.selfLethalOpenCount,
+    };
+
     return {
         config: {
             startSeed: 1,
@@ -48,6 +59,10 @@ function makeReport(counts: TacticalCounts): MatchBatchReport {
                 lethal_miss_rate: safeDivide(counts.lethalMissCount, counts.lethalOpportunityCount),
                 self_lethal_open_rate: safeDivide(counts.selfLethalOpenCount, counts.selfLethalCheckCount),
                 counts,
+                byPlayer: {
+                    player1,
+                    player2,
+                },
             },
         },
     };
@@ -56,7 +71,8 @@ function makeReport(counts: TacticalCounts): MatchBatchReport {
 function makeRun(
     player1BotId: string,
     player2BotId: string,
-    counts: TacticalCounts,
+    player1Counts: TacticalKpiCounts,
+    player2Counts: TacticalKpiCounts,
 ): { pairing: { player1BotId: string; player2BotId: string; games: number }; report: MatchBatchReport } {
     return {
         pairing: {
@@ -64,45 +80,37 @@ function makeRun(
             player2BotId,
             games: 1,
         },
-        report: makeReport(counts),
+        report: makeReport(player1Counts, player2Counts),
     };
 }
 
 describe('Phase4 stress matrix tactical KPI delta', () => {
-    it('computes candidate-vs-baseline tactical KPI deltas over shared opponents', () => {
+    it('isolates tactical KPI counts to evaluated bot position', () => {
         const runs = [
-            makeRun('strong-v3.1-topk3', 'strong-v2', {
-                upgradeActionCount: 10,
-                wastefulUpgradeCount: 2,
-                lethalOpportunityCount: 8,
-                lethalMissCount: 1,
-                selfLethalCheckCount: 20,
-                selfLethalOpenCount: 1,
-            }),
-            makeRun('strong-v2', 'strong-v3', {
-                upgradeActionCount: 10,
-                wastefulUpgradeCount: 3,
-                lethalOpportunityCount: 8,
-                lethalMissCount: 2,
-                selfLethalCheckCount: 20,
-                selfLethalOpenCount: 2,
-            }),
-            makeRun('strong-v3.1-topk3', 'baseline-a', {
-                upgradeActionCount: 10,
-                wastefulUpgradeCount: 1,
-                lethalOpportunityCount: 2,
-                lethalMissCount: 0,
-                selfLethalCheckCount: 10,
-                selfLethalOpenCount: 0,
-            }),
-            makeRun('strong-v3', 'baseline-a', {
-                upgradeActionCount: 10,
-                wastefulUpgradeCount: 2,
-                lethalOpportunityCount: 2,
-                lethalMissCount: 1,
-                selfLethalCheckCount: 10,
-                selfLethalOpenCount: 1,
-            }),
+            makeRun(
+                'strong-v3.1-topk3',
+                'strong-v2',
+                { upgradeActionCount: 10, wastefulUpgradeCount: 2, lethalOpportunityCount: 8, lethalMissCount: 1, selfLethalCheckCount: 20, selfLethalOpenCount: 1 },
+                { upgradeActionCount: 100, wastefulUpgradeCount: 90, lethalOpportunityCount: 100, lethalMissCount: 90, selfLethalCheckCount: 100, selfLethalOpenCount: 90 },
+            ),
+            makeRun(
+                'strong-v2',
+                'strong-v3',
+                { upgradeActionCount: 100, wastefulUpgradeCount: 80, lethalOpportunityCount: 100, lethalMissCount: 80, selfLethalCheckCount: 100, selfLethalOpenCount: 70 },
+                { upgradeActionCount: 10, wastefulUpgradeCount: 3, lethalOpportunityCount: 8, lethalMissCount: 2, selfLethalCheckCount: 20, selfLethalOpenCount: 2 },
+            ),
+            makeRun(
+                'strong-v3.1-topk3',
+                'baseline-a',
+                { upgradeActionCount: 10, wastefulUpgradeCount: 1, lethalOpportunityCount: 2, lethalMissCount: 0, selfLethalCheckCount: 10, selfLethalOpenCount: 0 },
+                emptyCounts(),
+            ),
+            makeRun(
+                'strong-v3',
+                'baseline-a',
+                { upgradeActionCount: 10, wastefulUpgradeCount: 2, lethalOpportunityCount: 2, lethalMissCount: 1, selfLethalCheckCount: 10, selfLethalOpenCount: 1 },
+                emptyCounts(),
+            ),
         ];
 
         const result = evaluatePhase41TacticalKpiDelta(runs, 'strong-v3.1-topk3', 'strong-v3');
@@ -121,22 +129,18 @@ describe('Phase4 stress matrix tactical KPI delta', () => {
 
     it('returns unavailable when candidate and baseline do not share evaluated opponents', () => {
         const runs = [
-            makeRun('strong-v3.1-topk3', 'strong-v2', {
-                upgradeActionCount: 5,
-                wastefulUpgradeCount: 1,
-                lethalOpportunityCount: 5,
-                lethalMissCount: 1,
-                selfLethalCheckCount: 10,
-                selfLethalOpenCount: 1,
-            }),
-            makeRun('strong-v3', 'baseline-a', {
-                upgradeActionCount: 5,
-                wastefulUpgradeCount: 2,
-                lethalOpportunityCount: 5,
-                lethalMissCount: 2,
-                selfLethalCheckCount: 10,
-                selfLethalOpenCount: 2,
-            }),
+            makeRun(
+                'strong-v3.1-topk3',
+                'strong-v2',
+                { upgradeActionCount: 5, wastefulUpgradeCount: 1, lethalOpportunityCount: 5, lethalMissCount: 1, selfLethalCheckCount: 10, selfLethalOpenCount: 1 },
+                emptyCounts(),
+            ),
+            makeRun(
+                'strong-v3',
+                'baseline-a',
+                { upgradeActionCount: 5, wastefulUpgradeCount: 2, lethalOpportunityCount: 5, lethalMissCount: 2, selfLethalCheckCount: 10, selfLethalOpenCount: 2 },
+                emptyCounts(),
+            ),
         ];
 
         const result = evaluatePhase41TacticalKpiDelta(runs, 'strong-v3.1-topk3', 'strong-v3');
