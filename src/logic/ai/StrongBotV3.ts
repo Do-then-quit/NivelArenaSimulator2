@@ -19,6 +19,8 @@ export interface StrongBotV3Options {
     interactionDiscount: number;
     rolloutInteractionScoreWeight: number;
     opponentReplyBlend: number;
+    opponentReplyTopK: number;
+    opponentReplyAggregation: 'max' | 'mean' | 'weighted';
     repeatMemoryDecay: number;
     repeatMemoryCapacity: number;
 }
@@ -35,6 +37,8 @@ const DEFAULT_OPTIONS: StrongBotV3Options = {
     interactionDiscount: 0.88,
     rolloutInteractionScoreWeight: 0.34,
     opponentReplyBlend: 0.62,
+    opponentReplyTopK: 1,
+    opponentReplyAggregation: 'weighted',
     repeatMemoryDecay: 1,
     repeatMemoryCapacity: 96,
 };
@@ -53,6 +57,8 @@ export class StrongBotV3 {
             ...options,
             beamWidth: Math.max(1, Math.trunc(options.beamWidth ?? DEFAULT_OPTIONS.beamWidth)),
             interactionRolloutDepth: Math.max(0, Math.trunc(options.interactionRolloutDepth ?? DEFAULT_OPTIONS.interactionRolloutDepth)),
+            opponentReplyTopK: Math.max(1, Math.trunc(options.opponentReplyTopK ?? DEFAULT_OPTIONS.opponentReplyTopK)),
+            opponentReplyAggregation: options.opponentReplyAggregation ?? DEFAULT_OPTIONS.opponentReplyAggregation,
             repeatMemoryDecay: Math.max(0, Math.trunc(options.repeatMemoryDecay ?? DEFAULT_OPTIONS.repeatMemoryDecay)),
             repeatMemoryCapacity: Math.max(8, Math.trunc(options.repeatMemoryCapacity ?? DEFAULT_OPTIONS.repeatMemoryCapacity)),
         };
@@ -84,6 +90,8 @@ export class StrongBotV3 {
                 interactionDiscount: this.options.interactionDiscount,
                 interactionScoreWeight: this.options.rolloutInteractionScoreWeight,
                 opponentReplyBlend: this.options.opponentReplyBlend,
+                opponentReplyTopK: this.options.opponentReplyTopK,
+                opponentReplyAggregation: this.options.opponentReplyAggregation,
             }).score;
             const total = immediate * this.options.actionScoreWeight + rollout * this.options.stateScoreWeight;
             const actionKey = this.toActionKey(action);

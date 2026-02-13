@@ -153,4 +153,45 @@ describe('StrongBotV3', () => {
             expect(action.zoneIndex).toBe(2);
         }
     });
+
+    it('keeps deterministic choices with opponent reply top-K aggregation and remains stable vs top-K=1 baseline', () => {
+        const buildScenario = () => {
+            const engine = createEngine(9401);
+            const actor = engine.state.players[0];
+            const opponent = engine.state.players[1];
+            actor.unitZones[0].unit = makeTwoTargetDebuffUnit();
+            opponent.unitZones[0].unit = makeUnit('OPP_A', { cost: 2, power: 3000, hit: 1 });
+            opponent.unitZones[1].unit = makeUnit('OPP_C', { cost: 2, power: 2800, hit: 1 });
+            opponent.unitZones[2].unit = makeUnit('OPP_B', { cost: 2, power: 2500, hit: 1 });
+            return { engine, actorId: actor.id };
+        };
+
+        const botTop1 = new StrongBotV3('Strong-v3-Top1', {
+            beamWidth: 6,
+            enableOpponentReplyPly: true,
+            opponentReplyTopK: 1,
+            opponentReplyAggregation: 'weighted',
+        });
+        const botTop3 = new StrongBotV3('Strong-v3-Top3', {
+            beamWidth: 6,
+            enableOpponentReplyPly: true,
+            opponentReplyTopK: 3,
+            opponentReplyAggregation: 'weighted',
+        });
+
+        const baselineRun = buildScenario();
+        const baselineAction = botTop1.chooseAction(baselineRun.engine, baselineRun.actorId);
+
+        const topKRunA = buildScenario();
+        const topKRunB = buildScenario();
+        const topKActionA = botTop3.chooseAction(topKRunA.engine, topKRunA.actorId);
+        const topKActionB = botTop3.chooseAction(topKRunB.engine, topKRunB.actorId);
+
+        expect(baselineAction).not.toBeNull();
+        expect(topKActionA).not.toBeNull();
+        expect(topKActionB).not.toBeNull();
+        expect(topKActionA).toEqual(topKActionB);
+        expect(topKActionA).toEqual(baselineAction);
+    });
+
 });

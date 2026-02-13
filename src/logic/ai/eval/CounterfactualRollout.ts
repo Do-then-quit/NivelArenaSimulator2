@@ -9,6 +9,8 @@ export interface CounterfactualRolloutOptions extends ObservationEvaluatorOption
     interactionDiscount: number;
     interactionScoreWeight: number;
     opponentReplyBlend: number;
+    opponentReplyTopK: number;
+    opponentReplyAggregation: 'max' | 'mean' | 'weighted';
 }
 
 export interface CounterfactualRolloutResult {
@@ -61,10 +63,20 @@ function pickBestActionWithLookahead(
     options: CounterfactualRolloutOptions,
     repeatCounts: Map<string, number>,
 ): RankedAction | null {
-    if (legalActions.length === 0) return null;
+    return rankActionsWithLookahead(engine, actorPlayerId, state, legalActions, options, repeatCounts)[0] ?? null;
+}
 
-    let best: RankedAction | null = null;
-    let bestKey = '';
+function rankActionsWithLookahead(
+    engine: GameEngine,
+    actorPlayerId: string,
+    state: GameState,
+    legalActions: EngineAction[],
+    options: CounterfactualRolloutOptions,
+    repeatCounts: Map<string, number>,
+): RankedAction[] {
+    if (legalActions.length === 0) return [];
+
+    const ranked: RankedAction[] = [];
 
     for (const action of legalActions) {
         const signature = getInteractionSignature(state, action);
@@ -77,15 +89,30 @@ function pickBestActionWithLookahead(
         const branchState = branch.getObservation(actorPlayerId).state;
         const lookaheadState = evaluateObservedState(branchState, actorPlayerId, options).total + getWinnerBonus(branchState, actorPlayerId);
         const combined = immediate * 0.42 + lookaheadState * 0.58;
-        const actionKey = toActionKey(action);
-
-        if (!best || combined > best.score || (combined === best.score && actionKey < bestKey)) {
-            best = { action, score: combined };
-            bestKey = actionKey;
-        }
+        ranked.push({ action, score: combined });
     }
 
-    return best;
+    ranked.sort((a, b) => {
+        if (a.score !== b.score) return b.score - a.score;
+        return toActionKey(a.action).localeCompare(toActionKey(b.action));
+    });
+
+    return ranked;
+}
+
+function aggregateScores(scores: number[], mode: CounterfactualRolloutOptions['opponentReplyAggregation']): number {
+    if (scores.length === 0) return Number.NaN;
+    if (mode === 'max') return Math.max(...scores);
+    if (mode === 'mean') return scores.reduce((sum, score) => sum + score, 0) / scores.length;
+
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (let i = 0; i < scores.length; i++) {
+        const weight = scores.length - i;
+        weightedSum += scores[i] * weight;
+        totalWeight += weight;
+    }
+    return totalWeight > 0 ? weightedSum / totalWeight : scores[0];
 }
 
 export function runCounterfactualRollout(
@@ -146,7 +173,7 @@ export function runCounterfactualRollout(
             if (nextActor !== actorPlayerId) {
                 const opponentObservation = fork.getObservation(nextActor);
                 if (opponentObservation.canAct && opponentObservation.legalActions.length > 0) {
-                    const opponentReply = pickBestActionWithLookahead(
+                    const rankedReplies = rankActionsWithLookahead(
                         fork,
                         nextActor,
                         opponentObservation.state,
@@ -154,13 +181,24 @@ export function runCounterfactualRollout(
                         options,
                         new Map(),
                     );
-                    if (opponentReply && fork.step(opponentReply.action)) {
-                        const afterReplyState = fork.getObservation(actorPlayerId).state;
+                    const topK = Math.max(1, Math.trunc(options.opponentReplyTopK));
+                    const replyCandidates = rankedReplies.slice(0, topK);
+                    const replyScores: number[] = [];
+
+                    for (const candidate of replyCandidates) {
+                        const replyFork = fork.createSimulationFork();
+                        if (!replyFork.step(candidate.action)) continue;
+                        const afterReplyState = replyFork.getObservation(actorPlayerId).state;
                         const afterReplyScore =
                             evaluateObservedState(afterReplyState, actorPlayerId, options).total
                             + getWinnerBonus(afterReplyState, actorPlayerId);
+                        replyScores.push(afterReplyScore);
+                    }
+
+                    if (replyScores.length > 0) {
+                        const aggregatedReplyScore = aggregateScores(replyScores, options.opponentReplyAggregation);
                         const blend = clamp01(options.opponentReplyBlend);
-                        stateScore = stateScore * (1 - blend) + afterReplyScore * blend;
+                        stateScore = stateScore * (1 - blend) + aggregatedReplyScore * blend;
                         opponentReplyApplied = true;
                     }
                 }
