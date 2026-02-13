@@ -112,7 +112,44 @@
     - 런타임 게이트(actual): `p50=5.8075`, `p95=7.667`, `avgMsPerGame=680.75` (통과)
     - 성능 게이트: `strong-v3 vs strong-v2 = 30/48 (62.5%)` (통과)
     - 산출물: `artifacts/ai/phase4/stress_matrix_latest.json`
-- [ ] Phase 4.1 미착수 (플레이 봇 강화 라운드)
+    - 참고: 해당 산출물은 런타임 생성물이므로 fresh checkout에는 없을 수 있으며, `npm run ai:phase4:matrix`로 재생성한다.
+- [~] Phase 4.1 착수 (2026-02-13, 플레이 봇 강화 라운드)
+  - 롤아웃 점수화에 opponent reply Top-K 집계 반영:
+    - `src/logic/ai/StrongBotV3.ts` (`opponentReplyTopK`, `opponentReplyAggregation`)
+    - `src/logic/ai/eval/CounterfactualRollout.ts` (Top-K 응답 후보 집계)
+  - Top-K 동작 결정론 회귀 테스트 추가:
+    - `tests/ai/StrongBotV3.vitest.test.ts`
+  - 후보 프로파일 분리 및 승격 실험 배선 반영:
+    - `scripts/ai/bot_registry.ts` (`strong-v3.1-topk3`, `strong-v3.1-topk3-mean`)
+    - 검증: `tests/ai/BotRegistryPhase41.vitest.test.ts`
+  - Phase 4 매트릭스 전술 KPI delta 리포트 반영(`strong-v3.1` vs `strong-v3`):
+    - `scripts/ai/run_phase4_stress_matrix.ts` (`summary.phase41TacticalKpiDelta`)
+    - 검증: `tests/ai/Phase4StressMatrix.vitest.test.ts`
+  - Phase 4.1 ablation + seed 예산 프리셋 반영:
+    - `artifacts/ai/ablation/phase4_1_v1_presets.json`
+    - 검증: `tests/ai/AblationPresets.vitest.test.ts`
+  - 신규 Phase 4.1 테스트를 `ai:regression`에 편입:
+    - `phase0.manifest.json`
+    - `scripts/ai/phase0_manifest.ts`
+  - 승격 프로토콜 고정(`v3.1 -> v3`) 반영:
+    - 커맨드: `npm run ai:phase4.1:promote`
+    - 스크립트: `scripts/ai/run_phase41_promotion_gate.ts`
+    - 런북: `docs/ai/phase4_1_promotion_protocol.md`
+    - 고정 side-swapped holdout: `200 + 200` (`promotion-holdout` seed suite)
+    - 고정 산출물 규약: `artifacts/ai/phase4_1/promotion_gate_latest.json`
+      및 `artifacts/ai/phase4_1/runs/<artifactTag>_<runId>.json`
+    - 고정 게이트 묶음: 성능+CI, 안정성, 런타임 비열화, 전술 KPI delta
+    - 검증: `tests/ai/Phase41PromotionGate.vitest.test.ts`
+  - 실측 Go/No-Go 승격 실행 완료 (2026-02-13, generatedAt=`2026-02-13T11:28:02.673Z`):
+    - 커맨드: `npm run ai:phase4.1:promote` (고정 `200+200`, runtime 측정 on)
+    - 판정: `No-Go`
+    - 성능 게이트: `164/400 = 41.0%`, 95% CI `[36.18%, 45.82%]` (기준: `winRate>=53%`, `CI low>=50%`) -> 실패
+    - 안정성/런타임/전술 KPI 게이트: 통과
+    - 산출물:
+      - `artifacts/ai/phase4_1/promotion_gate_latest.json`
+      - `artifacts/ai/phase4_1/promotion_gate_phase4_1_v1.json`
+  - 잔여 갭:
+    - `strong-v3.1-topk3` 후보 정책을 `strong-v3` 대비 승률 회복 방향으로 개선한 뒤, 고정 승격 게이트를 재실행.
 - [ ] Phase 5 미착수 (덱 탐색 MVP)
 - [ ] Phase 6 미착수
 - [ ] Phase 7 미착수
@@ -423,6 +460,40 @@
   - 전술 KPI: `lethal_miss_rate` 15% 추가 개선, `self_lethal_open_rate` 비열화, `wasteful_upgrade_rate` 비열화.
   - 산출물: bench/ladder/matrix/ablation 리포트를 `artifacts/ai/`에 저장하고 로드맵에 링크 기록.
 
+### Phase 4.1 실행 백로그 (2026-02-13 업데이트)
+
+1. [x] opponent reply Top-K 집계 반영 완료
+   - `StrongBotV3` 옵션과 `CounterfactualRollout` Top-K 집계 경로 구현 완료.
+2. [x] 후보 프로파일 분리 및 승격 실험 배선
+   - `scripts/ai/bot_registry.ts`에 후보 봇 id 추가:
+     - `strong-v3.1-topk3`
+     - `strong-v3.1-topk3-mean`
+   - 기본 승격 프로파일(`strong-v3`)은 유지.
+3. [x] Phase 4 매트릭스 전술 KPI delta 리포트 추가
+   - `scripts/ai/run_phase4_stress_matrix.ts` 요약에 `phase41TacticalKpiDelta` 추가:
+     - `lethal_miss_rate`
+     - `self_lethal_open_rate`
+     - `wasteful_upgrade_rate`
+   - 후보/기준 봇 지정용 환경변수 추가:
+     - `AI_PHASE4_KPI_DELTA_CANDIDATE_BOT`
+     - `AI_PHASE4_KPI_DELTA_BASELINE_BOT`
+4. [x] Phase 4.1 ablation + seed 예산 프리셋 추가
+   - `artifacts/ai/ablation/phase4_1_v1_presets.json` 추가(topK/aggregation/reply-ply ablation 세트).
+   - `tuning/dev/promotion-holdout` seed 예산 프리셋 추가 및 검증 테스트 반영.
+5. [x] `v3.1 -> v3` 승격 프로토콜 고정
+   - 고정 게이트 실행기 추가: `scripts/ai/run_phase41_promotion_gate.ts` (`npm run ai:phase4.1:promote`).
+   - 고정 side-swapped holdout 프리셋: `promotion-holdout` 기준 `200+200`.
+   - 고정 아티팩트 네이밍 규칙:
+     - summary latest: `artifacts/ai/phase4_1/promotion_gate_latest.json`
+     - summary tagged: `artifacts/ai/phase4_1/promotion_gate_<artifactTag>.json`
+     - run 단위 산출물: `artifacts/ai/phase4_1/runs/<artifactTag>_<runId>.json`
+     - run 단위 latest alias: `artifacts/ai/phase4_1/runs/latest_<runId>.json`
+   - 고정 게이트 묶음:
+     - 성능 + CI
+     - 안정성(`max_steps=0`, `no_action=0`, `invalid_action=0`)
+     - 런타임 비열화
+     - 전술 KPI delta(`lethal_miss_rate`, `self_lethal_open_rate`, `wasteful_upgrade_rate`)
+
 ## Phase 5: 덱 탐색 MVP (진화형 탐색)
 
 - 목표:
@@ -500,6 +571,8 @@
   - GA/ES 기반 덱 탐색 실행(Phase 5 전까지는 placeholder CLI)
 - `npm run ai:regression`
   - AI 핵심 회귀 세트 + quick soak 실행
+- `npm run ai:phase4.1:promote`
+  - `v3.1 -> v3` 고정 승격 게이트 실행(holdout side-swap + 산출물 규약 포함)
 
 ## 7) 단계별 테스트 전략
 

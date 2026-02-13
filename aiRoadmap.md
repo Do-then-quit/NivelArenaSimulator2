@@ -112,7 +112,44 @@
     - runtime gate (actual): `p50=5.8075`, `p95=7.667`, `avgMsPerGame=680.75` (pass)
     - performance gate: `strong-v3 vs strong-v2 = 30/48 (62.5%)` (pass)
     - artifact: `artifacts/ai/phase4/stress_matrix_latest.json`
-- [ ] Phase 4.1 not started (Play-bot strengthening round)
+    - note: this artifact is runtime-generated and may be absent in a fresh checkout; regenerate with `npm run ai:phase4:matrix`.
+- [~] Phase 4.1 started (2026-02-13, Play-bot strengthening round)
+  - Added top-K opponent reply aggregation in rollout scoring:
+    - `src/logic/ai/StrongBotV3.ts` (`opponentReplyTopK`, `opponentReplyAggregation`)
+    - `src/logic/ai/eval/CounterfactualRollout.ts` (top-K reply candidate aggregation)
+  - Added deterministic regression for top-K behavior:
+    - `tests/ai/StrongBotV3.vitest.test.ts`
+  - Added candidate profile wiring for controlled promotion runs:
+    - `scripts/ai/bot_registry.ts` (`strong-v3.1-topk3`, `strong-v3.1-topk3-mean`)
+    - validation: `tests/ai/BotRegistryPhase41.vitest.test.ts`
+  - Added Phase 4 matrix tactical KPI delta reporting (`strong-v3.1` vs `strong-v3`):
+    - `scripts/ai/run_phase4_stress_matrix.ts` (`summary.phase41TacticalKpiDelta`)
+    - validation: `tests/ai/Phase4StressMatrix.vitest.test.ts`
+  - Added Phase 4.1 ablation + seed-budget presets:
+    - `artifacts/ai/ablation/phase4_1_v1_presets.json`
+    - validation: `tests/ai/AblationPresets.vitest.test.ts`
+  - Wired new Phase 4.1 tests into `ai:regression`:
+    - `phase0.manifest.json`
+    - `scripts/ai/phase0_manifest.ts`
+  - Locked promotion protocol (`v3.1 -> v3`) with fixed gate runner:
+    - command: `npm run ai:phase4.1:promote`
+    - script: `scripts/ai/run_phase41_promotion_gate.ts`
+    - runbook: `docs/ai/phase4_1_promotion_protocol.md`
+    - fixed side-swapped holdout: `200 + 200` (promotion-holdout seed suite)
+    - fixed artifact convention: `artifacts/ai/phase4_1/promotion_gate_latest.json`
+      and `artifacts/ai/phase4_1/runs/<artifactTag>_<runId>.json`
+    - gate bundle: performance+CI, stability, runtime non-regression, tactical KPI delta
+    - validation: `tests/ai/Phase41PromotionGate.vitest.test.ts`
+  - Full-size Go/No-Go promotion run executed (2026-02-13, generatedAt=`2026-02-13T11:28:02.673Z`):
+    - command: `npm run ai:phase4.1:promote` (fixed `200+200`, runtime enabled)
+    - verdict: `No-Go`
+    - performance gate: `164/400 = 41.0%`, 95% CI `[36.18%, 45.82%]` (thresholds: `winRate>=53%`, `CI low>=50%`) -> fail
+    - stability/runtime/tactical KPI gates: pass
+    - artifacts:
+      - `artifacts/ai/phase4_1/promotion_gate_latest.json`
+      - `artifacts/ai/phase4_1/promotion_gate_phase4_1_v1.json`
+  - Remaining gap:
+    - improve candidate policy (`strong-v3.1-topk3`) to recover win-rate vs `strong-v3`, then rerun fixed promotion gate.
 - [ ] Phase 5 not started (Deck search MVP)
 - [ ] Phase 6 not started
 - [ ] Phase 7 not started
@@ -422,6 +459,40 @@
   - Tactical KPIs: additional 15% reduction in `lethal_miss_rate`, no regression in `self_lethal_open_rate`, and no regression in `wasteful_upgrade_rate`.
   - Artifacts: store bench/ladder/matrix/ablation outputs under `artifacts/ai/` and link them in roadmap logs.
 
+### Phase 4.1 Execution Backlog (Updated 2026-02-13)
+
+1. [x] Top-K opponent reply aggregation landed
+   - Implemented in `StrongBotV3` rollout options and `CounterfactualRollout` top-K aggregation path.
+2. [x] Candidate profile wiring for controlled promotion runs
+   - Added explicit candidate bot ids in `scripts/ai/bot_registry.ts`:
+     - `strong-v3.1-topk3`
+     - `strong-v3.1-topk3-mean`
+   - Kept promoted default profile unchanged (`strong-v3` remains baseline promotion profile).
+3. [x] Tactical KPI delta reporting in Phase 4 matrix
+   - Extended `scripts/ai/run_phase4_stress_matrix.ts` summary with `phase41TacticalKpiDelta`:
+     - `lethal_miss_rate`
+     - `self_lethal_open_rate`
+     - `wasteful_upgrade_rate`
+   - Added candidate/baseline selector envs:
+     - `AI_PHASE4_KPI_DELTA_CANDIDATE_BOT`
+     - `AI_PHASE4_KPI_DELTA_BASELINE_BOT`
+4. [x] Phase 4.1 ablation + seed-budget presets
+   - Added `artifacts/ai/ablation/phase4_1_v1_presets.json` (topK/aggregation/reply-ply ablation set).
+   - Added seed-suite budget presets (`tuning/dev/promotion-holdout`) and validation tests.
+5. [x] Promotion protocol lock for `v3.1 -> v3`
+   - Added fixed gate runner: `scripts/ai/run_phase41_promotion_gate.ts` (`npm run ai:phase4.1:promote`).
+   - Fixed side-swapped holdout preset: `200+200` on `promotion-holdout`.
+   - Fixed artifact naming convention:
+     - summary latest: `artifacts/ai/phase4_1/promotion_gate_latest.json`
+     - summary tagged: `artifacts/ai/phase4_1/promotion_gate_<artifactTag>.json`
+     - per-run artifacts: `artifacts/ai/phase4_1/runs/<artifactTag>_<runId>.json`
+     - per-run latest aliases: `artifacts/ai/phase4_1/runs/latest_<runId>.json`
+   - Fixed gate bundle:
+     - performance + CI
+     - stability (`max_steps=0`, `no_action=0`, `invalid_action=0`)
+     - runtime non-regression
+     - tactical KPI delta (`lethal_miss_rate`, `self_lethal_open_rate`, `wasteful_upgrade_rate`)
+
 ## Phase 5: Deck Search MVP (Evolutionary Search)
 
 - Objective:
@@ -499,6 +570,8 @@
   - run GA/ES deck search with config (placeholder CLI until Phase 5 implementation is complete).
 - `npm run ai:regression`:
   - AI-required regression subset + soak quick run.
+- `npm run ai:phase4.1:promote`:
+  - fixed promotion gate runner (`v3.1 -> v3`) with side-swapped holdout protocol and artifact outputs.
 
 ## 7) Test Strategy per Phase
 

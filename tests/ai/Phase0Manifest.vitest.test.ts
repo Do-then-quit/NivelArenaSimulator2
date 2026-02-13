@@ -39,6 +39,8 @@ describe('Phase0 Manifest', () => {
         expect(manifest.ladder.entrants).toEqual(DEFAULT_PHASE0_MANIFEST.ladder.entrants);
         expect(manifest.phase4.runtimeGateThresholds).toEqual(DEFAULT_PHASE0_MANIFEST.phase4.runtimeGateThresholds);
         expect(manifest.phase4.performanceGate).toEqual(DEFAULT_PHASE0_MANIFEST.phase4.performanceGate);
+        expect(manifest.phase41Promotion.performanceGate).toEqual(DEFAULT_PHASE0_MANIFEST.phase41Promotion.performanceGate);
+        expect(manifest.phase41Promotion.tacticalKpiGate).toEqual(DEFAULT_PHASE0_MANIFEST.phase41Promotion.tacticalKpiGate);
     });
 
     it('merges partial manifest over defaults', () => {
@@ -62,6 +64,12 @@ describe('Phase0 Manifest', () => {
                         gamesPerPairing: 8,
                     },
                 },
+                phase41Promotion: {
+                    holdoutGamesPerRole: 40,
+                    performanceGate: {
+                        minWinRate: 0.54,
+                    },
+                },
             }),
             'utf8',
         );
@@ -76,5 +84,11 @@ describe('Phase0 Manifest', () => {
         expect(manifest.phase4.runtimeGateBaseline.avgMsPerGame).toBe(DEFAULT_PHASE0_MANIFEST.phase4.runtimeGateBaseline.avgMsPerGame);
         expect(manifest.phase4.performanceGate.minStrongV3WinRateVsStrongV2)
             .toBe(DEFAULT_PHASE0_MANIFEST.phase4.performanceGate.minStrongV3WinRateVsStrongV2);
+        expect(manifest.phase41Promotion.holdoutGamesPerRole).toBe(40);
+        expect(manifest.phase41Promotion.performanceGate.minWinRate).toBe(0.54);
+        expect(manifest.phase41Promotion.performanceGate.minCi95Low)
+            .toBe(DEFAULT_PHASE0_MANIFEST.phase41Promotion.performanceGate.minCi95Low);
+        expect(manifest.phase41Promotion.tacticalKpiGate)
+            .toEqual(DEFAULT_PHASE0_MANIFEST.phase41Promotion.tacticalKpiGate);
     });
 });

@@ -1,0 +1,89 @@
+{
+  "version": "phase4_1_v1",
+  "seedSuiteVersion": "phase3_v1",
+  "description": "Phase4.1 ablation presets for opponent-reply top-K diversification and rollout budget tuning.",
+  "budgetPresets": {
+    "tuning": {
+      "beamWidth": 8,
+      "interactionRolloutDepth": 5,
+      "opponentReplyTopK": 3
+    },
+    "dev": {
+      "beamWidth": 10,
+      "interactionRolloutDepth": 6,
+      "opponentReplyTopK": 3
+    },
+    "promotion-holdout": {
+      "beamWidth": 8,
+      "interactionRolloutDepth": 5,
+      "opponentReplyTopK": 3
+    }
+  },
+  "presets": [
+    {
+      "id": "v3_baseline_reference",
+      "botId": "strong-v3",
+      "description": "Current promoted v3 baseline profile.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": true,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": true,
+        "opponentReplyTopK": 1,
+        "opponentReplyAggregation": "weighted"
+      }
+    },
+    {
+      "id": "v3_1_topk3_weighted",
+      "botId": "strong-v3.1-topk3",
+      "description": "Phase4.1 candidate profile with top-K=3 weighted aggregation.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": true,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": true,
+        "opponentReplyTopK": 3,
+        "opponentReplyAggregation": "weighted"
+      }
+    },
+    {
+      "id": "v3_1_topk3_mean",
+      "botId": "strong-v3.1-topk3-mean",
+      "description": "Candidate variant with mean aggregation for top-K opponent replies.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": true,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": true,
+        "opponentReplyTopK": 3,
+        "opponentReplyAggregation": "mean"
+      }
+    },
+    {
+      "id": "v3_1_topk5_weighted",
+      "botId": "strong-v3",
+      "description": "Higher-coverage candidate variant (top-K=5) to test marginal gains vs runtime cost.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": true,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": true,
+        "opponentReplyTopK": 5,
+        "opponentReplyAggregation": "weighted"
+      }
+    },
+    {
+      "id": "v3_1_topk3_no_reply_ply",
+      "botId": "strong-v3",
+      "description": "Ablation control that disables opponent reply ply while keeping other Phase4.1 settings.",
+      "options": {
+        "enableInteractionRollout": true,
+        "enableOpponentReplyPly": false,
+        "enableResourceEconomyModel": true,
+        "enableAntiOscillationPenalty": true,
+        "opponentReplyTopK": 3,
+        "opponentReplyAggregation": "weighted"
+      }
+    }
+  ]
+}
