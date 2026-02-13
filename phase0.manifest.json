@@ -25,6 +25,7 @@
     "vitestFiles": [
       "tests/rules_v2_regression/rules_v2_ai_ready_stage1_regression.test.ts",
       "tests/rules_v2_regression/rules_v2_ai_ready_stage2_stage3_regression.test.ts",
+      "tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts",
       "tests/rules_v2_regression/rules_v2_ai_baseline_bot_regression.test.ts",
       "tests/rules_v2_regression/rules_v2_mulligan_regression.test.ts",
       "tests/rules_v2_regression/rules_v2_bt01_061_targeting_regression.test.ts",
@@ -40,8 +41,59 @@
       "tests/cards/st02/st02_high_value_targeting_regression.test.ts",
       "tests/cards/st03/st03_high_value_targeting_regression.test.ts",
       "tests/cards/bt01/bt01_high_value_targeting_regression.test.ts",
-      "tests/ai/StrongBotV2InteractionSearch.vitest.test.ts"
+      "tests/ai/StrongBotV2InteractionSearch.vitest.test.ts",
+      "tests/rules_v2_regression/rules_v2_ai_seed_2026021312_trash_toggle_regression.test.ts"
     ],
     "includeBotSoak": true
+  },
+  "phase4": {
+    "stressMatrix": {
+      "startSeed": 2026021301,
+      "gamesPerPairing": 24,
+      "maxSteps": 2600,
+      "enableMulligan": true,
+      "measureRuntime": true,
+      "outputPath": "artifacts/ai/phase4/stress_matrix_latest.json",
+      "pairings": [
+        {
+          "player1BotId": "strong-v3",
+          "player2BotId": "baseline-a",
+          "games": 24
+        },
+        {
+          "player1BotId": "strong-v3",
+          "player2BotId": "baseline-b",
+          "games": 24
+        },
+        {
+          "player1BotId": "strong-v3",
+          "player2BotId": "strong-v1",
+          "games": 24
+        },
+        {
+          "player1BotId": "strong-v3",
+          "player2BotId": "strong-v2",
+          "games": 24
+        },
+        {
+          "player1BotId": "strong-v2",
+          "player2BotId": "strong-v3",
+          "games": 24
+        }
+      ]
+    },
+    "runtimeGateThresholds": {
+      "p50MsPerActionMultiplier": 1.25,
+      "p95MsPerActionMultiplier": 1.6,
+      "avgMsPerGameMultiplier": 1.4
+    },
+    "runtimeGateBaseline": {
+      "p50MsPerAction": 7.1877,
+      "p95MsPerAction": 8.2,
+      "avgMsPerGame": 801.88
+    },
+    "performanceGate": {
+      "minStrongV3WinRateVsStrongV2": 0.5
+    }
   }
 }
