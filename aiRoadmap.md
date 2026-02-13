@@ -112,6 +112,7 @@
     - runtime gate (actual): `p50=5.8075`, `p95=7.667`, `avgMsPerGame=680.75` (pass)
     - performance gate: `strong-v3 vs strong-v2 = 30/48 (62.5%)` (pass)
     - artifact: `artifacts/ai/phase4/stress_matrix_latest.json`
+- [ ] Phase 4.1 not started (Play-bot strengthening round)
 - [ ] Phase 5 not started (Deck search MVP)
 - [ ] Phase 6 not started
 - [ ] Phase 7 not started
@@ -385,6 +386,41 @@
   - `strong-v3` outperforms `strong-v2` on fixed protocol and remains stable under stress.
   - runtime gate passes with the quantitative thresholds above.
   - Pre-deck-search gate signed off with reproducible artifact set under `artifacts/ai/`.
+
+## Phase 4.1: Play-Bot Strengthening Round (Pre-Deck-Search Performance Boost)
+
+- Objective:
+  - Improve practical win rate and tactical quality of `strong-v3` while preserving Phase 4 stability gates.
+  - Raise the policy ceiling before entering Phase 5 deck-search work.
+- Implementation priority:
+  1. Interaction decision upgrades
+     - Split policies per effect family in `SELECT_TARGET`/`SELECT_COST`/`SELECT_OPTIONAL` (removal / buff / recovery / payment).
+     - Extend beam handling for multi-target (`count>1`) interactions including partial-selection and confirm timing.
+     - Strengthen anti-loop logic (repeat-state repeat-action penalties + deterministic fallback action).
+  2. Tactical heuristic refinement
+     - Improve lethal detection (this-turn / next-turn), with lethal-miss reduction as the top KPI.
+     - Improve attack/block trade valuation by lane (tempo race, direct-damage pressure, backfire risk).
+     - Further split penalties for wasteful upgrades and low-value resource spending by card/effect class.
+  3. Search quality improvements
+     - Add optional top-K opponent reply diversification in `StrongBotV3` rollout scoring.
+     - Add seed-suite-specific budget presets (`tuning/dev/holdout`) with auto-tuning hooks.
+     - Report search coverage metrics (root action coverage, interaction branch coverage).
+  4. Regression and validation expansion
+     - Expand high-impact interaction regressions across ST01/ST02/ST03/BT01.
+     - Add fixed-seed tactical regressions (lethal miss, harmful optional decisions, under/over target selection).
+     - Add tactical KPI delta reporting (vs v3 baseline) in `ai:phase4:matrix`.
+- Suggested files:
+  - `src/logic/ai/StrongBotV3.ts`
+  - `src/logic/ai/eval/ObservationEvaluator.ts`
+  - `src/logic/ai/eval/InteractionValueModel.ts`
+  - `src/logic/ai/eval/CounterfactualRollout.ts`
+  - `tests/ai/StrongBotV3.vitest.test.ts`
+  - `tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
+- Acceptance:
+  - Performance: on side-swapped 200+200 (holdout), `strong-v3.1` achieves `>=53%` vs `strong-v3` with CI low `>=50%`.
+  - Stability: `ai:phase4:matrix` keeps `max_steps=0`, `no_action=0`, `invalid_action=0`.
+  - Tactical KPIs: additional 15% reduction in `lethal_miss_rate`, no regression in `self_lethal_open_rate`, and no regression in `wasteful_upgrade_rate`.
+  - Artifacts: store bench/ladder/matrix/ablation outputs under `artifacts/ai/` and link them in roadmap logs.
 
 ## Phase 5: Deck Search MVP (Evolutionary Search)
 
