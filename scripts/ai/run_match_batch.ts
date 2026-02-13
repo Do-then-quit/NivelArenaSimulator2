@@ -18,6 +18,7 @@ export interface RunMatchBatchConfig {
     seedList?: number[];
     seedSuiteName?: SeedSuiteName;
     seedSuitePath?: string;
+    suppressLogs?: boolean;
 }
 
 export interface MatchBatchReport {
@@ -111,6 +112,7 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     const player1BotFactory = resolveBotFactory(config.player1BotId ?? 'baseline-a');
     const player2BotFactory = resolveBotFactory(config.player2BotId ?? 'baseline-b');
     const measureRuntime = config.measureRuntime ?? false;
+    const suppressLogs = config.suppressLogs ?? false;
     const seeds = (config.seedList && config.seedList.length > 0)
         ? [...config.seedList]
         : Array.from({ length: config.games }, (_v, i) => config.startSeed + i);
@@ -133,7 +135,7 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
         }
 
         const startMs = performance.now();
-        const match = runSingleMatch(matchConfig);
+        const match = runWithOptionalLogSuppression(() => runSingleMatch(matchConfig), suppressLogs);
         totalRuntimeMs += performance.now() - startMs;
         matches.push(match);
     }
@@ -223,6 +225,25 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
     };
 }
 
+function runWithOptionalLogSuppression<T>(run: () => T, suppressLogs: boolean): T {
+    if (!suppressLogs) return run();
+
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalInfo = console.info;
+    console.log = () => undefined;
+    console.warn = () => undefined;
+    console.info = () => undefined;
+
+    try {
+        return run();
+    } finally {
+        console.log = originalLog;
+        console.warn = originalWarn;
+        console.info = originalInfo;
+    }
+}
+
 function parseIntEnv(name: string, fallback: number): number {
     const raw = process.env[name];
     if (!raw) return fallback;
@@ -288,6 +309,7 @@ function runCli(): void {
         player1BotId: process.env.AI_BENCH_P1_BOT ?? 'baseline-a',
         player2BotId: process.env.AI_BENCH_P2_BOT ?? 'baseline-b',
         measureRuntime: parseBoolEnv('AI_BENCH_MEASURE_RUNTIME', false),
+        suppressLogs: parseBoolEnv('AI_BENCH_SUPPRESS_LOGS', false),
         seedList: envSeedList ?? resolvedSeedSuite?.seeds,
         seedSuiteName: envSeedSuiteName,
         seedSuitePath: envSeedSuiteName ? envSeedSuitePath : undefined,

@@ -84,7 +84,7 @@
       - `artifacts/ai/bench/phase3_v3_vs_v2_p1v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_p2v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_holdout_440_summary_20260212_fix2.json`
-- [~] Phase 4 착수 (플레이 봇 하드닝 게이트, PR1)
+- [x] Phase 4 완료 (플레이 봇 하드닝 게이트)
   - PR1 최소 작업 세트 문서화:
     - `docs/ai/phase4_pr1_minimum.md`
   - Phase 4 상호작용 회귀 추가:
@@ -96,6 +96,23 @@
   - 검증(quick):
     - `npx vitest run tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
     - `AI_REGRESSION_SKIP_SOAK=1 npm run ai:regression`
+  - Phase 4 하드닝 자동화(스트레스 매트릭스 + 런타임 게이트) 추가:
+    - `scripts/ai/run_phase4_stress_matrix.ts`
+    - `scripts/ai/phase4_runtime_gate.ts`
+    - `docs/ai/phase4_completion_runbook.md`
+    - `phase0.manifest.json`, `scripts/ai/phase0_manifest.ts`(`phase4` 설정 추가)
+  - 실행 커맨드 추가:
+    - `npm run ai:phase4:matrix`
+  - 검증:
+    - `npx vitest run tests/ai/Phase0Manifest.vitest.test.ts tests/ai/Phase4RuntimeGate.vitest.test.ts tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
+    - `AI_PHASE4_MATRIX_PAIRINGS='strong-v3:baseline-a:2' AI_PHASE4_GATE_P50_MULT=2 AI_PHASE4_MATRIX_OUTPUT='-' npm run ai:phase4:matrix`
+  - Phase 4 완료 게이트 실측(기본 설정, 120 games):
+    - `npm run ai:phase4:matrix`
+    - 종료 안정성: `winner=120`, `max_steps=0`, `no_action=0`, `invalid_action=0`
+    - 런타임 게이트(actual): `p50=5.8075`, `p95=7.667`, `avgMsPerGame=680.75` (통과)
+    - 성능 게이트: `strong-v3 vs strong-v2 = 30/48 (62.5%)` (통과)
+    - 산출물: `artifacts/ai/phase4/stress_matrix_latest.json`
+- [ ] Phase 4.1 미착수 (플레이 봇 강화 라운드)
 - [ ] Phase 5 미착수 (덱 탐색 MVP)
 - [ ] Phase 6 미착수
 - [ ] Phase 7 미착수
@@ -370,6 +387,41 @@
   - `strong-v3`가 고정 프로토콜에서 `strong-v2`를 상회하고 스트레스 조건에서도 안정
   - 런타임 정량 게이트 충족
   - `artifacts/ai/`에 재현 가능한 산출물 세트와 함께 덱 탐색 전 게이트 승인
+
+## Phase 4.1: 플레이 봇 강화 라운드 (Pre-Deck-Search Performance Boost)
+
+- 목표:
+  - Phase 4의 안정성 게이트를 유지한 채, `strong-v3`의 실전 승률/전술 품질을 추가 개선한다.
+  - Phase 5(덱 탐색) 착수 전에 “플레이 정책 자체의 상한”을 한 단계 더 올린다.
+- 구현 우선순위:
+  1. 상호작용 의사결정 고도화
+     - `SELECT_TARGET`/`SELECT_COST`/`SELECT_OPTIONAL`에서 effect-type별 정책 분리(제거/버프/회수/코스트 절감).
+     - 다중 타겟(`count>1`) 조합 선택에 대한 빔 탐색 확장(부분 선택 + confirm 타이밍 포함).
+     - 상호작용 루프 방지 정책 강화(동일 상태-동일 행동 반복 감점, 강제 fallback 액션).
+  2. 전술 휴리스틱 정밀화
+     - 킬각 탐지(이번 턴/다음 턴) 정확도 개선: lethal miss 감소를 최우선 KPI로 관리.
+     - 블록/공격 교환가치 계산 개선(라인별 손익, 직접 대미지 레이스, 역킬 리스크).
+     - 무가치 업그레이드/무가치 소모효과 패널티를 카드군별로 세분화.
+  3. 탐색 품질 향상
+     - `StrongBotV3` 롤아웃 평가에 opponent reply 다변화(상위 K응답 샘플) 옵션 추가.
+     - seed-suite(`tuning/dev/holdout`)별 탐색 예산 자동 튜닝 프리셋 도입.
+     - 탐색 커버리지 메트릭(루트 액션 커버, interaction branch 커버) 리포팅 추가.
+  4. 회귀/검증 확장
+     - ST01/ST02/ST03/BT01별 “고임팩트 카드 상호작용” 회귀 세트를 확대.
+     - seed 고정 전술 회귀(킬각 미스, 자해 optional 오판, 타겟 과소/과대선택) 추가.
+     - `ai:phase4:matrix`에 Phase 4.1 전술 KPI 비교(v3 baseline 대비)를 포함.
+- 권장 파일:
+  - `src/logic/ai/StrongBotV3.ts`
+  - `src/logic/ai/eval/ObservationEvaluator.ts`
+  - `src/logic/ai/eval/InteractionValueModel.ts`
+  - `src/logic/ai/eval/CounterfactualRollout.ts`
+  - `tests/ai/StrongBotV3.vitest.test.ts`
+  - `tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
+- 완료 기준:
+  - 성능: side-swapped 200+200(holdout)에서 `strong-v3.1`이 `strong-v3` 대비 승률 `>=53%` 및 CI 하한 `>=50%`.
+  - 안정성: `ai:phase4:matrix`에서 `max_steps=0`, `no_action=0`, `invalid_action=0` 유지.
+  - 전술 KPI: `lethal_miss_rate` 15% 추가 개선, `self_lethal_open_rate` 비열화, `wasteful_upgrade_rate` 비열화.
+  - 산출물: bench/ladder/matrix/ablation 리포트를 `artifacts/ai/`에 저장하고 로드맵에 링크 기록.
 
 ## Phase 5: 덱 탐색 MVP (진화형 탐색)
 
