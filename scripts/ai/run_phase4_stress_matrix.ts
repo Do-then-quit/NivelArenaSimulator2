@@ -23,7 +23,18 @@ interface Phase4MatrixConfig {
     };
 }
 
-interface Phase4MatrixSummary {
+interface TacticalKPIBaseline {
+    wasteful_upgrade_rate: number;
+    lethal_miss_rate: number;
+    self_lethal_open_rate: number;
+}
+
+interface SearchCoverageBaseline {
+    rootExploredRate: number;
+    interactionExploredRate: number;
+}
+
+export interface Phase4MatrixSummary {
     totalGames: number;
     terminationTotals: {
         winner: number;
@@ -38,6 +49,24 @@ interface Phase4MatrixSummary {
         strongV3WinRateVsStrongV2: number;
         wins: number;
         games: number;
+    };
+    tacticalKPIDelta: {
+        baseline: TacticalKPIBaseline;
+        current: TacticalKPIBaseline;
+        delta: TacticalKPIBaseline;
+    };
+    searchCoverage: {
+        baseline: SearchCoverageBaseline;
+        current: SearchCoverageBaseline;
+        delta: SearchCoverageBaseline;
+        counts: {
+            rootDecisionCount: number;
+            rootLegalActionCount: number;
+            rootExploredActionCount: number;
+            interactionDecisionCount: number;
+            interactionLegalActionCount: number;
+            interactionExploredActionCount: number;
+        };
     };
 }
 
@@ -143,6 +172,87 @@ function evaluateStrongV3VsStrongV2Performance(
     };
 }
 
+function roundTo(value: number, digits: number): number {
+    const p = 10 ** digits;
+    return Math.round(value * p) / p;
+}
+
+export function buildPhase4MatrixSummary(
+    reports: MatchBatchReport[],
+    runs: Phase4MatrixReport['runs'],
+    runtimeGate: ReturnType<typeof checkPhase4RuntimeGate>,
+    minStrongV3WinRateVsStrongV2: number,
+): Phase4MatrixSummary {
+    const totalGames = reports.reduce((sum, report) => sum + report.summary.totalGames, 0);
+    const terminationTotals = collectTerminationTotals(reports);
+    const performanceGate = evaluateStrongV3VsStrongV2Performance(runs, minStrongV3WinRateVsStrongV2);
+
+    const currentTactical: TacticalKPIBaseline = {
+        wasteful_upgrade_rate: roundTo(reports.reduce((sum, report) => sum + report.summary.tacticalKPIs.wasteful_upgrade_rate, 0) / Math.max(1, reports.length), 4),
+        lethal_miss_rate: roundTo(reports.reduce((sum, report) => sum + report.summary.tacticalKPIs.lethal_miss_rate, 0) / Math.max(1, reports.length), 4),
+        self_lethal_open_rate: roundTo(reports.reduce((sum, report) => sum + report.summary.tacticalKPIs.self_lethal_open_rate, 0) / Math.max(1, reports.length), 4),
+    };
+    const baselineTactical: TacticalKPIBaseline = {
+        wasteful_upgrade_rate: parseFloatEnv('AI_PHASE4_BASELINE_WASTEFUL_UPGRADE_RATE', currentTactical.wasteful_upgrade_rate),
+        lethal_miss_rate: parseFloatEnv('AI_PHASE4_BASELINE_LETHAL_MISS_RATE', currentTactical.lethal_miss_rate),
+        self_lethal_open_rate: parseFloatEnv('AI_PHASE4_BASELINE_SELF_LETHAL_OPEN_RATE', currentTactical.self_lethal_open_rate),
+    };
+
+    const currentCoverage: SearchCoverageBaseline = {
+        rootExploredRate: roundTo(reports.reduce((sum, report) => sum + report.summary.searchCoverage.root.exploredRate, 0) / Math.max(1, reports.length), 4),
+        interactionExploredRate: roundTo(reports.reduce((sum, report) => sum + report.summary.searchCoverage.interaction.exploredRate, 0) / Math.max(1, reports.length), 4),
+    };
+    const baselineCoverage: SearchCoverageBaseline = {
+        rootExploredRate: parseFloatEnv('AI_PHASE4_BASELINE_ROOT_COVERAGE', currentCoverage.rootExploredRate),
+        interactionExploredRate: parseFloatEnv('AI_PHASE4_BASELINE_INTERACTION_COVERAGE', currentCoverage.interactionExploredRate),
+    };
+
+    const coverageCounts = reports.reduce(
+        (acc, report) => {
+            acc.rootDecisionCount += report.summary.searchCoverage.root.decisionCount;
+            acc.rootLegalActionCount += report.summary.searchCoverage.root.legalActionCount;
+            acc.rootExploredActionCount += report.summary.searchCoverage.root.exploredActionCount;
+            acc.interactionDecisionCount += report.summary.searchCoverage.interaction.decisionCount;
+            acc.interactionLegalActionCount += report.summary.searchCoverage.interaction.legalActionCount;
+            acc.interactionExploredActionCount += report.summary.searchCoverage.interaction.exploredActionCount;
+            return acc;
+        },
+        {
+            rootDecisionCount: 0,
+            rootLegalActionCount: 0,
+            rootExploredActionCount: 0,
+            interactionDecisionCount: 0,
+            interactionLegalActionCount: 0,
+            interactionExploredActionCount: 0,
+        },
+    );
+
+    return {
+        totalGames,
+        terminationTotals,
+        runtimeGate,
+        performanceGate,
+        tacticalKPIDelta: {
+            baseline: baselineTactical,
+            current: currentTactical,
+            delta: {
+                wasteful_upgrade_rate: roundTo(currentTactical.wasteful_upgrade_rate - baselineTactical.wasteful_upgrade_rate, 4),
+                lethal_miss_rate: roundTo(currentTactical.lethal_miss_rate - baselineTactical.lethal_miss_rate, 4),
+                self_lethal_open_rate: roundTo(currentTactical.self_lethal_open_rate - baselineTactical.self_lethal_open_rate, 4),
+            },
+        },
+        searchCoverage: {
+            baseline: baselineCoverage,
+            current: currentCoverage,
+            delta: {
+                rootExploredRate: roundTo(currentCoverage.rootExploredRate - baselineCoverage.rootExploredRate, 4),
+                interactionExploredRate: roundTo(currentCoverage.interactionExploredRate - baselineCoverage.interactionExploredRate, 4),
+            },
+            counts: coverageCounts,
+        },
+    };
+}
+
 function runCli(): void {
     const manifest = loadPhase0Manifest(resolvePhase0ManifestPath());
     const phase4 = manifest.phase4;
@@ -189,36 +299,31 @@ function runCli(): void {
     }
 
     const reports = runs.map(run => run.report);
-    const totalGames = reports.reduce((sum, report) => sum + report.summary.totalGames, 0);
-    const terminationTotals = collectTerminationTotals(reports);
     const runtimeGate = checkPhase4RuntimeGate(
         reports,
         config.runtimeGate.baseline,
         config.runtimeGate.thresholds,
     );
-    const performanceGate = evaluateStrongV3VsStrongV2Performance(
+    const summary = buildPhase4MatrixSummary(
+        reports,
         runs,
+        runtimeGate,
         manifest.phase4.performanceGate.minStrongV3WinRateVsStrongV2,
     );
 
     const matrixReport: Phase4MatrixReport = {
         config,
         runs,
-        summary: {
-            totalGames,
-            terminationTotals,
-            runtimeGate,
-            performanceGate,
-        },
+        summary,
     };
 
     const outputPath = resolveOutputPath(phase4.stressMatrix.outputPath);
     writeIfRequested(outputPath, matrixReport);
     console.log(JSON.stringify(matrixReport, null, 2));
 
-    if (terminationTotals.max_steps > 0 || terminationTotals.no_action > 0 || terminationTotals.invalid_action > 0) {
+    if (summary.terminationTotals.max_steps > 0 || summary.terminationTotals.no_action > 0 || summary.terminationTotals.invalid_action > 0) {
         throw new Error(
-            `Phase4 stress matrix stability gate failed: ${JSON.stringify(terminationTotals)}`,
+            `Phase4 stress matrix stability gate failed: ${JSON.stringify(summary.terminationTotals)}`,
         );
     }
 
@@ -226,13 +331,16 @@ function runCli(): void {
         throw new Error(`Phase4 runtime gate failed: ${runtimeGate.reasons.join(' | ')}`);
     }
 
-    if (!performanceGate.pass) {
+    if (!summary.performanceGate.pass) {
         throw new Error(
-            `Phase4 performance gate failed: strong-v3 winRate vs strong-v2=${performanceGate.strongV3WinRateVsStrongV2.toFixed(4)} `
-            + `< required ${performanceGate.minStrongV3WinRateVsStrongV2.toFixed(4)} `
-            + `(wins=${performanceGate.wins}, games=${performanceGate.games})`,
+            `Phase4 performance gate failed: strong-v3 winRate vs strong-v2=${summary.performanceGate.strongV3WinRateVsStrongV2.toFixed(4)} `
+            + `< required ${summary.performanceGate.minStrongV3WinRateVsStrongV2.toFixed(4)} `
+            + `(wins=${summary.performanceGate.wins}, games=${summary.performanceGate.games})`,
         );
     }
 }
 
-runCli();
+const maybeMain = process.argv[1] ?? "";
+if (maybeMain.endsWith('run_phase4_stress_matrix.ts') || maybeMain.endsWith('run_phase4_stress_matrix.js')) {
+    runCli();
+}

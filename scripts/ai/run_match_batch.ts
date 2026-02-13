@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { MatchReport, MatchTerminationReason, runSingleMatch } from './match_harness';
+import { StrongBotV3SearchCoverage } from '../../src/logic/ai/StrongBotV3';
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 import { resolveBotFactory } from './bot_registry';
 import { parseSeedListCsv, resolveSeedSuiteSeeds, SeedSuiteName } from './seed_suites';
@@ -61,6 +62,7 @@ export interface MatchBatchReport {
                 selfLethalOpenCount: number;
             };
         };
+        searchCoverage: StrongBotV3SearchCoverage;
     };
 }
 
@@ -85,6 +87,35 @@ function clamp01(value: number): number {
 function roundTo(value: number, digits: number): number {
     const p = 10 ** digits;
     return Math.round(value * p) / p;
+}
+
+
+
+function aggregateSearchCoverage(matches: MatchReport[]): StrongBotV3SearchCoverage {
+    const totals = {
+        root: { decisionCount: 0, legalActionCount: 0, exploredActionCount: 0 },
+        interaction: { decisionCount: 0, legalActionCount: 0, exploredActionCount: 0 },
+    };
+
+    for (const match of matches) {
+        totals.root.decisionCount += match.searchCoverage.root.decisionCount;
+        totals.root.legalActionCount += match.searchCoverage.root.legalActionCount;
+        totals.root.exploredActionCount += match.searchCoverage.root.exploredActionCount;
+        totals.interaction.decisionCount += match.searchCoverage.interaction.decisionCount;
+        totals.interaction.legalActionCount += match.searchCoverage.interaction.legalActionCount;
+        totals.interaction.exploredActionCount += match.searchCoverage.interaction.exploredActionCount;
+    }
+
+    return {
+        root: {
+            ...totals.root,
+            exploredRate: roundTo(safeDivide(totals.root.exploredActionCount, totals.root.legalActionCount), 4),
+        },
+        interaction: {
+            ...totals.interaction,
+            exploredRate: roundTo(safeDivide(totals.interaction.exploredActionCount, totals.interaction.legalActionCount), 4),
+        },
+    };
 }
 
 function computeBinomialRateStats(successes: number, total: number): BinomialRateStats {
@@ -186,6 +217,8 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
         counts: tacticalCounts,
     };
 
+    const searchCoverage = aggregateSearchCoverage(matches);
+
     const terminationCounts = matches.reduce<Record<MatchTerminationReason, number>>(
         (acc, match) => {
             acc[match.reason] += 1;
@@ -221,6 +254,7 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
             },
             runtime: runtimeSummary,
             tacticalKPIs,
+            searchCoverage,
         },
     };
 }

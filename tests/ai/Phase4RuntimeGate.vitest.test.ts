@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MatchBatchReport } from '../../scripts/ai/run_match_batch';
 import { checkPhase4RuntimeGate, computePhase4RuntimeStats } from '../../scripts/ai/phase4_runtime_gate';
+import { buildPhase4MatrixSummary } from '../../scripts/ai/run_phase4_stress_matrix';
 
 function makeReport(msPerAction: number, avgMsPerGame: number): MatchBatchReport {
     return {
@@ -31,16 +32,30 @@ function makeReport(msPerAction: number, avgMsPerGame: number): MatchBatchReport
                 msPerAction,
             },
             tacticalKPIs: {
-                wasteful_upgrade_rate: 0,
-                lethal_miss_rate: 0,
-                self_lethal_open_rate: 0,
+                wasteful_upgrade_rate: 0.2,
+                lethal_miss_rate: 0.1,
+                self_lethal_open_rate: 0.05,
                 counts: {
-                    upgradeActionCount: 0,
-                    wastefulUpgradeCount: 0,
-                    lethalOpportunityCount: 0,
-                    lethalMissCount: 0,
-                    selfLethalCheckCount: 0,
-                    selfLethalOpenCount: 0,
+                    upgradeActionCount: 10,
+                    wastefulUpgradeCount: 2,
+                    lethalOpportunityCount: 10,
+                    lethalMissCount: 1,
+                    selfLethalCheckCount: 20,
+                    selfLethalOpenCount: 1,
+                },
+            },
+            searchCoverage: {
+                root: {
+                    decisionCount: 10,
+                    legalActionCount: 40,
+                    exploredActionCount: 20,
+                    exploredRate: 0.5,
+                },
+                interaction: {
+                    decisionCount: 4,
+                    legalActionCount: 16,
+                    exploredActionCount: 8,
+                    exploredRate: 0.5,
                 },
             },
         },
@@ -81,5 +96,54 @@ describe('Phase4 runtime gate', () => {
         expect(result.pass).toBe(false);
         expect(result.reasons.join(' | ')).toContain('p95 ms/action gate failed');
         expect(result.reasons.join(' | ')).toContain('avg ms/game gate failed');
+    });
+
+    it('builds matrix summary with tactical and coverage deltas', () => {
+        process.env.AI_PHASE4_BASELINE_WASTEFUL_UPGRADE_RATE = '0.1';
+        process.env.AI_PHASE4_BASELINE_LETHAL_MISS_RATE = '0.2';
+        process.env.AI_PHASE4_BASELINE_SELF_LETHAL_OPEN_RATE = '0.02';
+        process.env.AI_PHASE4_BASELINE_ROOT_COVERAGE = '0.45';
+        process.env.AI_PHASE4_BASELINE_INTERACTION_COVERAGE = '0.4';
+
+        const reports = [makeReport(2.5, 260), makeReport(2.0, 250)];
+        const runs = [
+            {
+                pairing: { player1BotId: 'strong-v3', player2BotId: 'strong-v2', games: 2 },
+                report: {
+                    ...makeReport(2.5, 260),
+                    summary: {
+                        ...makeReport(2.5, 260).summary,
+                        totalGames: 2,
+                        wins: { player1: 2, player2: 0 },
+                    },
+                },
+            },
+        ];
+
+        const summary = buildPhase4MatrixSummary(
+            reports,
+            runs,
+            {
+                pass: true,
+                reasons: [],
+                thresholds: { p50MsPerActionMultiplier: 1.2, p95MsPerActionMultiplier: 1.2, avgMsPerGameMultiplier: 1.2 },
+                baseline: { p50MsPerAction: 1, p95MsPerAction: 1, avgMsPerGame: 1 },
+                actual: { p50MsPerAction: 1, p95MsPerAction: 1, avgMsPerGame: 1 },
+            },
+            0.5,
+        );
+
+        expect(summary.tacticalKPIDelta.delta.wasteful_upgrade_rate).toBe(0.1);
+        expect(summary.tacticalKPIDelta.delta.lethal_miss_rate).toBe(-0.1);
+        expect(summary.searchCoverage.delta.rootExploredRate).toBe(0.05);
+        expect(summary.searchCoverage.delta.interactionExploredRate).toBe(0.1);
+        expect(summary.searchCoverage.counts.rootDecisionCount).toBe(20);
+        expect(summary.performanceGate.strongV3WinRateVsStrongV2).toBe(1);
+
+        delete process.env.AI_PHASE4_BASELINE_WASTEFUL_UPGRADE_RATE;
+        delete process.env.AI_PHASE4_BASELINE_LETHAL_MISS_RATE;
+        delete process.env.AI_PHASE4_BASELINE_SELF_LETHAL_OPEN_RATE;
+        delete process.env.AI_PHASE4_BASELINE_ROOT_COVERAGE;
+        delete process.env.AI_PHASE4_BASELINE_INTERACTION_COVERAGE;
     });
 });

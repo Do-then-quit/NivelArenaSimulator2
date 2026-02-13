@@ -1,5 +1,6 @@
 import { GameEngine } from '../../src/logic/GameEngine';
 import { BaselineBot } from '../../src/logic/ai/BaselineBot';
+import { StrongBotV3SearchCoverage } from '../../src/logic/ai/StrongBotV3';
 import { Card, EngineAction, PlayerState } from '../../src/logic/types';
 import {
     buildDeterministicDeckForLeader,
@@ -13,6 +14,11 @@ export type MatchTerminationReason = 'winner' | 'max_steps' | 'no_action' | 'inv
 export interface BotLike {
     name: string;
     chooseAction(engine: GameEngine, actorPlayerId?: string): EngineAction | null;
+}
+
+interface SearchCoverageProvider {
+    getSearchCoverage(): StrongBotV3SearchCoverage;
+    resetTelemetry?(): void;
 }
 
 export type BotFactory = (botName: string) => BotLike;
@@ -49,6 +55,7 @@ export interface MatchReport {
     player2LeaderId: string;
     lastActions: string[];
     tacticalMetrics: MatchTacticalMetrics;
+    searchCoverage: StrongBotV3SearchCoverage;
 }
 
 const DEFAULT_TRACE_LIMIT = 18;
@@ -97,6 +104,36 @@ function roundTo(value: number, digits: number): number {
 function safeDivide(numerator: number, denominator: number): number {
     if (denominator <= 0) return 0;
     return numerator / denominator;
+}
+
+function isSearchCoverageProvider(bot: BotLike): bot is BotLike & SearchCoverageProvider {
+    return typeof (bot as Partial<SearchCoverageProvider>).getSearchCoverage === 'function';
+}
+
+
+function mergeCoverageEntries(entries: StrongBotV3SearchCoverage[]): StrongBotV3SearchCoverage {
+    const aggregate = {
+        root: { decisionCount: 0, legalActionCount: 0, exploredActionCount: 0 },
+        interaction: { decisionCount: 0, legalActionCount: 0, exploredActionCount: 0 },
+    };
+    for (const entry of entries) {
+        aggregate.root.decisionCount += entry.root.decisionCount;
+        aggregate.root.legalActionCount += entry.root.legalActionCount;
+        aggregate.root.exploredActionCount += entry.root.exploredActionCount;
+        aggregate.interaction.decisionCount += entry.interaction.decisionCount;
+        aggregate.interaction.legalActionCount += entry.interaction.legalActionCount;
+        aggregate.interaction.exploredActionCount += entry.interaction.exploredActionCount;
+    }
+    return {
+        root: {
+            ...aggregate.root,
+            exploredRate: roundTo(safeDivide(aggregate.root.exploredActionCount, aggregate.root.legalActionCount), 4),
+        },
+        interaction: {
+            ...aggregate.interaction,
+            exploredRate: roundTo(safeDivide(aggregate.interaction.exploredActionCount, aggregate.interaction.legalActionCount), 4),
+        },
+    };
 }
 
 function getPlayerById(engine: GameEngine, playerId: string): PlayerState | null {
@@ -253,6 +290,7 @@ function snapshot(
     actorPlayerId: string | null,
     trace: string[],
     tacticalCounters: TacticalMetricCounters,
+    searchCoverage: StrongBotV3SearchCoverage,
 ): MatchReport {
     return {
         seed,
@@ -270,6 +308,7 @@ function snapshot(
         player2LeaderId: engine.state.players[1].levelZone?.id ?? 'NONE',
         lastActions: [...trace],
         tacticalMetrics: buildMatchTacticalMetrics(tacticalCounters),
+        searchCoverage,
     };
 }
 
@@ -332,6 +371,10 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
     const player2Factory = config.player2BotFactory ?? createBaselineBotFactory();
     const bot1 = player1Factory('P1-Bot');
     const bot2 = player2Factory('P2-Bot');
+    const telemetryBots = [bot1, bot2].filter(isSearchCoverageProvider);
+    for (const bot of telemetryBots) {
+        bot.resetTelemetry?.();
+    }
 
     const trace: string[] = [];
     const tacticalCounters: TacticalMetricCounters = {
@@ -357,7 +400,7 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
 
         const action = actingBot.chooseAction(engine, actorPlayerId);
         if (!action) {
-            return snapshot(engine, seed, 'no_action', steps, actorPlayerId, trace, tacticalCounters);
+            return snapshot(engine, seed, 'no_action', steps, actorPlayerId, trace, tacticalCounters, mergeCoverageEntries(telemetryBots.map(bot => bot.getSearchCoverage())));
         }
 
         const upgradeContext = captureUpgradeContext(engine, actorPlayerId, action);
@@ -370,7 +413,7 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
 
         const ok = engine.step(action);
         if (!ok) {
-            return snapshot(engine, seed, 'invalid_action', steps, actorPlayerId, trace, tacticalCounters);
+            return snapshot(engine, seed, 'invalid_action', steps, actorPlayerId, trace, tacticalCounters, mergeCoverageEntries(telemetryBots.map(bot => bot.getSearchCoverage())));
         }
 
         if (hadLethalOpportunity) {
@@ -407,6 +450,7 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
             engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id,
             trace,
             tacticalCounters,
+            mergeCoverageEntries(telemetryBots.map(bot => bot.getSearchCoverage())),
         );
     }
 
@@ -418,6 +462,7 @@ function runSingleMatchCore(config: SingleMatchConfig): MatchReport {
         engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id,
         trace,
         tacticalCounters,
+        mergeCoverageEntries(telemetryBots.map(bot => bot.getSearchCoverage())),
     );
 }
 

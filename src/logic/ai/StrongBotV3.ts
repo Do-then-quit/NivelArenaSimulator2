@@ -23,6 +23,21 @@ export interface StrongBotV3Options {
     repeatMemoryCapacity: number;
 }
 
+export interface StrongBotV3SearchCoverage {
+    root: {
+        decisionCount: number;
+        legalActionCount: number;
+        exploredActionCount: number;
+        exploredRate: number;
+    };
+    interaction: {
+        decisionCount: number;
+        legalActionCount: number;
+        exploredActionCount: number;
+        exploredRate: number;
+    };
+}
+
 const DEFAULT_OPTIONS: StrongBotV3Options = {
     beamWidth: 6,
     stateScoreWeight: 1,
@@ -44,6 +59,18 @@ export class StrongBotV3 {
     private readonly fallback: StrongBotV2;
     private readonly options: StrongBotV3Options;
     private readonly interactionRepeatMemory = new Map<string, number>();
+    private readonly coverageCounters = {
+        root: {
+            decisionCount: 0,
+            legalActionCount: 0,
+            exploredActionCount: 0,
+        },
+        interaction: {
+            decisionCount: 0,
+            legalActionCount: 0,
+            exploredActionCount: 0,
+        },
+    };
 
     constructor(name: string = 'StrongBot-v3', options: Partial<StrongBotV3Options> = {}) {
         this.name = name;
@@ -67,6 +94,7 @@ export class StrongBotV3 {
         const evalOptions = this.getEvalOptions();
         const rankedActions = this.sortActions(observation.state, resolvedActorId, observation.legalActions, evalOptions)
             .slice(0, this.options.beamWidth);
+        this.recordCoverage(observation.state.interactionMode !== 'NORMAL', observation.legalActions.length, rankedActions.length);
         if (rankedActions.length === 0) return null;
 
         let bestAction = rankedActions[0];
@@ -100,6 +128,28 @@ export class StrongBotV3 {
 
         this.rememberInteractionAction(observation.state, bestAction);
         return bestAction;
+    }
+
+    public getSearchCoverage(): StrongBotV3SearchCoverage {
+        return {
+            root: {
+                ...this.coverageCounters.root,
+                exploredRate: this.safeDivide(this.coverageCounters.root.exploredActionCount, this.coverageCounters.root.legalActionCount),
+            },
+            interaction: {
+                ...this.coverageCounters.interaction,
+                exploredRate: this.safeDivide(this.coverageCounters.interaction.exploredActionCount, this.coverageCounters.interaction.legalActionCount),
+            },
+        };
+    }
+
+    public resetTelemetry(): void {
+        this.coverageCounters.root.decisionCount = 0;
+        this.coverageCounters.root.legalActionCount = 0;
+        this.coverageCounters.root.exploredActionCount = 0;
+        this.coverageCounters.interaction.decisionCount = 0;
+        this.coverageCounters.interaction.legalActionCount = 0;
+        this.coverageCounters.interaction.exploredActionCount = 0;
     }
 
     public step(engine: GameEngine, actorPlayerId?: string): boolean {
@@ -171,6 +221,18 @@ export class StrongBotV3 {
         const actionType = pending?.actionType ?? 'NONE';
         const selectedCount = pending?.selectedTargets?.length ?? 0;
         return `${state.interactionMode}|${actionType}|${selectedCount}|${this.toActionKey(action)}`;
+    }
+
+    private recordCoverage(isInteraction: boolean, legalActionCount: number, exploredActionCount: number): void {
+        const target = isInteraction ? this.coverageCounters.interaction : this.coverageCounters.root;
+        target.decisionCount += 1;
+        target.legalActionCount += legalActionCount;
+        target.exploredActionCount += exploredActionCount;
+    }
+
+    private safeDivide(numerator: number, denominator: number): number {
+        if (denominator <= 0) return 0;
+        return numerator / denominator;
     }
 
     private resolveActorPlayerId(engine: GameEngine): string {
