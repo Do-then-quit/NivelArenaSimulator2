@@ -114,6 +114,7 @@ const FALLBACK_PHASE0_MANIFEST: Phase0Manifest = {
             'tests/cards/st03/st03_high_value_targeting_regression.test.ts',
             'tests/cards/bt01/bt01_high_value_targeting_regression.test.ts',
             'tests/ai/StrongBotV2InteractionSearch.vitest.test.ts',
+            'tests/rules_v2_regression/rules_v2_ai_seed_2026021312_trash_toggle_regression.test.ts',
         ],
         includeBotSoak: true,
     },

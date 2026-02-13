@@ -181,6 +181,33 @@ function isAlreadySelected(pending: PendingEffect | null, candidate: unknown): b
     return (pending?.selectedTargets ?? []).includes(candidate);
 }
 
+function isCardLike(value: unknown): value is Card {
+    if (!value || typeof value !== 'object') return false;
+    const card = value as Partial<Card>;
+    return typeof card.id === 'string'
+        && typeof card.type === 'string'
+        && typeof card.cost === 'number';
+}
+
+function isSameCardSnapshot(a: Card, b: Card): boolean {
+    return a.id === b.id
+        && a.name === b.name
+        && a.type === b.type
+        && a.cost === b.cost
+        && (a.power ?? null) === (b.power ?? null)
+        && (a.hit ?? null) === (b.hit ?? null)
+        && !!a.isAwakened === !!b.isAwakened;
+}
+
+function isCardAlreadySelected(pending: PendingEffect | null, candidate: Card): boolean {
+    const selectedTargets = pending?.selectedTargets ?? [];
+    for (const target of selectedTargets) {
+        if (!isCardLike(target)) continue;
+        if (isSameCardSnapshot(target, candidate)) return true;
+    }
+    return false;
+}
+
 function scoreOptionalAction(
     state: GameState,
     actor: PlayerState,
@@ -251,7 +278,7 @@ function scoreSelectHandTargetAction(
     const card = targetPlayer?.hand[action.handIndex];
     if (!targetPlayer || !card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-hand-target' };
     if (isOverTargetCap(pending, card)) return { score: -1800, reason: 'hand-target-over-cap' };
-    if (isAlreadySelected(pending, card)) return { score: TOGGLE_UNSELECT_HEAVY_PENALTY, reason: 'hand-target-unselect' };
+    if (isCardAlreadySelected(pending, card)) return { score: TOGGLE_UNSELECT_HEAVY_PENALTY, reason: 'hand-target-unselect' };
 
     const tactical = getCardValue(card);
     const isOwnHand = targetPlayer.id === actor.id;
@@ -320,7 +347,7 @@ function scoreSelectTrashTargetAction(
     const card = targetPlayer?.trash[action.trashIndex];
     if (!targetPlayer || !card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-trash-target' };
     if (isOverTargetCap(pending, card)) return { score: -1800, reason: 'trash-target-over-cap' };
-    if (isAlreadySelected(pending, card)) return { score: TOGGLE_UNSELECT_HEAVY_PENALTY, reason: 'trash-target-unselect' };
+    if (isCardAlreadySelected(pending, card)) return { score: TOGGLE_UNSELECT_HEAVY_PENALTY, reason: 'trash-target-unselect' };
 
     const tactical = getCardValue(card);
     const actionType = pending?.actionType;
@@ -344,7 +371,7 @@ function scoreSelectRevealedAction(
     const card = state.revealedCards[action.revealedIndex];
     if (!card) return { score: Number.NEGATIVE_INFINITY, reason: 'no-revealed-target' };
     if (isOverTargetCap(pending, card)) return { score: -1800, reason: 'revealed-over-cap' };
-    if (isAlreadySelected(pending, card)) return { score: TOGGLE_UNSELECT_HEAVY_PENALTY, reason: 'revealed-unselect' };
+    if (isCardAlreadySelected(pending, card)) return { score: TOGGLE_UNSELECT_HEAVY_PENALTY, reason: 'revealed-unselect' };
 
     const tactical = getCardValue(card);
     const preferLow = pending?.actionType === 'DISCARD_FROM_DRAWN';
