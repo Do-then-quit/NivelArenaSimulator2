@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { MatchBatchReport, runMatchBatch } from './run_match_batch';
+import { MatchBatchReport, runMatchBatch, TacticalKpiCounts } from './run_match_batch';
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 import { checkPhase4RuntimeGate, Phase4RuntimeBaseline, Phase4RuntimeGateThresholds } from './phase4_runtime_gate';
 
@@ -21,6 +21,32 @@ interface Phase4MatrixConfig {
         baseline: Phase4RuntimeBaseline;
         thresholds: Phase4RuntimeGateThresholds;
     };
+    phase41KpiDelta: {
+        candidateBotId: string;
+        baselineBotId: string;
+    };
+}
+
+interface TacticalKpiSnapshot {
+    wasteful_upgrade_rate: number;
+    lethal_miss_rate: number;
+    self_lethal_open_rate: number;
+    counts: TacticalKpiCounts;
+}
+
+export interface Phase41TacticalKpiDelta {
+    available: boolean;
+    candidateBotId: string;
+    baselineBotId: string;
+    sharedOpponents: string[];
+    candidate: TacticalKpiSnapshot | null;
+    baseline: TacticalKpiSnapshot | null;
+    delta: {
+        wasteful_upgrade_rate: number;
+        lethal_miss_rate: number;
+        self_lethal_open_rate: number;
+    } | null;
+    note?: string;
 }
 
 interface Phase4MatrixSummary {
@@ -39,6 +65,7 @@ interface Phase4MatrixSummary {
         wins: number;
         games: number;
     };
+    phase41TacticalKpiDelta: Phase41TacticalKpiDelta;
 }
 
 interface Phase4MatrixReport {
@@ -49,7 +76,6 @@ interface Phase4MatrixReport {
     }>;
     summary: Phase4MatrixSummary;
 }
-
 
 function parseFloatEnv(name: string, fallback: number): number {
     const raw = process.env[name];
@@ -70,6 +96,13 @@ function parseBoolEnv(name: string, fallback: boolean): boolean {
     if (!raw) return fallback;
     const normalized = raw.trim().toLowerCase();
     return normalized === '1' || normalized === 'true' || normalized === 'yes';
+}
+
+function parseStringEnv(name: string, fallback: string): string {
+    const raw = process.env[name];
+    if (!raw) return fallback;
+    const normalized = raw.trim();
+    return normalized.length > 0 ? normalized : fallback;
 }
 
 function resolveOutputPath(defaultOutputPath: string): string | undefined {
@@ -143,6 +176,125 @@ function evaluateStrongV3VsStrongV2Performance(
     };
 }
 
+function roundTo(value: number, digits: number): number {
+    const p = 10 ** digits;
+    return Math.round(value * p) / p;
+}
+
+function safeDivide(numerator: number, denominator: number): number {
+    if (denominator <= 0) return 0;
+    return numerator / denominator;
+}
+
+function emptyTacticalKpiCounts(): TacticalKpiCounts {
+    return {
+        upgradeActionCount: 0,
+        wastefulUpgradeCount: 0,
+        lethalOpportunityCount: 0,
+        lethalMissCount: 0,
+        selfLethalCheckCount: 0,
+        selfLethalOpenCount: 0,
+    };
+}
+
+function mergeTacticalKpiCounts(left: TacticalKpiCounts, right: TacticalKpiCounts): TacticalKpiCounts {
+    return {
+        upgradeActionCount: left.upgradeActionCount + right.upgradeActionCount,
+        wastefulUpgradeCount: left.wastefulUpgradeCount + right.wastefulUpgradeCount,
+        lethalOpportunityCount: left.lethalOpportunityCount + right.lethalOpportunityCount,
+        lethalMissCount: left.lethalMissCount + right.lethalMissCount,
+        selfLethalCheckCount: left.selfLethalCheckCount + right.selfLethalCheckCount,
+        selfLethalOpenCount: left.selfLethalOpenCount + right.selfLethalOpenCount,
+    };
+}
+
+function buildTacticalKpiSnapshot(counts: TacticalKpiCounts): TacticalKpiSnapshot {
+    return {
+        wasteful_upgrade_rate: roundTo(safeDivide(counts.wastefulUpgradeCount, counts.upgradeActionCount), 4),
+        lethal_miss_rate: roundTo(safeDivide(counts.lethalMissCount, counts.lethalOpportunityCount), 4),
+        self_lethal_open_rate: roundTo(safeDivide(counts.selfLethalOpenCount, counts.selfLethalCheckCount), 4),
+        counts,
+    };
+}
+
+function collectTacticalCountsByOpponent(
+    runs: Phase4MatrixReport['runs'],
+    botId: string,
+): Map<string, TacticalKpiCounts> {
+    const map = new Map<string, TacticalKpiCounts>();
+
+    for (const run of runs) {
+        const pairing = run.pairing;
+        let opponentId: string | null = null;
+        if (pairing.player1BotId === botId) {
+            opponentId = pairing.player2BotId;
+        } else if (pairing.player2BotId === botId) {
+            opponentId = pairing.player1BotId;
+        }
+
+        if (!opponentId) continue;
+
+        const counts = pairing.player1BotId === botId
+            ? run.report.summary.tacticalKPIs.byPlayer.player1
+            : run.report.summary.tacticalKPIs.byPlayer.player2;
+        const previous = map.get(opponentId) ?? emptyTacticalKpiCounts();
+        map.set(opponentId, mergeTacticalKpiCounts(previous, counts));
+    }
+
+    return map;
+}
+
+export function evaluatePhase41TacticalKpiDelta(
+    runs: Phase4MatrixReport['runs'],
+    candidateBotId: string,
+    baselineBotId: string,
+): Phase41TacticalKpiDelta {
+    const candidateByOpponent = collectTacticalCountsByOpponent(runs, candidateBotId);
+    const baselineByOpponent = collectTacticalCountsByOpponent(runs, baselineBotId);
+
+    const sharedOpponents = [...candidateByOpponent.keys()]
+        .filter(opponent => baselineByOpponent.has(opponent))
+        .sort();
+
+    if (sharedOpponents.length === 0) {
+        return {
+            available: false,
+            candidateBotId,
+            baselineBotId,
+            sharedOpponents: [],
+            candidate: null,
+            baseline: null,
+            delta: null,
+            note: `No shared opponents between candidate="${candidateBotId}" and baseline="${baselineBotId}" runs.`,
+        };
+    }
+
+    let candidateCounts = emptyTacticalKpiCounts();
+    let baselineCounts = emptyTacticalKpiCounts();
+
+    for (const opponentId of sharedOpponents) {
+        candidateCounts = mergeTacticalKpiCounts(candidateCounts, candidateByOpponent.get(opponentId) ?? emptyTacticalKpiCounts());
+        baselineCounts = mergeTacticalKpiCounts(baselineCounts, baselineByOpponent.get(opponentId) ?? emptyTacticalKpiCounts());
+    }
+
+    const candidate = buildTacticalKpiSnapshot(candidateCounts);
+    const baseline = buildTacticalKpiSnapshot(baselineCounts);
+
+    return {
+        available: true,
+        candidateBotId,
+        baselineBotId,
+        sharedOpponents,
+        candidate,
+        baseline,
+        delta: {
+            wasteful_upgrade_rate: roundTo(candidate.wasteful_upgrade_rate - baseline.wasteful_upgrade_rate, 4),
+            lethal_miss_rate: roundTo(candidate.lethal_miss_rate - baseline.lethal_miss_rate, 4),
+            self_lethal_open_rate: roundTo(candidate.self_lethal_open_rate - baseline.self_lethal_open_rate, 4),
+        },
+    };
+}
+
 function runCli(): void {
     const manifest = loadPhase0Manifest(resolvePhase0ManifestPath());
     const phase4 = manifest.phase4;
@@ -168,6 +320,10 @@ function runCli(): void {
                 p95MsPerActionMultiplier: parseFloatEnv('AI_PHASE4_GATE_P95_MULT', phase4.runtimeGateThresholds.p95MsPerActionMultiplier),
                 avgMsPerGameMultiplier: parseFloatEnv('AI_PHASE4_GATE_AVG_GAME_MULT', phase4.runtimeGateThresholds.avgMsPerGameMultiplier),
             },
+        },
+        phase41KpiDelta: {
+            candidateBotId: parseStringEnv('AI_PHASE4_KPI_DELTA_CANDIDATE_BOT', 'strong-v3.1-topk3'),
+            baselineBotId: parseStringEnv('AI_PHASE4_KPI_DELTA_BASELINE_BOT', 'strong-v3'),
         },
     };
 
@@ -200,6 +356,11 @@ function runCli(): void {
         runs,
         manifest.phase4.performanceGate.minStrongV3WinRateVsStrongV2,
     );
+    const phase41TacticalKpiDelta = evaluatePhase41TacticalKpiDelta(
+        runs,
+        config.phase41KpiDelta.candidateBotId,
+        config.phase41KpiDelta.baselineBotId,
+    );
 
     const matrixReport: Phase4MatrixReport = {
         config,
@@ -209,6 +370,7 @@ function runCli(): void {
             terminationTotals,
             runtimeGate,
             performanceGate,
+            phase41TacticalKpiDelta,
         },
     };
 
@@ -235,4 +397,7 @@ function runCli(): void {
     }
 }
 
-runCli();
+const maybeMain = process.argv[1] ?? '';
+if (maybeMain.endsWith('run_phase4_stress_matrix.ts') || maybeMain.endsWith('run_phase4_stress_matrix.js')) {
+    runCli();
+}

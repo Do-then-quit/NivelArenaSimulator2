@@ -12,12 +12,21 @@ const BOT_REGISTRY: Record<string, BotFactory> = {
     'strong-v1': (name: string) => new StrongBot(name),
     'strong-v2': (name: string) => new StrongBotV2(name),
     'strong-v3': (name: string) => new StrongBotV3(name),
+    'strong-v3.1-topk3': (name: string) => new StrongBotV3(name, {
+        opponentReplyTopK: 3,
+        opponentReplyAggregation: 'weighted',
+    }),
+    'strong-v3.1-topk3-mean': (name: string) => new StrongBotV3(name, {
+        opponentReplyTopK: 3,
+        opponentReplyAggregation: 'mean',
+    }),
 };
 
 export function resolveBotFactory(botId: string): BotFactory {
     const direct = BOT_REGISTRY[botId];
     if (direct) return direct;
     if (botId.startsWith('baseline')) return BOT_REGISTRY.baseline;
+    if (botId.startsWith('strong-v3.1')) return BOT_REGISTRY['strong-v3.1-topk3'];
     if (botId.startsWith('strong-v3')) return BOT_REGISTRY['strong-v3'];
     if (botId.startsWith('strong-v2')) return BOT_REGISTRY['strong-v2'];
     if (botId.startsWith('strong')) return BOT_REGISTRY['strong-v1'];

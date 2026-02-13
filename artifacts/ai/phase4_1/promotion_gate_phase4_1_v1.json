@@ -1,0 +1,470 @@
+{
+  "generatedAt": "2026-02-13T11:28:02.673Z",
+  "config": {
+    "artifactTag": "phase4_1_v1",
+    "candidateBotId": "strong-v3.1-topk3",
+    "baselineBotId": "strong-v3",
+    "controlBotId": "strong-v2",
+    "seedSuitePath": "artifacts/ai/seeds/phase3_v1.json",
+    "seedSuiteName": "promotion-holdout",
+    "holdoutGamesPerRole": 200,
+    "kpiComparisonGamesPerRole": 200,
+    "maxSteps": 2600,
+    "enableMulligan": true,
+    "measureRuntime": true,
+    "suppressLogs": true,
+    "outputPath": "artifacts/ai/phase4_1/promotion_gate_latest.json"
+  },
+  "runs": [
+    {
+      "id": "candidate_vs_baseline_p1",
+      "player1BotId": "strong-v3.1-topk3",
+      "player2BotId": "strong-v3",
+      "games": 200,
+      "artifactPath": "artifacts\\ai\\phase4_1\\runs\\phase4_1_v1_candidate_vs_baseline_p1.json",
+      "latestArtifactPath": "artifacts\\ai\\phase4_1\\runs\\latest_candidate_vs_baseline_p1.json",
+      "summary": {
+        "totalGames": 200,
+        "wins": {
+          "player1": 77,
+          "player2": 123
+        },
+        "winRate": {
+          "player1": 0.385,
+          "player2": 0.615
+        },
+        "unfinished": 0,
+        "avgSteps": 106.51,
+        "avgTurns": 11.46,
+        "terminationCounts": {
+          "winner": 200,
+          "max_steps": 0,
+          "no_action": 0,
+          "invalid_action": 0
+        },
+        "confidence": {
+          "player1WinRate": {
+            "pointEstimate": 0.385,
+            "standardError": 0.0344,
+            "ci95Low": 0.3176,
+            "ci95High": 0.4524
+          },
+          "player2WinRate": {
+            "pointEstimate": 0.615,
+            "standardError": 0.0344,
+            "ci95Low": 0.5476,
+            "ci95High": 0.6824
+          }
+        },
+        "runtime": {
+          "enabled": true,
+          "totalMs": 119249.05,
+          "avgMsPerGame": 596.25,
+          "msPerAction": 5.5983
+        },
+        "tacticalKPIs": {
+          "wasteful_upgrade_rate": 0.3853,
+          "lethal_miss_rate": 0,
+          "self_lethal_open_rate": 0.0012,
+          "counts": {
+            "upgradeActionCount": 680,
+            "wastefulUpgradeCount": 262,
+            "lethalOpportunityCount": 231,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 5838,
+            "selfLethalOpenCount": 7
+          }
+        }
+      }
+    },
+    {
+      "id": "baseline_vs_candidate_p1",
+      "player1BotId": "strong-v3",
+      "player2BotId": "strong-v3.1-topk3",
+      "games": 200,
+      "artifactPath": "artifacts\\ai\\phase4_1\\runs\\phase4_1_v1_baseline_vs_candidate_p1.json",
+      "latestArtifactPath": "artifacts\\ai\\phase4_1\\runs\\latest_baseline_vs_candidate_p1.json",
+      "summary": {
+        "totalGames": 200,
+        "wins": {
+          "player1": 113,
+          "player2": 87
+        },
+        "winRate": {
+          "player1": 0.565,
+          "player2": 0.435
+        },
+        "unfinished": 0,
+        "avgSteps": 105.12,
+        "avgTurns": 11.31,
+        "terminationCounts": {
+          "winner": 200,
+          "max_steps": 0,
+          "no_action": 0,
+          "invalid_action": 0
+        },
+        "confidence": {
+          "player1WinRate": {
+            "pointEstimate": 0.565,
+            "standardError": 0.0351,
+            "ci95Low": 0.4963,
+            "ci95High": 0.6337
+          },
+          "player2WinRate": {
+            "pointEstimate": 0.435,
+            "standardError": 0.0351,
+            "ci95Low": 0.3663,
+            "ci95High": 0.5037
+          }
+        },
+        "runtime": {
+          "enabled": true,
+          "totalMs": 116831.31,
+          "avgMsPerGame": 584.16,
+          "msPerAction": 5.5573
+        },
+        "tacticalKPIs": {
+          "wasteful_upgrade_rate": 0.3941,
+          "lethal_miss_rate": 0,
+          "self_lethal_open_rate": 0.0012,
+          "counts": {
+            "upgradeActionCount": 680,
+            "wastefulUpgradeCount": 268,
+            "lethalOpportunityCount": 224,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 5744,
+            "selfLethalOpenCount": 7
+          }
+        }
+      }
+    },
+    {
+      "id": "candidate_vs_control_p1",
+      "player1BotId": "strong-v3.1-topk3",
+      "player2BotId": "strong-v2",
+      "games": 200,
+      "artifactPath": "artifacts\\ai\\phase4_1\\runs\\phase4_1_v1_candidate_vs_control_p1.json",
+      "latestArtifactPath": "artifacts\\ai\\phase4_1\\runs\\latest_candidate_vs_control_p1.json",
+      "summary": {
+        "totalGames": 200,
+        "wins": {
+          "player1": 85,
+          "player2": 115
+        },
+        "winRate": {
+          "player1": 0.425,
+          "player2": 0.575
+        },
+        "unfinished": 0,
+        "avgSteps": 100.82,
+        "avgTurns": 11.07,
+        "terminationCounts": {
+          "winner": 200,
+          "max_steps": 0,
+          "no_action": 0,
+          "invalid_action": 0
+        },
+        "confidence": {
+          "player1WinRate": {
+            "pointEstimate": 0.425,
+            "standardError": 0.035,
+            "ci95Low": 0.3565,
+            "ci95High": 0.4935
+          },
+          "player2WinRate": {
+            "pointEstimate": 0.575,
+            "standardError": 0.035,
+            "ci95Low": 0.5065,
+            "ci95High": 0.6435
+          }
+        },
+        "runtime": {
+          "enabled": true,
+          "totalMs": 100768.13,
+          "avgMsPerGame": 503.84,
+          "msPerAction": 4.9974
+        },
+        "tacticalKPIs": {
+          "wasteful_upgrade_rate": 0.4164,
+          "lethal_miss_rate": 0,
+          "self_lethal_open_rate": 0.0008,
+          "counts": {
+            "upgradeActionCount": 795,
+            "wastefulUpgradeCount": 331,
+            "lethalOpportunityCount": 227,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 5196,
+            "selfLethalOpenCount": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "control_vs_candidate_p1",
+      "player1BotId": "strong-v2",
+      "player2BotId": "strong-v3.1-topk3",
+      "games": 200,
+      "artifactPath": "artifacts\\ai\\phase4_1\\runs\\phase4_1_v1_control_vs_candidate_p1.json",
+      "latestArtifactPath": "artifacts\\ai\\phase4_1\\runs\\latest_control_vs_candidate_p1.json",
+      "summary": {
+        "totalGames": 200,
+        "wins": {
+          "player1": 98,
+          "player2": 102
+        },
+        "winRate": {
+          "player1": 0.49,
+          "player2": 0.51
+        },
+        "unfinished": 0,
+        "avgSteps": 102.48,
+        "avgTurns": 11.13,
+        "terminationCounts": {
+          "winner": 200,
+          "max_steps": 0,
+          "no_action": 0,
+          "invalid_action": 0
+        },
+        "confidence": {
+          "player1WinRate": {
+            "pointEstimate": 0.49,
+            "standardError": 0.0353,
+            "ci95Low": 0.4207,
+            "ci95High": 0.5593
+          },
+          "player2WinRate": {
+            "pointEstimate": 0.51,
+            "standardError": 0.0353,
+            "ci95Low": 0.4407,
+            "ci95High": 0.5793
+          }
+        },
+        "runtime": {
+          "enabled": true,
+          "totalMs": 99055.52,
+          "avgMsPerGame": 495.28,
+          "msPerAction": 4.8332
+        },
+        "tacticalKPIs": {
+          "wasteful_upgrade_rate": 0.4617,
+          "lethal_miss_rate": 0,
+          "self_lethal_open_rate": 0.0007,
+          "counts": {
+            "upgradeActionCount": 797,
+            "wastefulUpgradeCount": 368,
+            "lethalOpportunityCount": 209,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 5529,
+            "selfLethalOpenCount": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "baseline_vs_control_p1",
+      "player1BotId": "strong-v3",
+      "player2BotId": "strong-v2",
+      "games": 200,
+      "artifactPath": "artifacts\\ai\\phase4_1\\runs\\phase4_1_v1_baseline_vs_control_p1.json",
+      "latestArtifactPath": "artifacts\\ai\\phase4_1\\runs\\latest_baseline_vs_control_p1.json",
+      "summary": {
+        "totalGames": 200,
+        "wins": {
+          "player1": 103,
+          "player2": 97
+        },
+        "winRate": {
+          "player1": 0.515,
+          "player2": 0.485
+        },
+        "unfinished": 0,
+        "avgSteps": 103.44,
+        "avgTurns": 11.34,
+        "terminationCounts": {
+          "winner": 200,
+          "max_steps": 0,
+          "no_action": 0,
+          "invalid_action": 0
+        },
+        "confidence": {
+          "player1WinRate": {
+            "pointEstimate": 0.515,
+            "standardError": 0.0353,
+            "ci95Low": 0.4457,
+            "ci95High": 0.5843
+          },
+          "player2WinRate": {
+            "pointEstimate": 0.485,
+            "standardError": 0.0353,
+            "ci95Low": 0.4157,
+            "ci95High": 0.5543
+          }
+        },
+        "runtime": {
+          "enabled": true,
+          "totalMs": 98016.44,
+          "avgMsPerGame": 490.08,
+          "msPerAction": 4.7381
+        },
+        "tacticalKPIs": {
+          "wasteful_upgrade_rate": 0.4223,
+          "lethal_miss_rate": 0,
+          "self_lethal_open_rate": 0.0007,
+          "counts": {
+            "upgradeActionCount": 817,
+            "wastefulUpgradeCount": 345,
+            "lethalOpportunityCount": 203,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 5351,
+            "selfLethalOpenCount": 4
+          }
+        }
+      }
+    },
+    {
+      "id": "control_vs_baseline_p1",
+      "player1BotId": "strong-v2",
+      "player2BotId": "strong-v3",
+      "games": 200,
+      "artifactPath": "artifacts\\ai\\phase4_1\\runs\\phase4_1_v1_control_vs_baseline_p1.json",
+      "latestArtifactPath": "artifacts\\ai\\phase4_1\\runs\\latest_control_vs_baseline_p1.json",
+      "summary": {
+        "totalGames": 200,
+        "wins": {
+          "player1": 75,
+          "player2": 125
+        },
+        "winRate": {
+          "player1": 0.375,
+          "player2": 0.625
+        },
+        "unfinished": 0,
+        "avgSteps": 105.4,
+        "avgTurns": 11.48,
+        "terminationCounts": {
+          "winner": 200,
+          "max_steps": 0,
+          "no_action": 0,
+          "invalid_action": 0
+        },
+        "confidence": {
+          "player1WinRate": {
+            "pointEstimate": 0.375,
+            "standardError": 0.0342,
+            "ci95Low": 0.3079,
+            "ci95High": 0.4421
+          },
+          "player2WinRate": {
+            "pointEstimate": 0.625,
+            "standardError": 0.0342,
+            "ci95Low": 0.5579,
+            "ci95High": 0.6921
+          }
+        },
+        "runtime": {
+          "enabled": true,
+          "totalMs": 102047.92,
+          "avgMsPerGame": 510.24,
+          "msPerAction": 4.841
+        },
+        "tacticalKPIs": {
+          "wasteful_upgrade_rate": 0.4706,
+          "lethal_miss_rate": 0,
+          "self_lethal_open_rate": 0.0007,
+          "counts": {
+            "upgradeActionCount": 816,
+            "wastefulUpgradeCount": 384,
+            "lethalOpportunityCount": 200,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 5703,
+            "selfLethalOpenCount": 4
+          }
+        }
+      }
+    }
+  ],
+  "gates": {
+    "performance": {
+      "pass": false,
+      "wins": 164,
+      "games": 400,
+      "winRate": 0.41,
+      "confidence": {
+        "pointEstimate": 0.41,
+        "standardError": 0.0246,
+        "ci95Low": 0.3618,
+        "ci95High": 0.4582
+      },
+      "thresholds": {
+        "minWinRate": 0.53,
+        "minCi95Low": 0.5
+      },
+      "reasons": [
+        "win rate gate failed: actual=0.41, required>=0.53",
+        "CI low gate failed: actual=0.3618, required>=0.5"
+      ]
+    },
+    "stability": {
+      "pass": true,
+      "terminationTotals": {
+        "winner": 1200,
+        "max_steps": 0,
+        "no_action": 0,
+        "invalid_action": 0
+      },
+      "reasons": []
+    },
+    "runtime": {
+      "pass": true,
+      "reasons": [],
+      "thresholds": {
+        "p50MsPerActionMultiplier": 1.25,
+        "p95MsPerActionMultiplier": 1.6,
+        "avgMsPerGameMultiplier": 1.4
+      },
+      "baseline": {
+        "p50MsPerAction": 7.1877,
+        "p95MsPerAction": 8.2,
+        "avgMsPerGame": 801.88
+      },
+      "actual": {
+        "p50MsPerAction": 5.5573,
+        "p95MsPerAction": 5.5573,
+        "avgMsPerGame": 590.2
+      }
+    },
+    "tacticalKpi": {
+      "pass": true,
+      "thresholds": {
+        "minRelativeLethalMissReduction": 0.15,
+        "allowSelfLethalOpenRegression": false,
+        "allowWastefulUpgradeRegression": false
+      },
+      "available": true,
+      "reasons": [],
+      "baselineRates": {
+        "wasteful_upgrade_rate": 0.4464,
+        "lethal_miss_rate": 0,
+        "self_lethal_open_rate": 0.0007
+      },
+      "candidateRates": {
+        "wasteful_upgrade_rate": 0.4391,
+        "lethal_miss_rate": 0,
+        "self_lethal_open_rate": 0.0007
+      },
+      "requiredLethalMissRate": 0,
+      "delta": {
+        "wasteful_upgrade_rate": -0.0073,
+        "lethal_miss_rate": 0,
+        "self_lethal_open_rate": 0
+      }
+    }
+  },
+  "overall": {
+    "pass": false,
+    "reasons": [
+      "win rate gate failed: actual=0.41, required>=0.53",
+      "CI low gate failed: actual=0.3618, required>=0.5"
+    ]
+  }
+}

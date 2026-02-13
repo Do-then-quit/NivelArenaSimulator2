@@ -37,6 +37,9 @@
       "tests/ai/StrongBotObservationModel.vitest.test.ts",
       "tests/ai/SeedSuites.vitest.test.ts",
       "tests/ai/AblationPresets.vitest.test.ts",
+      "tests/ai/BotRegistryPhase41.vitest.test.ts",
+      "tests/ai/Phase4StressMatrix.vitest.test.ts",
+      "tests/ai/Phase41PromotionGate.vitest.test.ts",
       "tests/cards/st01/st01_high_value_targeting_regression.test.ts",
       "tests/cards/st02/st02_high_value_targeting_regression.test.ts",
       "tests/cards/st03/st03_high_value_targeting_regression.test.ts",
@@ -94,6 +97,30 @@
     },
     "performanceGate": {
       "minStrongV3WinRateVsStrongV2": 0.5
+    }
+  },
+  "phase41Promotion": {
+    "candidateBotId": "strong-v3.1-topk3",
+    "baselineBotId": "strong-v3",
+    "controlBotId": "strong-v2",
+    "seedSuitePath": "artifacts/ai/seeds/phase3_v1.json",
+    "seedSuiteName": "promotion-holdout",
+    "holdoutGamesPerRole": 200,
+    "kpiComparisonGamesPerRole": 200,
+    "maxSteps": 2600,
+    "enableMulligan": true,
+    "measureRuntime": true,
+    "suppressLogs": true,
+    "outputPath": "artifacts/ai/phase4_1/promotion_gate_latest.json",
+    "artifactTag": "phase4_1_v1",
+    "performanceGate": {
+      "minWinRate": 0.53,
+      "minCi95Low": 0.5
+    },
+    "tacticalKpiGate": {
+      "minRelativeLethalMissReduction": 0.15,
+      "allowSelfLethalOpenRegression": false,
+      "allowWastefulUpgradeRegression": false
     }
   }
 }

@@ -63,12 +63,42 @@ export interface Phase0Phase4Config {
     };
 }
 
+export interface Phase41PromotionPerformanceGateConfig {
+    minWinRate: number;
+    minCi95Low: number;
+}
+
+export interface Phase41PromotionTacticalKpiGateConfig {
+    minRelativeLethalMissReduction: number;
+    allowSelfLethalOpenRegression: boolean;
+    allowWastefulUpgradeRegression: boolean;
+}
+
+export interface Phase41PromotionConfig {
+    candidateBotId: string;
+    baselineBotId: string;
+    controlBotId: string;
+    seedSuitePath: string;
+    seedSuiteName: 'tuning' | 'dev' | 'promotion-holdout';
+    holdoutGamesPerRole: number;
+    kpiComparisonGamesPerRole: number;
+    maxSteps: number;
+    enableMulligan: boolean;
+    measureRuntime: boolean;
+    suppressLogs: boolean;
+    outputPath: string;
+    artifactTag: string;
+    performanceGate: Phase41PromotionPerformanceGateConfig;
+    tacticalKpiGate: Phase41PromotionTacticalKpiGateConfig;
+}
+
 export interface Phase0Manifest {
     version: string;
     bench: Phase0BenchDefaults;
     ladder: Phase0LadderDefaults;
     regression: Phase0RegressionConfig;
     phase4: Phase0Phase4Config;
+    phase41Promotion: Phase41PromotionConfig;
 }
 
 const REPO_DEFAULT_MANIFEST_FILENAME = 'phase0.manifest.json';
@@ -109,6 +139,9 @@ const FALLBACK_PHASE0_MANIFEST: Phase0Manifest = {
             'tests/ai/StrongBotObservationModel.vitest.test.ts',
             'tests/ai/SeedSuites.vitest.test.ts',
             'tests/ai/AblationPresets.vitest.test.ts',
+            'tests/ai/BotRegistryPhase41.vitest.test.ts',
+            'tests/ai/Phase4StressMatrix.vitest.test.ts',
+            'tests/ai/Phase41PromotionGate.vitest.test.ts',
             'tests/cards/st01/st01_high_value_targeting_regression.test.ts',
             'tests/cards/st02/st02_high_value_targeting_regression.test.ts',
             'tests/cards/st03/st03_high_value_targeting_regression.test.ts',
@@ -148,6 +181,30 @@ const FALLBACK_PHASE0_MANIFEST: Phase0Manifest = {
             minStrongV3WinRateVsStrongV2: 0.5,
         },
     },
+    phase41Promotion: {
+        candidateBotId: 'strong-v3.1-topk3',
+        baselineBotId: 'strong-v3',
+        controlBotId: 'strong-v2',
+        seedSuitePath: 'artifacts/ai/seeds/phase3_v1.json',
+        seedSuiteName: 'promotion-holdout',
+        holdoutGamesPerRole: 200,
+        kpiComparisonGamesPerRole: 200,
+        maxSteps: 2600,
+        enableMulligan: true,
+        measureRuntime: true,
+        suppressLogs: true,
+        outputPath: 'artifacts/ai/phase4_1/promotion_gate_latest.json',
+        artifactTag: 'phase4_1_v1',
+        performanceGate: {
+            minWinRate: 0.53,
+            minCi95Low: 0.5,
+        },
+        tacticalKpiGate: {
+            minRelativeLethalMissReduction: 0.15,
+            allowSelfLethalOpenRegression: false,
+            allowWastefulUpgradeRegression: false,
+        },
+    },
 };
 
 function mergeManifest(base: Phase0Manifest, input: Partial<Phase0Manifest>): Phase0Manifest {
@@ -185,6 +242,18 @@ function mergeManifest(base: Phase0Manifest, input: Partial<Phase0Manifest>): Ph
             performanceGate: {
                 ...base.phase4.performanceGate,
                 ...(input.phase4?.performanceGate ?? {}),
+            },
+        },
+        phase41Promotion: {
+            ...base.phase41Promotion,
+            ...(input.phase41Promotion ?? {}),
+            performanceGate: {
+                ...base.phase41Promotion.performanceGate,
+                ...(input.phase41Promotion?.performanceGate ?? {}),
+            },
+            tacticalKpiGate: {
+                ...base.phase41Promotion.tacticalKpiGate,
+                ...(input.phase41Promotion?.tacticalKpiGate ?? {}),
             },
         },
     };
