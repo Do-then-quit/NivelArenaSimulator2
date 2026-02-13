@@ -87,9 +87,12 @@
       "avgMsPerGameMultiplier": 1.4
     },
     "runtimeGateBaseline": {
-      "p50MsPerAction": 2.752,
-      "p95MsPerAction": 3.853,
-      "avgMsPerGame": 273.61
+      "p50MsPerAction": 7.1877,
+      "p95MsPerAction": 8.2,
+      "avgMsPerGame": 801.88
+    },
+    "performanceGate": {
+      "minStrongV3WinRateVsStrongV2": 0.5
     }
   }
 }

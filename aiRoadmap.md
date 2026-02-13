@@ -84,7 +84,7 @@
       - `artifacts/ai/bench/phase3_v3_vs_v2_p1v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_p2v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_holdout_440_summary_20260212_fix2.json`
-- [~] Phase 4 started (Play bot hardening gate, PR1)
+- [x] Phase 4 completed (Play bot hardening gate)
   - PR1 minimum scope documented:
     - `docs/ai/phase4_pr1_minimum.md`
   - Added Phase 4 interaction regressions:
@@ -106,6 +106,12 @@
   - Validation:
     - `npx vitest run tests/ai/Phase0Manifest.vitest.test.ts tests/ai/Phase4RuntimeGate.vitest.test.ts tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
     - `AI_PHASE4_MATRIX_PAIRINGS='strong-v3:baseline-a:2' AI_PHASE4_GATE_P50_MULT=2 AI_PHASE4_MATRIX_OUTPUT='-' npm run ai:phase4:matrix`
+  - Phase 4 completion gate measurement (default config, 120 games):
+    - `npm run ai:phase4:matrix`
+    - stability: `winner=120`, `max_steps=0`, `no_action=0`, `invalid_action=0`
+    - runtime gate (actual): `p50=5.8075`, `p95=7.667`, `avgMsPerGame=680.75` (pass)
+    - performance gate: `strong-v3 vs strong-v2 = 30/48 (62.5%)` (pass)
+    - artifact: `artifacts/ai/phase4/stress_matrix_latest.json`
 - [ ] Phase 5 not started (Deck search MVP)
 - [ ] Phase 6 not started
 - [ ] Phase 7 not started

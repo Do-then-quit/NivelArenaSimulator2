@@ -18,10 +18,14 @@ Phase 4 완료 기준(회귀 확장 / 스트레스-소크 / 런타임 정량 게
 - `AI_PHASE4_MATRIX_MAX_STEPS`
 - `AI_PHASE4_MATRIX_ENABLE_MULLIGAN`
 - `AI_PHASE4_MATRIX_MEASURE_RUNTIME`
+- `AI_PHASE4_MATRIX_SUPPRESS_LOGS`
 - `AI_PHASE4_MATRIX_PAIRINGS`
   - 형식: `p1:p2[:games],p1:p2[:games]`
   - 예: `strong-v3:strong-v2:40,strong-v2:strong-v3:40`
 - `AI_PHASE4_MATRIX_OUTPUT`
+- `AI_PHASE4_GATE_BASELINE_P50_MS_PER_ACTION`
+- `AI_PHASE4_GATE_BASELINE_P95_MS_PER_ACTION`
+- `AI_PHASE4_GATE_BASELINE_AVG_MS_PER_GAME`
 
 ## 3) 런타임/품질 게이트
 `npm run ai:phase4:matrix`는 아래를 함께 검증한다.
@@ -30,5 +34,11 @@ Phase 4 완료 기준(회귀 확장 / 스트레스-소크 / 런타임 정량 게
   - `p50 ms/action <= baseline * 1.25`
   - `p95 ms/action <= baseline * 1.60`
   - `avgMsPerGame <= baseline * 1.40`
+- 성능 게이트:
+  - `strong-v3` vs `strong-v2` 집계 승률이 `phase0.manifest.json.phase4.performanceGate.minStrongV3WinRateVsStrongV2` 이상
 
 기준선과 배수는 `phase0.manifest.json > phase4`에서 조정한다.
+
+## 4) 기준선 보정 메모
+- 현재 저장소 기본 runtime baseline은 동일 환경에서 측정한 `strong-v2` 기준 샘플(`48 games`)에 맞춰 고정했다.
+  - 아티팩트: `artifacts/ai/phase4/runtime_baseline_v2v2_48.json`

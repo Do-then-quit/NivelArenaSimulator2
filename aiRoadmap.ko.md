@@ -84,7 +84,7 @@
       - `artifacts/ai/bench/phase3_v3_vs_v2_p1v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_p2v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_holdout_440_summary_20260212_fix2.json`
-- [~] Phase 4 착수 (플레이 봇 하드닝 게이트, PR1)
+- [x] Phase 4 완료 (플레이 봇 하드닝 게이트)
   - PR1 최소 작업 세트 문서화:
     - `docs/ai/phase4_pr1_minimum.md`
   - Phase 4 상호작용 회귀 추가:
@@ -106,6 +106,12 @@
   - 검증:
     - `npx vitest run tests/ai/Phase0Manifest.vitest.test.ts tests/ai/Phase4RuntimeGate.vitest.test.ts tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
     - `AI_PHASE4_MATRIX_PAIRINGS='strong-v3:baseline-a:2' AI_PHASE4_GATE_P50_MULT=2 AI_PHASE4_MATRIX_OUTPUT='-' npm run ai:phase4:matrix`
+  - Phase 4 완료 게이트 실측(기본 설정, 120 games):
+    - `npm run ai:phase4:matrix`
+    - 종료 안정성: `winner=120`, `max_steps=0`, `no_action=0`, `invalid_action=0`
+    - 런타임 게이트(actual): `p50=5.8075`, `p95=7.667`, `avgMsPerGame=680.75` (통과)
+    - 성능 게이트: `strong-v3 vs strong-v2 = 30/48 (62.5%)` (통과)
+    - 산출물: `artifacts/ai/phase4/stress_matrix_latest.json`
 - [ ] Phase 5 미착수 (덱 탐색 MVP)
 - [ ] Phase 6 미착수
 - [ ] Phase 7 미착수

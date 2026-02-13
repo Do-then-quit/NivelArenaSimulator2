@@ -58,6 +58,9 @@ export interface Phase0Phase4Config {
     stressMatrix: Phase4StressMatrixConfig;
     runtimeGateThresholds: Phase4RuntimeGateThresholds;
     runtimeGateBaseline: Phase4RuntimeGateBaseline;
+    performanceGate: {
+        minStrongV3WinRateVsStrongV2: number;
+    };
 }
 
 export interface Phase0Manifest {
@@ -136,9 +139,12 @@ const FALLBACK_PHASE0_MANIFEST: Phase0Manifest = {
             avgMsPerGameMultiplier: 1.4,
         },
         runtimeGateBaseline: {
-            p50MsPerAction: 2.752,
-            p95MsPerAction: 3.853,
-            avgMsPerGame: 273.61,
+            p50MsPerAction: 7.1877,
+            p95MsPerAction: 8.2,
+            avgMsPerGame: 801.88,
+        },
+        performanceGate: {
+            minStrongV3WinRateVsStrongV2: 0.5,
         },
     },
 };
@@ -174,6 +180,10 @@ function mergeManifest(base: Phase0Manifest, input: Partial<Phase0Manifest>): Ph
             runtimeGateBaseline: {
                 ...base.phase4.runtimeGateBaseline,
                 ...(input.phase4?.runtimeGateBaseline ?? {}),
+            },
+            performanceGate: {
+                ...base.phase4.performanceGate,
+                ...(input.phase4?.performanceGate ?? {}),
             },
         },
     };

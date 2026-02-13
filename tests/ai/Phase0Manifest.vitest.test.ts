@@ -38,6 +38,7 @@ describe('Phase0 Manifest', () => {
         expect(manifest.bench.games).toBe(DEFAULT_PHASE0_MANIFEST.bench.games);
         expect(manifest.ladder.entrants).toEqual(DEFAULT_PHASE0_MANIFEST.ladder.entrants);
         expect(manifest.phase4.runtimeGateThresholds).toEqual(DEFAULT_PHASE0_MANIFEST.phase4.runtimeGateThresholds);
+        expect(manifest.phase4.performanceGate).toEqual(DEFAULT_PHASE0_MANIFEST.phase4.performanceGate);
     });
 
     it('merges partial manifest over defaults', () => {
@@ -73,5 +74,7 @@ describe('Phase0 Manifest', () => {
         expect(manifest.regression.vitestFiles).toEqual(DEFAULT_PHASE0_MANIFEST.regression.vitestFiles);
         expect(manifest.phase4.stressMatrix.gamesPerPairing).toBe(8);
         expect(manifest.phase4.runtimeGateBaseline.avgMsPerGame).toBe(DEFAULT_PHASE0_MANIFEST.phase4.runtimeGateBaseline.avgMsPerGame);
+        expect(manifest.phase4.performanceGate.minStrongV3WinRateVsStrongV2)
+            .toBe(DEFAULT_PHASE0_MANIFEST.phase4.performanceGate.minStrongV3WinRateVsStrongV2);
     });
 });

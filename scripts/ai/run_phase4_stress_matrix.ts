@@ -14,6 +14,7 @@ interface Phase4MatrixConfig {
     maxSteps: number;
     enableMulligan: boolean;
     measureRuntime: boolean;
+    suppressLogs: boolean;
     startSeed: number;
     pairings: Phase4MatrixPairing[];
     runtimeGate: {
@@ -31,6 +32,13 @@ interface Phase4MatrixSummary {
         invalid_action: number;
     };
     runtimeGate: ReturnType<typeof checkPhase4RuntimeGate>;
+    performanceGate: {
+        pass: boolean;
+        minStrongV3WinRateVsStrongV2: number;
+        strongV3WinRateVsStrongV2: number;
+        wins: number;
+        games: number;
+    };
 }
 
 interface Phase4MatrixReport {
@@ -107,6 +115,34 @@ function collectTerminationTotals(reports: MatchBatchReport[]): Phase4MatrixSumm
     );
 }
 
+function evaluateStrongV3VsStrongV2Performance(
+    runs: Phase4MatrixReport['runs'],
+    minStrongV3WinRateVsStrongV2: number,
+): Phase4MatrixSummary['performanceGate'] {
+    let wins = 0;
+    let games = 0;
+
+    for (const run of runs) {
+        const p1 = run.pairing.player1BotId;
+        const p2 = run.pairing.player2BotId;
+        if (!((p1 === 'strong-v3' && p2 === 'strong-v2') || (p1 === 'strong-v2' && p2 === 'strong-v3'))) continue;
+
+        games += run.report.summary.totalGames;
+        wins += (p1 === 'strong-v3')
+            ? run.report.summary.wins.player1
+            : run.report.summary.wins.player2;
+    }
+
+    const strongV3WinRateVsStrongV2 = games > 0 ? wins / games : 0;
+    return {
+        pass: games > 0 && strongV3WinRateVsStrongV2 >= minStrongV3WinRateVsStrongV2,
+        minStrongV3WinRateVsStrongV2,
+        strongV3WinRateVsStrongV2,
+        wins,
+        games,
+    };
+}
+
 function runCli(): void {
     const manifest = loadPhase0Manifest(resolvePhase0ManifestPath());
     const phase4 = manifest.phase4;
@@ -118,6 +154,7 @@ function runCli(): void {
         maxSteps: parseIntEnv('AI_PHASE4_MATRIX_MAX_STEPS', phase4.stressMatrix.maxSteps),
         enableMulligan: parseBoolEnv('AI_PHASE4_MATRIX_ENABLE_MULLIGAN', phase4.stressMatrix.enableMulligan),
         measureRuntime: parseBoolEnv('AI_PHASE4_MATRIX_MEASURE_RUNTIME', phase4.stressMatrix.measureRuntime),
+        suppressLogs: parseBoolEnv('AI_PHASE4_MATRIX_SUPPRESS_LOGS', true),
         startSeed: parseIntEnv('AI_PHASE4_MATRIX_START_SEED', phase4.stressMatrix.startSeed),
         pairings,
         runtimeGate: {
@@ -143,6 +180,7 @@ function runCli(): void {
             maxSteps: config.maxSteps,
             enableMulligan: config.enableMulligan,
             measureRuntime: config.measureRuntime,
+            suppressLogs: config.suppressLogs,
             player1BotId: pairing.player1BotId,
             player2BotId: pairing.player2BotId,
         });
@@ -158,6 +196,10 @@ function runCli(): void {
         config.runtimeGate.baseline,
         config.runtimeGate.thresholds,
     );
+    const performanceGate = evaluateStrongV3VsStrongV2Performance(
+        runs,
+        manifest.phase4.performanceGate.minStrongV3WinRateVsStrongV2,
+    );
 
     const matrixReport: Phase4MatrixReport = {
         config,
@@ -166,6 +208,7 @@ function runCli(): void {
             totalGames,
             terminationTotals,
             runtimeGate,
+            performanceGate,
         },
     };
 
@@ -181,6 +224,14 @@ function runCli(): void {
 
     if (!runtimeGate.pass) {
         throw new Error(`Phase4 runtime gate failed: ${runtimeGate.reasons.join(' | ')}`);
+    }
+
+    if (!performanceGate.pass) {
+        throw new Error(
+            `Phase4 performance gate failed: strong-v3 winRate vs strong-v2=${performanceGate.strongV3WinRateVsStrongV2.toFixed(4)} `
+            + `< required ${performanceGate.minStrongV3WinRateVsStrongV2.toFixed(4)} `
+            + `(wins=${performanceGate.wins}, games=${performanceGate.games})`,
+        );
     }
 }
 
