@@ -96,6 +96,16 @@
   - Validation (quick):
     - `npx vitest run tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
     - `AI_REGRESSION_SKIP_SOAK=1 npm run ai:regression`
+  - Added Phase 4 hardening automation (stress matrix + runtime gate):
+    - `scripts/ai/run_phase4_stress_matrix.ts`
+    - `scripts/ai/phase4_runtime_gate.ts`
+    - `docs/ai/phase4_completion_runbook.md`
+    - `phase0.manifest.json`, `scripts/ai/phase0_manifest.ts` (new `phase4` config)
+  - Added command:
+    - `npm run ai:phase4:matrix`
+  - Validation:
+    - `npx vitest run tests/ai/Phase0Manifest.vitest.test.ts tests/ai/Phase4RuntimeGate.vitest.test.ts tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
+    - `AI_PHASE4_MATRIX_PAIRINGS='strong-v3:baseline-a:2' AI_PHASE4_GATE_P50_MULT=2 AI_PHASE4_MATRIX_OUTPUT='-' npm run ai:phase4:matrix`
 - [ ] Phase 5 not started (Deck search MVP)
 - [ ] Phase 6 not started
 - [ ] Phase 7 not started

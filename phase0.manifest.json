@@ -44,5 +44,52 @@
       "tests/ai/StrongBotV2InteractionSearch.vitest.test.ts"
     ],
     "includeBotSoak": true
+  },
+  "phase4": {
+    "stressMatrix": {
+      "startSeed": 2026021301,
+      "gamesPerPairing": 24,
+      "maxSteps": 2600,
+      "enableMulligan": true,
+      "measureRuntime": true,
+      "outputPath": "artifacts/ai/phase4/stress_matrix_latest.json",
+      "pairings": [
+        {
+          "player1BotId": "strong-v3",
+          "player2BotId": "baseline-a",
+          "games": 24
+        },
+        {
+          "player1BotId": "strong-v3",
+          "player2BotId": "baseline-b",
+          "games": 24
+        },
+        {
+          "player1BotId": "strong-v3",
+          "player2BotId": "strong-v1",
+          "games": 24
+        },
+        {
+          "player1BotId": "strong-v3",
+          "player2BotId": "strong-v2",
+          "games": 24
+        },
+        {
+          "player1BotId": "strong-v2",
+          "player2BotId": "strong-v3",
+          "games": 24
+        }
+      ]
+    },
+    "runtimeGateThresholds": {
+      "p50MsPerActionMultiplier": 1.25,
+      "p95MsPerActionMultiplier": 1.6,
+      "avgMsPerGameMultiplier": 1.4
+    },
+    "runtimeGateBaseline": {
+      "p50MsPerAction": 2.752,
+      "p95MsPerAction": 3.853,
+      "avgMsPerGame": 273.61
+    }
   }
 }

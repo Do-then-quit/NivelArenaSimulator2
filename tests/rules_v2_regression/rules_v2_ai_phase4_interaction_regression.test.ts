@@ -123,4 +123,27 @@ describe('Rules v2 AI Phase4 interaction regression', () => {
             expect(action.confirm).toBe(false);
         }
     });
+
+    it('NORMAL: avoids wasteful empty-lane-neutral upgrade when pressure-positive deployment exists', () => {
+        const engine = makeEngine(9404);
+        const actor = engine.state.players[0];
+        const opponent = engine.state.players[1];
+
+        actor.unitZones[0].unit = makeUnit('BASE_UNIT', { cost: 3, power: 4000, hit: 1 });
+        actor.damage = Array.from({ length: 5 }, (_v, i) => makeUnit(`P1_DAMAGE_${i}`));
+        opponent.unitZones[2].unit = makeUnit('RIGHT_LANE_BLOCKER', { cost: 4, power: 7000, hit: 1 });
+        actor.hand = [
+            makeUnit('WASTEFUL_UPGRADE', { cost: 1, power: 3500, hit: 1 }),
+            makeUnit('PRESSURE_DEPLOY', { cost: 1, power: 2500, hit: 2 }),
+        ];
+
+        const bot = new StrongBotV3('Strong-v3-Phase4-WastefulUpgrade');
+        const action = bot.chooseAction(engine, actor.id);
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('PLAY_UNIT');
+        if (action?.type === 'PLAY_UNIT') {
+            expect(action.handIndex).toBe(1);
+            expect(action.zoneIndex).toBe(1);
+        }
+    });
 });

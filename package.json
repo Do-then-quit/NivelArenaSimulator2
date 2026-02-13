@@ -12,7 +12,8 @@
         "ai:bench": "tsx scripts/ai/run_match_batch.ts",
         "ai:ladder": "tsx scripts/ai/elo_ladder.ts",
         "ai:deck-search": "tsx scripts/ai/run_deck_search.ts",
-        "ai:regression": "tsx scripts/ai/run_ai_regression.ts"
+        "ai:regression": "tsx scripts/ai/run_ai_regression.ts",
+        "ai:phase4:matrix": "tsx scripts/ai/run_phase4_stress_matrix.ts"
     },
     "devDependencies": {
         "@types/jsdom": "^27.0.0",

@@ -26,11 +26,46 @@ export interface Phase0RegressionConfig {
     includeBotSoak: boolean;
 }
 
+export interface Phase4StressMatrixPairing {
+    player1BotId: string;
+    player2BotId: string;
+    games: number;
+}
+
+export interface Phase4StressMatrixConfig {
+    startSeed: number;
+    gamesPerPairing: number;
+    maxSteps: number;
+    enableMulligan: boolean;
+    measureRuntime: boolean;
+    outputPath: string;
+    pairings: Phase4StressMatrixPairing[];
+}
+
+export interface Phase4RuntimeGateThresholds {
+    p50MsPerActionMultiplier: number;
+    p95MsPerActionMultiplier: number;
+    avgMsPerGameMultiplier: number;
+}
+
+export interface Phase4RuntimeGateBaseline {
+    p50MsPerAction: number;
+    p95MsPerAction: number;
+    avgMsPerGame: number;
+}
+
+export interface Phase0Phase4Config {
+    stressMatrix: Phase4StressMatrixConfig;
+    runtimeGateThresholds: Phase4RuntimeGateThresholds;
+    runtimeGateBaseline: Phase4RuntimeGateBaseline;
+}
+
 export interface Phase0Manifest {
     version: string;
     bench: Phase0BenchDefaults;
     ladder: Phase0LadderDefaults;
     regression: Phase0RegressionConfig;
+    phase4: Phase0Phase4Config;
 }
 
 const REPO_DEFAULT_MANIFEST_FILENAME = 'phase0.manifest.json';
@@ -79,6 +114,33 @@ const FALLBACK_PHASE0_MANIFEST: Phase0Manifest = {
         ],
         includeBotSoak: true,
     },
+    phase4: {
+        stressMatrix: {
+            startSeed: 2026021301,
+            gamesPerPairing: 24,
+            maxSteps: 2600,
+            enableMulligan: true,
+            measureRuntime: true,
+            outputPath: 'artifacts/ai/phase4/stress_matrix_latest.json',
+            pairings: [
+                { player1BotId: 'strong-v3', player2BotId: 'baseline-a', games: 24 },
+                { player1BotId: 'strong-v3', player2BotId: 'baseline-b', games: 24 },
+                { player1BotId: 'strong-v3', player2BotId: 'strong-v1', games: 24 },
+                { player1BotId: 'strong-v3', player2BotId: 'strong-v2', games: 24 },
+                { player1BotId: 'strong-v2', player2BotId: 'strong-v3', games: 24 },
+            ],
+        },
+        runtimeGateThresholds: {
+            p50MsPerActionMultiplier: 1.25,
+            p95MsPerActionMultiplier: 1.6,
+            avgMsPerGameMultiplier: 1.4,
+        },
+        runtimeGateBaseline: {
+            p50MsPerAction: 2.752,
+            p95MsPerAction: 3.853,
+            avgMsPerGame: 273.61,
+        },
+    },
 };
 
 function mergeManifest(base: Phase0Manifest, input: Partial<Phase0Manifest>): Phase0Manifest {
@@ -96,6 +158,23 @@ function mergeManifest(base: Phase0Manifest, input: Partial<Phase0Manifest>): Ph
             ...base.regression,
             ...(input.regression ?? {}),
             vitestFiles: input.regression?.vitestFiles ?? base.regression.vitestFiles,
+        },
+        phase4: {
+            ...base.phase4,
+            ...(input.phase4 ?? {}),
+            stressMatrix: {
+                ...base.phase4.stressMatrix,
+                ...(input.phase4?.stressMatrix ?? {}),
+                pairings: input.phase4?.stressMatrix?.pairings ?? base.phase4.stressMatrix.pairings,
+            },
+            runtimeGateThresholds: {
+                ...base.phase4.runtimeGateThresholds,
+                ...(input.phase4?.runtimeGateThresholds ?? {}),
+            },
+            runtimeGateBaseline: {
+                ...base.phase4.runtimeGateBaseline,
+                ...(input.phase4?.runtimeGateBaseline ?? {}),
+            },
         },
     };
 }
