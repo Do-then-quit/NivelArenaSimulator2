@@ -1,6 +1,6 @@
 ﻿# AI 로드맵: 강한 플레이 봇 + 강한 덱 탐색
 
-## 진행 현황 (2026-02-12)
+## 진행 현황 (2026-02-13)
 
 - [x] Phase 0 완료
   - 근거 문서: `Phase0.md`
@@ -84,7 +84,18 @@
       - `artifacts/ai/bench/phase3_v3_vs_v2_p1v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_p2v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_holdout_440_summary_20260212_fix2.json`
-- [ ] Phase 4 미착수 (플레이 봇 하드닝 게이트)
+- [~] Phase 4 착수 (플레이 봇 하드닝 게이트, PR1)
+  - PR1 최소 작업 세트 문서화:
+    - `docs/ai/phase4_pr1_minimum.md`
+  - Phase 4 상호작용 회귀 추가:
+    - `tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
+    - 커버 축: `SELECT_COST` / `SELECT_TARGET` / `SELECT_OPTIONAL`
+  - AI 회귀 파이프라인 편입:
+    - `phase0.manifest.json`
+    - `scripts/ai/phase0_manifest.ts`
+  - 검증(quick):
+    - `npx vitest run tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
+    - `AI_REGRESSION_SKIP_SOAK=1 npm run ai:regression`
 - [ ] Phase 5 미착수 (덱 탐색 MVP)
 - [ ] Phase 6 미착수
 - [ ] Phase 7 미착수

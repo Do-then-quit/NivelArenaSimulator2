@@ -25,6 +25,7 @@
     "vitestFiles": [
       "tests/rules_v2_regression/rules_v2_ai_ready_stage1_regression.test.ts",
       "tests/rules_v2_regression/rules_v2_ai_ready_stage2_stage3_regression.test.ts",
+      "tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts",
       "tests/rules_v2_regression/rules_v2_ai_baseline_bot_regression.test.ts",
       "tests/rules_v2_regression/rules_v2_mulligan_regression.test.ts",
       "tests/rules_v2_regression/rules_v2_bt01_061_targeting_regression.test.ts",

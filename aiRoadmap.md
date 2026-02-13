@@ -1,6 +1,6 @@
 # AI Roadmap: Strong Play Bot + Strong Deck Search
 
-## Progress Status (2026-02-12)
+## Progress Status (2026-02-13)
 
 - [x] Phase 0 complete
   - Evidence: `Phase0.md`
@@ -84,7 +84,18 @@
       - `artifacts/ai/bench/phase3_v3_vs_v2_p1v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_p2v3_holdout_220_20260212_fix2.json`
       - `artifacts/ai/bench/phase3_v3_vs_v2_holdout_440_summary_20260212_fix2.json`
-- [ ] Phase 4 not started (Play bot hardening gate)
+- [~] Phase 4 started (Play bot hardening gate, PR1)
+  - PR1 minimum scope documented:
+    - `docs/ai/phase4_pr1_minimum.md`
+  - Added Phase 4 interaction regressions:
+    - `tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
+    - covered axes: `SELECT_COST` / `SELECT_TARGET` / `SELECT_OPTIONAL`
+  - Wired into AI regression pipeline:
+    - `phase0.manifest.json`
+    - `scripts/ai/phase0_manifest.ts`
+  - Validation (quick):
+    - `npx vitest run tests/rules_v2_regression/rules_v2_ai_phase4_interaction_regression.test.ts`
+    - `AI_REGRESSION_SKIP_SOAK=1 npm run ai:regression`
 - [ ] Phase 5 not started (Deck search MVP)
 - [ ] Phase 6 not started
 - [ ] Phase 7 not started
