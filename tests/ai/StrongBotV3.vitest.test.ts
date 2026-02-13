@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { GameEngine } from '../../src/logic/GameEngine';
-import { StrongBotV3 } from '../../src/logic/ai/StrongBotV3';
+import {
+    resolveStrongBotV3BudgetPresetKey,
+    resolveV3OptionsFromPreset,
+    STRONG_BOT_V3_BUDGET_PRESETS,
+    StrongBotV3,
+} from '../../src/logic/ai/StrongBotV3';
 import { ActivationCondition, Attribute, Card, CardType, Phase } from '../../src/logic/types';
 
 function makeLeader(id: string): Card {
@@ -132,6 +137,27 @@ describe('StrongBotV3', () => {
         expect(action?.type).toBe('CONFIRM_TARGETS');
     });
 
+
+
+    it('resolves suite-aware budget presets and allows partial override for tuning hooks', () => {
+        const dev = resolveV3OptionsFromPreset('dev');
+        const holdout = resolveV3OptionsFromPreset('holdout');
+        const tuning = resolveV3OptionsFromPreset('tuning', { beamWidth: 11, opponentReplyTopK: 5 });
+
+        expect(dev.beamWidth).toBe(STRONG_BOT_V3_BUDGET_PRESETS.dev.beamWidth);
+        expect(dev.interactionRolloutDepth).toBe(STRONG_BOT_V3_BUDGET_PRESETS.dev.interactionRolloutDepth);
+        expect(holdout.beamWidth).toBe(STRONG_BOT_V3_BUDGET_PRESETS.holdout.beamWidth);
+        expect(holdout.opponentReplyTopK).toBe(STRONG_BOT_V3_BUDGET_PRESETS.holdout.opponentReplyTopK);
+        expect(tuning.beamWidth).toBe(11);
+        expect(tuning.opponentReplyTopK).toBe(5);
+        expect(tuning.interactionRolloutDepth).toBe(STRONG_BOT_V3_BUDGET_PRESETS.tuning.interactionRolloutDepth);
+    });
+
+    it('falls back to holdout preset key for unknown suite input', () => {
+        expect(resolveStrongBotV3BudgetPresetKey('nope')).toBe('holdout');
+        expect(resolveStrongBotV3BudgetPresetKey(undefined)).toBe('holdout');
+        expect(resolveStrongBotV3BudgetPresetKey('TUNING')).toBe('tuning');
+    });
     it('selects a distinct second target instead of toggling already selected target in count=2 selection', () => {
         const engine = createEngine(9304);
         const actor = engine.state.players[0];

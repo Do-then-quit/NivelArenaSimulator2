@@ -9,6 +9,7 @@ import { runCounterfactualRollout } from './eval/CounterfactualRollout';
 
 export interface StrongBotV3Options {
     beamWidth: number;
+    opponentReplyTopK: number;
     stateScoreWeight: number;
     actionScoreWeight: number;
     enableInteractionRollout: boolean;
@@ -23,8 +24,11 @@ export interface StrongBotV3Options {
     repeatMemoryCapacity: number;
 }
 
+export type StrongBotV3BudgetPreset = 'tuning' | 'dev' | 'holdout';
+
 const DEFAULT_OPTIONS: StrongBotV3Options = {
     beamWidth: 6,
+    opponentReplyTopK: 3,
     stateScoreWeight: 1,
     actionScoreWeight: 0.36,
     enableInteractionRollout: true,
@@ -39,6 +43,56 @@ const DEFAULT_OPTIONS: StrongBotV3Options = {
     repeatMemoryCapacity: 96,
 };
 
+export const STRONG_BOT_V3_BUDGET_PRESETS: Record<StrongBotV3BudgetPreset, Partial<StrongBotV3Options>> = {
+    tuning: {
+        beamWidth: 8,
+        interactionRolloutDepth: 5,
+        opponentReplyTopK: 4,
+    },
+    dev: {
+        beamWidth: 4,
+        interactionRolloutDepth: 3,
+        opponentReplyTopK: 2,
+    },
+    holdout: {
+        beamWidth: 6,
+        interactionRolloutDepth: 4,
+        opponentReplyTopK: 3,
+    },
+};
+
+function parseBudgetPreset(input?: string | null): StrongBotV3BudgetPreset | null {
+    const normalized = input?.trim().toLowerCase();
+    if (!normalized) return null;
+    if (normalized === 'tuning' || normalized === 'dev' || normalized === 'holdout') return normalized;
+    return null;
+}
+
+export function resolveStrongBotV3BudgetPresetKey(input?: string | null): StrongBotV3BudgetPreset {
+    return parseBudgetPreset(input) ?? 'holdout';
+}
+
+export function resolveV3OptionsFromPreset(
+    presetInput?: string | null,
+    override: Partial<StrongBotV3Options> = {},
+): StrongBotV3Options {
+    const preset = resolveStrongBotV3BudgetPresetKey(presetInput);
+    const presetOptions = STRONG_BOT_V3_BUDGET_PRESETS[preset] ?? {};
+    const merged = {
+        ...DEFAULT_OPTIONS,
+        ...presetOptions,
+        ...override,
+    };
+    return {
+        ...merged,
+        beamWidth: Math.max(1, Math.trunc(merged.beamWidth)),
+        opponentReplyTopK: Math.max(1, Math.trunc(merged.opponentReplyTopK)),
+        interactionRolloutDepth: Math.max(0, Math.trunc(merged.interactionRolloutDepth)),
+        repeatMemoryDecay: Math.max(0, Math.trunc(merged.repeatMemoryDecay)),
+        repeatMemoryCapacity: Math.max(8, Math.trunc(merged.repeatMemoryCapacity)),
+    };
+}
+
 export class StrongBotV3 {
     readonly name: string;
     private readonly fallback: StrongBotV2;
@@ -48,14 +102,7 @@ export class StrongBotV3 {
     constructor(name: string = 'StrongBot-v3', options: Partial<StrongBotV3Options> = {}) {
         this.name = name;
         this.fallback = new StrongBotV2(`${name}-Fallback-v2`);
-        this.options = {
-            ...DEFAULT_OPTIONS,
-            ...options,
-            beamWidth: Math.max(1, Math.trunc(options.beamWidth ?? DEFAULT_OPTIONS.beamWidth)),
-            interactionRolloutDepth: Math.max(0, Math.trunc(options.interactionRolloutDepth ?? DEFAULT_OPTIONS.interactionRolloutDepth)),
-            repeatMemoryDecay: Math.max(0, Math.trunc(options.repeatMemoryDecay ?? DEFAULT_OPTIONS.repeatMemoryDecay)),
-            repeatMemoryCapacity: Math.max(8, Math.trunc(options.repeatMemoryCapacity ?? DEFAULT_OPTIONS.repeatMemoryCapacity)),
-        };
+        this.options = resolveV3OptionsFromPreset('holdout', options);
     }
 
     public chooseAction(engine: GameEngine, actorPlayerId?: string): EngineAction | null {
@@ -84,6 +131,7 @@ export class StrongBotV3 {
                 interactionDiscount: this.options.interactionDiscount,
                 interactionScoreWeight: this.options.rolloutInteractionScoreWeight,
                 opponentReplyBlend: this.options.opponentReplyBlend,
+                opponentReplyTopK: this.options.opponentReplyTopK,
             }).score;
             const total = immediate * this.options.actionScoreWeight + rollout * this.options.stateScoreWeight;
             const actionKey = this.toActionKey(action);

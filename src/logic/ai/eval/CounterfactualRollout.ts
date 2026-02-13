@@ -9,6 +9,7 @@ export interface CounterfactualRolloutOptions extends ObservationEvaluatorOption
     interactionDiscount: number;
     interactionScoreWeight: number;
     opponentReplyBlend: number;
+    opponentReplyTopK: number;
 }
 
 export interface CounterfactualRolloutResult {
@@ -88,6 +89,28 @@ function pickBestActionWithLookahead(
     return best;
 }
 
+function pickTopActionCandidates(
+    state: GameState,
+    actorPlayerId: string,
+    legalActions: EngineAction[],
+    options: CounterfactualRolloutOptions,
+    topK: number,
+): EngineAction[] {
+    const limit = Math.max(1, Math.trunc(topK));
+    return [...legalActions]
+        .map(action => ({
+            action,
+            score: scoreObservedAction(state, actorPlayerId, action, options, 0).score,
+            key: toActionKey(action),
+        }))
+        .sort((a, b) => {
+            if (a.score !== b.score) return b.score - a.score;
+            return a.key.localeCompare(b.key);
+        })
+        .slice(0, limit)
+        .map(entry => entry.action);
+}
+
 export function runCounterfactualRollout(
     engine: GameEngine,
     actorPlayerId: string,
@@ -146,11 +169,18 @@ export function runCounterfactualRollout(
             if (nextActor !== actorPlayerId) {
                 const opponentObservation = fork.getObservation(nextActor);
                 if (opponentObservation.canAct && opponentObservation.legalActions.length > 0) {
+                    const shortlisted = pickTopActionCandidates(
+                        opponentObservation.state,
+                        nextActor,
+                        opponentObservation.legalActions,
+                        options,
+                        options.opponentReplyTopK,
+                    );
                     const opponentReply = pickBestActionWithLookahead(
                         fork,
                         nextActor,
                         opponentObservation.state,
-                        opponentObservation.legalActions,
+                        shortlisted,
                         options,
                         new Map(),
                     );

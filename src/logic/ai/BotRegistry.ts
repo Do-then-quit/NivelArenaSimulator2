@@ -3,9 +3,19 @@ import { EngineAction } from '../types';
 import { BaselineBot } from './BaselineBot';
 import { StrongBot } from './StrongBot';
 import { StrongBotV2 } from './StrongBotV2';
-import { StrongBotV3 } from './StrongBotV3';
+import {
+    resolveV3OptionsFromPreset,
+    StrongBotV3,
+} from './StrongBotV3';
 
-export type BotModelId = 'baseline' | 'strong-v1' | 'strong-v2' | 'strong-v3';
+export type BotModelId =
+    | 'baseline'
+    | 'strong-v1'
+    | 'strong-v2'
+    | 'strong-v3'
+    | 'strong-v3.1-tuning'
+    | 'strong-v3.1-dev'
+    | 'strong-v3.1-holdout';
 
 export interface BotLike {
     name: string;
@@ -17,11 +27,18 @@ const BOT_LABEL_BY_ID: Record<BotModelId, string> = {
     'strong-v1': 'Strong v1',
     'strong-v2': 'Strong v2',
     'strong-v3': 'Strong v3',
+    'strong-v3.1-tuning': 'Strong v3.1 (tuning)',
+    'strong-v3.1-dev': 'Strong v3.1 (dev)',
+    'strong-v3.1-holdout': 'Strong v3.1 (holdout)',
 };
+
 
 export function normalizeBotModelId(input: string): BotModelId {
     const raw = input.trim().toLowerCase();
     if (raw === 'baseline' || raw === 'baseline-a' || raw === 'baseline-b') return 'baseline';
+    if (raw === 'strong-v3.1-tuning' || raw === 'strong-v31-tuning') return 'strong-v3.1-tuning';
+    if (raw === 'strong-v3.1-dev' || raw === 'strong-v31-dev') return 'strong-v3.1-dev';
+    if (raw === 'strong-v3.1-holdout' || raw === 'strong-v31-holdout') return 'strong-v3.1-holdout';
     if (raw === 'strong-v3' || raw === 'strong3' || raw === 'strong-3') return 'strong-v3';
     if (raw === 'strong-v2' || raw === 'strong2' || raw === 'strong-2') return 'strong-v2';
     if (raw === 'strong-v1' || raw === 'strong' || raw === 'strong1' || raw === 'strong-1') return 'strong-v1';
@@ -29,7 +46,17 @@ export function normalizeBotModelId(input: string): BotModelId {
 }
 
 export function getAvailableBotModels(): Array<{ id: BotModelId; label: string }> {
-    return (['baseline', 'strong-v1', 'strong-v2', 'strong-v3'] as BotModelId[]).map(id => ({
+    return (
+        [
+            'baseline',
+            'strong-v1',
+            'strong-v2',
+            'strong-v3',
+            'strong-v3.1-tuning',
+            'strong-v3.1-dev',
+            'strong-v3.1-holdout',
+        ] as BotModelId[]
+    ).map(id => ({
         id,
         label: BOT_LABEL_BY_ID[id],
     }));
@@ -49,6 +76,12 @@ export function createBotForModel(botId: BotModelId, name: string): BotLike {
             return new StrongBotV2(name);
         case 'strong-v3':
             return new StrongBotV3(name);
+        case 'strong-v3.1-tuning':
+            return new StrongBotV3(name, resolveV3OptionsFromPreset('tuning'));
+        case 'strong-v3.1-dev':
+            return new StrongBotV3(name, resolveV3OptionsFromPreset('dev'));
+        case 'strong-v3.1-holdout':
+            return new StrongBotV3(name, resolveV3OptionsFromPreset('holdout'));
         default: {
             const _never: never = botId;
             throw new Error(`Unhandled bot model: ${_never}`);
