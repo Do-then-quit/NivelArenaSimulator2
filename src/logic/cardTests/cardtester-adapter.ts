@@ -5,7 +5,7 @@
  * (setupScenarios + runTests) for use in the UI.
  */
 
-import { UnifiedTestCase, UnifiedTestModule } from './shared/types';
+import { UnifiedTestModule } from './shared/types';
 import { CardTestModule, CardTestContext } from './types';
 
 /**
@@ -15,36 +15,25 @@ export function adaptUnifiedModule(module: UnifiedTestModule): CardTestModule {
     const setupScenarios: Record<string, (ctx: CardTestContext) => string> = {};
     const runTests: Record<string, (ctx: CardTestContext) => Promise<void>> = {};
 
-    // Group tests by cardId, use first test for scenario, combine all for run
-    const byCard = new Map<string, UnifiedTestCase[]>();
+    const seenCardIds = new Set<string>();
     for (const test of module.tests) {
-        if (!byCard.has(test.cardId)) {
-            byCard.set(test.cardId, []);
+        if (seenCardIds.has(test.cardId)) {
+            throw new Error(
+                `Duplicate cardId detected: ${test.cardId}. Use unique case ids like ${test.cardId}-Trigger.`
+            );
         }
-        byCard.get(test.cardId)!.push(test);
-    }
+        seenCardIds.add(test.cardId);
 
-    for (const [cardId, tests] of byCard) {
-        // Setup uses first test's setup
-        const firstTest = tests[0];
-        setupScenarios[cardId] = (ctx: CardTestContext) => {
-            firstTest.setup(ctx.engine, ctx.getCard);
-            return firstTest.description;
+        setupScenarios[test.cardId] = (ctx: CardTestContext) => {
+            test.setup(ctx.engine, ctx.getCard);
+            return test.description;
         };
 
-        // Run combines all tests for this card
-        runTests[cardId] = async (ctx: CardTestContext) => {
-            for (const test of tests) {
-                ctx.log(`Running: ${test.name}`);
-
-                // Re-setup for each test (fresh state)
-                // Note: In UI, user already triggered setup, so we skip setup here
-                // and just run verify
-                const results = test.verify(ctx.engine, ctx.getCard);
-
-                for (const result of results) {
-                    ctx.assert(result.pass, result.message);
-                }
+        runTests[test.cardId] = async (ctx: CardTestContext) => {
+            ctx.log(`Running: ${test.name}`);
+            const results = test.verify(ctx.engine, ctx.getCard);
+            for (const result of results) {
+                ctx.assert(result.pass, result.message);
             }
         };
     }

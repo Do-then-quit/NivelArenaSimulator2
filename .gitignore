@@ -20,3 +20,10 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Experiment artifacts (generated locally)
+artifacts/ai/**/runs/
+artifacts/ai/bench/latest.json
+artifacts/ai/ladder/latest.json
+artifacts/ai/phase4/stress_matrix_latest.json
+artifacts/ai/phase4_1/promotion_gate_latest.json

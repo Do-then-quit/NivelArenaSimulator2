@@ -123,6 +123,17 @@ function estimateLanePressureForCard(
     return power > defenderPower ? 120 : 20;
 }
 
+function hasGuardianAbility(zone: UnitZoneState): boolean {
+    const hasGuardianText = (card: Card | undefined): boolean => {
+        if (!card?.text) return false;
+        const normalized = card.text.replace(/&nbsp;/g, ' ').replace(/\s+/g, '');
+        return normalized.includes('가디언') || normalized.includes('GUARDIAN');
+    };
+
+    if (hasGuardianText(zone.unit ?? undefined)) return true;
+    return zone.items.some(item => hasGuardianText(item));
+}
+
 export function evaluateObservedState(
     state: GameState,
     actorPlayerId: string,
@@ -289,14 +300,27 @@ function scoreResolveBlockAction(
     if (attackerIndex === null || !opponent) return { score: action.shouldBlock ? -40 : 20, reason: 'block-default' };
 
     const attackerZone = opponent.unitZones[attackerIndex];
-    const defenderZone = actor.unitZones[attackerIndex];
-    if (!attackerZone.unit || !defenderZone.unit) {
+    if (!attackerZone.unit) {
+        return { score: action.shouldBlock ? -20 : 60, reason: 'block-empty-lane' };
+    }
+
+    const defenderCandidates: UnitZoneState[] = [];
+    const encounterZone = actor.unitZones[attackerIndex];
+    if (encounterZone?.unit) defenderCandidates.push(encounterZone);
+    [attackerIndex - 1, attackerIndex + 1]
+        .filter(index => index >= 0 && index < actor.unitZones.length)
+        .forEach(index => {
+            const zone = actor.unitZones[index];
+            if (!zone?.unit) return;
+            if (hasGuardianAbility(zone)) defenderCandidates.push(zone);
+        });
+    if (defenderCandidates.length === 0) {
         return { score: action.shouldBlock ? -20 : 60, reason: 'block-empty-lane' };
     }
 
     const attackerPower = getObservedZonePower(attackerZone);
     const attackerHit = getObservedZoneHit(attackerZone);
-    const defenderPower = getObservedZonePower(defenderZone);
+    const defenderPower = defenderCandidates.reduce((maxPower, zone) => Math.max(maxPower, getObservedZonePower(zone)), Number.NEGATIVE_INFINITY);
     const directLethalIfUnblocked = actor.damage.length + attackerHit >= 10;
     const shouldBlock = directLethalIfUnblocked || defenderPower >= attackerPower;
 

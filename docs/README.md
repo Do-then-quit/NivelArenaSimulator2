@@ -14,6 +14,6 @@
   - `GEMINI.md`
   - `knowledge.md`
 - `docs/ai/`: AI 운영 실행 문서/런북/시도 기록
-- `docs/agent/`: 에이전트 작업용 요약 가이드/포인터 (`Architecture.md`, `Workflow.md`, `Plans.md`)
+- `docs/agent/`: 에이전트 작업용 요약 가이드/포인터 (`Architecture.md`, `Workflow.md`, `PackImplementationPolicy.md`, `Plans.md`)
 
 에이전트 기준 포인터는 루트 `AGENTS.md`의 **Task-specific Guidance Pointers** 섹션을 참고합니다.

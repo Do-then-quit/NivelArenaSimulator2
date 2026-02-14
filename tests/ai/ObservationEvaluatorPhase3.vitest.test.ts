@@ -135,6 +135,7 @@ function makeBaseState(): GameState {
         turnCount: 1,
         winner: null,
         pendingAttackerIndex: null,
+        pendingDefenderIndex: null,
         interactionMode: 'NORMAL',
         interactionOwnerPlayerId: null,
         pendingEffect: null,

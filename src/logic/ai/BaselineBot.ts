@@ -167,14 +167,19 @@ export class BaselineBot {
         const attackerPlayer = engine.currentPlayer;
         const defenderPlayer = engine.opponentPlayer;
         const attackerZone = attackerPlayer.unitZones[attackerIndex];
-        const defenderZone = defenderPlayer.unitZones[attackerIndex];
-        if (!attackerZone?.unit || !defenderZone?.unit) return blockFalse;
+        if (!attackerZone?.unit) return blockFalse;
 
         const attackerPower = engine.getUnitPower(attackerZone, attackerPlayer);
         const attackerHit = engine.getUnitHit(attackerZone, attackerPlayer);
-        const defenderPower = engine.getUnitPower(defenderZone, defenderPlayer);
+        const defenseOptions = engine.getPendingDefenseOptions();
+        if (defenseOptions.length === 0) return blockFalse;
+        const strongestDefenderPower = defenseOptions.reduce((maxPower, option) => {
+            const zone = defenderPlayer.unitZones[option.defenderZoneIndex];
+            if (!zone?.unit) return maxPower;
+            return Math.max(maxPower, engine.getUnitPower(zone, defenderPlayer));
+        }, Number.NEGATIVE_INFINITY);
 
-        const shouldBlock = defenderPower >= attackerPower || attackerHit >= 2;
+        const shouldBlock = strongestDefenderPower >= attackerPower || attackerHit >= 2;
         return shouldBlock ? blockTrue : blockFalse;
     }
 
@@ -307,6 +312,14 @@ export class BaselineBot {
             }
         }
 
+        if (pendingActionType === 'BLOCK_SELECT_DEFENDER') {
+            return this.pickMax(candidateActions, action => this.getZoneActionValue(engine, action)) ?? candidateActions[0];
+        }
+
+        if (pendingActionType === 'BLOCK_PAY_SACRIFICE') {
+            return this.pickMin(candidateActions, action => this.getZoneActionValue(engine, action)) ?? candidateActions[0];
+        }
+
         return this.pickMax(candidateActions, action => {
             const zoneValue = this.getZoneActionValue(engine, action);
             if (zoneValue === Number.NEGATIVE_INFINITY) return zoneValue;
@@ -349,7 +362,7 @@ export class BaselineBot {
         if (candidateActions.length === 0) return null;
 
         const actionType = engine.state.pendingEffect?.actionType;
-        const preferLow = actionType === 'DISCARD_FROM_DRAWN';
+        const preferLow = actionType === 'DISCARD_FROM_DRAWN' || actionType === 'BLOCK_PAY_NEGATE';
 
         return (preferLow
             ? this.pickMin(candidateActions, action => this.getCardValue(engine.state.revealedCards[action.revealedIndex]))

@@ -18,13 +18,19 @@ import rawSB01 from '../../packs/SB01.json';
 import { ST01_EFFECTS } from './cardEffects/st01';
 import { ST02_EFFECTS } from './cardEffects/st02';
 import { ST03_EFFECTS } from './cardEffects/st03';
+import { ST04_EFFECTS } from './cardEffects/st04';
+import { ST05_EFFECTS } from './cardEffects/st05';
 import { BT01_EFFECTS } from './cardEffects/bt01';
+import { BT02_EFFECTS } from './cardEffects/bt02';
 
 const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...ST01_EFFECTS,
     ...ST02_EFFECTS,
     ...ST03_EFFECTS,
-    ...BT01_EFFECTS
+    ...ST04_EFFECTS,
+    ...ST05_EFFECTS,
+    ...BT01_EFFECTS,
+    ...BT02_EFFECTS
 };
 
 function mapType(rawType: string): CardType {
