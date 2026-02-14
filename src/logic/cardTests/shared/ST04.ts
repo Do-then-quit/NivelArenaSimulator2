@@ -25,6 +25,40 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
+        cardId: 'ST04-001-Awaken',
+        name: 'Leader awaken only',
+        description: 'Checks only the awaken condition at leader level 4.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('ST04-001');
+            p1.levelZone.isAwakened = false;
+            p1.leaderLevel = 4;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.checkAwakening(0);
+            return [{ pass: p1.levelZone?.isAwakened === true, message: 'leader awakened at level 4' }];
+        }
+    },
+    {
+        cardId: 'ST04-001-Passive',
+        name: 'Leader opponent-turn passive only',
+        description: 'Checks only the opponent-turn +1000 passive while awakened.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('ST04-001');
+            p1.levelZone.isAwakened = true;
+            p1.unitZones[0].unit = getCard('ST04-002');
+            engine.state.turnPlayerIndex = 1;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const basePower = p1.unitZones[0].unit?.power ?? 0;
+            const actualPower = engine.getUnitPower(p1.unitZones[0], p1);
+            return [{ pass: actualPower >= basePower + 1000, message: 'opponent-turn passive buff applied' }];
+        }
+    },
+    {
         cardId: 'ST04-002',
         name: 'Vanilla unit placement',
         description: 'Smoke test for vanilla unit card.',
@@ -161,6 +195,56 @@ const tests: UnifiedTestCase[] = [
             return [
                 { pass: p2.damage.length === damageBefore + 2, message: 'direct damage dealt' },
                 { pass: !!p2.unitZones[0].unit, message: 'blocker stayed on field (could not block)' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST04-007-Attacker',
+        name: 'Attacker breakthrough costMin=4 only',
+        description: 'Checks ATTACKER breakthrough restriction against cost 4+ blocker.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+
+            const attacker = getCard('ST04-007');
+            attacker.hit = 2;
+            attacker.power = 3000;
+            p1.unitZones[0].unit = attacker;
+
+            const blocker = getCard('ST01-009');
+            blocker.cost = 4;
+            blocker.power = 9999;
+            p2.unitZones[0].unit = blocker;
+        },
+        verify: (engine) => {
+            const p2 = engine.state.players[1];
+            const damageBefore = p2.damage.length;
+            engine.attack(0);
+            return [
+                { pass: p2.damage.length === damageBefore + 2, message: 'damage goes through due to breakthrough' },
+                { pass: !!p2.unitZones[0].unit, message: 'defender stays because it could not block' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST04-007-Trigger',
+        name: 'Trigger return-to-hand only',
+        description: 'Damage trigger returns ST04-007 from damage zone to hand.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.deck = [getCard('ST01-002'), getCard('ST04-007')];
+            p1.hand = [];
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const handBefore = p1.hand.length;
+            engine.dealDamage(p1, 1);
+            return [
+                { pass: p1.hand.length === handBefore + 1, message: 'returned to hand from trigger' },
+                { pass: p1.hand.some(card => card.id.startsWith('ST04-007')), message: 'hand contains ST04-007' },
+                { pass: !p1.damage.some(card => card.id.startsWith('ST04-007')), message: 'source removed from damage zone' }
             ];
         }
     },
@@ -307,6 +391,48 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
+        cardId: 'ST04-013-Active',
+        name: 'Active hit +1 only',
+        description: 'Checks ACTIVE hit+1 targeting a guardian unit.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('ST04-013')];
+            p1.unitZones[0].unit = getCard('ST04-003');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const baseHit = engine.getUnitHit(p1.unitZones[0], p1);
+            engine.playSkill(0);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectZoneTargetByPlayerId(0, p1.id);
+            }
+            const boostedHit = engine.getUnitHit(p1.unitZones[0], p1);
+            return [{ pass: boostedHit >= baseHit + 1, message: 'guardian got +1 hit' }];
+        }
+    },
+    {
+        cardId: 'ST04-013-Trigger',
+        name: 'Trigger trash self and draw only',
+        description: 'Damage trigger trashes ST04-013 and draws one card.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.hand = [];
+            p1.deck = [getCard('ST01-002'), getCard('ST04-013')];
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const handBefore = p1.hand.length;
+            engine.dealDamage(p1, 1);
+            return [
+                { pass: p1.trash.some(card => card.id.startsWith('ST04-013')), message: 'source moved to trash' },
+                { pass: !p1.damage.some(card => card.id.startsWith('ST04-013')), message: 'source removed from damage zone' },
+                { pass: p1.hand.length === handBefore + 1, message: 'draw 1 resolved after trash self' }
+            ];
+        }
+    },
+    {
         cardId: 'ST04-014',
         name: 'Draw 2 skill',
         description: 'Skill draws two cards.',
@@ -359,6 +485,71 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
+        cardId: 'ST04-015-Active',
+        name: 'Active grants unconditional breakthrough only',
+        description: 'Active grants unconditional breakthrough to guardian, then attack cannot be blocked.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('ST04-015')];
+            p1.unitZones[0].unit = getCard('ST04-003');
+            p2.unitZones[0].unit = getCard('ST01-009');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.playSkill(0);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectZoneTargetByPlayerId(0, p1.id);
+            }
+
+            const damageBefore = p2.damage.length;
+            const hit = p1.unitZones[0].unit?.hit ?? 0;
+            engine.state.phase = Phase.ATTACK;
+            engine.attack(0);
+
+            return [
+                { pass: p2.damage.length === damageBefore + hit, message: 'damage dealt directly due to unconditional breakthrough' },
+                { pass: !!p2.unitZones[0].unit, message: 'defender remained on field (no block occurred)' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST04-015-Trigger',
+        name: 'Trigger trash self and bounce lowest-cost unit+items only',
+        description: 'Damage trigger trashes source and returns lowest-cost opponent unit with attached items.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.deck = [getCard('ST01-002'), getCard('ST04-015')];
+
+            const low = getCard('ST04-002');
+            low.cost = 1;
+            const high = getCard('ST01-009');
+            high.cost = 5;
+            p2.unitZones[0].unit = low;
+            p2.unitZones[0].items = [getCard('ST04-016')];
+            p2.unitZones[1].unit = high;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const oppHandBefore = p2.hand.length;
+            engine.dealDamage(p1, 1);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectZoneTargetByPlayerId(0, p2.id);
+            }
+            return [
+                { pass: p1.trash.some(card => card.id.startsWith('ST04-015')), message: 'source moved to trash' },
+                { pass: p2.unitZones[0].unit === null, message: 'lowest-cost unit removed from field' },
+                { pass: p2.hand.length >= oppHandBefore + 2, message: 'unit and attached item returned to hand' }
+            ];
+        }
+    },
+    {
         cardId: 'ST04-016',
         name: 'Defender item +2000',
         description: 'Item grants defender +2000 power.',
@@ -401,6 +592,46 @@ const tests: UnifiedTestCase[] = [
             const handBefore = p1.hand.length;
             engine.activateEffect(0, 0, 0);
             return [{ pass: p1.hand.length === handBefore + 1, message: 'item active draw resolved' }];
+        }
+    },
+    {
+        cardId: 'ST04-017-ActiveMain',
+        name: 'ActiveMain draw with defender host only',
+        description: 'Checks ACTIVE_MAIN draw while host has Defender keyword.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('ST04-017')];
+            p1.deck = [getCard('ST01-002')];
+            p1.unitZones[0].unit = getCard('ST04-006');
+            engine.state.phase = Phase.MAIN;
+            engine.playItem(0, 0);
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const handBefore = p1.hand.length;
+            engine.activateEffect(0, 0, 0);
+            return [{ pass: p1.hand.length === handBefore + 1, message: 'active main draw resolved on defender host' }];
+        }
+    },
+    {
+        cardId: 'ST04-017-Trigger',
+        name: 'Trigger trash self and draw only',
+        description: 'Damage trigger trashes ST04-017 and draws one card.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.hand = [];
+            p1.deck = [getCard('ST01-002'), getCard('ST04-017')];
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const handBefore = p1.hand.length;
+            engine.dealDamage(p1, 1);
+            return [
+                { pass: p1.trash.some(card => card.id.startsWith('ST04-017')), message: 'source moved to trash' },
+                { pass: !p1.damage.some(card => card.id.startsWith('ST04-017')), message: 'source removed from damage zone' },
+                { pass: p1.hand.length === handBefore + 1, message: 'draw 1 resolved after trash self' }
+            ];
         }
     }
 ];

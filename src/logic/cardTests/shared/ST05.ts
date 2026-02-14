@@ -24,6 +24,39 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
+        cardId: 'ST05-001-Awaken',
+        name: 'Leader awaken only',
+        description: 'Checks only the awaken condition at leader level 5.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('ST05-001');
+            p1.levelZone.isAwakened = false;
+            p1.leaderLevel = 5;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.checkAwakening(0);
+            return [{ pass: p1.levelZone?.isAwakened === true, message: 'leader awakened at level 5' }];
+        }
+    },
+    {
+        cardId: 'ST05-001-Passive',
+        name: 'Leader armed passive only',
+        description: 'Checks only the armed-unit +1000 passive while awakened.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('ST05-001');
+            p1.levelZone.isAwakened = true;
+            p1.unitZones[0].unit = getCard('ST05-005');
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const basePower = p1.unitZones[0].unit?.power ?? 0;
+            const actualPower = engine.getUnitPower(p1.unitZones[0], p1);
+            return [{ pass: actualPower >= basePower + 1000, message: 'armed passive buff applied' }];
+        }
+    },
+    {
         cardId: 'ST05-002',
         name: 'Vanilla unit placement',
         description: 'Smoke test for vanilla unit card.',
@@ -117,6 +150,50 @@ const tests: UnifiedTestCase[] = [
             return [
                 { pass: p1.hand.some(card => card.id.startsWith('ST05-017')), message: 'searched item added to hand' },
                 { pass: engine.state.revealedCards.length === 0, message: 'revealed cards cleared' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST05-006-Entry',
+        name: 'Entry search cost 2 item only',
+        description: 'Checks ENTRY deck search for one cost 2 item.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('ST05-006')];
+            p1.deck = [getCard('ST01-002'), getCard('ST05-017'), getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playUnit(0, 0);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectRevealedTarget(0);
+            }
+            return [
+                { pass: p1.hand.some(card => card.id.startsWith('ST05-017')), message: 'cost 2 item searched to hand' },
+                { pass: engine.state.revealedCards.length === 0, message: 'revealed pool cleared after pick' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST05-006-Trigger',
+        name: 'Trigger trash self and search <=1 item only',
+        description: 'Damage trigger trashes ST05-006 then searches deck for cost 1 or less item.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.hand = [];
+            p1.deck = [getCard('ST05-017'), getCard('ST05-015'), getCard('ST05-006')];
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.dealDamage(p1, 1);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectRevealedTarget(0);
+            }
+            return [
+                { pass: p1.trash.some(card => card.id.startsWith('ST05-006')), message: 'source moved to trash' },
+                { pass: p1.hand.some(card => card.id.startsWith('ST05-015')), message: 'cost 1 item searched to hand' }
             ];
         }
     },
@@ -215,6 +292,55 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
+        cardId: 'ST05-011-Attacker',
+        name: 'Attacker discard effect only',
+        description: 'Checks ATTACKER discard effect when host is equipped.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.unitZones[0].unit = getCard('ST05-011');
+            p1.unitZones[0].items = [getCard('ST05-015')];
+            p2.hand = [getCard('ST01-002'), getCard('ST01-002')];
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            const zone = p1.unitZones[0];
+            const handBefore = p2.hand.length;
+            engine.effectManager.processEffects('ATTACKER' as any, {
+                sourceCard: zone.unit!,
+                player: p1,
+                opponent: p2,
+                unitZone: zone,
+                machine: engine
+            } as any);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectHandTargetByPlayerId(0, p2.id);
+            }
+            return [{ pass: p2.hand.length === handBefore - 1, message: 'attacker effect discarded one opponent card' }];
+        }
+    },
+    {
+        cardId: 'ST05-011-Trigger',
+        name: 'Trigger return-to-hand only',
+        description: 'Damage trigger returns ST05-011 from damage zone to hand.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.hand = [];
+            p1.deck = [getCard('ST01-002'), getCard('ST05-011')];
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const handBefore = p1.hand.length;
+            engine.dealDamage(p1, 1);
+            return [
+                { pass: p1.hand.length === handBefore + 1, message: 'source returned to hand' },
+                { pass: p1.hand.some(card => card.id.startsWith('ST05-011')), message: 'hand contains ST05-011' },
+                { pass: !p1.damage.some(card => card.id.startsWith('ST05-011')), message: 'source removed from damage zone' }
+            ];
+        }
+    },
+    {
         cardId: 'ST05-012',
         name: 'Active recovers item from trash',
         description: 'Active selects item in own trash and returns it to hand.',
@@ -234,6 +360,50 @@ const tests: UnifiedTestCase[] = [
             return [
                 { pass: p1.hand.some(card => card.id.startsWith('ST05-015')), message: 'item recovered to hand' },
                 { pass: p1.trash.length === 0, message: 'item removed from trash' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST05-012-Active',
+        name: 'Active trash item recovery only',
+        description: 'Checks ACTIVE recovery of one item from own trash.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('ST05-012')];
+            p1.trash = [getCard('ST05-015')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playSkill(0);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectTrashTarget(0, p1.id);
+            }
+            return [
+                { pass: p1.hand.some(card => card.id.startsWith('ST05-015')), message: 'item recovered from trash to hand' },
+                { pass: p1.trash.length === 0, message: 'selected trash item removed' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST05-012-Trigger',
+        name: 'Trigger trash self and search <=1 item only',
+        description: 'Damage trigger trashes ST05-012 then searches deck for cost 1 or less item.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.hand = [];
+            p1.deck = [getCard('ST05-017'), getCard('ST05-015'), getCard('ST05-012')];
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.dealDamage(p1, 1);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectRevealedTarget(0);
+            }
+            return [
+                { pass: p1.trash.some(card => card.id.startsWith('ST05-012')), message: 'source moved to trash' },
+                { pass: p1.hand.some(card => card.id.startsWith('ST05-015')), message: 'cost 1 item searched to hand' }
             ];
         }
     },
@@ -287,6 +457,63 @@ const tests: UnifiedTestCase[] = [
             return [
                 { pass: p1.unitZones[0].unit === null, message: 'own selected unit destroyed' },
                 { pass: p2.unitZones[1].unit === null, message: 'opponent selected unit destroyed' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST05-014-Active',
+        name: 'Active destroy own then opponent only',
+        description: 'Checks ACTIVE flow: destroy own 2+ equipped unit, then destroy opponent unit.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('ST05-014')];
+            p1.unitZones[0].unit = getCard('ST05-005');
+            p1.unitZones[0].items = [getCard('ST05-015'), getCard('ST05-017')];
+            p2.unitZones[1].unit = getCard('ST05-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.playSkill(0);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectZoneTargetByPlayerId(0, p1.id);
+            }
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectZoneTargetByPlayerId(1, p2.id);
+            }
+            return [
+                { pass: p1.unitZones[0].unit === null, message: 'own selected unit destroyed' },
+                { pass: p2.unitZones[1].unit === null, message: 'opponent selected unit destroyed' }
+            ];
+        }
+    },
+    {
+        cardId: 'ST05-014-Trigger',
+        name: 'Trigger trash self and draw2-discard2 hand only',
+        description: 'Damage trigger trashes ST05-014, draws 2, then discards 2 from hand.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.hand = [getCard('ST01-002'), getCard('ST01-002')];
+            p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST05-014')];
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const handBefore = p1.hand.length;
+            engine.dealDamage(p1, 1);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.selectHandTargetByPlayerId(0, p1.id);
+                engine.selectHandTargetByPlayerId(1, p1.id);
+                if (engine.state.interactionMode === 'SELECT_TARGET') {
+                    engine.confirmTargets();
+                }
+            }
+            return [
+                { pass: p1.trash.some(card => card.id.startsWith('ST05-014')), message: 'source moved to trash' },
+                { pass: p1.hand.length === handBefore, message: 'draw2 discard2 from hand resolved (net 0)' },
+                { pass: p1.trash.length >= 3, message: 'trash includes source plus two discarded cards' }
             ];
         }
     },
