@@ -1,7 +1,7 @@
 ﻿import { describe, expect, it } from 'vitest';
 import { DUMMY_CARDS } from '../../src/logic/CardDatabase';
 import { GameEngine } from '../../src/logic/GameEngine';
-import { Attribute, Card, CardType, Phase } from '../../src/logic/types';
+import { ActivationCondition, Attribute, Card, CardType, Phase } from '../../src/logic/types';
 
 function getCard(id: string): Card {
     const card = DUMMY_CARDS.find(c => c.id === id);
@@ -138,6 +138,57 @@ describe('Rules v2 Guardian Regression', () => {
         expect(p2.damage.length).toBe(damageBefore);
     });
 
+    it('does not treat non-guardian ability text as guardian block source', () => {
+        const engine = createEngine();
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+
+        p1.unitZones[1].unit = makeUnit('ATK_NON_GUARDIAN', { power: 5000, hit: 1 });
+        p2.unitZones[0].unit = makeUnit('EQUIP_CONDITION_TEXT', {
+            text: '장착조건 가디언',
+            power: 4000,
+            hit: 1
+        });
+
+        engine.attack(1);
+        const options = engine.getPendingDefenseOptions();
+
+        expect(options.some(option => option.source === 'GUARDIAN')).toBe(false);
+    });
+
+    it('guardian sacrifice cost cannot be bypassed by destruction prevention', () => {
+        const engine = createEngine();
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+
+        p1.unitZones[1].unit = makeUnit('ATK_PREVENT', { power: 4000, hit: 1 });
+        p2.unitZones[0].unit = getCard('BT03-041');
+        p2.unitZones[2].unit = makeUnit('SAC_TARGET_WITH_PREVENT', {
+            effects: [{
+                activation: ActivationCondition.PASSIVE,
+                description: 'Prevent destruction by trashing an equipped item',
+                action: {
+                    type: 'NONE',
+                    params: { preventDestroyBy: 'TRASH_ITEM' }
+                }
+            }]
+        });
+        p2.unitZones[2].items = [makeItem('PREVENT_ITEM')];
+
+        const damageBefore = p2.damage.length;
+        engine.attack(1);
+        engine.resolveBlock(true);
+        engine.selectZoneTargetByPlayerId(2, p2.id);
+        engine.confirmTargets();
+
+        expect(p2.unitZones[2].unit).toBeNull();
+        expect(p2.damage.length).toBe(damageBefore);
+    });
+
     it('negate guardian pays by trashing a matching equipped item', () => {
         const engine = createEngine();
         const p1 = engine.state.players[0];
@@ -215,4 +266,3 @@ describe('Rules v2 Guardian Regression', () => {
         expect(engine.state.pendingDefenderIndex).toBeNull();
     });
 });
-

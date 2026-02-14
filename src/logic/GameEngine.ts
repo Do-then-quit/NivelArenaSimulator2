@@ -2201,8 +2201,12 @@ export class GameEngine {
     }
 
     private parseGuardianCostFromCard(card: Card): { costType: GuardianCostType; amount: number; negateFilter?: GuardianNegateFilter } | null {
-        const normalized = this.normalizeText(card.text);
-        if (!normalized.includes('가디언') && !normalized.includes('GUARDIAN')) return null;
+        const guardianLine = (card.text || '')
+            .split(/\r?\n/)
+            .find(line => /(가디언|GUARDIAN)\s*[:：]/i.test(line));
+        if (!guardianLine) return null;
+
+        const normalized = this.normalizeText(guardianLine);
 
         const barrier = normalized.match(/방벽\[(\d+)\]/);
         if (barrier) {
@@ -3163,13 +3167,26 @@ export class GameEngine {
             if (!option) return;
             const defender = this.getPlayerById(pending.sourcePlayerId);
             if (!defender) return;
+            const required = Math.max(1, option.costAmount);
             const selected = (pending.selectedTargets ?? []) as UnitZoneState[];
+            if (selected.length < required) return;
+
+            let trashedCount = 0;
             selected.forEach(zone => {
                 if (!zone.unit) return;
                 const owner = this.state.players.find(player => player.unitZones.includes(zone));
                 if (!owner) return;
-                this.destroyUnit(owner, zone);
+                this.destroyUnit(owner, zone, undefined, 'RULE');
+                if (!zone.unit) {
+                    trashedCount += 1;
+                }
             });
+
+            if (trashedCount < required) {
+                this.finalizeCombatAsUnblocked();
+                return;
+            }
+
             this.finalizeBlockWithOption(option);
             return;
         }
@@ -3472,7 +3489,6 @@ export class GameEngine {
 
 
 }
-
 
 
 
