@@ -101,6 +101,7 @@ export class GameEngine {
             combatStep: 'NONE',
             combatBlocked: false
         };
+        (this.state as any).effectTrashedUnitsByPlayerId = {};
         this.startGame();
         this.assignInteractionOwner(this.currentPlayer.id);
     }
@@ -1086,6 +1087,51 @@ export class GameEngine {
         return drawn;
     }
 
+    public notifyHandDiscardedByEffect(player: PlayerState, discardedCount: number) {
+        if (discardedCount <= 0) return;
+
+        const opponent = this.getOpponentOf(player);
+        const batchStep = this.incrementAndGetGlobalStep();
+
+        if (player.levelZone) {
+            this.effectManager.processEffects(ActivationCondition.HAND_DISCARDED, {
+                sourceCard: player.levelZone,
+                player,
+                opponent,
+                machine: this,
+                discardedCount
+            }, { enqueueOnly: true, batchStep });
+        }
+
+        player.unitZones.forEach(zone => {
+            if (zone.unit) {
+                this.effectManager.processEffects(ActivationCondition.HAND_DISCARDED, {
+                    sourceCard: zone.unit,
+                    player,
+                    opponent,
+                    unitZone: zone,
+                    machine: this,
+                    discardedCount
+                }, { enqueueOnly: true, batchStep });
+            }
+
+            zone.items.forEach(item => {
+                this.effectManager.processEffects(ActivationCondition.HAND_DISCARDED, {
+                    sourceCard: item,
+                    player,
+                    opponent,
+                    unitZone: zone,
+                    machine: this,
+                    discardedCount
+                }, { enqueueOnly: true, batchStep });
+            });
+        });
+
+        if (this.state.interactionMode === 'NORMAL') {
+            this.effectManager.processQueue();
+        }
+    }
+
     nextPhase() {
         if (this.state.winner) {
             return;
@@ -1295,6 +1341,7 @@ export class GameEngine {
             z.hasActivatedEffectThisTurn = false;
             z.activatedEffectKeys = {};
         });
+        (this.state as any).effectTrashedUnitsByPlayerId = {};
 
         // Switch
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
@@ -1622,6 +1669,10 @@ export class GameEngine {
             return;
         }
 
+        if (costType === 'TRASH_HAND') {
+            this.notifyHandDiscardedByEffect(payer, pending.costPaidCount || requiredAmount);
+        }
+
         if (pending.actionType === 'BLOCK_PAY_BARRIER') {
             const option = pending.actionValue?.option as PendingDefenseOption | undefined;
             if (!option) return;
@@ -1845,7 +1896,7 @@ export class GameEngine {
         // 2. Pre-Combat Effects? (e.g. Infiltration)
         // INFILTRATION (Rule 10.2.3.1): If Infiltration & No Blocker -> Draw 1
         // Wait, Proposal says "Pre-Combat Effect".
-        if (!this.state.combatBlocked && (this.hasKeywordInZone(attackerZone, '침투') || this.hasKeywordInZone(attackerZone, 'INFILTRATION'))) {
+        if (!this.state.combatBlocked && (this.zoneHasKeyword(attackerZone, '침투') || this.zoneHasKeyword(attackerZone, 'INFILTRATION'))) {
             console.log("Infiltration Triggered.");
             this.drawCard(this.state.turnPlayerIndex, 1);
         }
@@ -1961,7 +2012,7 @@ export class GameEngine {
 
         const defenseOptions = this.getPendingDefenseOptions();
         const encounterOption = defenseOptions.find(option => option.source === 'ENCOUNTER');
-        const isDualist = this.hasKeyword(attackerZone.unit, 'DUALIST');
+        const isDualist = this.zoneHasKeyword(attackerZone, 'DUALIST');
         if (isDualist && encounterOption) {
             shouldBlock = true;
             this.beginBlockPaymentForOption(encounterOption);
@@ -2004,8 +2055,84 @@ export class GameEngine {
     }
 
 
+    private getKeywordAliases(keyword: string): string[] {
+        const map: Record<string, string[]> = {
+            BERSERK: ['BERSERK', '광전사'],
+            광전사: ['광전사', 'BERSERK'],
+            DUALIST: ['DUALIST', '듀얼리스트'],
+            듀얼리스트: ['듀얼리스트', 'DUALIST'],
+            PENETRATION: ['PENETRATION', '관통'],
+            관통: ['관통', 'PENETRATION'],
+            PLUNDER: ['PLUNDER', '약탈'],
+            약탈: ['약탈', 'PLUNDER'],
+            INFILTRATION: ['INFILTRATION', '침투'],
+            침투: ['침투', 'INFILTRATION'],
+        };
+        return map[keyword] || [keyword];
+    }
+
     private hasKeyword(card: Card, keyword: string): boolean {
-        return card.keywords?.includes(keyword) || false;
+        const aliases = this.getKeywordAliases(keyword);
+        return aliases.some(alias => card.keywords?.includes(alias)) || false;
+    }
+
+    public zoneHasKeyword(zone: UnitZoneState, keyword: string): boolean {
+        if (!zone.unit) return false;
+        if (this.hasKeywordInZone(zone, keyword)) return true;
+
+        const targetOwner = this.state.players.find(player => player.unitZones.includes(zone));
+        if (!targetOwner) return false;
+
+        const aliases = this.getKeywordAliases(keyword);
+        const keywordMatches = (rawKeyword: unknown): boolean =>
+            typeof rawKeyword === 'string' && aliases.includes(rawKeyword);
+
+        for (const sourceOwner of this.state.players) {
+            const sourceOpponent = this.getOpponentOf(sourceOwner);
+            const sources: { card: Card; zone?: UnitZoneState }[] = [];
+
+            sourceOwner.unitZones.forEach(sourceZone => {
+                if (sourceZone.unit) sources.push({ card: sourceZone.unit, zone: sourceZone });
+                sourceZone.items.forEach(item => sources.push({ card: item, zone: sourceZone }));
+            });
+            if (sourceOwner.levelZone) sources.push({ card: sourceOwner.levelZone });
+
+            for (const source of sources) {
+                const effects = source.card.effects || [];
+                for (const effect of effects) {
+                    if (effect.activation !== ActivationCondition.PASSIVE) continue;
+                    const context: GameContext = {
+                        sourceCard: source.card,
+                        player: sourceOwner,
+                        opponent: sourceOpponent,
+                        unitZone: source.zone,
+                        machine: this
+                    };
+                    if (!this.effectManager.checkCondition(effect, context)) continue;
+
+                    if (
+                        effect.action.type === 'NONE' &&
+                        keywordMatches(effect.action.params?.keyword)
+                    ) {
+                        if (!effect.targets || TargetSelector.isValidTarget(this, effect.targets, context, zone)) {
+                            return true;
+                        }
+                    }
+
+                    if (effect.action.type !== 'GRANT_EFFECT') continue;
+                    const granted = effect.action.params?.effect as Effect | undefined;
+                    if (!granted) continue;
+                    if (granted.action?.type !== 'NONE') continue;
+                    if (!keywordMatches(granted.action.params?.keyword)) continue;
+                    if (!effect.targets) continue;
+                    if (TargetSelector.isValidTarget(this, effect.targets, context, zone)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private getBreakthroughRule(zone: UnitZoneState): { unconditional: boolean; costMax: number | null; costMin: number | null } {
@@ -2342,7 +2469,7 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let value = 0;
 
-        if (this.hasKeywordInZone(zone, '관통') || this.hasKeywordInZone(zone, 'PENETRATION')) {
+        if (this.zoneHasKeyword(zone, '관통') || this.zoneHasKeyword(zone, 'PENETRATION')) {
             value = Math.max(value, zone.unit.hit || 0);
         }
 
@@ -2358,7 +2485,7 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let value = 0;
 
-        if (this.hasKeywordInZone(zone, '약탈') || this.hasKeywordInZone(zone, 'PLUNDER')) {
+        if (this.zoneHasKeyword(zone, '약탈') || this.zoneHasKeyword(zone, 'PLUNDER')) {
             value = Math.max(value, 1);
         }
 
@@ -2371,15 +2498,33 @@ export class GameEngine {
 
     private hasKeywordInZone(zone: UnitZoneState, keyword: string): boolean {
         if (!zone.unit) return false;
+        const aliases = this.getKeywordAliases(keyword);
+        const includesAlias = (text: string): boolean => aliases.some(alias => text.includes(alias));
 
         // Check Unit
         if (this.hasKeyword(zone.unit, keyword)) return true;
+        if (zone.unit.effects?.some(effect =>
+            effect.activation === ActivationCondition.PASSIVE &&
+            effect.action?.type === 'NONE' &&
+            includesAlias(String(effect.action?.params?.keyword || ''))
+        )) {
+            return true;
+        }
 
         // Check Items
         if (zone.items.some(item => this.hasKeyword(item, keyword))) return true;
+        if (zone.items.some(item =>
+            item.effects?.some(effect =>
+                effect.activation === ActivationCondition.PASSIVE &&
+                effect.action?.type === 'NONE' &&
+                includesAlias(String(effect.action?.params?.keyword || ''))
+            )
+        )) {
+            return true;
+        }
 
         // Check Temporary Effects (which might grant the keyword)
-        if (zone.temporaryEffects.some(effect => effect.description.includes(keyword))) return true;
+        if (zone.temporaryEffects.some(effect => includesAlias(effect.description))) return true;
 
         return false;
     }
@@ -2435,7 +2580,80 @@ export class GameEngine {
         });
     }
 
-    public destroyUnit(player: PlayerState, zone: UnitZoneState, killerCard?: Card) {
+    private tryPreventDestruction(
+        player: PlayerState,
+        zone: UnitZoneState,
+        unit: Card
+    ): boolean {
+        const opponent = this.getOpponentOf(player);
+        const candidateEffects: Effect[] = [];
+
+        if (unit.effects) {
+            candidateEffects.push(...unit.effects.filter(effect =>
+                effect.activation === ActivationCondition.PASSIVE &&
+                effect.action?.type === 'NONE' &&
+                !!effect.action?.params?.preventDestroyBy
+            ));
+        }
+
+        zone.items.forEach(item => {
+            item.effects?.forEach(effect => {
+                if (
+                    effect.activation === ActivationCondition.PASSIVE &&
+                    effect.action?.type === 'NONE' &&
+                    !!effect.action?.params?.preventDestroyBy
+                ) {
+                    candidateEffects.push(effect);
+                }
+            });
+        });
+
+        for (const effect of candidateEffects) {
+            const context: GameContext = {
+                sourceCard: unit,
+                player,
+                opponent,
+                unitZone: zone,
+                machine: this,
+            };
+            if (!this.effectManager.checkCondition(effect, context)) continue;
+
+            const mode = effect.action.params.preventDestroyBy;
+            if (mode === 'TRASH_ITEM') {
+                if (zone.items.length === 0) continue;
+                const [item] = zone.items.splice(0, 1);
+                player.trash.push(item);
+            } else if (mode === 'DISCARD_HIT') {
+                const required = Math.max(0, this.getUnitHit(zone, player));
+                if (required <= 0) return true;
+                if (player.hand.length < required) continue;
+                for (let i = 0; i < required; i++) {
+                    const [card] = player.hand.splice(0, 1);
+                    if (!card) continue;
+                    player.trash.push(card);
+                }
+                this.notifyHandDiscardedByEffect(player, required);
+            } else {
+                continue;
+            }
+
+            if (effect.condition?.type === 'ONCE_PER_TURN') {
+                const fired = ((this.state as any).firedEffects ??= {});
+                const effectId = effect.id || effect.description;
+                fired[effectId] = true;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    public destroyUnit(
+        player: PlayerState,
+        zone: UnitZoneState,
+        killerCard?: Card,
+        reason: 'EFFECT' | 'COMBAT' | 'RULE' = 'COMBAT'
+    ) {
         if (!zone.unit) return;
 
         const unit = zone.unit;
@@ -2447,6 +2665,15 @@ export class GameEngine {
         this.destroyInProgressKeys.add(destroyKey);
         try {
             const opponent = this.getOpponentOf(player);
+
+            if ((reason === 'COMBAT' || reason === 'EFFECT') && this.tryPreventDestruction(player, zone, unit)) {
+                return;
+            }
+
+            if (reason === 'EFFECT') {
+                const effectTrashedMap = ((this.state as any).effectTrashedUnitsByPlayerId ??= {});
+                effectTrashedMap[player.id] = (effectTrashedMap[player.id] || 0) + 1;
+            }
 
             // Apply passive "grant EXIT effect" auras before removing the unit from the zone.
             this.processPassiveGrantedExitEffects(player, zone, unit, killerCard);
@@ -2462,7 +2689,8 @@ export class GameEngine {
                 opponent: opponent,
                 unitZone: zone,
                 machine: this,
-                destroyedBy: killerCard
+                destroyedBy: killerCard,
+                trashReason: reason
             }, { enqueueOnly: true, batchStep: exitBatchStep });
 
             zone.items.forEach(item => {
@@ -2473,7 +2701,8 @@ export class GameEngine {
                     unitZone: zone,
                     machine: this,
                     destroyedBy: killerCard,
-                    trashedUnit: unit
+                    trashedUnit: unit,
+                    trashReason: reason
                 }, { enqueueOnly: true, batchStep: exitBatchStep });
             });
 
@@ -2498,7 +2727,8 @@ export class GameEngine {
                         opponent: sourceOpponent,
                         machine: this,
                         trashedUnit: trashedUnit,
-                        trashedUnitOwner: player
+                        trashedUnitOwner: player,
+                        trashReason: reason
                     }, { enqueueOnly: true, batchStep: trashedBatchStep });
                 }
 
@@ -2511,7 +2741,8 @@ export class GameEngine {
                         unitZone: z,
                         machine: this,
                         trashedUnit: trashedUnit,
-                        trashedUnitOwner: player
+                        trashedUnitOwner: player,
+                        trashReason: reason
                     }, { enqueueOnly: true, batchStep: trashedBatchStep });
                 });
             });
@@ -2543,7 +2774,7 @@ export class GameEngine {
                         if (power > 0) return;
 
                         console.log(`Rule Processing: Trashing ${zone.unit.name} due to 0 or less ATK (${power})`);
-                        this.destroyUnit(player, zone);
+                        this.destroyUnit(player, zone, undefined, 'RULE');
                         if (zone.unit?.id !== currentUnitId) {
                             destroyedAny = true;
                         }
@@ -2736,6 +2967,9 @@ export class GameEngine {
                                 value = baseUnitCount * value;
                             } else if (params.dynamic === 'EQUIPPED_ITEM_COUNT_MULTIPLIER') {
                                 value = source.zone ? source.zone.items.length * value : 0;
+                            } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
+                                const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
+                                value = equippedUnitCount * value;
                             }
                             power += value;
                         }
@@ -2789,7 +3023,15 @@ export class GameEngine {
 
                         if (TargetSelector.isValidTarget(this, effect.targets!, context, zone)) {
                             const params = effect.action.params || {};
-                            hit += (params.value || 0);
+                            let value = params.value || 0;
+                            if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
+                                const baseUnitCount = source.owner.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
+                                value = baseUnitCount * value;
+                            } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
+                                const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
+                                value = equippedUnitCount * value;
+                            }
+                            hit += value;
                         }
                     }
                 });

@@ -232,7 +232,7 @@ export class EffectManager {
 
     public checkCondition(effect: Effect, context: GameContext): boolean {
         if (!effect.condition) return true;
-        const { type, value, trashedUnitCostMin, friendlyOnly } = effect.condition;
+        const { type, value, trashedUnitCostMin, friendlyOnly, trashedByEffectOnly } = effect.condition;
 
         if (trashedUnitCostMin !== undefined && context.trashedUnit) {
             if (context.trashedUnit.cost < trashedUnitCostMin) return false;
@@ -240,6 +240,10 @@ export class EffectManager {
 
         if (friendlyOnly && context.trashedUnitOwner) {
             if (context.trashedUnitOwner !== context.player) return false;
+        }
+
+        if (trashedByEffectOnly && (context as any).trashReason !== 'EFFECT') {
+            return false;
         }
 
         switch (type) {
@@ -309,11 +313,38 @@ export class EffectManager {
                 if (value.min !== undefined && context.opponent.hand.length < value.min) return false;
                 if (value.max !== undefined && context.opponent.hand.length > value.max) return false;
                 return true;
+            case 'HAND_COUNT':
+                if (typeof value === 'number') {
+                    return context.player.hand.length >= value;
+                }
+                if (value?.min !== undefined && context.player.hand.length < value.min) return false;
+                if (value?.max !== undefined && context.player.hand.length > value.max) return false;
+                return true;
             case 'DISCARDED_COUNT':
                 const count = (context as any).discardedCount || 0;
                 if (typeof value === 'number') return count >= value;
                 if (value.min !== undefined && count < value.min) return false;
                 return true;
+            case 'EFFECT_TRASHED_UNITS_THIS_TURN':
+                {
+                    const byPlayer = ((context.machine.state as any).effectTrashedUnitsByPlayerId || {});
+                    const trashedCount = byPlayer[context.player.id] || 0;
+                    if (typeof value === 'number') return trashedCount >= value;
+                    if (value?.min !== undefined && trashedCount < value.min) return false;
+                    if (value?.max !== undefined && trashedCount > value.max) return false;
+                    return true;
+                }
+            case 'EQUIPPED_UNIT_COUNT':
+                {
+                    const equippedCount = context.player.unitZones.filter(zone => zone.unit && zone.items.length > 0).length;
+                    if (typeof value === 'number') return equippedCount >= value;
+                    if (value?.min !== undefined && equippedCount < value.min) return false;
+                    if (value?.max !== undefined && equippedCount > value.max) return false;
+                    return true;
+                }
+            case 'UNIT_TRASHED_OTHER':
+                if (!context.trashedUnit) return false;
+                return context.trashedUnit !== context.sourceCard;
             case 'FRONTLINE':
                 return context.player.unitZones.every(z => z.unit !== null);
             case 'LEVEL_LINK':

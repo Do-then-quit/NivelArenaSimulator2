@@ -98,6 +98,12 @@ export class TargetSelector {
                             return card && card.cost <= filter.value;
                         });
                         break;
+                    case 'COST_MIN':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            return card && card.cost >= filter.value;
+                        });
+                        break;
                     case 'COST_EQUAL':
                         candidates = candidates.filter(c => {
                             const card = this.getCardFromTarget(c);
@@ -274,6 +280,12 @@ export class TargetSelector {
                         {
                             const card = this.getCardFromTarget(target);
                             if (!card || card.cost > filter.value) return false;
+                        }
+                        break;
+                    case 'COST_MIN':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || card.cost < filter.value) return false;
                         }
                         break;
                     case 'POWER_LIMIT':

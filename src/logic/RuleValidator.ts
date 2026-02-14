@@ -130,7 +130,7 @@ export class RuleValidator {
     static canEndPhase(engine: GameEngine, player: PlayerState): ValidationResult {
         if (engine.state.phase === Phase.ATTACK) {
             const hasReadyBerserker = player.unitZones.some(z => {
-                if (z.unit && (z.unit.keywords?.includes('광전사') || z.unit.keywords?.includes('BERSERK')) && !z.hasAttacked && !z.isExhausted) {
+                if (z.unit && engine.zoneHasKeyword(z, 'BERSERK') && !z.hasAttacked && !z.isExhausted) {
                     return true;
                 }
                 return false;

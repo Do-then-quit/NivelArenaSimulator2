@@ -5,7 +5,7 @@
  * (setupScenarios + runTests) for use in the UI.
  */
 
-import { UnifiedTestCase, UnifiedTestModule } from './shared/types';
+import { UnifiedTestModule } from './shared/types';
 import { CardTestModule, CardTestContext } from './types';
 
 /**
