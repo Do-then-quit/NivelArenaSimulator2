@@ -3,17 +3,17 @@
 ## 진행 현황 (2026-02-13)
 
 - [x] Phase 0 완료
-  - 근거 문서: `Phase0.md`
+  - 근거 문서: `../plans/phases/Phase0.md`
   - 반영: 매니페스트 기반 평가, 신뢰구간, `ai:regression` 게이트
 - [x] Phase 1 구현 완료 (StrongBot v1)
-  - 근거 문서: `Phase1.md`
+  - 근거 문서: `../plans/phases/Phase1.md`
   - 반영: `src/logic/ai/StrongBot.ts`, evaluator/scorer, bot registry 연동
 - [~] Phase 1 성능 목표 부분 안정화
   - 라더(진영 스왑 포함, entrants=`strong-v1,baseline-a,baseline-b`, seedsPerPair=6):
     - `strong-v1` 15승 9패(62.5%), Elo 1041.06
   - 고정 역할 벤치에서 `baseline-b` 상대 성능은 추가 튜닝 필요
 - [~] Phase 2 구현 착수
-  - 근거 문서: `Phase2.md`
+  - 근거 문서: `../plans/phases/Phase2.md`
   - 반영:
     - 시뮬레이션 포크 인프라(`GameEngine.createSimulationFork`, RNG clone)
     - `StrongBotV2` (beam search + 결정론적 v1 fallback)

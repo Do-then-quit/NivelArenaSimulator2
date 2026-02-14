@@ -108,7 +108,7 @@ tests/
   rules_v2_regression/
 packs/
 AGENTS.md
-AiReadyTask.md
+docs/plans/AiReadyTask.md
 ```
 
 ## 현재 제한 사항
@@ -127,6 +127,6 @@ AiReadyTask.md
 ## 참고
 
 - 운영/개발 가이드: `AGENTS.md`
-- AI 준비 태스크 기록: `AiReadyTask.md`
+- AI 준비 태스크 기록: `docs/plans/AiReadyTask.md`
 
 본 프로젝트는 비공식 시뮬레이터이며, 원작 게임 및 카드 IP는 각 권리자에게 있습니다.
