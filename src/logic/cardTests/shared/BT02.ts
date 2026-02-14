@@ -1,6 +1,4 @@
-import { CardType } from '../../types';
-import { RuleValidator } from '../../RuleValidator';
-import { BT02_EFFECTS } from '../../cardEffects/bt02';
+﻿import { RuleValidator } from '../../RuleValidator';
 import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 
 const tests: UnifiedTestCase[] = [];
@@ -100,448 +98,32 @@ function processAttackerEffects(engine: any, playerIndex: number, zoneIndex: num
     autoResolveInteractions(engine);
 }
 
-const CARD_IDS = Object.keys(BT02_EFFECTS).sort();
+function processDefenderEffects(engine: any, playerIndex: number, zoneIndex: number): void {
+    const player = engine.state.players[playerIndex];
+    const opponent = engine.state.players[1 - playerIndex];
+    const zone = player.unitZones[zoneIndex];
+    if (!zone?.unit) return;
 
-for (const cardId of CARD_IDS) {
-    tests.push({
-        cardId,
-        name: `${cardId} smoke`,
-        description: `${cardId} basic play/equip/placement smoke test`,
-        setup: (engine, getCard) => {
-            const p1 = engine.state.players[0];
-            const card = getCard(cardId);
-            p1.leaderLevel = 10;
-            engine.state.phase = Phase.MAIN;
+    engine.effectManager.processEffects('DEFENDER' as any, {
+        sourceCard: zone.unit,
+        player,
+        opponent,
+        unitZone: zone,
+        machine: engine
+    } as any);
 
-            if (card.type === CardType.UNIT) {
-                p1.hand = [card];
-                return;
-            }
-
-            if (card.type === CardType.SKILL) {
-                p1.hand = [card, getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
-                return;
-            }
-
-            if (card.type === CardType.ITEM) {
-                p1.unitZones[0].unit = getCard('BT02-070');
-                p1.hand = [card];
-                return;
-            }
-
-            p1.levelZone = card;
-        },
-        verify: (engine, getCard) => {
-            const p1 = engine.state.players[0];
-            const card = getCard(cardId);
-
-            if (card.type === CardType.UNIT) {
-                engine.playUnit(0, 0);
-                return [{ pass: !!p1.unitZones[0].unit, message: 'unit is placed' }];
-            }
-
-            if (card.type === CardType.SKILL) {
-                engine.playSkill(0);
-                return [{ pass: p1.skillZone.some(c => c.id === card.id), message: 'skill is played to skill zone' }];
-            }
-
-            if (card.type === CardType.ITEM) {
-                engine.playItem(0, 0);
-                return [{ pass: p1.unitZones[0].items.some(c => c.id === card.id), message: 'item is equipped' }];
-            }
-
-            return [{ pass: p1.levelZone?.id === card.id, message: 'leader set in level zone' }];
-        }
+    zone.items.forEach((item: any) => {
+        engine.effectManager.processEffects('DEFENDER' as any, {
+            sourceCard: item,
+            player,
+            opponent,
+            unitZone: zone,
+            machine: engine
+        } as any);
     });
+
+    autoResolveInteractions(engine);
 }
-
-const suffixByActivation: Record<string, string> = {
-    AWAKEN: 'Awaken',
-    PASSIVE: 'Passive',
-    ENTRY: 'Entry',
-    ACTIVE: 'Active',
-    ACTIVE_MAIN: 'ActiveMain',
-    ATTACKER: 'Attacker',
-    DAMAGE_TRIGGER: 'Trigger',
-    DEFENDER: 'Defender',
-    EXIT: 'Exit',
-    TURN_END: 'TurnEnd',
-    UNIT_TRASHED: 'Passive',
-    HAND_DISCARDED: 'Passive',
-};
-
-for (const [cardId, effects] of Object.entries(BT02_EFFECTS)) {
-    if (effects.length < 2) continue;
-    const activations = Array.from(new Set(effects.map(effect => String(effect.activation))));
-
-    for (const activation of activations) {
-        const suffix = suffixByActivation[activation] || activation;
-        tests.push({
-            cardId: `${cardId}-${suffix}`,
-            name: `${cardId} ${suffix} registration`,
-            description: `${cardId} has independent ${activation} effect registered`,
-            setup: () => { },
-            verify: (_engine, getCard) => {
-                const card = getCard(cardId);
-                return [{
-                    pass: (card.effects || []).some(effect => String(effect.activation) === activation),
-                    message: `${activation} effect exists`
-                }];
-            }
-        });
-    }
-}
-
-tests.push({
-    cardId: 'BT02-028-Awaken-Behavior',
-    name: 'Leader 028 awaken and guardian buff',
-    description: 'BT02-028 awakens at level 5 and buffs guardian ally.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.levelZone = getCard('BT02-028');
-        p1.levelZone.isAwakened = false;
-        p1.leaderLevel = 5;
-        p1.unitZones[0].unit = getCard('BT02-030');
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        const basePower = p1.unitZones[0].unit?.power ?? 0;
-        engine.checkAwakening(0);
-        const buffedPower = engine.getUnitPower(p1.unitZones[0], p1);
-        return [
-            { pass: p1.levelZone?.isAwakened === true, message: 'leader awakened at level 5' },
-            { pass: buffedPower >= basePower + 1000, message: 'guardian buff applied' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-009-Trigger-Behavior',
-    name: 'Trigger trash self then recover <=2 unit',
-    description: 'BT02-009 trigger trashes itself and recovers one low-cost unit from trash.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.deck = [getCard('ST01-002'), getCard('BT02-009')];
-        p1.trash = [getCard('BT02-001')];
-        p1.hand = [];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        engine.dealDamage(p1, 1);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectTrashTarget(0, p1.id);
-        }
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-009'), message: 'source moved to trash' },
-            { pass: p1.damage.every(card => card.id !== 'BT02-009'), message: 'source removed from damage zone' },
-            { pass: p1.hand.some(card => card.id === 'BT02-001'), message: 'recovery resolved' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-011-Trigger-Behavior',
-    name: 'Trigger trash self then gain level',
-    description: 'BT02-011 trigger trashes itself and increases leader level.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.deck = [getCard('ST01-002'), getCard('BT02-011')];
-        p1.leaderLevel = 1;
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        engine.dealDamage(p1, 1);
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-011'), message: 'source moved to trash' },
-            { pass: p1.leaderLevel === 2, message: 'leader level increased' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-025-Trigger-Behavior',
-    name: 'Trigger trash self then recover Exit unit',
-    description: 'BT02-025 trigger trashes itself and recovers Exit unit from trash.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.deck = [getCard('ST01-002'), getCard('BT02-025')];
-        p1.trash = [getCard('BT02-019')];
-        p1.hand = [];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        engine.dealDamage(p1, 1);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectTrashTarget(0, p1.id);
-        }
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-025'), message: 'source moved to trash' },
-            { pass: p1.hand.some(card => card.id === 'BT02-019'), message: 'exit unit recovered' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-036-Trigger-Behavior',
-    name: 'Trigger trash self then bounce lowest-cost enemy',
-    description: 'BT02-036 trigger trashes itself and returns an opponent unit+items to hand.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        const p2 = engine.state.players[1];
-        p1.deck = [getCard('ST01-002'), getCard('BT02-036')];
-        p2.unitZones[0].unit = getCard('ST01-002');
-        p2.unitZones[0].items = [getCard('BT02-078')];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        const p2 = engine.state.players[1];
-        engine.dealDamage(p1, 1);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectZoneTargetByPlayerId(0, p2.id);
-        }
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-036'), message: 'source moved to trash' },
-            { pass: p2.unitZones[0].unit === null, message: 'enemy unit removed from field' },
-            { pass: p2.hand.some(card => card.id === 'ST01-002'), message: 'enemy unit returned to hand' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-041-Trigger-Behavior',
-    name: 'Trigger trash self then draw',
-    description: 'BT02-041 trigger trashes itself and draws one card.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('BT02-041')];
-        p1.hand = [];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        engine.dealDamage(p1, 1);
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-041'), message: 'source moved to trash' },
-            { pass: p1.hand.length >= 1, message: 'draw resolved' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-043-Trigger-Behavior',
-    name: 'Trigger trash self then bounce lowest-cost enemy',
-    description: 'BT02-043 trigger trashes itself and returns an opponent unit+items to hand.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        const p2 = engine.state.players[1];
-        p1.deck = [getCard('ST01-002'), getCard('BT02-043')];
-        p2.unitZones[0].unit = getCard('ST01-002');
-        p2.unitZones[0].items = [getCard('BT02-078')];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        const p2 = engine.state.players[1];
-        engine.dealDamage(p1, 1);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectZoneTargetByPlayerId(0, p2.id);
-        }
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-043'), message: 'source moved to trash' },
-            { pass: p2.unitZones[0].unit === null, message: 'enemy unit removed from field' },
-            { pass: p2.hand.some(card => card.id === 'ST01-002'), message: 'enemy unit returned to hand' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-057-Trigger-Behavior',
-    name: 'Trigger trash self then draw2-discard2',
-    description: 'BT02-057 trigger trashes itself and resolves draw-then-discard.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('BT02-057')];
-        p1.hand = [getCard('ST01-002'), getCard('ST01-002')];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        engine.dealDamage(p1, 1);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectHandTargetByPlayerId(0, p1.id);
-            engine.selectHandTargetByPlayerId(1, p1.id);
-            if (engine.state.interactionMode === 'SELECT_TARGET') {
-                engine.confirmTargets();
-            }
-        }
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-057'), message: 'source moved to trash' },
-            { pass: p1.trash.length >= 3, message: 'discard aftermath resolved' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-063-Trigger-Behavior',
-    name: 'Trigger trash self then search <=1 item',
-    description: 'BT02-063 trigger trashes itself and searches low-cost item from deck.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.deck = [getCard('ST01-002'), getCard('BT02-078'), getCard('BT02-063')];
-        p1.hand = [];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        engine.dealDamage(p1, 1);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectRevealedTarget(0);
-        }
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-063'), message: 'source moved to trash' },
-            { pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'searched item added to hand' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-074-Trigger-Behavior',
-    name: 'Trigger trash self then search <=1 item',
-    description: 'BT02-074 trigger trashes itself and searches low-cost item from deck.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.deck = [getCard('ST01-002'), getCard('BT02-078'), getCard('BT02-074')];
-        p1.hand = [];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        engine.dealDamage(p1, 1);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectRevealedTarget(0);
-        }
-        return [
-            { pass: p1.trash.some(card => card.id === 'BT02-074'), message: 'source moved to trash' },
-            { pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'searched item added to hand' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-048-Active-Behavior',
-    name: 'Active copies guardian power to ally',
-    description: 'BT02-048 copies selected source power to selected ally.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.hand = [getCard('BT02-048')];
-        p1.leaderLevel = 10;
-        p1.unitZones[0].unit = getCard('BT02-030');
-        p1.unitZones[1].unit = getCard('ST01-002');
-        engine.state.phase = Phase.MAIN;
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        const sourcePower = engine.getUnitPower(p1.unitZones[0], p1);
-        const before = engine.getUnitPower(p1.unitZones[1], p1);
-        engine.playSkill(0);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectZoneTargetByPlayerId(0, p1.id);
-            engine.selectZoneTargetByPlayerId(1, p1.id);
-            engine.confirmTargets();
-        }
-        const after = engine.getUnitPower(p1.unitZones[1], p1);
-        return [{ pass: after >= before + sourcePower, message: 'power copied to second target' }];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-049-Active-Behavior',
-    name: 'Active damages opponent and exhausts selected defenders',
-    description: 'BT02-049 deals 1 damage and exhausts two selected defender units.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        const p2 = engine.state.players[1];
-        p1.hand = [getCard('BT02-049')];
-        p1.leaderLevel = 10;
-        p1.unitZones[0].unit = getCard('BT02-029');
-        p1.unitZones[1].unit = getCard('BT02-031');
-        p2.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
-        engine.state.phase = Phase.MAIN;
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        const p2 = engine.state.players[1];
-        const damageBefore = p2.damage.length;
-        engine.playSkill(0);
-        if (engine.state.interactionMode === 'SELECT_TARGET') {
-            engine.selectZoneTargetByPlayerId(0, p1.id);
-            engine.selectZoneTargetByPlayerId(1, p1.id);
-            engine.confirmTargets();
-        }
-        return [
-            { pass: p2.damage.length === damageBefore + 1, message: 'opponent took 1 damage' },
-            { pass: p1.unitZones[0].isExhausted && p1.unitZones[1].isExhausted, message: 'selected units exhausted' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-081-Passive-Behavior',
-    name: 'Passive destruction prevention by discard',
-    description: 'BT02-081 prevents host destruction by discarding cards equal to host hit.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.unitZones[0].unit = getCard('ST01-002');
-        p1.unitZones[0].items = [getCard('BT02-081')];
-        p1.hand = [getCard('ST01-002')];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'COMBAT');
-        return [
-            { pass: !!p1.unitZones[0].unit, message: 'host destruction prevented' },
-            { pass: p1.hand.length === 0, message: 'discard cost paid' }
-        ];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-046-Passive-Behavior',
-    name: 'Passive berserk aura blocks phase end',
-    description: 'BT02-046 grants berserk to opponent cost 3+ units, forcing attack before phase end.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        const p2 = engine.state.players[1];
-        engine.state.turnPlayerIndex = 0;
-        engine.state.phase = Phase.ATTACK;
-        p1.unitZones[0].unit = getCard('BT02-040');
-        p2.unitZones[0].unit = getCard('BT02-046');
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        const result = RuleValidator.canEndPhase(engine, p1);
-        return [{ pass: result.valid === false, message: 'phase end blocked by berserk requirement' }];
-    }
-});
-
-tests.push({
-    cardId: 'BT02-055-Awaken-Behavior',
-    name: 'Leader 055 awaken and equipped buff',
-    description: 'BT02-055 awakens at level 6 and buffs equipped allies.',
-    setup: (engine, getCard) => {
-        const p1 = engine.state.players[0];
-        p1.levelZone = getCard('BT02-055');
-        p1.levelZone.isAwakened = false;
-        p1.leaderLevel = 6;
-        p1.unitZones[0].unit = getCard('BT02-070');
-        p1.unitZones[0].items = [getCard('BT02-078')];
-    },
-    verify: (engine) => {
-        const p1 = engine.state.players[0];
-        const basePower = p1.unitZones[0].unit?.power ?? 0;
-        engine.checkAwakening(0);
-        const buffedPower = engine.getUnitPower(p1.unitZones[0], p1);
-        return [
-            { pass: p1.levelZone?.isAwakened === true, message: 'leader awakened at level 6' },
-            { pass: buffedPower >= basePower + 1500, message: 'equipped-unit buff applied' }
-        ];
-    }
-});
 
 tests.push({
     cardId: 'BT02-001-Entry-Behavior',
@@ -583,6 +165,51 @@ tests.push({
         processAttackerEffects(engine, 0, 1);
         const after = engine.getUnitPower(zone, p1);
         return [{ pass: after >= before + 500, message: 'ally attacker +500 applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-003-Attacker-Behavior',
+    name: 'Attacker grants dualist and +4000',
+    description: 'BT02-003 should gain DUALIST and +4000 power at attacker timing.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('BT02-003');
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const zone = p1.unitZones[0];
+        const before = engine.getUnitPower(zone, p1);
+        processAttackerEffects(engine, 0, 0);
+        const after = engine.getUnitPower(zone, p1);
+        return [
+            { pass: after >= before + 4000, message: 'attacker +4000 applied' },
+            {
+                pass: zone.temporaryEffects.some((effect: any) =>
+                    effect.description === 'DUALIST' || effect.action?.params?.keyword === 'DUALIST'
+                ),
+                message: 'dualist granted on attacker timing'
+            }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-003-Trigger-Behavior',
+    name: 'Trigger returns self to hand',
+    description: 'BT02-003 trigger should return itself from damage to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-003')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-003'), message: 'trigger card returned to hand' },
+            { pass: p1.damage.every(card => card.id !== 'BT02-003'), message: 'trigger card removed from damage zone' }
+        ];
     }
 });
 
@@ -629,6 +256,29 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-007-Active-Behavior',
+    name: 'Active grants attacker plunder',
+    description: 'BT02-007 should grant attacker plunder[1] to friendly units this turn.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('ST01-002');
+        p1.hand = [getCard('BT02-007')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const zone = p1.unitZones[0];
+        engine.playSkill(0);
+        processAttackerEffects(engine, 0, 0);
+        return [{
+            pass: zone.buffs.some((buff: any) => buff.type === 'PLUNDER' && (buff.value || 0) >= 1),
+            message: 'attacker plunder buff applied'
+        }];
+    }
+});
+
+tests.push({
     cardId: 'BT02-008-Active-Behavior',
     name: 'Active recovers cost 7+ unit',
     description: 'BT02-008 active should recover cost 7 or higher unit from trash.',
@@ -646,6 +296,55 @@ tests.push({
         engine.playSkill(0);
         autoResolveInteractions(engine);
         return [{ pass: p1.hand.some(card => card.id === 'ST01-009'), message: 'high-cost unit recovered' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-009-Passive-Behavior',
+    name: 'Passive grants host power and berserk',
+    description: 'BT02-009 should grant +4000 to low-cost host and apply berserk keyword.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const host = getCard('ST01-002');
+        host.cost = 2;
+        p1.unitZones[0].unit = host;
+        p1.unitZones[0].items = [getCard('BT02-009')];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const raw = p1.unitZones[0].unit?.power ?? 0;
+        const power = engine.getUnitPower(p1.unitZones[0], p1);
+        const phaseGate = RuleValidator.canEndPhase(engine, p1);
+        return [
+            { pass: power >= raw + 4000, message: 'host received +4000 passive buff' },
+            { pass: phaseGate.valid === false, message: 'berserk passive blocks phase end before attack' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-009-Trigger-Behavior',
+    name: 'Trigger trash self then recover <=2 unit',
+    description: 'BT02-009 trigger trashes itself and recovers one low-cost unit from trash.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-009')];
+        p1.trash = [getCard('BT02-001')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectTrashTarget(0, p1.id);
+        }
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-009'), message: 'source moved to trash' },
+            { pass: p1.damage.every(card => card.id !== 'BT02-009'), message: 'source removed from damage zone' },
+            { pass: p1.hand.some(card => card.id === 'BT02-001'), message: 'recovery resolved' }
+        ];
     }
 });
 
@@ -672,6 +371,25 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-011-Trigger-Behavior',
+    name: 'Trigger trash self then gain level',
+    description: 'BT02-011 trigger trashes itself and increases leader level.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-011')];
+        p1.leaderLevel = 1;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-011'), message: 'source moved to trash' },
+            { pass: p1.leaderLevel === 2, message: 'leader level increased' }
+        ];
+    }
+});
+
+tests.push({
     cardId: 'BT02-012-Passive-Behavior',
     name: 'Passive hit scales by Base unit count',
     description: 'BT02-012 should gain hit based on friendly Base unit count.',
@@ -693,6 +411,51 @@ tests.push({
         const raw = p1.unitZones[0].unit?.hit ?? 0;
         const hit = engine.getUnitHit(p1.unitZones[0], p1);
         return [{ pass: hit >= raw + 2, message: 'hit scaled by Base unit count' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-012-Trigger-Behavior',
+    name: 'Trigger returns self to hand (012)',
+    description: 'BT02-012 trigger should return itself from damage to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-012')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-012'), message: 'trigger card returned to hand' },
+            { pass: p1.damage.every(card => card.id !== 'BT02-012'), message: 'trigger card removed from damage zone' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-013-Entry-Behavior',
+    name: 'Entry buffs selected friendly unit',
+    description: 'BT02-013 should grant +2000 to one selected friendly unit.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[1].unit = getCard('ST01-002');
+        p1.hand = [getCard('BT02-013')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const beforeSelf = p1.unitZones[0].unit ? engine.getUnitPower(p1.unitZones[0], p1) : 0;
+        const beforeAlly = p1.unitZones[1].unit ? engine.getUnitPower(p1.unitZones[1], p1) : 0;
+        engine.playUnit(0, 0);
+        autoResolveInteractions(engine);
+        const afterSelf = p1.unitZones[0].unit ? engine.getUnitPower(p1.unitZones[0], p1) : 0;
+        const afterAlly = p1.unitZones[1].unit ? engine.getUnitPower(p1.unitZones[1], p1) : 0;
+        return [{
+            pass: (afterSelf >= beforeSelf + 2000) || (afterAlly >= beforeAlly + 2000),
+            message: 'one friendly target received +2000 entry buff'
+        }];
     }
 });
 
@@ -770,6 +533,25 @@ tests.push({
             { pass: after0 >= before0 + 1500, message: 'first Base unit buffed' },
             { pass: after1 >= before1 + 1500, message: 'second Base unit buffed' }
         ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-018-Passive-Behavior',
+    name: 'Passive grants +1 hit to Base host',
+    description: 'BT02-018 should grant +1 hit when equipped to a Base trait unit.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const host = getCard('ST01-002');
+        host.traits = getBaseTraitToken(getCard);
+        p1.unitZones[0].unit = host;
+        p1.unitZones[0].items = [getCard('BT02-018')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const raw = p1.unitZones[0].unit?.hit ?? 0;
+        const hit = engine.getUnitHit(p1.unitZones[0], p1);
+        return [{ pass: hit >= raw + 1, message: 'base host gained +1 hit' }];
     }
 });
 
@@ -859,6 +641,25 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-022-Trigger-Behavior',
+    name: 'Trigger returns self to hand (022)',
+    description: 'BT02-022 trigger should return itself from damage zone to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-022')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-022'), message: 'trigger source returned to hand' },
+            { pass: !p1.damage.some(card => card.id === 'BT02-022'), message: 'trigger source removed from damage zone' }
+        ];
+    }
+});
+
+tests.push({
     cardId: 'BT02-024-Exit-Behavior',
     name: 'Exit mutual destruction can destroy killer',
     description: 'BT02-024 should destroy the killer when killer cost is not greater than source cost.',
@@ -879,6 +680,55 @@ tests.push({
         engine.destroyUnit(p1, p1.unitZones[0], killer || undefined, 'COMBAT');
         autoResolveInteractions(engine);
         return [{ pass: p2.unitZones[0].unit === null, message: 'killer removed by mutual destruction' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-025-Active-Behavior',
+    name: 'Active recovers low-cost Exit unit',
+    description: 'BT02-025 active should recover a cost 2 or less Exit unit from trash.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const exitKeyword = getKeywordFilterValue(getCard, 'BT02-025', 0);
+        const recovered = getCard('ST01-002');
+        recovered.cost = 2;
+        recovered.keywords = exitKeyword;
+        p1.trash = [recovered];
+        p1.hand = [getCard('BT02-025')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playSkill(0);
+        autoResolveInteractions(engine);
+        return [
+            { pass: p1.hand.some(card => card.id === 'ST01-002'), message: 'exit unit recovered by active effect' },
+            { pass: !p1.trash.some(card => card.id === 'ST01-002'), message: 'recovered card removed from trash' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-025-Trigger-Behavior',
+    name: 'Trigger trash self then recover Exit unit',
+    description: 'BT02-025 trigger trashes itself and recovers Exit unit from trash.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-025')];
+        p1.trash = [getCard('BT02-019')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectTrashTarget(0, p1.id);
+        }
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-025'), message: 'source moved to trash' },
+            { pass: p1.hand.some(card => card.id === 'BT02-019'), message: 'exit unit recovered' }
+        ];
     }
 });
 
@@ -924,6 +774,93 @@ tests.push({
     verify: (engine) => {
         const p1 = engine.state.players[0];
         return [{ pass: p1.unitZones[0].unit === null, message: 'host destroyed at turn end trigger' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-028-Awaken-Behavior',
+    name: 'Leader 028 awaken and guardian buff',
+    description: 'BT02-028 awakens at level 5 and buffs guardian ally.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.levelZone = getCard('BT02-028');
+        p1.levelZone.isAwakened = false;
+        p1.leaderLevel = 5;
+        p1.unitZones[0].unit = getCard('BT02-030');
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const basePower = p1.unitZones[0].unit?.power ?? 0;
+        engine.checkAwakening(0);
+        const buffedPower = engine.getUnitPower(p1.unitZones[0], p1);
+        return [
+            { pass: p1.levelZone?.isAwakened === true, message: 'leader awakened at level 5' },
+            { pass: buffedPower >= basePower + 1000, message: 'guardian buff applied' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-028-Passive-Behavior',
+    name: 'Passive buffs only guardian units when awakened',
+    description: 'BT02-028 passive should grant +1000 only to friendly units with guardian keyword.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const guardianKeyword = getKeywordFilterValue(getCard, 'BT02-028', 1);
+        const guardian = getCard('ST01-002');
+        guardian.keywords = guardianKeyword;
+        const nonGuardian = getCard('ST01-003');
+        nonGuardian.keywords = 'NON_GUARDIAN';
+
+        p1.levelZone = getCard('BT02-028');
+        p1.levelZone.isAwakened = true;
+        p1.unitZones[0].unit = guardian;
+        p1.unitZones[1].unit = nonGuardian;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const guardianRaw = p1.unitZones[0].unit?.power ?? 0;
+        const nonGuardianRaw = p1.unitZones[1].unit?.power ?? 0;
+        const guardianBuffed = engine.getUnitPower(p1.unitZones[0], p1);
+        const nonGuardianBuffed = engine.getUnitPower(p1.unitZones[1], p1);
+        return [
+            { pass: guardianBuffed >= guardianRaw + 1000, message: 'guardian unit received passive buff' },
+            { pass: nonGuardianBuffed === nonGuardianRaw, message: 'non-guardian unit not buffed by passive' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-029-Defender-Behavior',
+    name: 'Defender gains +2000 power',
+    description: 'BT02-029 should gain +2000 power at defender timing.',
+    setup: (engine, getCard) => {
+        const p2 = engine.state.players[1];
+        p2.unitZones[0].unit = getCard('BT02-029');
+    },
+    verify: (engine) => {
+        const p2 = engine.state.players[1];
+        const before = engine.getUnitPower(p2.unitZones[0], p2);
+        processDefenderEffects(engine, 1, 0);
+        const after = engine.getUnitPower(p2.unitZones[0], p2);
+        return [{ pass: after >= before + 2000, message: 'defender +2000 applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-031-Defender-Behavior',
+    name: 'Defender gains +2000 power (031)',
+    description: 'BT02-031 should gain +2000 power at defender timing.',
+    setup: (engine, getCard) => {
+        const p2 = engine.state.players[1];
+        p2.unitZones[0].unit = getCard('BT02-031');
+    },
+    verify: (engine) => {
+        const p2 = engine.state.players[1];
+        const before = engine.getUnitPower(p2.unitZones[0], p2);
+        processDefenderEffects(engine, 1, 0);
+        const after = engine.getUnitPower(p2.unitZones[0], p2);
+        return [{ pass: after >= before + 2000, message: 'defender +2000 applied' }];
     }
 });
 
@@ -975,6 +912,251 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-036-Entry-Behavior',
+    name: 'Entry grants +1 hit to Guardian ally',
+    description: 'BT02-036 entry should grant +1 hit to selected friendly Guardian.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const guardianKeyword = getKeywordFilterValue(getCard, 'BT02-036', 0);
+        const guardian = getCard('ST01-002');
+        guardian.keywords = guardianKeyword;
+        p1.unitZones[1].unit = guardian;
+        p1.hand = [getCard('BT02-036')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const before = engine.getUnitHit(p1.unitZones[1], p1);
+        engine.playUnit(0, 0);
+        autoResolveInteractions(engine);
+        const after = engine.getUnitHit(p1.unitZones[1], p1);
+        return [{ pass: after >= before + 1, message: 'guardian hit buff applied on entry' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-036-Trigger-Behavior',
+    name: 'Trigger trash self then bounce lowest-cost enemy',
+    description: 'BT02-036 trigger trashes itself and returns an opponent unit+items to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-036')];
+        p2.unitZones[0].unit = getCard('ST01-002');
+        p2.unitZones[0].items = [getCard('BT02-078')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        engine.dealDamage(p1, 1);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectZoneTargetByPlayerId(0, p2.id);
+        }
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-036'), message: 'source moved to trash' },
+            { pass: p2.unitZones[0].unit === null, message: 'enemy unit removed from field' },
+            { pass: p2.hand.some(card => card.id === 'ST01-002'), message: 'enemy unit returned to hand' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-038-Passive-Behavior',
+    name: 'Passive buffs Defender allies',
+    description: 'BT02-038 should grant +2000 power to friendly Defender units.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const defenderKeyword = getKeywordFilterValue(getCard, 'BT02-038', 0);
+        const defender = getCard('ST01-002');
+        defender.keywords = defenderKeyword;
+        p1.unitZones[0].unit = getCard('BT02-038');
+        p1.unitZones[1].unit = defender;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const raw = p1.unitZones[1].unit?.power ?? 0;
+        const power = engine.getUnitPower(p1.unitZones[1], p1);
+        return [{ pass: power >= raw + 2000, message: 'defender ally buffed by passive' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-039-Entry-Behavior',
+    name: 'Entry buffs self by +2000',
+    description: 'BT02-039 should gain +2000 power on entry.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.hand = [getCard('BT02-039')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playUnit(0, 0);
+        const raw = p1.unitZones[0].unit?.power ?? 0;
+        const power = engine.getUnitPower(p1.unitZones[0], p1);
+        return [{ pass: power >= raw + 2000, message: 'entry self buff applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-040-Entry-Behavior',
+    name: 'Entry draws 1 card',
+    description: 'BT02-040 should draw 1 card on entry.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002')];
+        p1.hand = [getCard('BT02-040')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playUnit(0, 0);
+        return [{ pass: p1.hand.some(card => card.id === 'ST01-002'), message: 'entry draw resolved' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-041-Attacker-Behavior',
+    name: 'Attacker breakthrough activates at hand>=5',
+    description: 'BT02-041 should bypass cost 6+ blocker when hand count condition is met.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.unitZones[0].unit = getCard('BT02-041');
+        p1.unitZones[0].unit.hit = 2;
+        p1.hand = [
+            getCard('ST01-002'),
+            getCard('ST01-003'),
+            getCard('ST01-004'),
+            getCard('ST01-005'),
+            getCard('ST01-006')
+        ];
+        const blocker = getCard('ST01-009');
+        blocker.cost = 6;
+        blocker.power = 9999;
+        p2.unitZones[0].unit = blocker;
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+    },
+    verify: (engine) => {
+        const p2 = engine.state.players[1];
+        const before = p2.damage.length;
+        engine.attack(0);
+        return [
+            { pass: p2.damage.length >= before + 1, message: 'conditional breakthrough dealt direct damage' },
+            { pass: !!p2.unitZones[0].unit, message: 'cost 6 blocker remained (block bypassed)' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-041-Trigger-Behavior',
+    name: 'Trigger trash self then draw',
+    description: 'BT02-041 trigger trashes itself and draws one card.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('BT02-041')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-041'), message: 'source moved to trash' },
+            { pass: p1.hand.length >= 1, message: 'draw resolved' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-042-Entry-Behavior',
+    name: 'Entry moves skill from trash to deck top',
+    description: 'BT02-042 should move selected skill card from trash to top of deck.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.trash = [getCard('BT02-047')];
+        p1.hand = [getCard('BT02-042')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playUnit(0, 0);
+        autoResolveInteractions(engine);
+        const top = p1.deck[p1.deck.length - 1];
+        return [
+            { pass: !!top && top.id === 'BT02-047', message: 'selected skill moved to deck top' },
+            { pass: !p1.trash.some(card => card.id === 'BT02-047'), message: 'selected skill removed from trash' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-042-Trigger-Behavior',
+    name: 'Trigger returns self to hand (042)',
+    description: 'BT02-042 trigger should return itself from damage to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-042')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-042'), message: 'trigger card returned to hand' },
+            { pass: p1.damage.every(card => card.id !== 'BT02-042'), message: 'trigger card removed from damage zone' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-043-Defender-Behavior',
+    name: 'Defender grants +4000 power',
+    description: 'BT02-043 should gain +4000 power at defender timing.',
+    setup: (engine, getCard) => {
+        const p2 = engine.state.players[1];
+        p2.unitZones[0].unit = getCard('BT02-043');
+    },
+    verify: (engine) => {
+        const p2 = engine.state.players[1];
+        const before = engine.getUnitPower(p2.unitZones[0], p2);
+        processDefenderEffects(engine, 1, 0);
+        const after = engine.getUnitPower(p2.unitZones[0], p2);
+        return [{ pass: after >= before + 4000, message: 'defender +4000 applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-043-Trigger-Behavior',
+    name: 'Trigger trash self then bounce lowest-cost enemy',
+    description: 'BT02-043 trigger trashes itself and returns an opponent unit+items to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-043')];
+        p2.unitZones[0].unit = getCard('ST01-002');
+        p2.unitZones[0].items = [getCard('BT02-078')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        engine.dealDamage(p1, 1);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectZoneTargetByPlayerId(0, p2.id);
+        }
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-043'), message: 'source moved to trash' },
+            { pass: p2.unitZones[0].unit === null, message: 'enemy unit removed from field' },
+            { pass: p2.hand.some(card => card.id === 'ST01-002'), message: 'enemy unit returned to hand' }
+        ];
+    }
+});
+
+tests.push({
     cardId: 'BT02-045-HandDiscarded-Behavior',
     name: 'Hand-discard trigger draws 1',
     description: 'BT02-045 should draw when hand cards are discarded by effect.',
@@ -997,6 +1179,126 @@ tests.push({
             { pass: p1.hand.length === beforeHand - 1, message: 'net hand count reflects discard and trigger draw' },
             { pass: p1.hand.some(card => card.id === 'ST01-004'), message: 'draw from HAND_DISCARDED resolved' },
             { pass: p1.trash.some(card => card.id === 'ST01-002'), message: 'a hand unit was trashed by effect cost' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-046-Passive-Behavior',
+    name: 'Passive berserk aura blocks phase end',
+    description: 'BT02-046 grants berserk to opponent cost 3+ units, forcing attack before phase end.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+        p1.unitZones[0].unit = getCard('BT02-040');
+        p2.unitZones[0].unit = getCard('BT02-046');
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const result = RuleValidator.canEndPhase(engine, p1);
+        return [{ pass: result.valid === false, message: 'phase end blocked by berserk requirement' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-046-Trigger-Behavior',
+    name: 'Trigger returns self to hand (046)',
+    description: 'BT02-046 trigger should return itself from damage to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-046')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-046'), message: 'trigger card returned to hand' },
+            { pass: p1.damage.every(card => card.id !== 'BT02-046'), message: 'trigger card removed from damage zone' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-047-Active-Behavior',
+    name: 'Active buffs selected Defender',
+    description: 'BT02-047 should grant +3500 to one friendly Defender unit.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const defenderKeyword = getKeywordFilterValue(getCard, 'BT02-047', 0);
+        const defender = getCard('ST01-002');
+        defender.keywords = defenderKeyword;
+        p1.unitZones[0].unit = defender;
+        p1.hand = [getCard('BT02-047')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const before = engine.getUnitPower(p1.unitZones[0], p1);
+        engine.playSkill(0);
+        autoResolveInteractions(engine);
+        const after = engine.getUnitPower(p1.unitZones[0], p1);
+        return [{ pass: after >= before + 3500, message: 'defender received +3500 buff' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-048-Active-Behavior',
+    name: 'Active copies guardian power to ally',
+    description: 'BT02-048 copies selected source power to selected ally.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.hand = [getCard('BT02-048')];
+        p1.leaderLevel = 10;
+        p1.unitZones[0].unit = getCard('BT02-030');
+        p1.unitZones[1].unit = getCard('ST01-002');
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const sourcePower = engine.getUnitPower(p1.unitZones[0], p1);
+        const before = engine.getUnitPower(p1.unitZones[1], p1);
+        engine.playSkill(0);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectZoneTargetByPlayerId(0, p1.id);
+            engine.selectZoneTargetByPlayerId(1, p1.id);
+            engine.confirmTargets();
+        }
+        const after = engine.getUnitPower(p1.unitZones[1], p1);
+        return [{ pass: after >= before + sourcePower, message: 'power copied to second target' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-049-Active-Behavior',
+    name: 'Active damages opponent and exhausts selected defenders',
+    description: 'BT02-049 deals 1 damage and exhausts two selected defender units.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.hand = [getCard('BT02-049')];
+        p1.leaderLevel = 10;
+        p1.unitZones[0].unit = getCard('BT02-029');
+        p1.unitZones[1].unit = getCard('BT02-031');
+        p2.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        const damageBefore = p2.damage.length;
+        engine.playSkill(0);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectZoneTargetByPlayerId(0, p1.id);
+            engine.selectZoneTargetByPlayerId(1, p1.id);
+            engine.confirmTargets();
+        }
+        return [
+            { pass: p2.damage.length === damageBefore + 1, message: 'opponent took 1 damage' },
+            { pass: p1.unitZones[0].isExhausted && p1.unitZones[1].isExhausted, message: 'selected units exhausted' }
         ];
     }
 });
@@ -1063,6 +1365,227 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-052-Passive-Behavior',
+    name: 'Passive grants +1000 to cost<=3 host',
+    description: 'BT02-052 should grant +1000 power to a cost 3 or less host.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const host = getCard('ST01-002');
+        host.cost = 3;
+        p1.unitZones[0].unit = host;
+        p1.unitZones[0].items = [getCard('BT02-052')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const raw = p1.unitZones[0].unit?.power ?? 0;
+        const power = engine.getUnitPower(p1.unitZones[0], p1);
+        return [{ pass: power >= raw + 1000, message: 'cost-limited passive buff applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-053-Passive-Behavior',
+    name: 'Passive grants +2000 to Guardian host',
+    description: 'BT02-053 should grant +2000 power when host has Guardian keyword.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const guardianKeyword = getKeywordFilterValue(getCard, 'BT02-053', 0);
+        const host = getCard('ST01-002');
+        host.keywords = guardianKeyword;
+        p1.unitZones[0].unit = host;
+        p1.unitZones[0].items = [getCard('BT02-053')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const raw = p1.unitZones[0].unit?.power ?? 0;
+        const power = engine.getUnitPower(p1.unitZones[0], p1);
+        return [{ pass: power >= raw + 2000, message: 'guardian passive buff applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-054-Attacker-Behavior',
+    name: 'Attacker grants infiltration to cost>=4 host',
+    description: 'BT02-054 should grant INFILTRATION to host at attacker timing when cost condition is met.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const host = getCard('ST01-009');
+        host.cost = 4;
+        p1.unitZones[0].unit = host;
+        p1.unitZones[0].items = [getCard('BT02-054')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        processAttackerEffects(engine, 0, 0);
+        return [{
+            pass: p1.unitZones[0].temporaryEffects.some((effect: any) =>
+                effect.description === 'INFILTRATION' || effect.action?.params?.keyword === 'INFILTRATION'
+            ),
+            message: 'infiltration granted to host'
+        }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-054-Passive-Behavior',
+    name: 'Passive equip condition enforces host cost',
+    description: 'BT02-054 should equip only to host cost 4 or higher.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const lowHost = getCard('ST01-002');
+        lowHost.cost = 3;
+        const highHost = getCard('ST01-003');
+        highHost.cost = 4;
+        p1.unitZones[0].unit = lowHost;
+        p1.unitZones[1].unit = highHost;
+        p1.hand = [getCard('BT02-054'), getCard('BT02-054')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playItem(0, 0);
+        engine.playItem(0, 1);
+        return [
+            { pass: p1.unitZones[0].items.length === 0, message: 'item not equipped to invalid low-cost host' },
+            { pass: p1.unitZones[1].items.some(item => item.id === 'BT02-054'), message: 'item equipped to valid cost 4+ host' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-055-Awaken-Behavior',
+    name: 'Leader 055 awaken and equipped buff',
+    description: 'BT02-055 awakens at level 6 and buffs equipped allies.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.levelZone = getCard('BT02-055');
+        p1.levelZone.isAwakened = false;
+        p1.leaderLevel = 6;
+        p1.unitZones[0].unit = getCard('BT02-070');
+        p1.unitZones[0].items = [getCard('BT02-078')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const basePower = p1.unitZones[0].unit?.power ?? 0;
+        engine.checkAwakening(0);
+        const buffedPower = engine.getUnitPower(p1.unitZones[0], p1);
+        return [
+            { pass: p1.levelZone?.isAwakened === true, message: 'leader awakened at level 6' },
+            { pass: buffedPower >= basePower + 1500, message: 'equipped-unit buff applied' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-055-Passive-Behavior',
+    name: 'Passive buffs only equipped units when awakened',
+    description: 'BT02-055 passive should grant +1500 only to friendly units that have equipped items.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.levelZone = getCard('BT02-055');
+        p1.levelZone.isAwakened = true;
+
+        p1.unitZones[0].unit = getCard('ST01-002');
+        p1.unitZones[0].items = [getCard('BT02-078')];
+        p1.unitZones[1].unit = getCard('ST01-003');
+        p1.unitZones[1].items = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const equippedRaw = p1.unitZones[0].unit?.power ?? 0;
+        const unequippedRaw = p1.unitZones[1].unit?.power ?? 0;
+        const equippedBuffed = engine.getUnitPower(p1.unitZones[0], p1);
+        const unequippedBuffed = engine.getUnitPower(p1.unitZones[1], p1);
+        return [
+            { pass: equippedBuffed >= equippedRaw + 1500, message: 'equipped unit received passive buff' },
+            { pass: unequippedBuffed === unequippedRaw, message: 'unequipped unit not buffed by passive' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-056-Exit-Behavior',
+    name: 'Exit recovers a cost 1 item',
+    description: 'BT02-056 should recover a cost 1 item from trash on exit.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('BT02-056');
+        p1.trash = [getCard('BT02-079')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+        autoResolveInteractions(engine);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-079'), message: 'cost 1 item recovered to hand' },
+            { pass: !p1.trash.some(card => card.id === 'BT02-079'), message: 'recovered item removed from trash' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-057-Passive-Behavior',
+    name: 'Passive scales power and grants attacker draw',
+    description: 'BT02-057 should gain power per item and grant attacker draw at 3 equipped items.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('BT02-057');
+        p1.unitZones[0].items = [getCard('BT02-078'), getCard('BT02-079'), getCard('BT02-080')];
+        p1.deck = [getCard('ST01-002')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const zone = p1.unitZones[0];
+        const raw = zone.unit?.power ?? 0;
+        const power = engine.getUnitPower(zone, p1);
+
+        const p2 = engine.state.players[1];
+        engine.effectManager.processEffects('PASSIVE' as any, {
+            sourceCard: zone.unit,
+            player: p1,
+            opponent: p2,
+            unitZone: zone,
+            machine: engine
+        } as any);
+
+        const beforeHand = p1.hand.length;
+        processAttackerEffects(engine, 0, 0);
+        return [
+            { pass: power >= raw + 6000, message: 'power scaled by equipped item count' },
+            { pass: p1.hand.length >= beforeHand + 1, message: 'granted attacker draw resolved at 3 items' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-057-Trigger-Behavior',
+    name: 'Trigger trash self then draw2-discard2',
+    description: 'BT02-057 trigger trashes itself and resolves draw-then-discard.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('BT02-057')];
+        p1.hand = [getCard('ST01-002'), getCard('ST01-002')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectHandTargetByPlayerId(0, p1.id);
+            engine.selectHandTargetByPlayerId(1, p1.id);
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                engine.confirmTargets();
+            }
+        }
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-057'), message: 'source moved to trash' },
+            { pass: p1.trash.length >= 3, message: 'discard aftermath resolved' }
+        ];
+    }
+});
+
+tests.push({
     cardId: 'BT02-058-Exit-Behavior',
     name: 'Exit swaps one item between damage and hand',
     description: 'BT02-058 should swap a damage item with one hand card on exit.',
@@ -1079,6 +1602,29 @@ tests.push({
         return [
             { pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'damage item moved to hand' },
             { pass: p1.damage.length === 1 && p1.damage[0].id === 'ST01-002', message: 'hand card moved to damage zone' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-059-Entry-Behavior',
+    name: 'Entry optionally returns equipped item to hand',
+    description: 'BT02-059 should return one equipped item from a friendly unit to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[1].unit = getCard('ST01-002');
+        p1.unitZones[1].items = [getCard('BT02-078')];
+        p1.hand = [getCard('BT02-059')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playUnit(0, 0);
+        autoResolveInteractions(engine);
+        return [
+            { pass: p1.unitZones[1].items.length === 0, message: 'equipped item removed from lane' },
+            { pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'equipped item returned to hand' }
         ];
     }
 });
@@ -1139,6 +1685,163 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-063-Entry-Behavior',
+    name: 'Entry optional cost destroys encounter unit',
+    description: 'BT02-063 should trash an item from hand and destroy encounter unit on entry.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.hand = [getCard('BT02-063'), getCard('BT02-078')];
+        p1.leaderLevel = 10;
+        p2.unitZones[0].unit = getCard('ST01-002');
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        engine.playUnit(0, 0);
+        autoResolveInteractions(engine);
+        return [
+            { pass: p2.unitZones[0].unit === null, message: 'encounter unit destroyed by optional entry effect' },
+            { pass: p1.trash.some(card => card.id === 'BT02-078'), message: 'item cost was paid from hand' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-063-Trigger-Behavior',
+    name: 'Trigger trash self then search <=1 item',
+    description: 'BT02-063 trigger trashes itself and searches low-cost item from deck.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-078'), getCard('BT02-063')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectRevealedTarget(0);
+        }
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-063'), message: 'source moved to trash' },
+            { pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'searched item added to hand' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-065-Passive-Behavior',
+    name: 'Passive grants +2500 when equipped',
+    description: 'BT02-065 should gain +2500 power while equipped.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('BT02-065');
+        p1.unitZones[0].items = [getCard('BT02-078')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const raw = p1.unitZones[0].unit?.power ?? 0;
+        const power = engine.getUnitPower(p1.unitZones[0], p1);
+        return [{ pass: power >= raw + 2500, message: 'equipped passive +2500 applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-066-Exit-Behavior',
+    name: 'Exit returns an equipped item to hand',
+    description: 'BT02-066 should return one equipped item to hand when trashed.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('BT02-066');
+        p1.unitZones[0].items = [getCard('BT02-078')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        const zone = p1.unitZones[0];
+        engine.effectManager.processEffects('EXIT' as any, {
+            sourceCard: zone.unit,
+            player: p1,
+            opponent: p2,
+            unitZone: zone,
+            machine: engine
+        } as any);
+        autoResolveInteractions(engine);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'equipped item returned on exit' },
+            { pass: p1.unitZones[0].items.length === 0, message: 'returned item removed from host lane' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-067-Attacker-Behavior',
+    name: 'Attacker breakthrough applies when equipped',
+    description: 'BT02-067 should bypass blocker when equipped due unconditional breakthrough.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.unitZones[0].unit = getCard('BT02-067');
+        p1.unitZones[0].unit.hit = 2;
+        p1.unitZones[0].items = [getCard('BT02-078')];
+        const blocker = getCard('ST01-002');
+        blocker.cost = 2;
+        blocker.power = 9999;
+        p2.unitZones[0].unit = blocker;
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+    },
+    verify: (engine) => {
+        const p2 = engine.state.players[1];
+        const before = p2.damage.length;
+        engine.attack(0);
+        return [
+            { pass: p2.damage.length >= before + 1, message: 'unconditional breakthrough dealt direct damage' },
+            { pass: !!p2.unitZones[0].unit, message: 'blocker remained (block was bypassed)' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-067-Trigger-Behavior',
+    name: 'Trigger returns self to hand (067)',
+    description: 'BT02-067 trigger should return itself from damage to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-067')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-067'), message: 'trigger card returned to hand' },
+            { pass: p1.damage.every(card => card.id !== 'BT02-067'), message: 'trigger card removed from damage zone' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-068-Entry-Behavior',
+    name: 'Entry reveals top 2 and takes item',
+    description: 'BT02-068 should reveal top 2 and move one item card to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-078')];
+        p1.hand = [getCard('BT02-068')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playUnit(0, 0);
+        autoResolveInteractions(engine);
+        return [{ pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'revealed item selected into hand' }];
+    }
+});
+
+tests.push({
     cardId: 'BT02-069-Passive-Behavior',
     name: 'Passive prevents destruction by trashing equipped item',
     description: 'BT02-069 should keep host alive by trashing one equipped item instead.',
@@ -1184,6 +1887,105 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-071-Trigger-Behavior',
+    name: 'Trigger returns self to hand (071)',
+    description: 'BT02-071 trigger should return itself from damage to hand.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-071')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-071'), message: 'trigger card returned to hand' },
+            { pass: p1.damage.every(card => card.id !== 'BT02-071'), message: 'trigger card removed from damage zone' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-072-Passive-Behavior',
+    name: 'Passive grants +1 hit when equipped',
+    description: 'BT02-072 should gain +1 hit while equipped.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('BT02-072');
+        p1.unitZones[0].items = [getCard('BT02-078')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const raw = p1.unitZones[0].unit?.hit ?? 0;
+        const hit = engine.getUnitHit(p1.unitZones[0], p1);
+        return [{ pass: hit >= raw + 1, message: 'equipped passive +1 hit applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-073-Active-Behavior',
+    name: 'Active swaps damage item with hand card',
+    description: 'BT02-073 should swap one damage-zone item with one hand card.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.damage = [getCard('BT02-078')];
+        p1.hand = [getCard('BT02-073'), getCard('ST01-002')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playSkill(0);
+        autoResolveInteractions(engine);
+        return [
+            { pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'damage item moved to hand' },
+            { pass: p1.damage.length === 1 && p1.damage[0].id === 'ST01-002', message: 'hand card moved to damage zone' }
+        ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-074-Active-Behavior',
+    name: 'Active searches Unique item from deck',
+    description: 'BT02-074 active should search deck for a matching Unique item.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-078')];
+        p1.hand = [getCard('BT02-074')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playSkill(0);
+        autoResolveInteractions(engine);
+        return [{ pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'unique item searched to hand' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-074-Trigger-Behavior',
+    name: 'Trigger trash self then search <=1 item',
+    description: 'BT02-074 trigger trashes itself and searches low-cost item from deck.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.deck = [getCard('ST01-002'), getCard('BT02-078'), getCard('BT02-074')];
+        p1.hand = [];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.dealDamage(p1, 1);
+        if (engine.state.interactionMode === 'SELECT_TARGET') {
+            engine.selectRevealedTarget(0);
+        }
+        return [
+            { pass: p1.trash.some(card => card.id === 'BT02-074'), message: 'source moved to trash' },
+            { pass: p1.hand.some(card => card.id === 'BT02-078'), message: 'searched item added to hand' }
+        ];
+    }
+});
+
+tests.push({
     cardId: 'BT02-075-Active-Behavior',
     name: 'Active moves equipped item to deck bottom',
     description: 'BT02-075 should remove one equipped item and place it on deck bottom.',
@@ -1204,6 +2006,25 @@ tests.push({
             { pass: p1.unitZones[0].items.length === 0, message: 'equipped item removed from field' },
             { pass: !!bottom && bottom.id === 'BT02-078', message: 'equipped item moved to deck bottom' }
         ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-076-Active-Behavior',
+    name: 'Active recovers item cost 1 or less',
+    description: 'BT02-076 should recover a cost 1 or less item from trash.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.trash = [getCard('BT02-079')];
+        p1.hand = [getCard('BT02-076')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playSkill(0);
+        autoResolveInteractions(engine);
+        return [{ pass: p1.hand.some(card => card.id === 'BT02-079'), message: 'low-cost item recovered to hand' }];
     }
 });
 
@@ -1237,6 +2058,24 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-079-Attacker-Behavior',
+    name: 'Attacker item grants +2000 power',
+    description: 'BT02-079 should grant host +2000 power at attacker timing.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('ST01-002');
+        p1.unitZones[0].items = [getCard('BT02-079')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const before = engine.getUnitPower(p1.unitZones[0], p1);
+        processAttackerEffects(engine, 0, 0);
+        const after = engine.getUnitPower(p1.unitZones[0], p1);
+        return [{ pass: after >= before + 2000, message: 'attacker item +2000 applied' }];
+    }
+});
+
+tests.push({
     cardId: 'BT02-080-Passive-Behavior',
     name: 'Passive gives +3000 when host has Armed keyword',
     description: 'BT02-080 should buff host power when host has required keyword.',
@@ -1253,6 +2092,26 @@ tests.push({
         const raw = p1.unitZones[0].unit?.power ?? 0;
         const power = engine.getUnitPower(p1.unitZones[0], p1);
         return [{ pass: power >= raw + 3000, message: 'armed host +3000 applied' }];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-081-Passive-Behavior',
+    name: 'Passive destruction prevention by discard',
+    description: 'BT02-081 prevents host destruction by discarding cards equal to host hit.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        p1.unitZones[0].unit = getCard('ST01-002');
+        p1.unitZones[0].items = [getCard('BT02-081')];
+        p1.hand = [getCard('ST01-002')];
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'COMBAT');
+        return [
+            { pass: !!p1.unitZones[0].unit, message: 'host destruction prevented' },
+            { pass: p1.hand.length === 0, message: 'discard cost paid' }
+        ];
     }
 });
 
