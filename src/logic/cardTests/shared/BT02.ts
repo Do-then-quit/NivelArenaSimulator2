@@ -12,11 +12,19 @@ function getKeywordFilterValue(
     getCard: (id: string) => any,
     cardId: string,
     effectIndex: number = 0
-): string {
+): string[] {
     const card = getCard(cardId);
     const filters = card.effects?.[effectIndex]?.targets?.filters || [];
     const keywordFilter = filters.find((filter: any) => filter.type === 'HAS_KEYWORD');
-    return keywordFilter?.value || 'KEYWORD';
+    if (Array.isArray(keywordFilter?.value)) {
+        return keywordFilter.value;
+    }
+
+    if (typeof keywordFilter?.value === 'string') {
+        return [keywordFilter.value];
+    }
+
+    return ['KEYWORD'];
 }
 
 function autoResolveInteractions(engine: any, maxSteps: number = 32): void {
@@ -810,7 +818,7 @@ tests.push({
         const guardian = getCard('ST01-002');
         guardian.keywords = guardianKeyword;
         const nonGuardian = getCard('ST01-003');
-        nonGuardian.keywords = 'NON_GUARDIAN';
+        nonGuardian.keywords = ['NON_GUARDIAN'];
 
         p1.levelZone = getCard('BT02-028');
         p1.levelZone.isAwakened = true;
