@@ -871,6 +871,13 @@ function renderGame() {
             const currentCount = pending.selectedTargets?.length || 0;
             const actorId = getActionOwnerPlayerId(game!);
             const canConfirm = game!.getLegalActions(actorId).some(action => action.type === 'CONFIRM_TARGETS');
+            const blockHint = pending?.actionType === 'BLOCK_SELECT_DEFENDER'
+                ? 'Select the defender for this block.'
+                : pending?.actionType === 'BLOCK_PAY_SACRIFICE'
+                    ? 'Select sacrifice unit(s), then confirm.'
+                    : pending?.actionType === 'BLOCK_PAY_NEGATE'
+                        ? 'Select one equipped item to trash for negate cost.'
+                        : '';
             const sacrificeHint = pending?.actionType === 'SACRIFICE_TO_BUFF'
                 ? (currentCount === 0
                     ? 'Step 1/2: Select the unit to trash.'
@@ -878,11 +885,12 @@ function renderGame() {
                         ? 'Step 2/2: Select the unit to receive +2000 power.'
                         : 'Selection complete. Confirm to resolve.')
                 : '';
+            const hintText = blockHint || sacrificeHint;
 
             return `
             <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
                 <span style="animation: pulse 1s infinite;">SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
-                ${sacrificeHint ? `<span style="font-size: 0.85rem; opacity: 0.9;">${sacrificeHint}</span>` : ''}
+                ${hintText ? `<span style="font-size: 0.85rem; opacity: 0.9;">${hintText}</span>` : ''}
                 <button id="confirm-targets-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'} style="background: ${canConfirm ? '#2ecc71' : '#636e72'}; border: none; padding: 5px 15px;">Confirm</button>
             </div>
             `;
@@ -1243,6 +1251,24 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
         const blockerZoneIndex = (game!.state.pendingAttackerIndex ?? -1);
         const isBlockingTarget = game!.state.phase === Phase.BLOCK && isOpponent && blockerZoneIndex === i;
         const isSelected = game!.state.pendingEffect?.selectedTargets?.includes(z);
+        const hasUnitActivatable = !!(z.unit && z.unit.effects?.some((e: any, idx: number) => {
+            const isActivatableInPhase =
+                (e.activation === 'ACTIVE' && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK)) ||
+                (e.activation === 'ACTIVE_MAIN' && game!.state.phase === Phase.MAIN);
+            if (!isActivatableInPhase) return false;
+            const key = `${z.unit!.id}_${e.id || idx}`;
+            return !z.activatedEffectKeys?.[key];
+        }));
+        const hasItemActivatable = !!(z.items?.some((item: Card, itemIndex: number) =>
+            item.effects?.some((e: any, idx: number) => {
+                const isActivatableInPhase =
+                    (e.activation === 'ACTIVE' && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK)) ||
+                    (e.activation === 'ACTIVE_MAIN' && game!.state.phase === Phase.MAIN);
+                if (!isActivatableInPhase) return false;
+                const key = `${item.id}_${e.id || idx}_${itemIndex}`;
+                return !z.activatedEffectKeys?.[key];
+            })
+        ));
 
         return `
                     <div class="zone unit-zone ${!isOpponent && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
@@ -1273,15 +1299,8 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                         ` : ''}
 
                         ${z.unit && !isOpponent && localHumanCanInput && game!.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${z.unit && !isOpponent && localHumanCanInput && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK) && z.unit.effects?.some((e: any, idx: number) => {
-                            const isActivatableInPhase =
-                                (e.activation === 'ACTIVE' && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK)) ||
-                                (e.activation === 'ACTIVE_MAIN' && game!.state.phase === Phase.MAIN);
-                            if (!isActivatableInPhase) return false;
-                            const key = `${z.unit!.id}_${e.id || idx}`;
-                            return !z.activatedEffectKeys?.[key];
-                        }) ? '<button class="active-btn">Active</button>' : ''}
-                        ${isBlockingTarget && localHumanCanInput ? `
+                        ${!isOpponent && localHumanCanInput && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK) && (hasUnitActivatable || hasItemActivatable) ? '<button class="active-btn">Active</button>' : ''}
+                        ${isBlockingTarget && localHumanCanInput && game!.state.interactionMode === 'NORMAL' ? `
                             <div class="block-controls">
                                 <button class="block-btn">Block</button>
                                 <button class="pass-btn">Pass</button>
@@ -1613,11 +1632,37 @@ function attachListeners() {
             if (!canLocalHumanInput()) return;
             const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
             const zone = game!.currentPlayer.unitZones[zoneIndex];
-            const effectIndex = zone.unit?.effects?.findIndex(e => e.activation === 'ACTIVE' || e.activation === 'ACTIVE_MAIN') ?? -1;
+            const unitEffectIndex = zone.unit?.effects?.findIndex((e, idx) => {
+                const isActivatableInPhase =
+                    (e.activation === 'ACTIVE' && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK)) ||
+                    (e.activation === 'ACTIVE_MAIN' && game!.state.phase === Phase.MAIN);
+                if (!isActivatableInPhase) return false;
+                const key = `${zone.unit!.id}_${e.id || idx}`;
+                return !zone.activatedEffectKeys?.[key];
+            }) ?? -1;
 
-            if (effectIndex !== -1) {
-                game!.activateEffect(zoneIndex, effectIndex);
+            if (unitEffectIndex !== -1) {
+                game!.activateEffect(zoneIndex, unitEffectIndex);
                 render();
+                return;
+            }
+
+            for (let itemIndex = 0; itemIndex < zone.items.length; itemIndex++) {
+                const item = zone.items[itemIndex];
+                const itemEffectIndex = item.effects?.findIndex((e, idx) => {
+                    const isActivatableInPhase =
+                        (e.activation === 'ACTIVE' && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK)) ||
+                        (e.activation === 'ACTIVE_MAIN' && game!.state.phase === Phase.MAIN);
+                    if (!isActivatableInPhase) return false;
+                    const key = `${item.id}_${e.id || idx}_${itemIndex}`;
+                    return !zone.activatedEffectKeys?.[key];
+                }) ?? -1;
+
+                if (itemEffectIndex !== -1) {
+                    game!.activateEffect(zoneIndex, itemEffectIndex, itemIndex);
+                    render();
+                    return;
+                }
             }
         });
     });

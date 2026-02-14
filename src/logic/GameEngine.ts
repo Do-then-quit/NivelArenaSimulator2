@@ -32,6 +32,26 @@ interface ZoneReferenceLocator {
     zoneIndex: number;
 }
 
+type GuardianCostType = 'NONE' | 'BARRIER' | 'SACRIFICE' | 'NEGATE';
+
+interface GuardianNegateFilter {
+    cardType?: CardType;
+    costMin?: number;
+    costMax?: number;
+    keyword?: string;
+}
+
+export interface PendingDefenseOption {
+    defenderZoneIndex: number;
+    source: 'ENCOUNTER' | 'GUARDIAN';
+    provider: 'UNIT' | 'ITEM';
+    providerCardId: string;
+    providerCardName: string;
+    costType: GuardianCostType;
+    costAmount: number;
+    negateFilter?: GuardianNegateFilter;
+}
+
 export class GameEngine {
     state: GameState;
     effectManager: EffectManager;
@@ -67,6 +87,7 @@ export class GameEngine {
             turnCount: 1,
             winner: null,
             pendingAttackerIndex: null,
+            pendingDefenderIndex: null,
             interactionMode: 'NORMAL',
             interactionOwnerPlayerId: null,
             pendingEffect: null,
@@ -650,8 +671,28 @@ export class GameEngine {
 
     public isPendingZoneTarget(zone: UnitZoneState): boolean {
         if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return false;
+        const pending = this.state.pendingEffect;
+
+        if (pending.actionType === 'BLOCK_SELECT_DEFENDER') {
+            const defender = this.getPlayerById(pending.sourcePlayerId);
+            const optionZones: number[] = Array.isArray(pending.actionValue?.options)
+                ? pending.actionValue.options.map((option: PendingDefenseOption) => option.defenderZoneIndex)
+                : [];
+            if (!defender) return false;
+            return defender.unitZones.some((candidate, index) => candidate === zone && optionZones.includes(index));
+        }
+
+        if (pending.actionType === 'BLOCK_PAY_SACRIFICE') {
+            const defender = this.getPlayerById(pending.sourcePlayerId);
+            const option = pending.actionValue?.option as PendingDefenseOption | undefined;
+            if (!defender || !zone.unit) return false;
+            return defender.unitZones.some((candidate, index) =>
+                candidate === zone && (!option || index !== option.defenderZoneIndex)
+            );
+        }
+
         const runtime = this.getPendingRuntime();
-        const schema = this.state.pendingEffect.targetSchema;
+        const schema = pending.targetSchema;
         if (!runtime || !schema) return false;
         return TargetSelector.isValidTarget(this, schema, runtime.context, zone);
     }
@@ -716,41 +757,81 @@ export class GameEngine {
                     }
 
                     const unit = zone.unit;
-                    if (!unit?.effects) return;
-                    unit.effects.forEach((effect, effectIndex) => {
-                        const activatableInPhase =
-                            (effect.activation === ActivationCondition.ACTIVE && (this.state.phase === Phase.MAIN || this.state.phase === Phase.ATTACK)) ||
-                            (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase === Phase.MAIN);
-                        if (!activatableInPhase) return;
+                    if (unit?.effects) {
+                        unit.effects.forEach((effect, effectIndex) => {
+                            const activatableInPhase =
+                                (effect.activation === ActivationCondition.ACTIVE && (this.state.phase === Phase.MAIN || this.state.phase === Phase.ATTACK)) ||
+                                (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase === Phase.MAIN);
+                            if (!activatableInPhase) return;
 
-                        const effectKey = `${unit.id}_${effect.id || effectIndex}`;
-                        if (zone.activatedEffectKeys?.[effectKey]) return;
+                            const effectKey = `${unit.id}_${effect.id || effectIndex}`;
+                            if (zone.activatedEffectKeys?.[effectKey]) return;
 
-                        const context: GameContext = {
-                            sourceCard: unit,
-                            player: actor,
-                            opponent: this.getOpponentOf(actor),
-                            unitZone: zone,
-                            machine: this,
-                        };
+                            const context: GameContext = {
+                                sourceCard: unit,
+                                player: actor,
+                                opponent: this.getOpponentOf(actor),
+                                unitZone: zone,
+                                machine: this,
+                            };
 
-                        if (!this.effectManager.checkCondition(effect, context)) return;
+                            if (!this.effectManager.checkCondition(effect, context)) return;
 
-                        if (effect.cost && effect.cost.type !== 'NONE') {
-                            if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
-                                const requiredAmount = effect.cost.amount || 1;
-                                const costFilter = effect.cost.cardTypeFilter;
-                                const payableCount = actor.hand.filter(card => !costFilter || card.type === costFilter).length;
-                                if (payableCount < requiredAmount) return;
+                            if (effect.cost && effect.cost.type !== 'NONE') {
+                                if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
+                                    const requiredAmount = effect.cost.amount || 1;
+                                    const costFilter = effect.cost.cardTypeFilter;
+                                    const payableCount = actor.hand.filter(card => !costFilter || card.type === costFilter).length;
+                                    if (payableCount < requiredAmount) return;
+                                }
                             }
-                        }
 
-                        if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                            const candidates = TargetSelector.resolve(this, effect.targets, context);
-                            if (candidates.length === 0) return;
-                        }
+                            if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+                                const candidates = TargetSelector.resolve(this, effect.targets, context);
+                                if (candidates.length === 0) return;
+                            }
 
-                        actions.push({ type: 'ACTIVATE_EFFECT', actorPlayerId: id, zoneIndex, effectIndex });
+                            actions.push({ type: 'ACTIVATE_EFFECT', actorPlayerId: id, zoneIndex, effectIndex });
+                        });
+                    }
+
+                    zone.items.forEach((item, itemIndex) => {
+                        if (!item.effects) return;
+                        item.effects.forEach((effect, effectIndex) => {
+                            const activatableInPhase =
+                                (effect.activation === ActivationCondition.ACTIVE && (this.state.phase === Phase.MAIN || this.state.phase === Phase.ATTACK)) ||
+                                (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase === Phase.MAIN);
+                            if (!activatableInPhase) return;
+
+                            const effectKey = `${item.id}_${effect.id || effectIndex}_${itemIndex}`;
+                            if (zone.activatedEffectKeys?.[effectKey]) return;
+
+                            const context: GameContext = {
+                                sourceCard: item,
+                                player: actor,
+                                opponent: this.getOpponentOf(actor),
+                                unitZone: zone,
+                                machine: this,
+                            };
+
+                            if (!this.effectManager.checkCondition(effect, context)) return;
+
+                            if (effect.cost && effect.cost.type !== 'NONE') {
+                                if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
+                                    const requiredAmount = effect.cost.amount || 1;
+                                    const costFilter = effect.cost.cardTypeFilter;
+                                    const payableCount = actor.hand.filter(card => !costFilter || card.type === costFilter).length;
+                                    if (payableCount < requiredAmount) return;
+                                }
+                            }
+
+                            if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+                                const candidates = TargetSelector.resolve(this, effect.targets, context);
+                                if (candidates.length === 0) return;
+                            }
+
+                            actions.push({ type: 'ACTIVATE_EFFECT', actorPlayerId: id, zoneIndex, effectIndex, itemIndex });
+                        });
                     });
                 });
 
@@ -786,6 +867,48 @@ export class GameEngine {
             const context = runtime?.context;
             const targetSchema = pending.targetSchema;
             if (!context || !targetSchema) return;
+
+            if (pending.actionType === 'BLOCK_SELECT_DEFENDER') {
+                const optionZones: number[] = Array.isArray(pending.actionValue?.options)
+                    ? pending.actionValue.options.map((option: PendingDefenseOption) => option.defenderZoneIndex)
+                    : [];
+                const defender = this.getPlayerById(pending.sourcePlayerId);
+                if (!defender) return;
+                optionZones.forEach(zoneIndex => {
+                    if (zoneIndex < 0 || zoneIndex >= defender.unitZones.length) return;
+                    if (!defender.unitZones[zoneIndex].unit) return;
+                    actions.push({ type: 'SELECT_ZONE_TARGET', actorPlayerId: id, targetPlayerId: defender.id, zoneIndex });
+                });
+                return;
+            }
+
+            if (pending.actionType === 'BLOCK_PAY_SACRIFICE') {
+                const defender = this.getPlayerById(pending.sourcePlayerId);
+                if (!defender) return;
+                const option = pending.actionValue?.option as PendingDefenseOption | undefined;
+                const required = Math.max(1, pending.actionValue?.required || 1);
+                const selected = pending.selectedTargets ?? [];
+                const selectable: UnitZoneState[] = [];
+
+                defender.unitZones.forEach((zone, zoneIndex) => {
+                    if (!zone.unit) return;
+                    if (option && zoneIndex === option.defenderZoneIndex) return;
+                    selectable.push(zone);
+                    actions.push({ type: 'SELECT_ZONE_TARGET', actorPlayerId: id, targetPlayerId: defender.id, zoneIndex });
+                });
+
+                const selectedCount = selected.length;
+                if (selectedCount >= required) {
+                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
+                    return;
+                }
+
+                const remainingSelectableCount = selectable.filter(zone => !selected.includes(zone)).length;
+                if (selectedCount + remainingSelectableCount < required) {
+                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
+                }
+                return;
+            }
 
             const needsConfirm =
                 (targetSchema.count ?? 1) !== 1 ||
@@ -903,7 +1026,7 @@ export class GameEngine {
                 return true;
             case 'ACTIVATE_EFFECT':
                 if (action.actorPlayerId !== this.currentPlayer.id) return false;
-                this.activateEffect(action.zoneIndex, action.effectIndex);
+                this.activateEffect(action.zoneIndex, action.effectIndex, action.itemIndex);
                 return true;
             case 'ATTACK':
                 if (action.actorPlayerId !== this.currentPlayer.id) return false;
@@ -1338,10 +1461,10 @@ export class GameEngine {
         console.log(`Equipped ${card.name} to unit in zone ${zoneIndex}`);
     }
 
-    activateEffect(zoneIndex: number, effectIndex: number) {
+    activateEffect(zoneIndex: number, effectIndex: number, itemIndex?: number) {
         const zone = this.currentPlayer.unitZones[zoneIndex];
-        const card = zone.unit;
-        if (!card || !card.effects) return;
+        const card = itemIndex === undefined ? zone.unit : zone.items[itemIndex];
+        if (!card?.effects) return;
 
         const effect = card.effects[effectIndex];
         if (effect.activation !== ActivationCondition.ACTIVE && effect.activation !== ActivationCondition.ACTIVE_MAIN) return;
@@ -1353,7 +1476,9 @@ export class GameEngine {
             return;
         }
 
-        const effectKey = `${card.id}_${effect.id || effectIndex}`;
+        const effectKey = itemIndex === undefined
+            ? `${card.id}_${effect.id || effectIndex}`
+            : `${card.id}_${effect.id || effectIndex}_${itemIndex}`;
         if (zone.activatedEffectKeys[effectKey]) return;
 
         const context = {
@@ -1497,6 +1622,13 @@ export class GameEngine {
             return;
         }
 
+        if (pending.actionType === 'BLOCK_PAY_BARRIER') {
+            const option = pending.actionValue?.option as PendingDefenseOption | undefined;
+            if (!option) return;
+            this.finalizeBlockWithOption(option);
+            return;
+        }
+
         if (pending.actionType === 'DESTROY_UNIT_WITH_HIT_COST') {
             const targetZone = pending.selectedTargets?.[0];
             if (targetZone && targetZone.unit) {
@@ -1591,6 +1723,7 @@ export class GameEngine {
         this.state.attackTerminated = false;
         // Combat block state is per-combat. Reset to avoid leaking prior combat results.
         this.state.combatBlocked = false;
+        this.state.pendingDefenderIndex = null;
         (attackerZone as any)._attackCostPaid = false; // Reset for next time
         attackerZone.hasAttacked = true;
 
@@ -1675,50 +1808,31 @@ export class GameEngine {
                 // End Combat
                 this.state.combatStep = 'NONE';
                 this.state.pendingAttackerIndex = null;
+                this.state.pendingDefenderIndex = null;
                 this.state.phase = Phase.ATTACK; // Return to Attack Available
                 this.assignInteractionOwner(this.currentPlayer.id);
                 break;
         }
     }
 
-    private stepDefenseDeclaration(attackerZone: UnitZoneState) {
+    private stepDefenseDeclaration(_attackerZone: UnitZoneState) {
         this.state.combatStep = 'DEFENSE_DECLARATION';
-        const attackerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
+        this.state.pendingDefenderIndex = null;
 
-        // 1. Check BREAKTHROUGH
-        const blockerZoneIndex = attackerZoneIndex;
-        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
-
-        let breakthroughActive = false;
-        if (blockerZone.unit) {
-            const limit = this.getBreakthroughLimit(attackerZone);
-            if (limit !== null && blockerZone.unit.cost <= limit) {
-                console.log(`BREAKTHROUGH active. Skipping Block phase.`);
-                breakthroughActive = true;
-            }
-        }
-
-        if (breakthroughActive || !blockerZone.unit) {
-            // Direct Attack or Breakthrough -> Skip Blocking
-            this.state.combatBlocked = false;
-            this.assignInteractionOwner(this.currentPlayer.id);
-            this.advanceCombatStep(); // Go directly to BATTLE
+        const defenseOptions = this.getPendingDefenseOptions();
+        if (defenseOptions.length === 0) {
+            this.finalizeCombatAsUnblocked();
             return;
         }
 
-        // 2. Encounter Unit exists -> Potential Block
         this.state.phase = Phase.BLOCK;
         this.assignInteractionOwner(this.opponentPlayer.id);
-        // Wait for user input (resolveBlock)
         console.log("Waiting for Block Declaration...");
-
-        // NOTE: guardian/auto-block logic would go here if implemented
-        // For now, we wait for Manual Block (UI calls resolveBlock)
     }
 
     private stepBattleResolution(attackerZone: UnitZoneState) {
         this.state.combatStep = 'BATTLE';
-        const blockerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
+        const blockerZoneIndex = this.state.pendingDefenderIndex ?? this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
         // 1. Check Attack Terminated
@@ -1839,78 +1953,54 @@ export class GameEngine {
 
     resolveBlock(shouldBlock: boolean) {
         if (this.state.phase !== Phase.BLOCK || this.state.pendingAttackerIndex === null) return;
-
-        const attackerZoneIndex = this.state.pendingAttackerIndex;
-        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
-
-        const blockerZoneIndex = attackerZoneIndex;
-        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
-
-        // CHECK BREAKTHROUGH (Fallback check)
-        if (shouldBlock && blockerZone.unit) {
-            const limit = this.getBreakthroughLimit(attackerZone);
-            if (limit !== null && blockerZone.unit.cost <= limit) {
-                console.log(`Block prevented by BREAKTHROUGH (Cost ${blockerZone.unit.cost} <= ${limit})`);
-                shouldBlock = false; // Force no block
-            }
+        const attackerZone = this.currentPlayer.unitZones[this.state.pendingAttackerIndex];
+        if (!attackerZone.unit) {
+            this.finalizeCombatAsUnblocked();
+            return;
         }
 
-        // DUALIST (Rule 10.2.3.5.3)
-        const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
-        let finalShouldBlock = shouldBlock;
-        if (isDualist && blockerZone.unit) {
-            finalShouldBlock = true; // Forced block
+        const defenseOptions = this.getPendingDefenseOptions();
+        const encounterOption = defenseOptions.find(option => option.source === 'ENCOUNTER');
+        const isDualist = this.hasKeyword(attackerZone.unit, 'DUALIST');
+        if (isDualist && encounterOption) {
+            shouldBlock = true;
+            this.beginBlockPaymentForOption(encounterOption);
+            return;
         }
 
-        if (finalShouldBlock && blockerZone.unit) {
-            // Trigger DEFENDER effects as one simultaneous event.
-            const defenderBatchStep = this.incrementAndGetGlobalStep();
-            this.effectManager.processEffects(ActivationCondition.DEFENDER, {
-                sourceCard: blockerZone.unit,
-                player: this.opponentPlayer,
-                opponent: this.currentPlayer,
-                unitZone: blockerZone,
-                machine: this
-            }, { enqueueOnly: true, batchStep: defenderBatchStep });
-
-            blockerZone.items.forEach(item => {
-                this.effectManager.processEffects(ActivationCondition.DEFENDER, {
-                    sourceCard: item,
-                    player: this.opponentPlayer,
-                    opponent: this.currentPlayer,
-                    unitZone: blockerZone,
-                    machine: this
-                }, { enqueueOnly: true, batchStep: defenderBatchStep });
-            });
-            this.effectManager.processQueue();
-
-            // Mark blocking happened? Actually, the presence of blockerZone.unit implies blocking capability,
-            // but we need to know if the player CHOSE to block.
-            // If they chose NOT to block, we should probably pretend the unit isn't there for combat??
-            // Wait, Nivel Arena rules: Encounter unit blocks logic or direct attack logic?
-            // "Manual Block: If there is no Guardian, the opponent decides whether to defend with the encounter unit."
-            // If they decide NOT to defend, what happens? "Attack Unit's Hit -> Player Damage".
-            // So if !finalShouldBlock, we treat it as unblocked even if unit is there because of Encounter logic.
-
-            // CRITICAL FIX: If user chose NOT to block, we must clear the 'blockerZone.unit' from the combat equation momentarily?
-            // No, we just need to pass a flag to stepBattleResolution. 
-            // BUT stepBattleResolution looks at `blockerZone.unit`.
-            // We need a robust way to say "This combat is unblocked".
-            // Let's set a temporary state on the engine? `this.state.isCombatBlocked`.
-
-            this.state.combatBlocked = true;
-
-        } else {
-            this.state.combatBlocked = false;
+        if (!shouldBlock || defenseOptions.length === 0) {
+            this.finalizeCombatAsUnblocked();
+            return;
         }
 
-        this.assignInteractionOwner(this.currentPlayer.id);
-
-        // Advance to next step (Battle Resolution)
-        // If effects were added, queue runs. If not, manual advance.
-        if (this.state.effectQueue.length === 0) {
-            this.advanceCombatStep();
+        if (defenseOptions.length === 1) {
+            this.beginBlockPaymentForOption(defenseOptions[0]);
+            return;
         }
+
+        this.state.interactionMode = 'SELECT_TARGET';
+        this.state.pendingEffect = {
+            sourceCard: attackerZone.unit,
+            sourcePlayerId: this.opponentPlayer.id,
+            controllerPlayerId: this.opponentPlayer.id,
+            actionType: 'BLOCK_SELECT_DEFENDER',
+            actionValue: { options: defenseOptions },
+            effectDescription: 'Select defending unit',
+            targetSchema: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                selectMode: 'MANUAL'
+            },
+            selectedTargets: []
+        };
+        this.setPendingRuntime({
+            sourceCard: attackerZone.unit,
+            player: this.opponentPlayer,
+            opponent: this.currentPlayer,
+            machine: this
+        }, null);
+        this.assignInteractionOwner(this.opponentPlayer.id);
     }
 
 
@@ -1918,47 +2008,334 @@ export class GameEngine {
         return card.keywords?.includes(keyword) || false;
     }
 
-    private getBreakthroughLimit(zone: UnitZoneState): number | null {
-        if (!zone.unit) return null;
-        let maxLimit: number | null = null;
+    private getBreakthroughRule(zone: UnitZoneState): { unconditional: boolean; costMax: number | null; costMin: number | null } {
+        const rule = {
+            unconditional: false,
+            costMax: null as number | null,
+            costMin: null as number | null
+        };
+        if (!zone.unit) return rule;
 
-        // 1. Check Unit Effects
-        if (zone.unit.effects) {
-            zone.unit.effects.forEach(e => {
-                if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
-                    const limit = e.action.params.costMax;
-                    if (limit !== undefined) {
-                        if (maxLimit === null || limit > maxLimit) maxLimit = limit;
-                    }
-                }
+        const collect = (effect: Effect) => {
+            if (effect.action?.type !== 'BREAKTHROUGH') return;
+            const params = effect.action.params || {};
+            if (params.unconditional === true) {
+                rule.unconditional = true;
+            }
+            if (typeof params.costMax === 'number') {
+                rule.costMax = rule.costMax === null ? params.costMax : Math.max(rule.costMax, params.costMax);
+            }
+            if (typeof params.costMin === 'number') {
+                rule.costMin = rule.costMin === null ? params.costMin : Math.min(rule.costMin, params.costMin);
+            }
+        };
+
+        zone.unit.effects?.forEach(effect => {
+            if (effect.activation === ActivationCondition.ATTACKER) collect(effect);
+        });
+        zone.items.forEach(item => {
+            item.effects?.forEach(effect => {
+                if (effect.activation === ActivationCondition.ATTACKER) collect(effect);
+            });
+        });
+        zone.temporaryEffects.forEach(collect);
+
+        return rule;
+    }
+
+    private canDefenderBlock(attackerZone: UnitZoneState, defenderUnit: Card | null): boolean {
+        if (!defenderUnit) return false;
+        const breakthrough = this.getBreakthroughRule(attackerZone);
+        if (breakthrough.unconditional) return false;
+        if (breakthrough.costMax !== null && defenderUnit.cost <= breakthrough.costMax) return false;
+        if (breakthrough.costMin !== null && defenderUnit.cost >= breakthrough.costMin) return false;
+        return true;
+    }
+
+    private normalizeText(text: string | undefined): string {
+        return (text || '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/\s+/g, '');
+    }
+
+    private parseGuardianNegateFilter(raw: string): GuardianNegateFilter | undefined {
+        const filter: GuardianNegateFilter = {};
+        if (raw.includes('아이템')) filter.cardType = CardType.ITEM;
+
+        const costMaxMatch = raw.match(/(\d+)코스트이하/);
+        if (costMaxMatch) filter.costMax = parseInt(costMaxMatch[1], 10);
+        const costMinMatch = raw.match(/(\d+)코스트이상/);
+        if (costMinMatch) filter.costMin = parseInt(costMinMatch[1], 10);
+
+        const keywordMatch = raw.match(/(유니크|암드|가디언|디펜더|어태커)/);
+        if (keywordMatch) filter.keyword = keywordMatch[1];
+
+        return Object.keys(filter).length > 0 ? filter : undefined;
+    }
+
+    private parseGuardianCostFromCard(card: Card): { costType: GuardianCostType; amount: number; negateFilter?: GuardianNegateFilter } | null {
+        const normalized = this.normalizeText(card.text);
+        if (!normalized.includes('가디언') && !normalized.includes('GUARDIAN')) return null;
+
+        const barrier = normalized.match(/방벽\[(\d+)\]/);
+        if (barrier) {
+            return { costType: 'BARRIER', amount: parseInt(barrier[1], 10) };
+        }
+
+        const sacrifice = normalized.match(/희생\[(\d+)\]/);
+        if (sacrifice) {
+            return { costType: 'SACRIFICE', amount: parseInt(sacrifice[1], 10) };
+        }
+
+        const negate = normalized.match(/상쇄\[(.*?)\]/);
+        if (negate) {
+            return {
+                costType: 'NEGATE',
+                amount: 1,
+                negateFilter: this.parseGuardianNegateFilter(negate[1] || '')
+            };
+        }
+
+        return { costType: 'NONE', amount: 0 };
+    }
+
+    private matchesGuardianNegateFilter(card: Card, filter: GuardianNegateFilter | undefined): boolean {
+        if (!filter) return true;
+        if (filter.cardType && card.type !== filter.cardType) return false;
+        if (filter.costMin !== undefined && card.cost < filter.costMin) return false;
+        if (filter.costMax !== undefined && card.cost > filter.costMax) return false;
+        if (filter.keyword && !card.keywords?.includes(filter.keyword)) return false;
+        return true;
+    }
+
+    private isDefenseOptionPayable(option: PendingDefenseOption): boolean {
+        const defender = this.opponentPlayer;
+        if (option.costType === 'NONE') return true;
+        if (option.costType === 'BARRIER') {
+            return defender.hand.length >= option.costAmount;
+        }
+        if (option.costType === 'SACRIFICE') {
+            const sacrificeCandidates = defender.unitZones.filter((zone, index) => index !== option.defenderZoneIndex && !!zone.unit);
+            return sacrificeCandidates.length >= option.costAmount;
+        }
+        if (option.costType === 'NEGATE') {
+            const zone = defender.unitZones[option.defenderZoneIndex];
+            return zone.items.some(item => this.matchesGuardianNegateFilter(item, option.negateFilter));
+        }
+        return false;
+    }
+
+    public getPendingDefenseOptions(): PendingDefenseOption[] {
+        if (this.state.pendingAttackerIndex === null) return [];
+        const attackerLane = this.state.pendingAttackerIndex;
+        const attackerZone = this.currentPlayer.unitZones[attackerLane];
+        if (!attackerZone.unit) return [];
+
+        const defender = this.opponentPlayer;
+        const options: PendingDefenseOption[] = [];
+
+        const encounterZone = defender.unitZones[attackerLane];
+        if (encounterZone.unit && this.canDefenderBlock(attackerZone, encounterZone.unit)) {
+            options.push({
+                defenderZoneIndex: attackerLane,
+                source: 'ENCOUNTER',
+                provider: 'UNIT',
+                providerCardId: encounterZone.unit.id,
+                providerCardName: encounterZone.unit.name,
+                costType: 'NONE',
+                costAmount: 0
             });
         }
 
-        // 2. Check Item Effects
-        zone.items.forEach(item => {
-            if (item.effects) {
-                item.effects.forEach(e => {
-                    if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
-                        const limit = e.action.params.costMax;
-                        if (limit !== undefined) {
-                            if (maxLimit === null || limit > maxLimit) maxLimit = limit;
-                        }
-                    }
-                });
-            }
-        });
+        const adjacentLaneIndexes = [attackerLane - 1, attackerLane + 1].filter(index => index >= 0 && index < defender.unitZones.length);
+        adjacentLaneIndexes.forEach(zoneIndex => {
+            const defenderZone = defender.unitZones[zoneIndex];
+            if (!defenderZone.unit) return;
+            if (!this.canDefenderBlock(attackerZone, defenderZone.unit)) return;
 
-        // 3. Check Temporary Effects
-        zone.temporaryEffects.forEach(effect => {
-            if (effect.action && effect.action.type === 'BREAKTHROUGH') {
-                const limit = effect.action.params.costMax;
-                if (limit !== undefined) {
-                    if (maxLimit === null || limit > maxLimit) maxLimit = limit;
+            const unitGuardian = this.parseGuardianCostFromCard(defenderZone.unit);
+            if (unitGuardian) {
+                const option: PendingDefenseOption = {
+                    defenderZoneIndex: zoneIndex,
+                    source: 'GUARDIAN',
+                    provider: 'UNIT',
+                    providerCardId: defenderZone.unit.id,
+                    providerCardName: defenderZone.unit.name,
+                    costType: unitGuardian.costType,
+                    costAmount: unitGuardian.amount,
+                    negateFilter: unitGuardian.negateFilter
+                };
+                if (this.isDefenseOptionPayable(option)) {
+                    options.push(option);
+                    return;
+                }
+            }
+
+            for (const item of defenderZone.items) {
+                const itemGuardian = this.parseGuardianCostFromCard(item);
+                if (!itemGuardian) continue;
+                const option: PendingDefenseOption = {
+                    defenderZoneIndex: zoneIndex,
+                    source: 'GUARDIAN',
+                    provider: 'ITEM',
+                    providerCardId: item.id,
+                    providerCardName: item.name,
+                    costType: itemGuardian.costType,
+                    costAmount: itemGuardian.amount,
+                    negateFilter: itemGuardian.negateFilter
+                };
+                if (this.isDefenseOptionPayable(option)) {
+                    options.push(option);
+                    return;
                 }
             }
         });
 
-        return maxLimit;
+        return options;
+    }
+
+    private finalizeCombatAsUnblocked() {
+        this.state.combatBlocked = false;
+        this.state.pendingDefenderIndex = null;
+        this.state.interactionMode = 'NORMAL';
+        this.state.pendingEffect = null;
+        this.clearPendingRuntime();
+        this.assignInteractionOwner(this.currentPlayer.id);
+        if (this.state.effectQueue.length === 0) {
+            this.advanceCombatStep();
+        }
+    }
+
+    private beginBlockPaymentForOption(option: PendingDefenseOption) {
+        const attackerZone = this.currentPlayer.unitZones[this.state.pendingAttackerIndex!];
+        const defender = this.opponentPlayer;
+        const context: GameContext = {
+            sourceCard: attackerZone.unit ?? defender.levelZone!,
+            player: defender,
+            opponent: this.currentPlayer,
+            machine: this
+        };
+
+        if (option.costType === 'NONE') {
+            this.finalizeBlockWithOption(option);
+            return;
+        }
+
+        if (option.costType === 'BARRIER') {
+            if (defender.hand.length < option.costAmount) {
+                this.finalizeCombatAsUnblocked();
+                return;
+            }
+            this.state.interactionMode = 'SELECT_COST';
+            this.state.pendingEffect = {
+                sourceCard: context.sourceCard,
+                sourcePlayerId: defender.id,
+                controllerPlayerId: defender.id,
+                actionType: 'BLOCK_PAY_BARRIER',
+                actionValue: { option },
+                effectDescription: 'Pay barrier cost',
+                costToPay: { type: 'TRASH_HAND', amount: option.costAmount },
+                costPaidCount: 0,
+                selectedTargets: []
+            };
+            this.setPendingRuntime(context, null);
+            this.assignInteractionOwner(defender.id);
+            return;
+        }
+
+        if (option.costType === 'SACRIFICE') {
+            this.state.interactionMode = 'SELECT_TARGET';
+            this.state.pendingEffect = {
+                sourceCard: context.sourceCard,
+                sourcePlayerId: defender.id,
+                controllerPlayerId: defender.id,
+                actionType: 'BLOCK_PAY_SACRIFICE',
+                actionValue: { option, required: option.costAmount },
+                effectDescription: 'Select sacrifice targets',
+                targetSchema: {
+                    scope: 'MY_FIELD',
+                    type: 'UNIT',
+                    count: option.costAmount,
+                    selectMode: 'MANUAL'
+                },
+                selectedTargets: []
+            };
+            this.setPendingRuntime(context, null);
+            this.assignInteractionOwner(defender.id);
+            return;
+        }
+
+        if (option.costType === 'NEGATE') {
+            const zone = defender.unitZones[option.defenderZoneIndex];
+            const candidates = zone.items.filter(item => this.matchesGuardianNegateFilter(item, option.negateFilter));
+            if (candidates.length === 0) {
+                this.finalizeCombatAsUnblocked();
+                return;
+            }
+
+            this.state.revealedCards = [...candidates];
+            this.state.interactionMode = 'SELECT_TARGET';
+            this.state.pendingEffect = {
+                sourceCard: context.sourceCard,
+                sourcePlayerId: defender.id,
+                controllerPlayerId: defender.id,
+                actionType: 'BLOCK_PAY_NEGATE',
+                actionValue: { option },
+                effectDescription: 'Select item to trash for negate cost',
+                validTargets: 'REVEALED',
+                targetSchema: {
+                    scope: 'REVEALED',
+                    type: 'CARD',
+                    count: 1,
+                    selectMode: 'MANUAL'
+                },
+                selectedTargets: []
+            };
+            this.setPendingRuntime(context, null);
+            this.assignInteractionOwner(defender.id);
+        }
+    }
+
+    private finalizeBlockWithOption(option: PendingDefenseOption) {
+        const defender = this.opponentPlayer;
+        const attackerZone = this.currentPlayer.unitZones[this.state.pendingAttackerIndex!];
+        const defenderZone = defender.unitZones[option.defenderZoneIndex];
+        if (!defenderZone.unit || !this.canDefenderBlock(attackerZone, defenderZone.unit)) {
+            this.finalizeCombatAsUnblocked();
+            return;
+        }
+
+        this.state.combatBlocked = true;
+        this.state.pendingDefenderIndex = option.defenderZoneIndex;
+        this.state.revealedCards = [];
+        this.state.interactionMode = 'NORMAL';
+        this.state.pendingEffect = null;
+        this.clearPendingRuntime();
+
+        const defenderBatchStep = this.incrementAndGetGlobalStep();
+        this.effectManager.processEffects(ActivationCondition.DEFENDER, {
+            sourceCard: defenderZone.unit,
+            player: defender,
+            opponent: this.currentPlayer,
+            unitZone: defenderZone,
+            machine: this
+        }, { enqueueOnly: true, batchStep: defenderBatchStep });
+
+        defenderZone.items.forEach(item => {
+            this.effectManager.processEffects(ActivationCondition.DEFENDER, {
+                sourceCard: item,
+                player: defender,
+                opponent: this.currentPlayer,
+                unitZone: defenderZone,
+                machine: this
+            }, { enqueueOnly: true, batchStep: defenderBatchStep });
+        });
+        this.effectManager.processQueue();
+
+        this.assignInteractionOwner(this.currentPlayer.id);
+        if (this.state.effectQueue.length === 0) {
+            this.advanceCombatStep();
+        }
     }
 
     private getPenetrationValue(zone: UnitZoneState): number {
@@ -2357,6 +2734,8 @@ export class GameEngine {
                             } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
                                 const baseUnitCount = source.owner.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
                                 value = baseUnitCount * value;
+                            } else if (params.dynamic === 'EQUIPPED_ITEM_COUNT_MULTIPLIER') {
+                                value = source.zone ? source.zone.items.length * value : 0;
                             }
                             power += value;
                         }
@@ -2435,12 +2814,50 @@ export class GameEngine {
         const effect = runtime?.effect;
         const context = runtime?.context;
         const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
+        if (!context || !targetSchema) return;
         const targetPlayer = this.getPlayerById(targetPlayerId);
         if (!targetPlayer) return;
         if (zoneIndex < 0 || zoneIndex >= targetPlayer.unitZones.length) return;
         const targetZone = targetPlayer.unitZones[zoneIndex];
         const scope = targetSchema.scope;
+
+        if (pending.actionType === 'BLOCK_SELECT_DEFENDER') {
+            if (targetPlayerId !== pending.sourcePlayerId) return;
+            const options: PendingDefenseOption[] = Array.isArray(pending.actionValue?.options)
+                ? pending.actionValue.options
+                : [];
+            const selectedOption = options.find(option => option.defenderZoneIndex === zoneIndex);
+            if (!selectedOption) return;
+            this.beginBlockPaymentForOption(selectedOption);
+            return;
+        }
+
+        if (pending.actionType === 'BLOCK_PAY_SACRIFICE') {
+            if (targetPlayerId !== pending.sourcePlayerId) return;
+            const option = pending.actionValue?.option as PendingDefenseOption | undefined;
+            if (option && zoneIndex === option.defenderZoneIndex) return;
+            if (!targetZone.unit) return;
+
+            const maxCount = targetSchema.count || 1;
+            const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
+            if (!selectedTargets.includes(targetZone)) {
+                if (selectedTargets.length >= maxCount) return;
+                selectedTargets.push(targetZone);
+            } else {
+                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetZone);
+            }
+            return;
+        }
+
+        if (pending.actionType === 'DESTROY_SELECTED_AND_DESTROY_OPPONENT' && !effect) {
+            if (!TargetSelector.isValidTarget(this, targetSchema, context, targetZone)) return;
+            if (!targetZone.unit) return;
+            const owner = this.state.players.find(player => player.unitZones.includes(targetZone));
+            if (!owner) return;
+            this.destroyUnit(owner, targetZone);
+            this.handleEffectCompletion(context, pending);
+            return;
+        }
 
         // NEW: Full validation using TargetSelector
         if (!TargetSelector.isValidTarget(this, targetSchema, context, targetZone)) {
@@ -2460,6 +2877,7 @@ export class GameEngine {
 
 
         // If everything good, execute
+        if (!effect) return;
         if (effect.action.type === 'DESTROY_LANE_LOWEST') {
             context.selectedLaneIndex = zoneIndex;
         }
@@ -2496,7 +2914,42 @@ export class GameEngine {
         const effect = runtime?.effect;
         const context = runtime?.context;
         const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
+        if (!context || !targetSchema) return;
+
+        if (pending.actionType === 'BLOCK_PAY_SACRIFICE') {
+            const option = pending.actionValue?.option as PendingDefenseOption | undefined;
+            if (!option) return;
+            const defender = this.getPlayerById(pending.sourcePlayerId);
+            if (!defender) return;
+            const selected = (pending.selectedTargets ?? []) as UnitZoneState[];
+            selected.forEach(zone => {
+                if (!zone.unit) return;
+                const owner = this.state.players.find(player => player.unitZones.includes(zone));
+                if (!owner) return;
+                this.destroyUnit(owner, zone);
+            });
+            this.finalizeBlockWithOption(option);
+            return;
+        }
+
+        if (pending.actionType === 'SEARCH_DECK_TO_HAND_PICK') {
+            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+            if (!player) return;
+            (pending.selectedTargets ?? []).forEach((card: Card) => {
+                const deckIndex = player.deck.indexOf(card);
+                if (deckIndex === -1) return;
+                player.deck.splice(deckIndex, 1);
+                player.hand.push(card);
+            });
+            this.state.revealedCards = [];
+            if (pending.actionValue?.shuffleAfter) {
+                this.shuffle(player.deck);
+            }
+            this.resetInteractionMode();
+            return;
+        }
+
+        if (!effect) return;
 
         // Validation - can be empty if no valid targets were found among revealed
 
@@ -2657,7 +3110,7 @@ export class GameEngine {
         const effect = runtime?.effect;
         const context = runtime?.context;
         const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
+        if (!context || !targetSchema) return;
         if (pending.validTargets !== 'REVEALED') return;
 
         const card = this.state.revealedCards[index];
@@ -2665,6 +3118,20 @@ export class GameEngine {
         // Validate
         if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) {
             console.log("Invalid Revealed Target Selected.");
+            return;
+        }
+
+        if (pending.actionType === 'BLOCK_PAY_NEGATE') {
+            const option = pending.actionValue?.option as PendingDefenseOption | undefined;
+            const defender = this.getPlayerById(pending.sourcePlayerId);
+            if (!option || !defender) return;
+            const defenderZone = defender.unitZones[option.defenderZoneIndex];
+            const itemIndex = defenderZone.items.indexOf(card);
+            if (itemIndex === -1) return;
+            const [trashedItem] = defenderZone.items.splice(itemIndex, 1);
+            defender.trash.push(trashedItem);
+            this.state.revealedCards = [];
+            this.finalizeBlockWithOption(option);
             return;
         }
 
@@ -2681,6 +3148,23 @@ export class GameEngine {
                 pending.selectedTargets = selectedTargets.filter((t: any) => t !== card);
             }
         } else {
+            if (pending.actionType === 'SEARCH_DECK_TO_HAND_PICK') {
+                const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+                if (!player) return;
+                const deckIndex = player.deck.indexOf(card);
+                if (deckIndex !== -1) {
+                    player.deck.splice(deckIndex, 1);
+                    player.hand.push(card);
+                }
+                this.state.revealedCards = [];
+                if (pending.actionValue?.shuffleAfter) {
+                    this.shuffle(player.deck);
+                }
+                this.resetInteractionMode();
+                return;
+            }
+
+            if (!effect) return;
             // Execute
             this.effectManager.executeEffect(effect, context, [card]);
             // Move card to hand (if required by the specific action type)

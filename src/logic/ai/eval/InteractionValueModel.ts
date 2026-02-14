@@ -318,6 +318,15 @@ function scoreSelectZoneTargetAction(
             : { score: zoneValue + lanePressureBonus + 180, reason: 'buff-high-second' };
     }
 
+    if (pending?.actionType === 'BLOCK_SELECT_DEFENDER') {
+        const lethalDefenseBonus = opponent ? laneThreatToActor(actor, opponent, action.zoneIndex) : 0;
+        return { score: zoneValue + lethalDefenseBonus + 180, reason: 'block-select-defender' };
+    }
+
+    if (pending?.actionType === 'BLOCK_PAY_SACRIFICE') {
+        return { score: -zoneValue + 220, reason: 'block-pay-sacrifice-low' };
+    }
+
     const targetBias = resolveZoneTargetBias(pending?.actionType, extractPendingNumericValue(pending ?? null));
     const isOwnZone = targetPlayer.id === actor.id;
     if (targetBias === 'offense') {
@@ -374,7 +383,7 @@ function scoreSelectRevealedAction(
     if (isCardAlreadySelected(pending, card)) return { score: TOGGLE_UNSELECT_HEAVY_PENALTY, reason: 'revealed-unselect' };
 
     const tactical = getCardValue(card);
-    const preferLow = pending?.actionType === 'DISCARD_FROM_DRAWN';
+    const preferLow = pending?.actionType === 'DISCARD_FROM_DRAWN' || pending?.actionType === 'BLOCK_PAY_NEGATE';
     return {
         score: preferLow ? -tactical : tactical,
         reason: preferLow ? 'revealed-prefer-low' : 'revealed-prefer-high',

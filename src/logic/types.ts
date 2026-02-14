@@ -78,10 +78,14 @@ export type ActionType =
     | 'COMPLEX_ACTION' // Added
     | 'SACRIFICE_TO_BUFF' // Added
     | 'DRAW_THEN_DISCARD' // Added for BT01-068
-    | 'DESTROY_UNIT_AND_DRAW'; // Added for BT01-071
+    | 'DESTROY_UNIT_AND_DRAW' // Added for BT01-071
+    | 'SEARCH_DECK_TO_HAND'
+    | 'RETURN_UNIT_AND_ITEMS_TO_HAND'
+    | 'DRAW_BY_EQUIPPED_ITEM_COUNT'
+    | 'DESTROY_SELECTED_AND_DESTROY_OPPONENT';
 
 export interface TargetFilter {
-    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT' | 'COST_EQUAL' | 'COST_HIGHER_THAN_ENCOUNTER';
+    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT' | 'COST_EQUAL' | 'COST_HIGHER_THAN_ENCOUNTER' | 'CARD_TYPE' | 'ITEM_COUNT_MIN' | 'LOWEST_COST_IN_SCOPE';
     value?: any;
 }
 
@@ -104,7 +108,7 @@ export interface TargetSchema {
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE' | 'LEVEL_LINK' | 'ONCE_PER_TURN';
+    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE' | 'LEVEL_LINK' | 'ONCE_PER_TURN' | 'OPPONENT_TURN' | 'HOST_HAS_KEYWORD';
     value?: any;
     trashedUnitCostMin?: number; // New: for triggers like Cinderella's UNIT_TRASHED
     friendlyOnly?: boolean; // New: check if trashed unit belongs to player
@@ -154,7 +158,7 @@ export type EngineAction =
     | { type: 'PLAY_UNIT'; actorPlayerId: string; handIndex: number; zoneIndex: number }
     | { type: 'PLAY_SKILL'; actorPlayerId: string; handIndex: number }
     | { type: 'PLAY_ITEM'; actorPlayerId: string; handIndex: number; zoneIndex: number }
-    | { type: 'ACTIVATE_EFFECT'; actorPlayerId: string; zoneIndex: number; effectIndex: number }
+    | { type: 'ACTIVATE_EFFECT'; actorPlayerId: string; zoneIndex: number; effectIndex: number; itemIndex?: number }
     | { type: 'ATTACK'; actorPlayerId: string; attackerZoneIndex: number }
     | { type: 'RESOLVE_BLOCK'; actorPlayerId: string; shouldBlock: boolean }
     | { type: 'SELECT_COST_HAND'; actorPlayerId: string; handIndex: number }
@@ -253,6 +257,7 @@ export interface GameState {
     turnCount: number;
     winner: string | null;
     pendingAttackerIndex: number | null; // Track who is attacking during BLOCK phase
+    pendingDefenderIndex: number | null; // Track who is defending during BLOCK phase
     interactionMode: 'NORMAL' | 'SELECT_MULLIGAN' | 'SELECT_TARGET' | 'SELECT_COST' | 'SELECT_OPTIONAL';
     interactionOwnerPlayerId: string | null; // Player who has input priority in the current interaction window
     pendingEffect: PendingEffect | null;

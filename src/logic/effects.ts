@@ -279,6 +279,29 @@ export class EffectManager {
                 return false;
             case 'YOUR_TURN':
                 return context.machine.currentPlayer === context.player;
+            case 'OPPONENT_TURN':
+                return context.machine.currentPlayer !== context.player;
+            case 'HAS_ITEM':
+                if (!context.unitZone) return false;
+                if (typeof value === 'number') {
+                    return context.unitZone.items.length >= value;
+                }
+                if (value && typeof value === 'object' && value.min !== undefined) {
+                    return context.unitZone.items.length >= value.min;
+                }
+                return context.unitZone.items.length > 0;
+            case 'HOST_HAS_KEYWORD':
+                if (!context.unitZone?.unit) return false;
+                {
+                    const hostKeywords = context.unitZone.unit.keywords;
+                    if (Array.isArray(value)) {
+                        return value.some(keyword => !!hostKeywords?.includes(keyword));
+                    }
+                    if (typeof value === 'string') {
+                        return !!hostKeywords?.includes(value);
+                    }
+                    return false;
+                }
             case 'OPPONENT_HAND_COUNT':
                 if (typeof value === 'number') {
                     return context.opponent.hand.length >= value;

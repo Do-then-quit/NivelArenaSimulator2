@@ -1,6 +1,32 @@
 import { ActionImplementation, UnitZoneState, ActivationCondition, CardType } from './types';
 import { TargetSelector } from './TargetSelector';
 
+function matchesCardFilters(card: any, filters: any[]): boolean {
+    for (const filter of filters) {
+        if (!filter) continue;
+        switch (filter.type) {
+            case 'CARD_TYPE':
+                if (card.type !== filter.value) return false;
+                break;
+            case 'COST_EQUAL':
+                if (card.cost !== filter.value) return false;
+                break;
+            case 'COST_LIMIT':
+                if (card.cost > filter.value) return false;
+                break;
+            case 'HAS_KEYWORD':
+                if (!card.keywords?.includes(filter.value)) return false;
+                break;
+            case 'HAS_TRAIT':
+                if (!card.traits?.includes(filter.value)) return false;
+                break;
+            default:
+                break;
+        }
+    }
+    return true;
+}
+
 const gainLevel: ActionImplementation = (ctx, params) => {
     const amount = params.value || 1;
     const pIdx = ctx.machine.state.players.indexOf(ctx.player);
@@ -620,6 +646,7 @@ const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => {
     const player = ctx.player;
     const drawCount = params.drawCount || 2;
     const discardCount = params.discardCount || 1;
+    const discardFrom: 'DRAWN' | 'HAND' = params.discardFrom === 'HAND' ? 'HAND' : 'DRAWN';
     const pIdx = ctx.machine.state.players.indexOf(player);
 
     // First, draw cards
@@ -633,31 +660,33 @@ const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => {
         description: 'Choose card to discard',
         action: { type: 'DISCARD', params: { target: 'SELF', count: discardCount } },
         targets: {
-            scope: 'REVEALED',
+            scope: discardFrom === 'HAND' ? 'MY_HAND' : 'REVEALED',
             type: 'CARD',
             count: discardCount,
             selectMode: 'MANUAL'
         }
     } as any;
 
-    // Now, initiate discard selection from drawn cards
-    ctx.machine.state.revealedCards = drawnCards;
+    // Now, initiate discard selection
+    if (discardFrom === 'DRAWN') {
+        ctx.machine.state.revealedCards = drawnCards;
+    }
     ctx.machine.state.interactionMode = 'SELECT_TARGET';
     ctx.machine.state.pendingEffect = {
         sourceCard: ctx.sourceCard,
         sourcePlayerId: player.id,
         controllerPlayerId: player.id,
-        actionType: 'DISCARD_FROM_DRAWN',
+        actionType: discardFrom === 'HAND' ? 'DISCARD_FROM_HAND' : 'DISCARD_FROM_DRAWN',
         actionValue: { discardCount },
         effectDescription: selectionEffect.description,
-        validTargets: 'REVEALED',
+        validTargets: discardFrom === 'HAND' ? 'MY_HAND' : 'REVEALED',
         targetSchema: selectionEffect.targets,
         selectedTargets: []
     };
-    ctx.machine.setPendingRuntime(ctx, selectionEffect);
+    ctx.machine.setPendingRuntime(ctx, selectionEffect as any);
     ctx.machine.setInteractionOwner(player.id);
 
-    console.log(`Waiting for ${player.name} to select ${discardCount} card(s) to discard from drawn cards.`);
+    console.log(`Waiting for ${player.name} to select ${discardCount} card(s) to discard (${discardFrom}).`);
 };
 
 const destroyUnitAndDraw: ActionImplementation = (ctx, params, targets) => {
@@ -677,6 +706,101 @@ const destroyUnitAndDraw: ActionImplementation = (ctx, params, targets) => {
     const pIdx = ctx.machine.state.players.indexOf(ctx.player);
     ctx.machine.drawCard(pIdx, drawCount);
     console.log(`Drew ${drawCount} card(s) after destroying unit.`);
+};
+
+const searchDeckToHand: ActionImplementation = (ctx, params, _targets) => {
+    const player = ctx.player;
+    const filters = Array.isArray(params.filters) ? params.filters : [];
+    const count = Math.max(1, params.count || 1);
+    const shuffleAfter = params.shuffleAfter !== false;
+    const candidates = player.deck.filter(card => matchesCardFilters(card, filters));
+
+    if (candidates.length === 0) {
+        if (shuffleAfter) {
+            ctx.machine.shuffleInPlace(player.deck);
+        }
+        console.log(`No matching cards found in deck for ${ctx.sourceCard.name}.`);
+        return;
+    }
+
+    ctx.machine.state.revealedCards = [...candidates];
+    ctx.machine.state.interactionMode = 'SELECT_TARGET';
+    ctx.machine.state.pendingEffect = {
+        sourceCard: ctx.sourceCard,
+        sourcePlayerId: player.id,
+        controllerPlayerId: player.id,
+        actionType: 'SEARCH_DECK_TO_HAND_PICK',
+        actionValue: { count, shuffleAfter },
+        effectDescription: 'Choose card(s) from deck search result',
+        validTargets: 'REVEALED',
+        targetSchema: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count,
+            selectMode: 'MANUAL'
+        },
+        selectedTargets: []
+    };
+    ctx.machine.setPendingRuntime(ctx, null);
+    ctx.machine.setInteractionOwner(player.id);
+};
+
+const returnUnitAndItemsToHand: ActionImplementation = (ctx, _params, targets) => {
+    targets.forEach(target => {
+        if (!target || typeof target !== 'object' || !('unit' in target)) return;
+        const zone = target as UnitZoneState;
+        if (!zone.unit) return;
+
+        const owner = getOwnerOfZone(ctx.machine, zone);
+        if (!owner) return;
+
+        owner.hand.push(zone.unit);
+        zone.items.forEach(item => owner.hand.push(item));
+        zone.unit = null;
+        zone.items = [];
+        zone.buffs = [];
+        zone.temporaryEffects = [];
+    });
+};
+
+const drawByEquippedItemCount: ActionImplementation = (ctx, params, targets) => {
+    const targetZone = (targets[0] as UnitZoneState) || ctx.unitZone;
+    if (!targetZone?.unit) return;
+
+    const costMin = params.costMin ?? 0;
+    const drawCount = targetZone.items.filter(item => item.cost >= costMin).length;
+    if (drawCount <= 0) return;
+
+    const pIdx = ctx.machine.state.players.indexOf(ctx.player);
+    ctx.machine.drawCard(pIdx, drawCount);
+};
+
+const destroySelectedAndDestroyOpponent: ActionImplementation = (ctx, _params, targets) => {
+    const ownTarget = targets[0] as UnitZoneState | undefined;
+    if (!ownTarget?.unit) return;
+
+    const ownOwner = getOwnerOfZone(ctx.machine, ownTarget);
+    if (!ownOwner) return;
+    ctx.machine.destroyUnit(ownOwner, ownTarget);
+
+    ctx.machine.state.interactionMode = 'SELECT_TARGET';
+    ctx.machine.state.pendingEffect = {
+        sourceCard: ctx.sourceCard,
+        sourcePlayerId: ctx.player.id,
+        controllerPlayerId: ctx.player.id,
+        actionType: 'DESTROY_SELECTED_AND_DESTROY_OPPONENT',
+        actionValue: {},
+        effectDescription: 'Select opponent unit to trash',
+        targetSchema: {
+            scope: 'OPP_FIELD',
+            type: 'UNIT',
+            count: 1,
+            selectMode: 'MANUAL'
+        },
+        selectedTargets: []
+    };
+    ctx.machine.setPendingRuntime(ctx, null);
+    ctx.machine.setInteractionOwner(ctx.player.id);
 };
 
 export const ActionRegistry: Record<string, ActionImplementation> = {
@@ -711,5 +835,9 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DAMAGE': damage,
     'DRAW_THEN_DISCARD': drawThenDiscard,
     'DESTROY_UNIT_AND_DRAW': destroyUnitAndDraw,
+    'SEARCH_DECK_TO_HAND': searchDeckToHand,
+    'RETURN_UNIT_AND_ITEMS_TO_HAND': returnUnitAndItemsToHand,
+    'DRAW_BY_EQUIPPED_ITEM_COUNT': drawByEquippedItemCount,
+    'DESTROY_SELECTED_AND_DESTROY_OPPONENT': destroySelectedAndDestroyOpponent,
     'NONE': noneAction,
 };

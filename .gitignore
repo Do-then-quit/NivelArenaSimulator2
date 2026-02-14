@@ -20,3 +20,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Experiment artifacts (generated locally)
+artifacts/ai/**/runs/

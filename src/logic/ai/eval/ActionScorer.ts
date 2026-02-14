@@ -170,13 +170,18 @@ function evaluateBlockDecision(engine: GameEngine): boolean {
     const attackerPlayer = engine.currentPlayer;
     const defenderPlayer = engine.opponentPlayer;
     const attackerZone = attackerPlayer.unitZones[attackerLane];
-    const defenderZone = defenderPlayer.unitZones[attackerLane];
-    if (!attackerZone.unit || !defenderZone.unit) return false;
+    if (!attackerZone.unit) return false;
 
     const attackerPower = engine.getUnitPower(attackerZone, attackerPlayer);
     const attackerHit = engine.getUnitHit(attackerZone, attackerPlayer);
-    const defenderPower = engine.getUnitPower(defenderZone, defenderPlayer);
-    const defenderWillLose = defenderPower <= attackerPower;
+    const defenseOptions = engine.getPendingDefenseOptions();
+    if (defenseOptions.length === 0) return false;
+    const strongestDefenderPower = defenseOptions.reduce((maxPower, option) => {
+        const defenderZone = defenderPlayer.unitZones[option.defenderZoneIndex];
+        if (!defenderZone?.unit) return maxPower;
+        return Math.max(maxPower, engine.getUnitPower(defenderZone, defenderPlayer));
+    }, Number.NEGATIVE_INFINITY);
+    const defenderWillLose = strongestDefenderPower <= attackerPower;
 
     // Tactical override: always block if direct hit would lose immediately.
     const directLethalIfUnblocked = defenderPlayer.damage.length + attackerHit >= 10;
@@ -184,7 +189,7 @@ function evaluateBlockDecision(engine: GameEngine): boolean {
         return true;
     }
 
-    if (defenderPower >= attackerPower) {
+    if (strongestDefenderPower >= attackerPower) {
         return true;
     }
 
@@ -422,6 +427,15 @@ function scoreSelectZoneTargetAction(
             : { score: zoneValue + lanePressureBonus + 160, reason: 'buff-high-second' };
     }
 
+    if (pending?.actionType === 'BLOCK_SELECT_DEFENDER') {
+        const lethalDefenseBonus = opponent ? getLaneThreatToActor(engine, actor, opponent, action.zoneIndex) : 0;
+        return { score: zoneValue + lethalDefenseBonus + 180, reason: 'block-select-defender' };
+    }
+
+    if (pending?.actionType === 'BLOCK_PAY_SACRIFICE') {
+        return { score: -zoneValue + 220, reason: 'block-pay-sacrifice-low' };
+    }
+
     const targetBias = resolveZoneTargetBias(pending?.actionType, extractPendingNumericValue(pending ?? null));
     const isOwnZone = targetPlayer.id === actor.id;
     if (targetBias === 'offense') {
@@ -495,7 +509,7 @@ function scoreSelectRevealedTargetAction(
 
     const tactical = getCardTacticalValue(card, actor);
     const actionType = engine.state.pendingEffect?.actionType;
-    const preferLow = actionType === 'DISCARD_FROM_DRAWN';
+    const preferLow = actionType === 'DISCARD_FROM_DRAWN' || actionType === 'BLOCK_PAY_NEGATE';
     return {
         score: preferLow ? -tactical : tactical,
         reason: preferLow ? 'revealed-prefer-low' : 'revealed-prefer-high',
