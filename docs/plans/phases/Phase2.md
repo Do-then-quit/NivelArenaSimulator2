@@ -31,7 +31,7 @@ Phase 2의 목표는 v1 휴리스틱 정책 위에 탐색 기반 의사결정을
   - `src/logic/ai/StrongBotV2.ts`
   - `tests/ai/StrongBotPhase2.vitest.test.ts`
   - `tests/rules_v2_regression/rules_v2_ai_seed_2026021819_stack_regression.test.ts`
-  - `Phase2.md`
+  - `docs/plans/phases/Phase2.md`
 - 수정
   - `src/logic/random.ts`
   - `src/logic/GameEngine.ts`
@@ -40,8 +40,8 @@ Phase 2의 목표는 v1 휴리스틱 정책 위에 탐색 기반 의사결정을
   - `scripts/ai/phase0_manifest.ts`
   - `phase0.manifest.json`
   - `tests/ai/AiPhase0Harness.vitest.test.ts`
-  - `aiRoadmap.md`
-  - `aiRoadmap.ko.md`
+  - `docs/roadmaps/aiRoadmap.md`
+  - `docs/roadmaps/aiRoadmap.ko.md`
 
 ## 3.2 시뮬레이션 인프라
 
