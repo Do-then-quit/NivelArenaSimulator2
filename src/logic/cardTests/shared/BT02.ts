@@ -264,6 +264,33 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-006-Entry-Filter-Behavior',
+    name: 'Entry only recovers cost 2 or less',
+    description: 'BT02-006 entry should not recover units over cost 2.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const low = getCard('ST01-002');
+        low.cost = 2;
+        const high = getCard('ST01-003');
+        high.cost = 3;
+        p1.trash = [high, low];
+        p1.hand = [getCard('BT02-006')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playUnit(0, 0);
+        autoResolveInteractions(engine);
+        return [
+            { pass: p1.hand.some(card => card.id === 'ST01-002'), message: 'cost 2 target was recovered' },
+            { pass: p1.hand.every(card => card.id !== 'ST01-003'), message: 'cost 3 target was not recovered' },
+            { pass: p1.trash.some(card => card.id === 'ST01-003'), message: 'cost 3 target remains in trash' }
+        ];
+    }
+});
+
+tests.push({
     cardId: 'BT02-007-Active-Behavior',
     name: 'Active grants attacker plunder',
     description: 'BT02-007 should grant attacker plunder[1] to friendly units this turn.',
@@ -308,6 +335,33 @@ tests.push({
 });
 
 tests.push({
+    cardId: 'BT02-008-Active-Filter-Behavior',
+    name: 'Active only recovers cost 7 or higher',
+    description: 'BT02-008 active should not recover units under cost 7.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const high = getCard('ST01-009');
+        high.cost = 7;
+        const low = getCard('ST01-006');
+        low.cost = 6;
+        p1.trash = [low, high];
+        p1.hand = [getCard('BT02-008')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        engine.playSkill(0);
+        autoResolveInteractions(engine);
+        return [
+            { pass: p1.hand.some(card => card.id === 'ST01-009'), message: 'cost 7 target was recovered' },
+            { pass: p1.hand.every(card => card.id !== 'ST01-006'), message: 'cost 6 target was not recovered' },
+            { pass: p1.trash.some(card => card.id === 'ST01-006'), message: 'cost 6 target remains in trash' }
+        ];
+    }
+});
+
+tests.push({
     cardId: 'BT02-009-Passive-Behavior',
     name: 'Passive grants host power and berserk',
     description: 'BT02-009 should grant +4000 to low-cost host and apply berserk keyword.',
@@ -329,6 +383,27 @@ tests.push({
             { pass: power >= raw + 4000, message: 'host received +4000 passive buff' },
             { pass: phaseGate.valid === false, message: 'berserk passive blocks phase end before attack' }
         ];
+    }
+});
+
+tests.push({
+    cardId: 'BT02-009-Passive-HostCostGate-Behavior',
+    name: 'Passive +4000 does not apply to host cost 4+',
+    description: 'BT02-009 power passive must only apply when host cost is 3 or less.',
+    setup: (engine, getCard) => {
+        const p1 = engine.state.players[0];
+        const host = getCard('ST01-002');
+        host.cost = 4;
+        p1.unitZones[0].unit = host;
+        p1.unitZones[0].items = [getCard('BT02-009')];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+    },
+    verify: (engine) => {
+        const p1 = engine.state.players[0];
+        const raw = p1.unitZones[0].unit?.power ?? 0;
+        const power = engine.getUnitPower(p1.unitZones[0], p1);
+        return [{ pass: power === raw, message: 'cost gate prevented +4000 passive buff' }];
     }
 });
 
