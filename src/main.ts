@@ -49,6 +49,15 @@ const cardTester = new CardTester();
 let testResults: any[] = [];
 let testRunning = false;
 
+interface VerificationSessionState {
+    orderedTestIds: string[];
+    currentIndex: number;
+    currentTestId: string;
+    currentInstructions: string;
+}
+
+let verificationSession: VerificationSessionState | null = null;
+
 type PlayerControlMode = 'HUMAN' | 'BOT';
 type ReplayDeckMode = 'CUSTOM' | 'RANDOM';
 
@@ -287,6 +296,7 @@ function startGame(
 ) {
     clearBotStepTimer();
     replaySession = null;
+    verificationSession = null;
     activeMatchConfig = controlConfig;
     activeMatchViewConfig = {
         ...getDefaultViewConfig(controlConfig),
@@ -698,6 +708,57 @@ function restartReplayFromBeginning() {
     );
 }
 
+function isVerificationGame(): boolean {
+    return !!verificationSession && currentScreen === Screen.GAME && !!game;
+}
+
+function getVerificationOrderedTestIds(testId: string, orderedTestIds: string[]): string[] {
+    const uniqueOrderedTestIds = Array.from(new Set(orderedTestIds.filter(Boolean)));
+    if (uniqueOrderedTestIds.length === 0) {
+        return [testId];
+    }
+    if (uniqueOrderedTestIds.includes(testId)) {
+        return uniqueOrderedTestIds;
+    }
+    return [testId, ...uniqueOrderedTestIds];
+}
+
+function startVerificationScenario(testId: string, orderedTestIds: string[]) {
+    const resolvedOrderedTestIds = getVerificationOrderedTestIds(testId, orderedTestIds);
+    const currentIndex = resolvedOrderedTestIds.indexOf(testId);
+    const { engine, instructions } = cardTester.setupScenario(testId);
+    clearBotStepTimer();
+    botByPlayerId.clear();
+    botLabelByPlayerId.clear();
+    replaySession = null;
+    activeMatchConfig = HUMAN_VS_HUMAN_CONFIG;
+    activeMatchViewConfig = getDefaultViewConfig(HUMAN_VS_HUMAN_CONFIG);
+    game = engine;
+    verificationSession = {
+        orderedTestIds: resolvedOrderedTestIds,
+        currentIndex,
+        currentTestId: testId,
+        currentInstructions: instructions || 'No instructions provided.',
+    };
+    (window as any).debug = new DebugManager(game, render);
+    currentScreen = Screen.GAME;
+    render();
+}
+
+function goToNextVerificationTest() {
+    if (!verificationSession) return;
+    const nextIndex = verificationSession.currentIndex + 1;
+    if (nextIndex >= verificationSession.orderedTestIds.length) return;
+    const nextTestId = verificationSession.orderedTestIds[nextIndex];
+    startVerificationScenario(nextTestId, verificationSession.orderedTestIds);
+}
+
+function returnToVerificationScreen() {
+    if (!verificationSession) return;
+    currentScreen = Screen.TEST;
+    render();
+}
+
 // Track selected packs
 let selectedPacks: Set<string> = new Set();
 // Initialize selectedPacks with all available packs on first load
@@ -803,17 +864,8 @@ function renderTestScreen() {
     document.querySelectorAll('.play-test-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const testId = (e.target as HTMLElement).dataset.testid!;
-            const { engine, instructions } = cardTester.setupScenario(testId);
-            clearBotStepTimer();
-            botByPlayerId.clear();
-            botLabelByPlayerId.clear();
-            replaySession = null;
-            activeMatchConfig = HUMAN_VS_HUMAN_CONFIG;
-            game = engine;
-            (window as any).debug = new DebugManager(game, render);
-            currentScreen = Screen.GAME;
-            alert(`Scenario Started: ${testId}\n\n${instructions}`);
-            render();
+            const orderedTestIds = testResults.map((result: { testId: string }) => result.testId);
+            startVerificationScenario(testId, orderedTestIds);
         });
     });
 }
@@ -838,6 +890,37 @@ function render() {
     }
 }
 
+function escapeHtml(text: string): string {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function renderVerificationSessionPanel(): string {
+    if (!verificationSession) return '';
+    const currentOrder = verificationSession.currentIndex + 1;
+    const totalTests = verificationSession.orderedTestIds.length;
+    const hasNextTest = verificationSession.currentIndex < totalTests - 1;
+    const safeInstructions = escapeHtml(verificationSession.currentInstructions).replace(/\n/g, '<br>');
+    return `
+        <div class="verification-session-panel">
+            <div class="verification-session-actions">
+                <button id="verification-back-btn" class="secondary-btn">Back to Verification (V)</button>
+                <button id="verification-next-btn" class="primary-btn" ${hasNextTest ? '' : 'disabled'}>Next Test (N)</button>
+            </div>
+            <div class="verification-session-meta">
+                <strong>${currentOrder} / ${totalTests}</strong>
+                <span>${verificationSession.currentTestId}</span>
+                ${hasNextTest ? '' : '<span class="verification-session-last">Last test in this run</span>'}
+            </div>
+            <div class="verification-session-instructions">${safeInstructions}</div>
+        </div>
+    `;
+}
+
 function renderGame() {
     if (!game) return;
     const currentPlayer = game.currentPlayer;
@@ -851,6 +934,7 @@ function renderGame() {
     const inputOwnerControl = inputOwner
         ? (isBotControlledPlayer(inputOwner.id) ? getBotLabelForPlayerId(inputOwner.id) : 'Human')
         : 'N/A';
+    const verificationGame = isVerificationGame();
 
 
     // Helper to determine if a zone is a valid drop target
@@ -889,6 +973,7 @@ function renderGame() {
         ` : ''}
         <button id="db-back-to-menu" class="secondary-btn" style="position: absolute; top: 10px; left: 10px;">Menu</button>
       </div>
+      ${verificationGame ? renderVerificationSessionPanel() : ''}
 
       <div class="opponent-hand-zone">
           ${opponent.hand.map((c, i) => {
@@ -1365,6 +1450,7 @@ function attachListeners() {
     document.getElementById('db-back-to-menu')?.addEventListener('click', () => {
         clearBotStepTimer();
         replaySession = null;
+        verificationSession = null;
         game = null;
         currentScreen = Screen.MENU;
         render();
@@ -1373,9 +1459,18 @@ function attachListeners() {
     document.getElementById('game-over-menu-btn')?.addEventListener('click', () => {
         clearBotStepTimer();
         replaySession = null;
+        verificationSession = null;
         game = null;
         currentScreen = Screen.MENU;
         render();
+    });
+
+    document.getElementById('verification-back-btn')?.addEventListener('click', () => {
+        returnToVerificationScreen();
+    });
+
+    document.getElementById('verification-next-btn')?.addEventListener('click', () => {
+        goToNextVerificationTest();
     });
 
     document.getElementById('replay-next-action')?.addEventListener('click', () => {
@@ -1926,6 +2021,30 @@ function attachListeners() {
     });
 
 }
+
+function isTypingElement(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    const tagName = target.tagName.toLowerCase();
+    return tagName === 'input' || tagName === 'textarea' || target.isContentEditable;
+}
+
+function handleVerificationHotkeys(event: KeyboardEvent) {
+    if (currentScreen !== Screen.GAME || !isVerificationGame()) return;
+    if (isTypingElement(event.target)) return;
+
+    const normalizedKey = event.key.toLowerCase();
+    if (normalizedKey === 'n') {
+        event.preventDefault();
+        goToNextVerificationTest();
+        return;
+    }
+    if (normalizedKey === 'v') {
+        event.preventDefault();
+        returnToVerificationScreen();
+    }
+}
+
+window.addEventListener('keydown', handleVerificationHotkeys);
 
 const debugManager = new DebugManager(game!, render);
 (window as any).debug = debugManager;

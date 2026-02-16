@@ -509,6 +509,68 @@ body {
     min-width: 180px;
 }
 
+.verification-session-panel {
+    position: fixed;
+    top: 96px;
+    left: 14px;
+    transform: none;
+    z-index: 7500;
+    width: 340px;
+    max-height: calc(100vh - 120px);
+    background: rgba(20, 22, 35, 0.9);
+    border: 1px solid rgba(74, 158, 255, 0.35);
+    border-radius: 14px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: auto;
+}
+
+.verification-session-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.verification-session-actions .primary-btn,
+.verification-session-actions .secondary-btn {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+}
+
+.verification-session-meta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    color: #d9e2f5;
+    font-size: 0.86rem;
+}
+
+.verification-session-meta strong {
+    color: #7fc5ff;
+}
+
+.verification-session-last {
+    color: #f6c26d;
+    font-weight: 700;
+}
+
+.verification-session-instructions {
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #ecf2ff;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    max-height: 120px;
+    overflow: auto;
+}
+
 .game-divider {
     width: 100%;
     height: 2px;
@@ -1591,6 +1653,25 @@ body {
 }
 
 @media (max-width: 980px) {
+    .verification-session-panel {
+        top: 66px;
+        width: calc(100vw - 16px);
+        max-height: none;
+        left: 8px;
+        right: 8px;
+        padding: 10px;
+    }
+
+    .verification-session-actions {
+        width: 100%;
+    }
+
+    .verification-session-actions .primary-btn,
+    .verification-session-actions .secondary-btn {
+        flex: 1;
+        min-width: 160px;
+    }
+
     .bot-replay-options-grid {
         grid-template-columns: 1fr;
     }
