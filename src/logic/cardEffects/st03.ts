@@ -29,15 +29,15 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시한다.",
             condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
             targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } }
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST03-005": [
@@ -93,15 +93,15 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시한다.",
             condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
             targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } }
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST03-011": [
@@ -178,6 +178,11 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 엑시트 : 를 가진 유닛을 1장 골라 자신의 패에 넣는다.",
             targets: {
                 scope: 'MY_TRASH',
@@ -187,11 +192,6 @@ export const ST03_EFFECTS: Record<string, Effect[]> = {
                 filters: [{ type: 'HAS_KEYWORD', value: '엑시트' }]
             },
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST03-016": [

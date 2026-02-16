@@ -74,15 +74,15 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
             targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
             action: { type: 'BUFF_POWER', params: { value: -5000 } },
             duration: 'TURN_END'
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST01-011": [
@@ -120,6 +120,11 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 2코스트 이하인 유닛을 1장 골라 자신의 패에 넣는다.",
             targets: {
                 scope: 'MY_TRASH',
@@ -129,11 +134,6 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
                 filters: [{ type: 'COST_LIMIT', value: 2 }]
             },
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST01-014": [
@@ -155,15 +155,15 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
             targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
             action: { type: 'BUFF_POWER', params: { value: -5000 } },
             duration: 'TURN_END'
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST01-016": [

@@ -39,26 +39,26 @@ export const ST02_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다. 자신의 리더 레벨+1.",
-            action: { type: 'GAIN_LEVEL', params: { value: 1 } }
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
+            description: "이 카드를 트래시한다. 자신의 리더 레벨+1.",
+            action: { type: 'GAIN_LEVEL', params: { value: 1 } }
         }
     ],
     "ST02-009": [
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
-            targets: { scope: 'OPP_FIELD', type: 'UNIT', conditions: { costMax: 3 }, selectMode: 'MANUAL', count: 1 },
-            action: { type: 'DESTROY_UNIT', params: { costMax: 3 } }
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
+            description: "이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', conditions: { costMax: 3 }, selectMode: 'MANUAL', count: 1 },
+            action: { type: 'DESTROY_UNIT', params: { costMax: 3 } }
         }
     ],
     "ST02-010": [
@@ -113,14 +113,14 @@ export const ST02_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
-            targets: { scope: 'OPP_FIELD', type: 'UNIT', conditions: { costMax: 3 }, selectMode: 'MANUAL', count: 1 },
-            action: { type: 'DESTROY_UNIT', params: { costMax: 3 } }
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
+            description: "이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', conditions: { costMax: 3 }, selectMode: 'MANUAL', count: 1 },
+            action: { type: 'DESTROY_UNIT', params: { costMax: 3 } }
         }
     ],
     "ST02-016": [

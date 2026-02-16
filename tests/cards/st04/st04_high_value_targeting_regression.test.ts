@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
 import { GameEngine } from '../../../src/logic/GameEngine';
 import { StrongBotV2 } from '../../../src/logic/ai/StrongBotV2';
-import { Card, Phase } from '../../../src/logic/types';
+import { ActivationCondition, Card, Phase } from '../../../src/logic/types';
 
 function getCard(id: string): Card {
     const card = DUMMY_CARDS.find(c => c.id === id);
@@ -51,7 +51,9 @@ describe('ST04 High Value Targeting Regression', () => {
         p2.unitZones[2].unit = high;
 
         const sourceCard = getCard('ST04-015');
-        const effect = sourceCard.effects?.[1];
+        const effect = sourceCard.effects?.find(
+            e => e.activation === ActivationCondition.DAMAGE_TRIGGER && e.action.type === 'RETURN_UNIT_AND_ITEMS_TO_HAND',
+        );
         expect(effect).toBeDefined();
 
         engine.initiateTargetSelection(effect!, {

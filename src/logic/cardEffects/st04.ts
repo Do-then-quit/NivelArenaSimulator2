@@ -113,13 +113,13 @@ export const ST04_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "트리거 / 카드를 1장 드로우한다.",
-            action: { type: 'DRAW', params: { count: 1 } }
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
+            description: "트리거 / 카드를 1장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 1 } }
         }
     ],
     "ST04-014": [
@@ -155,6 +155,11 @@ export const ST04_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 그 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
             targets: {
                 scope: 'OPP_FIELD',
@@ -164,11 +169,6 @@ export const ST04_EFFECTS: Record<string, Effect[]> = {
                 filters: [{ type: 'LOWEST_COST_ONLY' }]
             },
             action: { type: 'RETURN_UNIT_AND_ITEMS_TO_HAND', params: {} }
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST04-016": [

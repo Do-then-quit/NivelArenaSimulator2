@@ -415,13 +415,13 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "트리거 / 이 카드를 트래시한다. 자신의 리더 레벨+1.",
-            action: { type: 'GAIN_LEVEL', params: { value: 1 } }
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
+            description: "트리거 / 이 카드를 트래시한다. 자신의 리더 레벨+1.",
+            action: { type: 'GAIN_LEVEL', params: { value: 1 } }
         }
     ],
     "BT01-045": [
@@ -499,14 +499,14 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
-            targets: { scope: 'OPP_FIELD', type: 'UNIT', filters: [{ type: 'COST_LIMIT', value: 3 }], selectMode: 'MANUAL', count: 1 },
-            action: { type: 'DESTROY_UNIT', params: {} }
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
+            description: "트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', filters: [{ type: 'COST_LIMIT', value: 3 }], selectMode: 'MANUAL', count: 1 },
+            action: { type: 'DESTROY_UNIT', params: {} }
         }
     ],
     "BT01-052": [
@@ -705,15 +705,15 @@ export const BT01_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 : 이 카드를 트래시한다. 상대의 패가 3장 이상이라면 상대는 상대의 패를 1장 골라 트래시한다.",
             condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
             action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } },
             targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' }
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "BT01-074": [

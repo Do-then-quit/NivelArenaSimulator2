@@ -59,6 +59,11 @@ export const ST05_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
             action: {
                 type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND',
@@ -70,11 +75,6 @@ export const ST05_EFFECTS: Record<string, Effect[]> = {
                     ]
                 }
             }
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST05-007": [
@@ -135,6 +135,11 @@ export const ST05_EFFECTS: Record<string, Effect[]> = {
         },
         {
             activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} }
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
             description: "트리거 / 자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
             action: {
                 type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND',
@@ -146,11 +151,6 @@ export const ST05_EFFECTS: Record<string, Effect[]> = {
                     ]
                 }
             }
-        },
-        {
-            activation: ActivationCondition.DAMAGE_TRIGGER,
-            description: "이 카드를 트래시한다.",
-            action: { type: 'TRASH_SELF', params: {} }
         }
     ],
     "ST05-013": [

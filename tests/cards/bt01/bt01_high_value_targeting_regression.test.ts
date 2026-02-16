@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
 import { GameEngine } from '../../../src/logic/GameEngine';
 import { StrongBotV2 } from '../../../src/logic/ai/StrongBotV2';
-import { Card, EngineAction, Phase } from '../../../src/logic/types';
+import { ActivationCondition, Card, EngineAction, Phase } from '../../../src/logic/types';
 
 function getCard(id: string): Card {
     const card = DUMMY_CARDS.find(c => c.id === id);
@@ -77,7 +77,9 @@ describe('BT01 High Value Targeting Regression', () => {
         });
 
         const sourceCard = getCard('BT01-078');
-        const triggerEffect = sourceCard.effects?.[1];
+        const triggerEffect = sourceCard.effects?.find(
+            e => e.activation === ActivationCondition.DAMAGE_TRIGGER && e.action.type === 'MOVE_FROM_TRASH_TO_HAND',
+        );
         expect(triggerEffect).toBeDefined();
 
         const slowExit = getCard('BT01-068');
@@ -114,7 +116,9 @@ describe('BT01 High Value Targeting Regression', () => {
         const p2 = engine.state.players[1];
 
         const sourceCard = getCard('BT01-073');
-        const triggerEffect = sourceCard.effects?.[1];
+        const triggerEffect = sourceCard.effects?.find(
+            e => e.activation === ActivationCondition.DAMAGE_TRIGGER && e.action.type === 'DISCARD',
+        );
         expect(triggerEffect).toBeDefined();
 
         const lowValue = getCard('ST01-002');
@@ -160,7 +164,9 @@ describe('BT01 High Value Targeting Regression', () => {
             });
 
             const sourceCard = getCard('BT01-078');
-            const triggerEffect = sourceCard.effects?.[1];
+            const triggerEffect = sourceCard.effects?.find(
+                e => e.activation === ActivationCondition.DAMAGE_TRIGGER && e.action.type === 'MOVE_FROM_TRASH_TO_HAND',
+            );
             const slowExit = getCard('BT01-068');
             slowExit.cost = 6;
             slowExit.power = 9000;
