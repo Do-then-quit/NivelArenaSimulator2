@@ -133,7 +133,9 @@ export class TargetSelector {
                     case 'COST_EQUAL':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
-                            return unit && unit.cost === filter.value;
+                            const expectedCost = this.resolveCostEqualExpectedCost(filter.value, context);
+                            if (!unit || expectedCost === null) return false;
+                            return unit.cost === expectedCost;
                         });
                         break;
                     case 'COST_LOWER_THAN_COST_PAYMENT':
@@ -323,7 +325,11 @@ export class TargetSelector {
                         if (!unit || !unit.name.includes(filter.value)) return false;
                         break;
                     case 'COST_EQUAL':
-                        if (!unit || unit.cost !== filter.value) return false;
+                        {
+                            const expectedCost = this.resolveCostEqualExpectedCost(filter.value, context);
+                            if (!unit || expectedCost === null) return false;
+                            if (unit.cost !== expectedCost) return false;
+                        }
                         break;
                     case 'COST_HIGHER_THAN_ENCOUNTER':
                         if (!unit || !context.unitZone || !context.unitZone.unit) return false;
@@ -451,5 +457,11 @@ export class TargetSelector {
         }
 
         return false;
+    }
+
+    private static resolveCostEqualExpectedCost(filterValue: any, context: GameContext): number | null {
+        const dynamicValue = filterValue ?? context.costPaymentCard?.cost;
+        if (typeof dynamicValue !== 'number') return null;
+        return dynamicValue;
     }
 }

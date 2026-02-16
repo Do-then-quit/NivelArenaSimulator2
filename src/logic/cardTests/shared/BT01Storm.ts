@@ -559,17 +559,21 @@ const tests: UnifiedTestCase[] = [
     {
         testId: 'BT01-075 ActiveCostHandling',
         name: 'Active requires discard cost',
-        description: 'Playing this skill should enter discard-cost selection and consume 1 hand card.',
+        description: 'Playing this skill should pay discard cost, then select and trash a same-cost unit.',
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
             const p2 = engine.opponentPlayer;
             p1.leaderLevel = 10;
             p1.hand = [getCard('BT01-075'), getCard('ST01-002')];
             p2.unitZones[0].unit = getCard('ST01-002');
+            const nonMatching = getCard('ST01-011');
+            nonMatching.cost = 4;
+            p2.unitZones[1].unit = nonMatching;
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
             const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
             const handBefore = p1.hand.length;
             const trashBefore = p1.trash.length;
             engine.playSkill(0);
@@ -577,10 +581,17 @@ const tests: UnifiedTestCase[] = [
             if (enteredCostMode) {
                 engine.selectCost(0);
             }
+            const enteredTargetMode = engine.state.interactionMode === 'SELECT_TARGET';
+            if (enteredTargetMode) {
+                engine.selectTarget(0, true);
+            }
             return [
                 { pass: enteredCostMode, message: 'Entered cost selection mode' },
+                { pass: enteredTargetMode, message: 'Entered target selection mode after paying cost' },
                 { pass: p1.hand.length === handBefore - 2, message: `Skill played + 1 discard (${p1.hand.length})` },
-                { pass: p1.trash.length === trashBefore + 1, message: `Discarded cost card to trash (${p1.trash.length})` }
+                { pass: p1.trash.length === trashBefore + 1, message: `Discarded cost card to trash (${p1.trash.length})` },
+                { pass: p2.unitZones[0].unit === null, message: 'Same-cost target unit trashed' },
+                { pass: p2.unitZones[1].unit !== null, message: 'Non-matching cost unit remains on field' }
             ];
         }
     },
@@ -803,4 +814,3 @@ export const BT01StormModule: UnifiedTestModule = {
 };
 
 export default tests;
-
