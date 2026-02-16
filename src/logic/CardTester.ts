@@ -52,11 +52,17 @@ export class CardTester {
     }
 
     private createCtx(): CardTestContext {
+        const self = this;
         return {
-            engine: this.engine,
-            getCard: (id: string) => this.getCard(id),
-            assert: (condition: boolean, msg: string) => this.assert(condition, msg),
-            log: (msg: string) => this.log(msg)
+            get engine() {
+                return self.engine;
+            },
+            getCard: (id: string) => self.getCard(id),
+            assert: (condition: boolean, msg: string) => self.assert(condition, msg),
+            log: (msg: string) => self.log(msg),
+            resetEngine: () => {
+                self.engine = self.createTestEngine();
+            },
         };
     }
 

@@ -37,9 +37,10 @@ export function adaptUnifiedModule(module: UnifiedTestModule): CardTestModule {
             for (const test of tests) {
                 ctx.log(`Running: ${test.name}`);
 
-                // Re-setup for each test (fresh state)
-                // Note: In UI, user already triggered setup, so we skip setup here
-                // and just run verify
+                // Run each case on a fresh engine to keep UI CardTester
+                // behavior aligned with isolated vitest execution.
+                ctx.resetEngine?.();
+                test.setup(ctx.engine, ctx.getCard);
                 const results = test.verify(ctx.engine, ctx.getCard);
 
                 for (const result of results) {
