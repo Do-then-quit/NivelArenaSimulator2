@@ -1875,8 +1875,9 @@ export class GameEngine {
         // processQueue returns COMPLETED if empty.
         // BUT processEffects doesn't return that status.
 
-        // Better: Check queue size. If 0, advance interactively.
-        if (this.state.effectQueue.length === 0) {
+        // Advance only when queue is empty and no interaction prompt is active.
+        // Otherwise, resolving the pending interaction should resume queue/flow.
+        if (this.state.effectQueue.length === 0 && this.state.interactionMode === 'NORMAL') {
             this.advanceCombatStep();
         }
     }

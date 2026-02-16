@@ -278,6 +278,41 @@ describe('Rules v2 ST04/ST05 Mechanics Regression', () => {
         expect(p2.hand.length).toBe(oppHandBefore - 1);
     });
 
+    it('keeps block/pass decision window after ST05-011 attacker discard selection', () => {
+        const engine = createEngine('ST05-001', 'ST05-001', 9903);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        engine.state.phase = Phase.ATTACK;
+        engine.state.turnPlayerIndex = 0;
+
+        p1.unitZones[0].unit = getCard('ST05-011');
+        p1.unitZones[0].items = [getCard('ST05-015')];
+        p2.hand = [getCard('ST05-002'), getCard('ST05-004')];
+        p2.unitZones[0].unit = getCard('ST05-009');
+
+        engine.attack(0);
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+
+        const handBefore = p2.hand.length;
+        const discardPick = engine.getLegalActions(p2.id).find(action =>
+            action.type === 'SELECT_HAND_TARGET' && action.targetPlayerId === p2.id
+        );
+        expect(discardPick).toBeDefined();
+        expect(engine.step(discardPick!)).toBe(true);
+        expect(p2.hand.length).toBe(handBefore - 1);
+
+        expect(engine.state.interactionMode).toBe('NORMAL');
+        expect(engine.state.phase).toBe(Phase.BLOCK);
+
+        const blockActions = engine
+            .getLegalActions(p2.id)
+            .filter(action => action.type === 'RESOLVE_BLOCK') as Array<any>;
+
+        expect(blockActions.some(action => action.shouldBlock === true && action.blockerZoneIndex === 0)).toBe(true);
+        expect(blockActions.some(action => action.shouldBlock === false)).toBe(true);
+    });
+
     it('draws dynamically by selected target item count (ST05-013)', () => {
         const engine = createEngine('ST05-001', 'ST05-001');
         const p1 = engine.state.players[0];

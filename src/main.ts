@@ -926,6 +926,10 @@ function renderTestScreen() {
 }
 
 function render() {
+    // Reset transient hover UI before any DOM re-render to avoid stale preview overlays.
+    hoverPreview.hide();
+    trashHoverOverlay.hide();
+
     if (currentScreen !== Screen.GAME) {
         clearBotStepTimer();
         clearAutoPhaseAdvanceTimer();
@@ -1429,19 +1433,6 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
                                 `;
         }).join('')}
                             </div>
-                            <div class="item-tooltip">
-                                ${z.items.map((item: Card) => `
-                                    <div style="display: flex; gap: 10px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                                        <div class="tooltip-card-preview">
-                                            <img src="${item.imageUrl}" style="width:100%; height:100%; object-fit:cover;">
-                                        </div>
-                                        <div class="tooltip-info">
-                                            <div class="tooltip-item-name">${item.name}</div>
-                                            <div class="tooltip-item-text">${item.text}</div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
                         ` : ''}
 
                         ${z.unit && !isOpponent && localHumanCanInput && game!.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
@@ -1724,6 +1715,18 @@ function attachListeners() {
     });
 
 
+    const getMiniItemCardFromElement = (miniItemEl: HTMLElement): Card | null => {
+        const isOpponent = miniItemEl.dataset.player === 'opponent';
+        const zoneIndex = parseInt(miniItemEl.dataset.zoneIndex || '-1', 10);
+        const itemIndex = parseInt(miniItemEl.dataset.itemIndex || '-1', 10);
+        if (Number.isNaN(zoneIndex) || Number.isNaN(itemIndex) || zoneIndex < 0 || itemIndex < 0) return null;
+
+        const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;
+        const zone = player.unitZones[zoneIndex];
+        if (!zone) return null;
+        return zone.items[itemIndex] ?? null;
+    };
+
     // Unit Zone Hover Listeners
     const unitZones = document.querySelectorAll('.unit-zone');
     unitZones.forEach(zone => {
@@ -1747,6 +1750,11 @@ function attachListeners() {
             const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;
             const unit = player.unitZones[index].unit;
 
+            const eventTarget = e.target as HTMLElement | null;
+            if (eventTarget?.closest('.mini-item-card')) {
+                return;
+            }
+
             if (unit) {
                 const mouseEvent = e as MouseEvent;
                 hoverPreview.show(unit, mouseEvent.clientX, mouseEvent.clientY);
@@ -1754,6 +1762,30 @@ function attachListeners() {
         });
 
         zone.addEventListener('mouseleave', () => {
+            hoverPreview.hide();
+        });
+    });
+
+    document.querySelectorAll('.mini-item-card').forEach((itemEl) => {
+        itemEl.addEventListener('mouseenter', (e) => {
+            const card = getMiniItemCardFromElement(itemEl as HTMLElement);
+            if (!card) return;
+            const mouseEvent = e as MouseEvent;
+            hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+        });
+
+        itemEl.addEventListener('mousemove', (e) => {
+            const card = getMiniItemCardFromElement(itemEl as HTMLElement);
+            if (!card) return;
+            const mouseEvent = e as MouseEvent;
+            hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+        });
+
+        itemEl.addEventListener('mouseleave', (e) => {
+            const related = (e as MouseEvent).relatedTarget as HTMLElement | null;
+            if (related?.closest('.unit-zone')) {
+                return;
+            }
             hoverPreview.hide();
         });
     });
