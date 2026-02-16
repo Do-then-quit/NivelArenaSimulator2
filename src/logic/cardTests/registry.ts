@@ -4,6 +4,8 @@ import { CardTestModule } from './types';
 import { ST01Module } from './shared/ST01';
 import { ST02Module } from './shared/ST02';
 import { ST03Module } from './shared/ST03';
+import { ST04Module } from './shared/ST04';
+import { ST05Module } from './shared/ST05';
 import { BT01FireModule } from './shared/BT01Fire';
 import { BT01EarthModule } from './shared/BT01Earth';
 import { BT01StormModule } from './shared/BT01Storm';
@@ -13,6 +15,8 @@ import { adaptUnifiedModule } from './cardtester-adapter';
 const UnifiedST01 = adaptUnifiedModule(ST01Module);
 const UnifiedST02 = adaptUnifiedModule(ST02Module);
 const UnifiedST03 = adaptUnifiedModule(ST03Module);
+const UnifiedST04 = adaptUnifiedModule(ST04Module);
+const UnifiedST05 = adaptUnifiedModule(ST05Module);
 const UnifiedBT01Fire = adaptUnifiedModule(BT01FireModule);
 const UnifiedBT01Earth = adaptUnifiedModule(BT01EarthModule);
 const UnifiedBT01Storm = adaptUnifiedModule(BT01StormModule);
@@ -21,6 +25,8 @@ export const CARD_TEST_REGISTRY: Record<string, CardTestModule> = {
     'ST01': UnifiedST01,
     'ST02': UnifiedST02,
     'ST03': UnifiedST03,
+    'ST04': UnifiedST04,
+    'ST05': UnifiedST05,
     'BT01화염': UnifiedBT01Fire,
     'BT01대지': UnifiedBT01Earth,
     'BT01폭풍': UnifiedBT01Storm

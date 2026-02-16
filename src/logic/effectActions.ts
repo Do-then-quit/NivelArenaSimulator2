@@ -366,6 +366,10 @@ const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
     const revealed = deck.splice(-count);
     ctx.machine.state.revealedCards = revealed;
 
+    const filters = Array.isArray(params.filters)
+        ? params.filters
+        : (params.filter ? [params.filter] : []);
+
     const selectionEffect = {
         activation: ActivationCondition.ACTIVE,
         description: 'Choose card to hand',
@@ -374,7 +378,7 @@ const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
             scope: 'REVEALED',
             type: 'CARD',
             count: 1,
-            filters: params.filter ? [params.filter] : [],
+            filters,
             selectMode: 'MANUAL'
         }
     } as any;
@@ -408,6 +412,10 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
     const revealed = deck.splice(-count);
     ctx.machine.state.revealedCards = revealed;
 
+    const filters = Array.isArray(params.filters)
+        ? params.filters
+        : (params.filter ? [params.filter] : []);
+
     const selectionEffect = {
         activation: ActivationCondition.ACTIVE,
         description: 'Review revealed cards',
@@ -416,7 +424,7 @@ const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) => {
             scope: 'REVEALED',
             type: 'CARD',
             count: 0,
-            filters: params.filter ? [params.filter] : [],
+            filters,
             selectMode: 'ALL'
         }
     } as any;
@@ -460,11 +468,20 @@ const returnFromTrashAtTurnEnd: ActionImplementation = (ctx, _params, _targets) 
     console.log(`Scheduled ${card.name} to return to hand at end of turn.`);
 };
 
-const drawDynamic: ActionImplementation = (ctx, params) => {
+const drawDynamic: ActionImplementation = (ctx, params, targets) => {
     const player = ctx.player;
     let count = 0;
     if (params.multiplier === 'BASE_UNIT_COUNT') {
         count = player.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
+    } else if (params.multiplier === 'TARGET_ITEM_COUNT') {
+        const costMin = params.costMin ?? 0;
+        const selectedTargets = targets || [];
+        count = selectedTargets.reduce((sum, target) => {
+            if (!target || typeof target !== 'object' || !('items' in target)) return sum;
+            const items = Array.isArray((target as UnitZoneState).items) ? (target as UnitZoneState).items : [];
+            const validItemCount = items.filter(item => (item.cost || 0) >= costMin).length;
+            return sum + validItemCount;
+        }, 0);
     }
 
     if (count > 0) {
@@ -472,6 +489,24 @@ const drawDynamic: ActionImplementation = (ctx, params) => {
         ctx.machine.drawCard(pIdx, count);
         console.log(`Drew ${count} cards dynamically.`);
     }
+};
+
+const returnUnitAndItemsToHand: ActionImplementation = (ctx, _params, targets) => {
+    targets.forEach(targetZone => {
+        if (!targetZone || !targetZone.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!owner) return;
+
+        const unitName = targetZone.unit.name;
+        owner.hand.push(targetZone.unit);
+        targetZone.items.forEach((item: any) => owner.hand.push(item));
+        targetZone.unit = null;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+
+        console.log(`Returned ${unitName} and equipped items to owner hand.`);
+    });
 };
 
 const destroyUnitAndDrawByHit: ActionImplementation = (ctx, _params, targets) => {
@@ -702,6 +737,7 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'REVEAL_TOP_AND_CHOOSE_TO_HAND': revealTopAndChooseToHand,
     'REVEAL_TOP_AND_TAKE_ALL_BY_FILTER': revealTopAndTakeAllByFilter,
     'DRAW_DYNAMIC': drawDynamic,
+    'RETURN_UNIT_AND_ITEMS_TO_HAND': returnUnitAndItemsToHand,
     'BREAKTHROUGH': breakthrough,
     'RETURN_FROM_TRASH_AT_TURN_END': returnFromTrashAtTurnEnd,
     'DESTROY_UNIT_AND_DRAW_BY_HIT': destroyUnitAndDrawByHit,

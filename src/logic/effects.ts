@@ -24,6 +24,13 @@ export class EffectManager {
         );
     }
 
+    private cardHasKeyword(card: any, keyword: string): boolean {
+        if (!card) return false;
+        if (card.keywords?.includes(keyword)) return true;
+        if (card.effects?.some((effect: any) => (effect.description || '').includes(keyword))) return true;
+        return false;
+    }
+
     public queueEphemeralEffect(effect: Effect, context: GameContext) {
         this.engine.incrementGlobalStep();
         const currentStep = this.engine.state.globalStep;
@@ -277,8 +284,26 @@ export class EffectManager {
                     if (value.operator === 'LTE') return cost <= value.cost;
                 }
                 return false;
+            case 'HAS_ITEM': {
+                if (!context.unitZone) return false;
+                const allItems = context.unitZone.items || [];
+                const minCount = typeof value === 'number' ? value : (value?.minCount ?? 1);
+                const costMin = typeof value === 'object' ? value?.costMin : undefined;
+                const countedItems = costMin !== undefined
+                    ? allItems.filter(item => (item.cost || 0) >= costMin)
+                    : allItems;
+                return countedItems.length >= minCount;
+            }
+            case 'HAS_KEYWORD': {
+                const keyword = typeof value === 'string' ? value : value?.keyword;
+                if (!keyword) return false;
+                if (context.unitZone?.unit && this.cardHasKeyword(context.unitZone.unit, keyword)) return true;
+                return this.cardHasKeyword(context.sourceCard, keyword);
+            }
             case 'YOUR_TURN':
                 return context.machine.currentPlayer === context.player;
+            case 'OPPONENT_TURN':
+                return context.machine.currentPlayer !== context.player;
             case 'OPPONENT_HAND_COUNT':
                 if (typeof value === 'number') {
                     return context.opponent.hand.length >= value;

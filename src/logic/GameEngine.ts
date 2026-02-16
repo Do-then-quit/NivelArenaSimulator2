@@ -67,6 +67,7 @@ export class GameEngine {
             turnCount: 1,
             winner: null,
             pendingAttackerIndex: null,
+            pendingBlockerZoneIndex: null,
             interactionMode: 'NORMAL',
             interactionOwnerPlayerId: null,
             pendingEffect: null,
@@ -679,7 +680,12 @@ export class GameEngine {
             if (this.state.interactionMode === 'NORMAL') {
                 if (this.state.phase === Phase.BLOCK) {
                     if (id !== this.opponentPlayer.id) return;
-                    actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: true });
+                    const attackerZoneIndex = this.state.pendingAttackerIndex;
+                    if (attackerZoneIndex === null) return;
+                    const candidateBlockers = this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
+                    candidateBlockers.forEach(blockerZoneIndex => {
+                        actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: true, blockerZoneIndex });
+                    });
                     actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: false });
                     return;
                 }
@@ -715,42 +721,61 @@ export class GameEngine {
                         actions.push({ type: 'ATTACK', actorPlayerId: id, attackerZoneIndex: zoneIndex });
                     }
 
-                    const unit = zone.unit;
-                    if (!unit?.effects) return;
-                    unit.effects.forEach((effect, effectIndex) => {
-                        const activatableInPhase =
-                            (effect.activation === ActivationCondition.ACTIVE && (this.state.phase === Phase.MAIN || this.state.phase === Phase.ATTACK)) ||
-                            (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase === Phase.MAIN);
-                        if (!activatableInPhase) return;
+                    const collectActivatableEffectActions = (
+                        sourceCard: Card | null,
+                        sourceType: 'UNIT' | 'ITEM',
+                        itemIndex?: number
+                    ) => {
+                        if (!sourceCard?.effects) return;
+                        sourceCard.effects.forEach((effect, effectIndex) => {
+                            const activatableInPhase =
+                                (effect.activation === ActivationCondition.ACTIVE && (this.state.phase === Phase.MAIN || this.state.phase === Phase.ATTACK)) ||
+                                (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase === Phase.MAIN);
+                            if (!activatableInPhase) return;
 
-                        const effectKey = `${unit.id}_${effect.id || effectIndex}`;
-                        if (zone.activatedEffectKeys?.[effectKey]) return;
+                            const effectKey = sourceType === 'ITEM'
+                                ? `${sourceCard.id}_${itemIndex}_${effect.id || effectIndex}`
+                                : `${sourceCard.id}_${effect.id || effectIndex}`;
+                            if (zone.activatedEffectKeys?.[effectKey]) return;
 
-                        const context: GameContext = {
-                            sourceCard: unit,
-                            player: actor,
-                            opponent: this.getOpponentOf(actor),
-                            unitZone: zone,
-                            machine: this,
-                        };
+                            const context: GameContext = {
+                                sourceCard,
+                                player: actor,
+                                opponent: this.getOpponentOf(actor),
+                                unitZone: zone,
+                                machine: this,
+                            };
 
-                        if (!this.effectManager.checkCondition(effect, context)) return;
+                            if (!this.effectManager.checkCondition(effect, context)) return;
 
-                        if (effect.cost && effect.cost.type !== 'NONE') {
-                            if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
-                                const requiredAmount = effect.cost.amount || 1;
-                                const costFilter = effect.cost.cardTypeFilter;
-                                const payableCount = actor.hand.filter(card => !costFilter || card.type === costFilter).length;
-                                if (payableCount < requiredAmount) return;
+                            if (effect.cost && effect.cost.type !== 'NONE') {
+                                if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
+                                    const requiredAmount = effect.cost.amount || 1;
+                                    const costFilter = effect.cost.cardTypeFilter;
+                                    const payableCount = actor.hand.filter(card => !costFilter || card.type === costFilter).length;
+                                    if (payableCount < requiredAmount) return;
+                                }
                             }
-                        }
 
-                        if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                            const candidates = TargetSelector.resolve(this, effect.targets, context);
-                            if (candidates.length === 0) return;
-                        }
+                            if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+                                const candidates = TargetSelector.resolve(this, effect.targets, context);
+                                if (candidates.length === 0) return;
+                            }
 
-                        actions.push({ type: 'ACTIVATE_EFFECT', actorPlayerId: id, zoneIndex, effectIndex });
+                            actions.push({
+                                type: 'ACTIVATE_EFFECT',
+                                actorPlayerId: id,
+                                zoneIndex,
+                                effectIndex,
+                                sourceType,
+                                itemIndex
+                            });
+                        });
+                    };
+
+                    collectActivatableEffectActions(zone.unit, 'UNIT');
+                    zone.items.forEach((item, itemIndex) => {
+                        collectActivatableEffectActions(item, 'ITEM', itemIndex);
                     });
                 });
 
@@ -903,7 +928,7 @@ export class GameEngine {
                 return true;
             case 'ACTIVATE_EFFECT':
                 if (action.actorPlayerId !== this.currentPlayer.id) return false;
-                this.activateEffect(action.zoneIndex, action.effectIndex);
+                this.activateEffect(action.zoneIndex, action.effectIndex, action.sourceType || 'UNIT', action.itemIndex);
                 return true;
             case 'ATTACK':
                 if (action.actorPlayerId !== this.currentPlayer.id) return false;
@@ -912,7 +937,7 @@ export class GameEngine {
             case 'RESOLVE_BLOCK':
                 if (this.state.phase !== Phase.BLOCK) return false;
                 if (action.actorPlayerId !== this.opponentPlayer.id) return false;
-                this.resolveBlock(action.shouldBlock);
+                this.resolveBlock(action.shouldBlock, action.blockerZoneIndex);
                 return true;
             case 'SELECT_COST_HAND':
                 this.selectCostForPlayerId(action.handIndex, action.actorPlayerId);
@@ -1338,12 +1363,20 @@ export class GameEngine {
         console.log(`Equipped ${card.name} to unit in zone ${zoneIndex}`);
     }
 
-    activateEffect(zoneIndex: number, effectIndex: number) {
+    activateEffect(
+        zoneIndex: number,
+        effectIndex: number,
+        sourceType: 'UNIT' | 'ITEM' = 'UNIT',
+        itemIndex?: number
+    ) {
         const zone = this.currentPlayer.unitZones[zoneIndex];
-        const card = zone.unit;
+        const card = sourceType === 'ITEM'
+            ? (itemIndex !== undefined ? zone.items[itemIndex] : null)
+            : zone.unit;
         if (!card || !card.effects) return;
 
         const effect = card.effects[effectIndex];
+        if (!effect) return;
         if (effect.activation !== ActivationCondition.ACTIVE && effect.activation !== ActivationCondition.ACTIVE_MAIN) return;
 
         if (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase !== Phase.MAIN) {
@@ -1353,7 +1386,9 @@ export class GameEngine {
             return;
         }
 
-        const effectKey = `${card.id}_${effect.id || effectIndex}`;
+        const effectKey = sourceType === 'ITEM'
+            ? `${card.id}_${itemIndex}_${effect.id || effectIndex}`
+            : `${card.id}_${effect.id || effectIndex}`;
         if (zone.activatedEffectKeys[effectKey]) return;
 
         const context = {
@@ -1515,6 +1550,25 @@ export class GameEngine {
             return;
         }
 
+        if (pending.actionType === 'GUARDIAN_BLOCK_COST') {
+            const selectedBlockerZoneIndex = pending.actionValue?.blockerZoneIndex;
+            this.state.interactionMode = 'NORMAL';
+            this.state.pendingEffect = null;
+            this.clearPendingRuntime();
+            this.assignInteractionOwner(this.currentPlayer.id);
+
+            if (typeof selectedBlockerZoneIndex === 'number') {
+                this.commitBlockDeclaration(selectedBlockerZoneIndex);
+            } else {
+                this.state.combatBlocked = false;
+                this.state.pendingBlockerZoneIndex = null;
+                if (this.state.effectQueue.length === 0) {
+                    this.advanceCombatStep();
+                }
+            }
+            return;
+        }
+
         // Resume Effect Execution
         if (!effect || !context) {
             this.resetInteractionMode();
@@ -1591,6 +1645,7 @@ export class GameEngine {
         this.state.attackTerminated = false;
         // Combat block state is per-combat. Reset to avoid leaking prior combat results.
         this.state.combatBlocked = false;
+        this.state.pendingBlockerZoneIndex = null;
         (attackerZone as any)._attackCostPaid = false; // Reset for next time
         attackerZone.hasAttacked = true;
 
@@ -1675,6 +1730,7 @@ export class GameEngine {
                 // End Combat
                 this.state.combatStep = 'NONE';
                 this.state.pendingAttackerIndex = null;
+                this.state.pendingBlockerZoneIndex = null;
                 this.state.phase = Phase.ATTACK; // Return to Attack Available
                 this.assignInteractionOwner(this.currentPlayer.id);
                 break;
@@ -1685,40 +1741,24 @@ export class GameEngine {
         this.state.combatStep = 'DEFENSE_DECLARATION';
         const attackerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
 
-        // 1. Check BREAKTHROUGH
-        const blockerZoneIndex = attackerZoneIndex;
-        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
-
-        let breakthroughActive = false;
-        if (blockerZone.unit) {
-            const limit = this.getBreakthroughLimit(attackerZone);
-            if (limit !== null && blockerZone.unit.cost <= limit) {
-                console.log(`BREAKTHROUGH active. Skipping Block phase.`);
-                breakthroughActive = true;
-            }
-        }
-
-        if (breakthroughActive || !blockerZone.unit) {
-            // Direct Attack or Breakthrough -> Skip Blocking
+        const candidateBlockers = this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
+        if (candidateBlockers.length === 0) {
             this.state.combatBlocked = false;
+            this.state.pendingBlockerZoneIndex = null;
             this.assignInteractionOwner(this.currentPlayer.id);
-            this.advanceCombatStep(); // Go directly to BATTLE
+            this.advanceCombatStep();
             return;
         }
 
-        // 2. Encounter Unit exists -> Potential Block
         this.state.phase = Phase.BLOCK;
         this.assignInteractionOwner(this.opponentPlayer.id);
-        // Wait for user input (resolveBlock)
         console.log("Waiting for Block Declaration...");
-
-        // NOTE: guardian/auto-block logic would go here if implemented
-        // For now, we wait for Manual Block (UI calls resolveBlock)
     }
 
     private stepBattleResolution(attackerZone: UnitZoneState) {
         this.state.combatStep = 'BATTLE';
-        const blockerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
+        const blockerZoneIndex = this.state.pendingBlockerZoneIndex
+            ?? this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
         const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
 
         // 1. Check Attack Terminated
@@ -1738,7 +1778,7 @@ export class GameEngine {
 
         // 3. Resolution
         // 3. Resolution
-        if (this.state.combatBlocked && blockerZone.unit) {
+        if (this.state.combatBlocked && blockerZone?.unit) {
             // Combat Resolution
             const attPower = this.getUnitPower(attackerZone, this.currentPlayer);
             const blkPower = this.getUnitPower(blockerZone, this.opponentPlayer);
@@ -1837,80 +1877,91 @@ export class GameEngine {
         });
     }
 
-    resolveBlock(shouldBlock: boolean) {
+    resolveBlock(shouldBlock: boolean, blockerZoneIndex?: number) {
         if (this.state.phase !== Phase.BLOCK || this.state.pendingAttackerIndex === null) return;
 
         const attackerZoneIndex = this.state.pendingAttackerIndex;
         const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
+        if (!attackerZone.unit) return;
 
-        const blockerZoneIndex = attackerZoneIndex;
-        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
-
-        // CHECK BREAKTHROUGH (Fallback check)
-        if (shouldBlock && blockerZone.unit) {
-            const limit = this.getBreakthroughLimit(attackerZone);
-            if (limit !== null && blockerZone.unit.cost <= limit) {
-                console.log(`Block prevented by BREAKTHROUGH (Cost ${blockerZone.unit.cost} <= ${limit})`);
-                shouldBlock = false; // Force no block
+        const candidateBlockers = this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
+        if (!shouldBlock || candidateBlockers.length === 0) {
+            this.state.combatBlocked = false;
+            this.state.pendingBlockerZoneIndex = null;
+            this.assignInteractionOwner(this.currentPlayer.id);
+            if (this.state.effectQueue.length === 0) {
+                this.advanceCombatStep();
             }
+            return;
         }
 
-        // DUALIST (Rule 10.2.3.5.3)
-        const isDualist = attackerZone.unit && this.hasKeyword(attackerZone.unit, 'DUALIST');
-        let finalShouldBlock = shouldBlock;
-        if (isDualist && blockerZone.unit) {
-            finalShouldBlock = true; // Forced block
+        let selectedBlockerZoneIndex: number | null = null;
+        if (blockerZoneIndex !== undefined && candidateBlockers.includes(blockerZoneIndex)) {
+            selectedBlockerZoneIndex = blockerZoneIndex;
+        } else if (candidateBlockers.includes(attackerZoneIndex)) {
+            selectedBlockerZoneIndex = attackerZoneIndex;
+        } else if (candidateBlockers.length === 1) {
+            selectedBlockerZoneIndex = candidateBlockers[0];
         }
 
-        if (finalShouldBlock && blockerZone.unit) {
-            // Trigger DEFENDER effects as one simultaneous event.
-            const defenderBatchStep = this.incrementAndGetGlobalStep();
-            this.effectManager.processEffects(ActivationCondition.DEFENDER, {
-                sourceCard: blockerZone.unit,
+        if (selectedBlockerZoneIndex === null) {
+            this.state.combatBlocked = false;
+            this.state.pendingBlockerZoneIndex = null;
+            this.assignInteractionOwner(this.currentPlayer.id);
+            if (this.state.effectQueue.length === 0) {
+                this.advanceCombatStep();
+            }
+            return;
+        }
+
+        const selectedBlockerZone = this.opponentPlayer.unitZones[selectedBlockerZoneIndex];
+        if (!selectedBlockerZone.unit) {
+            this.state.combatBlocked = false;
+            this.state.pendingBlockerZoneIndex = null;
+            this.assignInteractionOwner(this.currentPlayer.id);
+            if (this.state.effectQueue.length === 0) {
+                this.advanceCombatStep();
+            }
+            return;
+        }
+
+        const isGuardianBlock = selectedBlockerZoneIndex !== attackerZoneIndex;
+        const barrierCost = isGuardianBlock ? this.getGuardianBarrierCost(selectedBlockerZone) : 0;
+        if (isGuardianBlock && barrierCost > 0) {
+            if (this.opponentPlayer.hand.length < barrierCost) {
+                this.state.combatBlocked = false;
+                this.state.pendingBlockerZoneIndex = null;
+                this.assignInteractionOwner(this.currentPlayer.id);
+                if (this.state.effectQueue.length === 0) {
+                    this.advanceCombatStep();
+                }
+                return;
+            }
+
+            const controllerPlayerId = this.opponentPlayer.id;
+            this.state.interactionMode = 'SELECT_COST';
+            this.state.pendingEffect = {
+                sourceCard: selectedBlockerZone.unit,
+                sourcePlayerId: this.opponentPlayer.id,
+                controllerPlayerId,
+                actionType: 'GUARDIAN_BLOCK_COST',
+                actionValue: { blockerZoneIndex: selectedBlockerZoneIndex, barrierCost },
+                effectDescription: `Guardian barrier cost (${barrierCost})`,
+                costToPay: { type: 'TRASH_HAND', amount: barrierCost },
+                selectedTargets: []
+            };
+            this.setPendingRuntime({
+                sourceCard: selectedBlockerZone.unit,
                 player: this.opponentPlayer,
                 opponent: this.currentPlayer,
-                unitZone: blockerZone,
+                unitZone: selectedBlockerZone,
                 machine: this
-            }, { enqueueOnly: true, batchStep: defenderBatchStep });
-
-            blockerZone.items.forEach(item => {
-                this.effectManager.processEffects(ActivationCondition.DEFENDER, {
-                    sourceCard: item,
-                    player: this.opponentPlayer,
-                    opponent: this.currentPlayer,
-                    unitZone: blockerZone,
-                    machine: this
-                }, { enqueueOnly: true, batchStep: defenderBatchStep });
-            });
-            this.effectManager.processQueue();
-
-            // Mark blocking happened? Actually, the presence of blockerZone.unit implies blocking capability,
-            // but we need to know if the player CHOSE to block.
-            // If they chose NOT to block, we should probably pretend the unit isn't there for combat??
-            // Wait, Nivel Arena rules: Encounter unit blocks logic or direct attack logic?
-            // "Manual Block: If there is no Guardian, the opponent decides whether to defend with the encounter unit."
-            // If they decide NOT to defend, what happens? "Attack Unit's Hit -> Player Damage".
-            // So if !finalShouldBlock, we treat it as unblocked even if unit is there because of Encounter logic.
-
-            // CRITICAL FIX: If user chose NOT to block, we must clear the 'blockerZone.unit' from the combat equation momentarily?
-            // No, we just need to pass a flag to stepBattleResolution. 
-            // BUT stepBattleResolution looks at `blockerZone.unit`.
-            // We need a robust way to say "This combat is unblocked".
-            // Let's set a temporary state on the engine? `this.state.isCombatBlocked`.
-
-            this.state.combatBlocked = true;
-
-        } else {
-            this.state.combatBlocked = false;
+            }, null);
+            this.assignInteractionOwner(controllerPlayerId);
+            return;
         }
 
-        this.assignInteractionOwner(this.currentPlayer.id);
-
-        // Advance to next step (Battle Resolution)
-        // If effects were added, queue runs. If not, manual advance.
-        if (this.state.effectQueue.length === 0) {
-            this.advanceCombatStep();
-        }
+        this.commitBlockDeclaration(selectedBlockerZoneIndex);
     }
 
 
@@ -1918,47 +1969,128 @@ export class GameEngine {
         return card.keywords?.includes(keyword) || false;
     }
 
-    private getBreakthroughLimit(zone: UnitZoneState): number | null {
-        if (!zone.unit) return null;
-        let maxLimit: number | null = null;
+    private getAvailableBlockerZoneIndexes(attackerZoneIndex: number): number[] {
+        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
+        if (!attackerZone?.unit) return [];
 
-        // 1. Check Unit Effects
-        if (zone.unit.effects) {
-            zone.unit.effects.forEach(e => {
-                if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
-                    const limit = e.action.params.costMax;
-                    if (limit !== undefined) {
-                        if (maxLimit === null || limit > maxLimit) maxLimit = limit;
-                    }
-                }
+        const defender = this.opponentPlayer;
+        const candidateSet = new Set<number>();
+        const isDualist = this.hasKeywordInZone(attackerZone, '듀얼리스트') || this.hasKeywordInZone(attackerZone, 'DUALIST');
+
+        const encounterZone = defender.unitZones[attackerZoneIndex];
+        if (encounterZone.unit && !this.isBlockPreventedByBreakthrough(attackerZone, encounterZone)) {
+            candidateSet.add(attackerZoneIndex);
+        }
+
+        if (!isDualist) {
+            defender.unitZones.forEach((zone, zoneIndex) => {
+                if (zoneIndex === attackerZoneIndex) return;
+                if (Math.abs(zoneIndex - attackerZoneIndex) !== 1) return;
+                if (!zone.unit) return;
+                if (!(this.hasKeywordInZone(zone, '가디언') || this.hasKeywordInZone(zone, 'GUARDIAN'))) return;
+                if (this.isBlockPreventedByBreakthrough(attackerZone, zone)) return;
+
+                const barrierCost = this.getGuardianBarrierCost(zone);
+                if (defender.hand.length < barrierCost) return;
+                candidateSet.add(zoneIndex);
             });
         }
 
-        // 2. Check Item Effects
+        return Array.from(candidateSet).sort((a, b) => a - b);
+    }
+
+    private getGuardianBarrierCost(zone: UnitZoneState): number {
+        let maxCost = 0;
+        const allEffects: Effect[] = [];
+
+        if (zone.unit?.effects) allEffects.push(...zone.unit.effects);
         zone.items.forEach(item => {
-            if (item.effects) {
-                item.effects.forEach(e => {
-                    if (e.activation === ActivationCondition.ATTACKER && e.action.type === 'BREAKTHROUGH') {
-                        const limit = e.action.params.costMax;
-                        if (limit !== undefined) {
-                            if (maxLimit === null || limit > maxLimit) maxLimit = limit;
-                        }
-                    }
-                });
+            if (item.effects) allEffects.push(...item.effects);
+        });
+        allEffects.push(...zone.temporaryEffects);
+
+        allEffects.forEach(effect => {
+            const explicit = effect.action?.params?.guardianBarrierCost;
+            if (typeof explicit === 'number') {
+                maxCost = Math.max(maxCost, explicit);
+                return;
+            }
+
+            const text = effect.description || '';
+            const match = text.match(/방벽\[(\d+)\]/);
+            if (match) {
+                maxCost = Math.max(maxCost, parseInt(match[1], 10));
             }
         });
 
-        // 3. Check Temporary Effects
-        zone.temporaryEffects.forEach(effect => {
-            if (effect.action && effect.action.type === 'BREAKTHROUGH') {
-                const limit = effect.action.params.costMax;
-                if (limit !== undefined) {
-                    if (maxLimit === null || limit > maxLimit) maxLimit = limit;
-                }
-            }
-        });
+        return maxCost;
+    }
 
-        return maxLimit;
+    private isBlockPreventedByBreakthrough(attackerZone: UnitZoneState, blockerZone: UnitZoneState): boolean {
+        if (!blockerZone.unit) return true;
+        const blockerCost = blockerZone.unit.cost || 0;
+
+        const checkRule = (params: any): boolean => {
+            if (!params) return false;
+            if (params.mode === 'ALL' || params.costMode === 'ALL' || params.all === true) return true;
+            if (params.costMax !== undefined && blockerCost <= params.costMax) return true;
+            if (params.costMin !== undefined && blockerCost >= params.costMin) return true;
+            return false;
+        };
+
+        const allEffects: Effect[] = [];
+        if (attackerZone.unit?.effects) allEffects.push(...attackerZone.unit.effects);
+        attackerZone.items.forEach(item => {
+            if (item.effects) allEffects.push(...item.effects);
+        });
+        allEffects.push(...attackerZone.temporaryEffects);
+
+        return allEffects.some(effect =>
+            effect.activation === ActivationCondition.ATTACKER &&
+            effect.action?.type === 'BREAKTHROUGH' &&
+            checkRule(effect.action.params)
+        );
+    }
+
+    private commitBlockDeclaration(blockerZoneIndex: number) {
+        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
+        if (!blockerZone.unit) {
+            this.state.combatBlocked = false;
+            this.state.pendingBlockerZoneIndex = null;
+            this.assignInteractionOwner(this.currentPlayer.id);
+            if (this.state.effectQueue.length === 0) {
+                this.advanceCombatStep();
+            }
+            return;
+        }
+
+        this.state.pendingBlockerZoneIndex = blockerZoneIndex;
+        this.state.combatBlocked = true;
+
+        const defenderBatchStep = this.incrementAndGetGlobalStep();
+        this.effectManager.processEffects(ActivationCondition.DEFENDER, {
+            sourceCard: blockerZone.unit,
+            player: this.opponentPlayer,
+            opponent: this.currentPlayer,
+            unitZone: blockerZone,
+            machine: this
+        }, { enqueueOnly: true, batchStep: defenderBatchStep });
+
+        blockerZone.items.forEach(item => {
+            this.effectManager.processEffects(ActivationCondition.DEFENDER, {
+                sourceCard: item,
+                player: this.opponentPlayer,
+                opponent: this.currentPlayer,
+                unitZone: blockerZone,
+                machine: this
+            }, { enqueueOnly: true, batchStep: defenderBatchStep });
+        });
+        this.effectManager.processQueue();
+
+        this.assignInteractionOwner(this.currentPlayer.id);
+        if (this.state.effectQueue.length === 0) {
+            this.advanceCombatStep();
+        }
     }
 
     private getPenetrationValue(zone: UnitZoneState): number {
@@ -2349,17 +2481,20 @@ export class GameEngine {
                         }
 
                         // Check if this effect targets the zone we are calculating power for
-                        if (TargetSelector.isValidTarget(this, effect.targets!, context, zone)) {
-                            const params = effect.action.params || {};
-                            let value = params.value || 0;
-                            if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
-                                value = source.owner.leaderLevel * value;
-                            } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
-                                const baseUnitCount = source.owner.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
-                                value = baseUnitCount * value;
+                            if (TargetSelector.isValidTarget(this, effect.targets!, context, zone)) {
+                                const params = effect.action.params || {};
+                                let value = params.value || 0;
+                                if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
+                                    value = source.owner.leaderLevel * value;
+                                } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
+                                    const baseUnitCount = source.owner.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
+                                    value = baseUnitCount * value;
+                                } else if (params.dynamic === 'ITEM_COUNT_MULTIPLIER') {
+                                    const sourceItemCount = source.zone?.items?.length || 0;
+                                    value = sourceItemCount * value;
+                                }
+                                power += value;
                             }
-                            power += value;
-                        }
                     }
                 });
             }
@@ -2746,7 +2881,3 @@ export class GameEngine {
 
 
 }
-
-
-
-

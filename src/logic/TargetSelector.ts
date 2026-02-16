@@ -77,6 +77,12 @@ export class TargetSelector {
                             candidates = candidates.filter(c => c !== context.unitZone);
                         }
                         break;
+                    case 'UNIT_TYPE':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            return card && card.type === filter.value;
+                        });
+                        break;
                     case 'HAS_TRAIT':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
@@ -124,6 +130,29 @@ export class TargetSelector {
                             return unit && unit.name.includes(filter.value);
                         });
                         break;
+                    case 'ITEM_COUNT_MIN':
+                        candidates = candidates.filter(c => {
+                            if (!c || typeof c !== 'object' || !('items' in c)) return false;
+                            const minCount = typeof filter.value === 'number' ? filter.value : 0;
+                            return Array.isArray((c as UnitZoneState).items) && (c as UnitZoneState).items.length >= minCount;
+                        });
+                        break;
+                    case 'LOWEST_COST_ONLY': {
+                        const costs = candidates
+                            .map(c => this.getCardFromTarget(c))
+                            .filter((card): card is any => card !== null && typeof card.cost === 'number')
+                            .map(card => card.cost);
+                        if (costs.length === 0) {
+                            candidates = [];
+                            break;
+                        }
+                        const minCost = Math.min(...costs);
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            return !!card && card.cost === minCost;
+                        });
+                        break;
+                    }
                 }
             });
         }
@@ -227,6 +256,12 @@ export class TargetSelector {
                 const unit = this.getUnitFromTarget(target);
                 switch (filter.type) {
                     case 'EXCLUDE_SELF': if (target === context.unitZone) return false; break;
+                    case 'UNIT_TYPE':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || card.type !== filter.value) return false;
+                        }
+                        break;
                     case 'HAS_TRAIT': if (!unit || !unit.traits?.includes(filter.value)) return false; break;
                     case 'HAS_KEYWORD':
                         if (!unit) return false;
@@ -253,6 +288,28 @@ export class TargetSelector {
                         if (!unit || !context.unitZone || !context.unitZone.unit) return false;
                         if (unit.cost <= context.unitZone.unit.cost) return false;
                         break;
+                    case 'ITEM_COUNT_MIN':
+                        if (!target || typeof target !== 'object' || !('items' in target)) return false;
+                        {
+                            const minCount = typeof filter.value === 'number' ? filter.value : 0;
+                            const itemCount = Array.isArray((target as UnitZoneState).items) ? (target as UnitZoneState).items.length : 0;
+                            if (itemCount < minCount) return false;
+                        }
+                        break;
+                    case 'LOWEST_COST_ONLY': {
+                        const otherFilters = (schema.filters || []).filter(f => f.type !== 'LOWEST_COST_ONLY');
+                        const baseSchema: TargetSchema = { ...schema, filters: otherFilters };
+                        const baseCandidates = this.resolve(engine, baseSchema, context);
+                        const baseCosts = baseCandidates
+                            .map(candidate => this.getCardFromTarget(candidate))
+                            .filter((card): card is any => card !== null && typeof card.cost === 'number')
+                            .map(card => card.cost);
+                        if (baseCosts.length === 0) return false;
+                        const targetCard = this.getCardFromTarget(target);
+                        if (!targetCard) return false;
+                        if (targetCard.cost !== Math.min(...baseCosts)) return false;
+                        break;
+                    }
                 }
             }
         }
@@ -268,6 +325,13 @@ export class TargetSelector {
     }
 
     private static getUnitFromTarget(target: any): any | null {
+        if (!target) return null;
+        if ('unit' in target) return target.unit;
+        if ('type' in target) return target;
+        return null;
+    }
+
+    private static getCardFromTarget(target: any): any | null {
         if (!target) return null;
         if ('unit' in target) return target.unit;
         if ('type' in target) return target;

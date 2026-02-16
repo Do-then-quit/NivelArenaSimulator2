@@ -93,6 +93,15 @@ export class RuleValidator {
                         return { valid: false, reason: `Requires unit cost ${val.cost} or higher` };
                     }
                 }
+
+                if (effect.activation === ActivationCondition.PASSIVE && effect.condition?.type === 'HAS_KEYWORD') {
+                    const requiredKeyword = typeof effect.condition.value === 'string'
+                        ? effect.condition.value
+                        : effect.condition.value?.keyword;
+                    if (requiredKeyword && !this.cardHasKeyword(zone.unit, requiredKeyword)) {
+                        return { valid: false, reason: `Requires unit keyword ${requiredKeyword}` };
+                    }
+                }
             }
         }
 
@@ -150,5 +159,12 @@ export class RuleValidator {
         });
         player.skillZone.forEach(s => cost += s.cost);
         return cost;
+    }
+
+    private static cardHasKeyword(card: any, keyword: string): boolean {
+        if (!card) return false;
+        if (card.keywords?.includes(keyword)) return true;
+        if (card.effects?.some((effect: any) => (effect.description || '').includes(keyword))) return true;
+        return false;
     }
 }
