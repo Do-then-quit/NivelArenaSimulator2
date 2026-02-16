@@ -41,6 +41,15 @@ enum Screen {
     TEST
 }
 
+const PHASE_THEME_CLASSES = [
+    'phase-theme-level-up',
+    'phase-theme-draw',
+    'phase-theme-main',
+    'phase-theme-attack',
+    'phase-theme-block',
+    'phase-theme-end',
+] as const;
+
 let currentScreen: Screen = Screen.MENU;
 let game: GameEngine | null = null;
 const hoverPreview = new HoverPreview();
@@ -910,6 +919,7 @@ function render() {
     if (currentScreen !== Screen.GAME) {
         clearBotStepTimer();
         clearAutoPhaseAdvanceTimer();
+        applyPhaseThemeClass(null);
     }
 
     if (currentScreen === Screen.MENU) {
@@ -925,6 +935,22 @@ function render() {
     } else if (currentScreen === Screen.TEST) {
         renderTestScreen();
     }
+}
+
+function applyPhaseThemeClass(phase: Phase | null) {
+    document.body.classList.remove(...PHASE_THEME_CLASSES);
+    if (phase === null) return;
+
+    const phaseClassMap: Record<Phase, string> = {
+        [Phase.LEVEL_UP]: 'phase-theme-level-up',
+        [Phase.DRAW]: 'phase-theme-draw',
+        [Phase.MAIN]: 'phase-theme-main',
+        [Phase.ATTACK]: 'phase-theme-attack',
+        [Phase.BLOCK]: 'phase-theme-block',
+        [Phase.END]: 'phase-theme-end',
+    };
+
+    document.body.classList.add(phaseClassMap[phase]);
 }
 
 function escapeHtml(text: string): string {
@@ -961,6 +987,7 @@ function renderVerificationSessionPanel(): string {
 function renderGame() {
     if (!game) return;
     clearAutoPhaseAdvanceTimer();
+    applyPhaseThemeClass(game.state.phase);
 
     const currentPlayer = game.currentPlayer;
     const opponent = game.opponentPlayer;
@@ -2084,7 +2111,20 @@ function handleVerificationHotkeys(event: KeyboardEvent) {
     }
 }
 
+function handleGameHotkeys(event: KeyboardEvent) {
+    if (currentScreen !== Screen.GAME) return;
+    if (isTypingElement(event.target)) return;
+    if (event.code !== 'Space') return;
+
+    const nextPhaseButton = document.getElementById('next-phase') as HTMLButtonElement | null;
+    if (!nextPhaseButton || nextPhaseButton.disabled) return;
+
+    event.preventDefault();
+    nextPhaseButton.click();
+}
+
 window.addEventListener('keydown', handleVerificationHotkeys);
+window.addEventListener('keydown', handleGameHotkeys);
 
 const debugManager = new DebugManager(game!, render);
 (window as any).debug = debugManager;

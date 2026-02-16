@@ -16,6 +16,13 @@ body {
     justify-content: center;
     min-height: 100vh;
     padding: 20px;
+    background-color: var(--phase-bg-color, #0f111a);
+    background-image: var(
+        --phase-bg-image,
+        radial-gradient(circle at 50% 50%, rgba(30, 45, 90, 0.4) 0%, transparent 60%),
+        linear-gradient(135deg, #0f111a 0%, #1a1c2e 100%)
+    );
+    transition: background-color 320ms ease, background-image 480ms ease;
 }
 
 #app {
@@ -32,6 +39,48 @@ body {
     gap: 20px;
     padding: 80px 20px 40px 20px;
     min-height: 100vh;
+}
+
+body.phase-theme-level-up {
+    --phase-bg-color: #0f1a2a;
+    --phase-bg-image:
+        radial-gradient(circle at 20% 30%, rgba(90, 170, 255, 0.26) 0%, transparent 58%),
+        linear-gradient(135deg, #0f1a2a 0%, #1a2640 100%);
+}
+
+body.phase-theme-draw {
+    --phase-bg-color: #102118;
+    --phase-bg-image:
+        radial-gradient(circle at 75% 25%, rgba(90, 220, 140, 0.24) 0%, transparent 55%),
+        linear-gradient(135deg, #102118 0%, #1b2e24 100%);
+}
+
+body.phase-theme-main {
+    --phase-bg-color: #101725;
+    --phase-bg-image:
+        radial-gradient(circle at 50% 50%, rgba(100, 140, 255, 0.2) 0%, transparent 62%),
+        linear-gradient(135deg, #101725 0%, #1a1f34 100%);
+}
+
+body.phase-theme-attack {
+    --phase-bg-color: #2a1418;
+    --phase-bg-image:
+        radial-gradient(circle at 70% 35%, rgba(255, 100, 120, 0.28) 0%, transparent 55%),
+        linear-gradient(135deg, #2a1418 0%, #3b1a20 100%);
+}
+
+body.phase-theme-block {
+    --phase-bg-color: #241e12;
+    --phase-bg-image:
+        radial-gradient(circle at 30% 35%, rgba(240, 190, 90, 0.2) 0%, transparent 58%),
+        linear-gradient(135deg, #241e12 0%, #352a1a 100%);
+}
+
+body.phase-theme-end {
+    --phase-bg-color: #161427;
+    --phase-bg-image:
+        radial-gradient(circle at 40% 65%, rgba(170, 120, 255, 0.2) 0%, transparent 58%),
+        linear-gradient(135deg, #161427 0%, #241f39 100%);
 }
 
 .header {
