@@ -53,6 +53,47 @@ describe('Rules v2 ST04/ST05 Mechanics Regression', () => {
         expect(p2.damage.length).toBe(damageBefore);
     });
 
+    it('offers both adjacent guardians as block candidates and resolves chosen blocker lane', () => {
+        const engine = createEngine();
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        engine.state.phase = Phase.ATTACK;
+        p1.unitZones[1].unit = getCard('ST04-004');
+        p1.unitZones[1].unit!.power = 3000;
+
+        p2.unitZones[0].unit = getCard('ST04-003'); // 방벽[1]
+        p2.unitZones[0].unit!.power = 2000;
+        p2.unitZones[2].unit = getCard('ST04-008'); // 방벽[2]
+        p2.unitZones[2].unit!.power = 5000;
+        p2.hand = [getCard('ST04-002'), getCard('ST04-004'), getCard('ST04-005')];
+
+        const trashBefore = p2.trash.length;
+        engine.attack(1);
+
+        const blockActions = engine
+            .getLegalActions(p2.id)
+            .filter(action => action.type === 'RESOLVE_BLOCK' && action.shouldBlock) as Array<any>;
+
+        const blockerIndexes = blockActions
+            .map(action => action.blockerZoneIndex)
+            .sort((a, b) => a - b);
+        expect(blockerIndexes).toEqual([0, 2]);
+
+        const chooseRightGuardian = blockActions.find(action => action.blockerZoneIndex === 2);
+        expect(chooseRightGuardian).toBeDefined();
+        expect(engine.step(chooseRightGuardian!)).toBe(true);
+        expect(engine.state.interactionMode).toBe('SELECT_COST');
+
+        engine.selectCostForPlayerId(0, p2.id);
+        engine.selectCostForPlayerId(0, p2.id);
+
+        expect(p2.trash.length).toBeGreaterThanOrEqual(trashBefore + 2);
+        expect(p2.unitZones[2].unit).not.toBeNull();
+        expect(p2.unitZones[0].unit).not.toBeNull();
+        expect(p1.unitZones[1].unit).toBeNull();
+    });
+
     it('applies ST04-007 breakthrough costMin rule (4+ cost blockers cannot block)', () => {
         const engine = createEngine();
         const p1 = engine.state.players[0];

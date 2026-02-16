@@ -853,6 +853,7 @@ function renderGame() {
     const inputOwnerId = getActionOwnerPlayerId(game);
     const inputOwner = game.state.players.find(player => player.id === inputOwnerId) ?? null;
     const localHumanCanInput = canLocalHumanInput();
+    const inputOwnerLegalActions = game.getLegalActions(inputOwnerId);
     const inputOwnerControl = inputOwner
         ? (isBotControlledPlayer(inputOwner.id) ? getBotLabelForPlayerId(inputOwner.id) : 'Human')
         : 'N/A';
@@ -908,11 +909,11 @@ function renderGame() {
           `}).join('')}
       </div>
 
-      ${renderPlayer(opponent, true, isMainPhase)}
+      ${renderPlayer(opponent, true, isMainPhase, inputOwnerLegalActions)}
       
       <div class="game-divider"></div>
 
-      ${renderPlayer(currentPlayer, false, isMainPhase)}
+      ${renderPlayer(currentPlayer, false, isMainPhase, inputOwnerLegalActions)}
 
       <div class="hand-zone">
           ${currentPlayer.hand.map((c, i) => {
@@ -1217,9 +1218,17 @@ function renderGameOverModal() {
     `;
 }
 
-function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
+function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, legalActions: any[]) {
     if (!game) return '';
     const localHumanCanInput = canLocalHumanInput();
+    const blockResolveActions = (legalActions || []).filter((action: any) => action.type === 'RESOLVE_BLOCK');
+    const blockableZoneSet = new Set<number>(
+        blockResolveActions
+            .filter((action: any) => action.shouldBlock && typeof action.blockerZoneIndex === 'number')
+            .map((action: any) => action.blockerZoneIndex)
+    );
+    const hasBlockPassAction = blockResolveActions.some((action: any) => action.shouldBlock === false);
+    const activatableEffectActions = (legalActions || []).filter((action: any) => action.type === 'ACTIVATE_EFFECT');
     return `
       <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
         <!-- Level Zone (1) -->
@@ -1240,8 +1249,12 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
             <!-- Unit Zones (3) -->
             <div class="units-container">
                 ${player.unitZones.map((z: any, i: number) => {
-        const blockerZoneIndex = (game!.state.pendingAttackerIndex ?? -1);
-        const isBlockingTarget = game!.state.phase === Phase.BLOCK && isOpponent && blockerZoneIndex === i;
+        const pendingAttackerLaneIndex = game!.state.pendingAttackerIndex ?? -1;
+        const isEncounterLane = game!.state.phase === Phase.BLOCK && isOpponent && pendingAttackerLaneIndex === i;
+        const canBlockWithThisZone = game!.state.phase === Phase.BLOCK && isOpponent && blockableZoneSet.has(i);
+        const showPassControl = game!.state.phase === Phase.BLOCK && isOpponent && hasBlockPassAction && isEncounterLane;
+        const isBlockingTarget = isEncounterLane || canBlockWithThisZone;
+        const zoneHasActivatableEffect = !isOpponent && activatableEffectActions.some((action: any) => action.zoneIndex === i);
         const isSelected = game!.state.pendingEffect?.selectedTargets?.includes(z);
 
         return `
@@ -1276,18 +1289,11 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                         ` : ''}
 
                         ${z.unit && !isOpponent && localHumanCanInput && game!.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${z.unit && !isOpponent && localHumanCanInput && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK) && z.unit.effects?.some((e: any, idx: number) => {
-                            const isActivatableInPhase =
-                                (e.activation === 'ACTIVE' && (game!.state.phase === Phase.MAIN || game!.state.phase === Phase.ATTACK)) ||
-                                (e.activation === 'ACTIVE_MAIN' && game!.state.phase === Phase.MAIN);
-                            if (!isActivatableInPhase) return false;
-                            const key = `${z.unit!.id}_${e.id || idx}`;
-                            return !z.activatedEffectKeys?.[key];
-                        }) ? '<button class="active-btn">Active</button>' : ''}
-                        ${isBlockingTarget && localHumanCanInput ? `
+                        ${!isOpponent && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">Active</button>' : ''}
+                        ${(canBlockWithThisZone || showPassControl) && localHumanCanInput ? `
                             <div class="block-controls">
-                                <button class="block-btn">Block</button>
-                                <button class="pass-btn">Pass</button>
+                                ${canBlockWithThisZone ? `<button class="block-btn" data-blocker-zone-index="${i}">Block</button>` : ''}
+                                ${showPassControl ? '<button class="pass-btn">Pass</button>' : ''}
                             </div>
                         ` : ''}
                         ${z.unit ? `<div class="stats">${game!.getUnitPower(z, player)} / ${game!.getUnitHit(z, player)}</div>` : ''}
@@ -1598,7 +1604,9 @@ function attachListeners() {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
-            game!.resolveBlock(true);
+            const blockerZoneIndexRaw = (btn as HTMLElement).dataset.blockerZoneIndex;
+            const blockerZoneIndex = blockerZoneIndexRaw !== undefined ? parseInt(blockerZoneIndexRaw, 10) : undefined;
+            game!.resolveBlock(true, Number.isNaN(blockerZoneIndex) ? undefined : blockerZoneIndex);
             render();
         });
     });
@@ -1618,11 +1626,16 @@ function attachListeners() {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
             const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
-            const zone = game!.currentPlayer.unitZones[zoneIndex];
-            const effectIndex = zone.unit?.effects?.findIndex(e => e.activation === 'ACTIVE' || e.activation === 'ACTIVE_MAIN') ?? -1;
+            const actorId = getActionOwnerPlayerId(game!);
+            const activateActions = game!.getLegalActions(actorId).filter((action: any) =>
+                action.type === 'ACTIVATE_EFFECT' && action.zoneIndex === zoneIndex
+            ) as any[];
+            const preferredAction =
+                activateActions.find((action: any) => action.sourceType !== 'ITEM') ??
+                activateActions[0];
 
-            if (effectIndex !== -1) {
-                game!.activateEffect(zoneIndex, effectIndex);
+            if (preferredAction) {
+                game!.step(preferredAction);
                 render();
             }
         });
