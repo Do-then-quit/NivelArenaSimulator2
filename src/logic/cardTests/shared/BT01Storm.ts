@@ -91,7 +91,7 @@ const tests: UnifiedTestCase[] = [
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
             const p2 = engine.opponentPlayer;
-            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.unitZones[0].unit = getCard('ST01-011');
             p1.unitZones[0].unit!.power = 10000;
             p2.unitZones[0].unit = getCard('BT01-058');
             engine.state.phase = Phase.ATTACK;
@@ -103,7 +103,8 @@ const tests: UnifiedTestCase[] = [
             engine.resolveBlock(true);
             return [
                 { pass: p2.unitZones[0].unit === null, message: 'Defender trashed itself' },
-                { pass: p1.unitZones[0].unit !== null, message: 'Attacker survived' }
+                { pass: p1.unitZones[0].unit !== null, message: 'Attacker survived' },
+                { pass: p2.damage.length === 0, message: 'Defender dealt no damage' }
             ];
         }
     },
