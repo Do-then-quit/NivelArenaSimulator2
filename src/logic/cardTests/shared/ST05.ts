@@ -141,19 +141,26 @@ const tests: UnifiedTestCase[] = [
     {
         testId: 'ST05-008',
         name: '리타 패시브 암드 유닛 +1000',
-        description: '암드 키워드 유닛 전체 +1000.',
+        description: '암드 키워드 유닛만 +1000 (자기 자신/비암드 제외).',
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
             p1.unitZones[0].unit = getCard('ST05-008');
             p1.unitZones[1].unit = getCard('ST05-005');
+            p1.unitZones[2].unit = getCard('ST05-009');
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
             const p1 = engine.currentPlayer;
-            const base = p1.unitZones[1].unit?.power || 0;
-            const actual = engine.getUnitPower(p1.unitZones[1], p1);
+            const selfBase = p1.unitZones[0].unit?.power || 0;
+            const armedBase = p1.unitZones[1].unit?.power || 0;
+            const nonArmedBase = p1.unitZones[2].unit?.power || 0;
+            const selfActual = engine.getUnitPower(p1.unitZones[0], p1);
+            const armedActual = engine.getUnitPower(p1.unitZones[1], p1);
+            const nonArmedActual = engine.getUnitPower(p1.unitZones[2], p1);
             return [
-                { pass: actual === base + 1000, message: `암드 대상 +1000 (${actual})` }
+                { pass: selfActual === selfBase, message: `자기 자신 버프 제외 (${selfActual})` },
+                { pass: armedActual === armedBase + 1000, message: `암드 대상 +1000 (${armedActual})` },
+                { pass: nonArmedActual === nonArmedBase, message: `비암드 대상 버프 제외 (${nonArmedActual})` }
             ];
         }
     },

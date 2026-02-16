@@ -27,7 +27,41 @@ export class EffectManager {
     private cardHasKeyword(card: any, keyword: string): boolean {
         if (!card) return false;
         if (card.keywords?.includes(keyword)) return true;
-        if (card.effects?.some((effect: any) => (effect.description || '').includes(keyword))) return true;
+
+        const keywordMap: Record<string, string> = {
+            '어태커': ActivationCondition.ATTACKER,
+            '디펜더': ActivationCondition.DEFENDER,
+            '액티브': ActivationCondition.ACTIVE,
+            '엔트리': ActivationCondition.ENTRY,
+            '엑시트': ActivationCondition.EXIT,
+            '트리거': ActivationCondition.DAMAGE_TRIGGER,
+            '각성': ActivationCondition.AWAKEN,
+        };
+        const actionKeywordMap: Record<string, string[]> = {
+            '관통': ['PENETRATION'],
+            '약탈': ['PLUNDER'],
+            '돌파': ['BREAKTHROUGH'],
+            '공멸': ['MUTUAL_DESTRUCTION'],
+            '침투': ['INFILTRATION', 'APPLY_INFILTRATION_MARK'],
+            '듀얼리스트': ['DUALIST', 'APPLY_DUALIST_MARK'],
+        };
+        const mappedActivation = keywordMap[keyword];
+        const mappedActions = actionKeywordMap[keyword] || [];
+        const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const keywordLabelPattern = new RegExp(`^[\\s「\\[]*${escapedKeyword}\\s*:`);
+
+        const effectHasKeyword = (effect: any): boolean => {
+            if (!effect) return false;
+            if (mappedActivation && effect.activation === mappedActivation) return true;
+            if (mappedActions.length > 0 && mappedActions.includes(effect.action?.type)) return true;
+            if (effect.action?.type === 'GRANT_EFFECT' && effect.action?.params?.effect) {
+                if (effectHasKeyword(effect.action.params.effect)) return true;
+            }
+            const description = String(effect.description || '').replace(/\u00a0/g, ' ').trim();
+            return keywordLabelPattern.test(description);
+        };
+
+        if (card.effects?.some((effect: any) => effectHasKeyword(effect))) return true;
         return false;
     }
 

@@ -403,13 +403,29 @@ export class TargetSelector {
             '어태커': 'ATTACKER', '디펜더': 'DEFENDER', '액티브': 'ACTIVE',
             '엔트리': 'ENTRY', '엑시트': 'EXIT', '트리거': 'DAMAGE_TRIGGER', '각성': 'AWAKEN'
         };
+        const actionKeywordMap: Record<string, string[]> = {
+            '관통': ['PENETRATION'],
+            '약탈': ['PLUNDER'],
+            '돌파': ['BREAKTHROUGH'],
+            '공멸': ['MUTUAL_DESTRUCTION'],
+            '침투': ['INFILTRATION', 'APPLY_INFILTRATION_MARK'],
+            '듀얼리스트': ['DUALIST', 'APPLY_DUALIST_MARK'],
+        };
         const mappedCondition = keywordMap[keyword];
         const isActivationKeyword = !!mappedCondition;
+        const mappedActions = actionKeywordMap[keyword] || [];
+        const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const keywordLabelPattern = new RegExp(`^[\\s「\\[]*${escapedKeyword}\\s*:`);
 
-        const effectHasKeyword = (effect: any) => {
-            if (isActivationKeyword) return effect.activation === mappedCondition;
-            if (keyword === '공멸') return effect.action?.type === 'MUTUAL_DESTRUCTION';
-            return effect.description.includes(keyword);
+        const effectHasKeyword = (effect: any): boolean => {
+            if (!effect) return false;
+            if (isActivationKeyword && effect.activation === mappedCondition) return true;
+            if (mappedActions.length > 0 && mappedActions.includes(effect.action?.type)) return true;
+            if (effect.action?.type === 'GRANT_EFFECT' && effect.action?.params?.effect) {
+                if (effectHasKeyword(effect.action.params.effect)) return true;
+            }
+            const description = String(effect.description || '').replace(/\u00a0/g, ' ').trim();
+            return keywordLabelPattern.test(description);
         };
 
         if (card.effects) {
