@@ -5,6 +5,7 @@ import { Phase, Card, CardType } from './logic/types';
 import { RuleValidator } from './logic/RuleValidator';
 import { createQuickPlayLoadout } from './logic/ai/QuickPlayDeckFactory';
 import { DeckPersistence, SavedDeck } from './logic/DeckPersistence';
+import { canAutoAdvancePhase } from './logic/AutoPhaseAdvance';
 import {
     BotModelId,
     BotLike,
@@ -93,6 +94,7 @@ let activeMatchViewConfig: MatchViewConfig = { revealBotHand: true };
 const botByPlayerId = new Map<string, BotLike>();
 const botLabelByPlayerId = new Map<string, string>();
 let botStepTimer: number | null = null;
+let autoPhaseAdvanceTimer: number | null = null;
 const availableBotModels = getAvailableBotModels();
 
 interface BotReplaySetupState {
@@ -143,6 +145,13 @@ function clearBotStepTimer() {
     }
 }
 
+function clearAutoPhaseAdvanceTimer() {
+    if (autoPhaseAdvanceTimer !== null) {
+        window.clearTimeout(autoPhaseAdvanceTimer);
+        autoPhaseAdvanceTimer = null;
+    }
+}
+
 function getActionOwnerPlayerId(engine: GameEngine): string {
     return engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id;
 }
@@ -172,6 +181,33 @@ function canLocalHumanInput(): boolean {
     if (replaySession) return false;
     const actorId = getActionOwnerPlayerId(game);
     return !isBotControlledPlayer(actorId);
+}
+
+function shouldAutoAdvancePhase(engine: GameEngine): boolean {
+    const actorId = getActionOwnerPlayerId(engine);
+    const hasNextPhaseAction = engine.getLegalActions(actorId).some(action => action.type === 'NEXT_PHASE');
+
+    return canAutoAdvancePhase({
+        phase: engine.state.phase,
+        interactionMode: engine.state.interactionMode,
+        isLocalHumanInput: canLocalHumanInput(),
+        hasNextPhaseAction,
+    });
+}
+
+function scheduleAutoPhaseAdvance(delayMs: number = 80) {
+    clearAutoPhaseAdvanceTimer();
+
+    if (!game || currentScreen !== Screen.GAME || game.state.winner || replaySession) return;
+    if (!shouldAutoAdvancePhase(game)) return;
+
+    autoPhaseAdvanceTimer = window.setTimeout(() => {
+        autoPhaseAdvanceTimer = null;
+        if (!game || currentScreen !== Screen.GAME || game.state.winner || replaySession) return;
+        if (!shouldAutoAdvancePhase(game)) return;
+        game.nextPhase();
+        render();
+    }, delayMs);
 }
 
 function getBotLabelForPlayerId(playerId: string): string {
@@ -873,6 +909,7 @@ function renderTestScreen() {
 function render() {
     if (currentScreen !== Screen.GAME) {
         clearBotStepTimer();
+        clearAutoPhaseAdvanceTimer();
     }
 
     if (currentScreen === Screen.MENU) {
@@ -923,6 +960,8 @@ function renderVerificationSessionPanel(): string {
 
 function renderGame() {
     if (!game) return;
+    clearAutoPhaseAdvanceTimer();
+
     const currentPlayer = game.currentPlayer;
     const opponent = game.opponentPlayer;
     const revealCurrentPlayerHand = shouldRevealHandForPlayer(currentPlayer.id);
@@ -1031,6 +1070,7 @@ function renderGame() {
   `;
 
     attachListeners();
+    scheduleAutoPhaseAdvance();
     scheduleBotStep();
 }
 
