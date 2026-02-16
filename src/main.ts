@@ -806,21 +806,22 @@ function returnToVerificationScreen() {
 
 // Track selected packs
 let selectedPacks: Set<string> = new Set();
-// Initialize selectedPacks with all available packs on first load
-if (selectedPacks.size === 0) {
-    const packs = cardTester.getAvailablePacks();
-    packs.forEach(p => selectedPacks.add(p));
-}
 
 function renderTestScreen() {
     const packs = cardTester.getAvailablePacks();
+    const allPacksSelected = packs.length > 0 && packs.every(pack => selectedPacks.has(pack));
 
     app.innerHTML = `
         <div class="test-screen" style="padding: 20px; color: white; max-width: 800px; margin: 0 auto;">
             <h1>Card Logic Verification</h1>
             
             <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="margin-top: 0; margin-bottom: 10px;">Select Packs to Test</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
+                    <h3 style="margin: 0;">Select Packs to Test</h3>
+                    <button id="toggle-pack-selection-btn" class="secondary-btn" style="padding: 6px 10px; font-size: 0.85rem;">
+                        ${allPacksSelected ? 'Deselect All' : 'Select All'}
+                    </button>
+                </div>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     ${packs.map(pack => `
                         <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 4px;">
@@ -862,6 +863,15 @@ function renderTestScreen() {
 
     document.getElementById('back-menu-btn')?.addEventListener('click', () => {
         currentScreen = Screen.MENU;
+        render();
+    });
+
+    document.getElementById('toggle-pack-selection-btn')?.addEventListener('click', () => {
+        if (allPacksSelected) {
+            selectedPacks.clear();
+        } else {
+            packs.forEach(pack => selectedPacks.add(pack));
+        }
         render();
     });
 
