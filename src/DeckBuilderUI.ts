@@ -1,26 +1,24 @@
 import { DeckBuilderLogic } from './logic/DeckBuilderLogic';
-import { Card, CardType } from './logic/types';
+import { Attribute, Card, CardType } from './logic/types';
 import { HoverPreview } from './HoverPreview';
 import { DeckPersistence } from './logic/DeckPersistence';
+import { DECK_BUILDER_ALLOWED_PACKS } from './logic/DeckBuilderCardPool';
 
 export class DeckBuilderUI {
     private logic: DeckBuilderLogic;
     private container: HTMLElement;
     private hoverPreview: HoverPreview;
-    private onPlay: (deck: Card[], leader: Card) => void;
     private onBack: () => void;
 
     constructor(
         cards: Card[],
         container: HTMLElement,
         hoverPreview: HoverPreview,
-        onPlay: (deck: Card[], leader: Card) => void,
         onBack: () => void
     ) {
         this.logic = new DeckBuilderLogic(cards);
         this.container = container;
         this.hoverPreview = hoverPreview;
-        this.onPlay = onPlay;
         this.onBack = onBack;
 
         // Try to load last saved deck or first one
@@ -34,16 +32,15 @@ export class DeckBuilderUI {
     }
 
     render() {
+        const packOptions = DECK_BUILDER_ALLOWED_PACKS
+            .map(pack => `<option value="${pack}">${pack}</option>`)
+            .join('');
+
         this.container.innerHTML = `
             <div class="deck-builder">
                 <div class="deck-builder-header">
                     <button id="db-back" class="secondary-btn">Back to Menu</button>
                     <h1>Deck Builder</h1>
-                    <div class="db-actions">
-                        <input type="text" id="db-deck-name" placeholder="Deck Name" class="db-input" value="My Custom Deck">
-                        <button id="db-save" class="primary-btn">Save Deck</button>
-                        <button id="db-play" class="primary-btn">Play with this Deck</button>
-                    </div>
                 </div>
 
                 <div class="db-main">
@@ -60,10 +57,7 @@ export class DeckBuilderUI {
                             <input type="text" id="db-search" placeholder="Search by name...">
                             <select id="db-filter-pack">
                                 <option value="">All Packs</option>
-                                <option value="ST01">ST01</option>
-                                <option value="ST02">ST02</option>
-                                <option value="ST03">ST03</option>
-                                <option value="BT01">BT01</option>
+                                ${packOptions}
                             </select>
                             <select id="db-filter-type">
                                 <option value="">All Types</option>
@@ -72,6 +66,15 @@ export class DeckBuilderUI {
                                 <option value="SKILL">Skill</option>
                                 <option value="ITEM">Item</option>
                             </select>
+                            <select id="db-filter-attribute">
+                                <option value="">All Attributes</option>
+                                <option value="FIRE">화염</option>
+                                <option value="EARTH">대지</option>
+                                <option value="STORM">폭풍</option>
+                                <option value="WATER">파도</option>
+                                <option value="LIGHTNING">번개</option>
+                                <option value="NONE">없음</option>
+                            </select>
                         </div>
                         <div class="db-card-grid" id="db-card-grid">
                             <!-- Cards will be rendered here -->
@@ -79,7 +82,11 @@ export class DeckBuilderUI {
                     </div>
 
                     <div class="db-current-deck">
-                        <h2>Current Deck (<span id="db-deck-count">0</span>/40)</h2>
+                        <div class="db-current-deck-header">
+                            <input type="text" id="db-deck-name" placeholder="Deck Name" class="db-input db-deck-name-input" value="My Custom Deck">
+                            <button id="db-save" class="primary-btn db-save-btn">Save Deck</button>
+                        </div>
+                        <div class="db-current-deck-count">Deck Cards: <span id="db-deck-count">0</span>/40</div>
                         <div id="db-validation-warnings" class="validation-warnings"></div>
                         <div class="db-leader-slot" id="db-leader-slot">
                             <!-- Leader card here -->
@@ -116,6 +123,12 @@ export class DeckBuilderUI {
             this.updateLibrary();
         });
 
+        document.getElementById('db-filter-attribute')?.addEventListener('change', (e) => {
+            const value = (e.target as HTMLSelectElement).value;
+            this.logic.setFilters({ attribute: value ? (value as Attribute) : undefined });
+            this.updateLibrary();
+        });
+
         document.getElementById('db-save')?.addEventListener('click', () => {
             const deck = this.logic.getCurrentDeck();
             const leader = this.logic.getLeader();
@@ -132,21 +145,6 @@ export class DeckBuilderUI {
                 alert('Deck saved!');
                 this.updateSavedList();
             }
-        });
-
-        document.getElementById('db-play')?.addEventListener('click', () => {
-            const validation = this.logic.validateDeck();
-            if (!validation.valid) {
-                if (!confirm(`Deck is invalid:\n${validation.errors.join('\n')}\n\nPlay anyway?`)) {
-                    return;
-                }
-            }
-            const leader = this.logic.getLeader();
-            if (!leader) {
-                alert('Please select a Leader first!');
-                return;
-            }
-            this.onPlay(this.logic.getCurrentDeck(), leader);
         });
 
         document.getElementById('db-new-deck')?.addEventListener('click', () => {
@@ -207,26 +205,15 @@ export class DeckBuilderUI {
 
         const filtered = this.logic.getFilteredCards();
         grid.innerHTML = filtered.map(card => `
-            <div class="db-card-item" data-id="${card.id}">
+            <div class="db-card-item" data-id="${card.id}" role="button" tabindex="0">
                 ${this.renderCardMini(card)}
-                <div class="db-card-overlay">
-                    <button class="add-to-deck-btn" data-id="${card.id}">${card.type === CardType.LEADER ? 'Set Leader' : 'Add'}</button>
-                </div>
                 <div class="db-card-count">${this.logic.getCardCountInDeck(card.id)}</div>
             </div>
         `).join('');
 
         // Attach library listeners
         grid.querySelectorAll('.db-card-item').forEach(item => {
-            item.addEventListener('mouseenter', (e) => {
-                const id = (item as HTMLElement).dataset.id!;
-                const card = filtered.find(c => c.id === id);
-                if (card) this.hoverPreview.show(card, (e as MouseEvent).clientX, (e as MouseEvent).clientY);
-            });
-            item.addEventListener('mouseleave', () => this.hoverPreview.hide());
-
-            item.querySelector('.add-to-deck-btn')?.addEventListener('click', (e) => {
-                e.stopPropagation();
+            const addCardFromLibrary = () => {
                 const id = (item as HTMLElement).dataset.id!;
                 const card = filtered.find(c => c.id === id);
                 if (card?.type === CardType.LEADER) {
@@ -235,7 +222,24 @@ export class DeckBuilderUI {
                     this.logic.addCardToDeck(id);
                 }
                 this.updateDeckView();
-                this.updateLibrary(); // Update counts
+                this.updateLibrary();
+            };
+
+            item.addEventListener('mouseenter', (e) => {
+                const id = (item as HTMLElement).dataset.id!;
+                const card = filtered.find(c => c.id === id);
+                if (card) this.hoverPreview.show(card, (e as MouseEvent).clientX, (e as MouseEvent).clientY);
+            });
+            item.addEventListener('mousemove', (e) => {
+                this.hoverPreview.move((e as MouseEvent).clientX, (e as MouseEvent).clientY);
+            });
+            item.addEventListener('mouseleave', () => this.hoverPreview.hide());
+            item.addEventListener('click', () => addCardFromLibrary());
+            item.addEventListener('keydown', (e: Event) => {
+                const keyboardEvent = e as KeyboardEvent;
+                if (keyboardEvent.key !== 'Enter' && keyboardEvent.key !== ' ') return;
+                keyboardEvent.preventDefault();
+                addCardFromLibrary();
             });
         });
     }
@@ -298,12 +302,10 @@ export class DeckBuilderUI {
 
     private renderCardMini(card: Card) {
         return `
-            <div class="card mini ${card.attribute.toLowerCase()}">
-                <img src="${card.imageUrl}" class="card-image">
-                <div class="card-overlay">
-                    <div class="card-name">${card.name}</div>
-                </div>
+            <div class="db-card-mini">
+                <img src="${card.imageUrl}" class="card-image" alt="${card.name}">
             </div>
+            <div class="db-card-title" title="${card.name}">${card.name}</div>
         `;
     }
 }

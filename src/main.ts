@@ -1,6 +1,6 @@
 import './style.css'
 import { GameEngine } from './logic/GameEngine';
-import { createDeck, DUMMY_CARDS } from './logic/CardDatabase';
+import { DUMMY_CARDS } from './logic/CardDatabase';
 import { Phase, Card, CardType } from './logic/types';
 import { RuleValidator } from './logic/RuleValidator';
 import { createQuickPlayLoadout } from './logic/ai/QuickPlayDeckFactory';
@@ -29,6 +29,7 @@ import { DeckBuilderUI } from './DeckBuilderUI';
 
 import { SetupUI } from './SetupUI';
 import { CardTester } from './logic/CardTester';
+import { getDeckBuilderCards } from './logic/DeckBuilderCardPool';
 
 enum Screen {
     MENU,
@@ -314,16 +315,9 @@ function startGame(
 
 function renderDeckBuilder() {
     const dbUI = new DeckBuilderUI(
-        DUMMY_CARDS,
+        getDeckBuilderCards(DUMMY_CARDS),
         app,
         hoverPreview,
-        (deck, leader) => {
-            // After building a deck, we can offer to start a game or go back
-            // For simplicity, let's keep the one-player play behavior as a quick test
-            const deck2 = createDeck();
-            const leader2 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
-            startGame(deck, deck2, leader, leader2);
-        },
         () => {
             currentScreen = Screen.MENU;
             render();

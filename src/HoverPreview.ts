@@ -42,6 +42,11 @@ export class HoverPreview {
         this.tooltipElement.style.display = 'none';
     }
 
+    move(x: number, y: number) {
+        if (this.tooltipElement.style.display === 'none') return;
+        this.updatePosition(x, y);
+    }
+
     private formatEffectText(text: string): string {
         if (!text) return '';
         // Match words inside square brackets [Keyword]
