@@ -1586,12 +1586,14 @@ function attachListeners() {
             if (event.dataTransfer) {
                 const index = parseInt((card as HTMLElement).dataset.index!);
                 draggedCardIndex = index;
+                hoverPreview.setSuppressed(true);
                 event.dataTransfer.setData('text/plain', index.toString());
                 event.dataTransfer.effectAllowed = 'move';
             }
         });
         card.addEventListener('dragend', () => {
             draggedCardIndex = null;
+            hoverPreview.setSuppressed(false);
             document.querySelectorAll('.zone').forEach(z => z.classList.remove('valid-target', 'invalid-target'));
         });
 

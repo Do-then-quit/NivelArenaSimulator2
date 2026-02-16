@@ -2,6 +2,7 @@ import { Card, CardType } from './logic/types';
 
 export class HoverPreview {
     private tooltipElement: HTMLElement;
+    private suppressed = false;
 
     constructor() {
         this.tooltipElement = document.createElement('div');
@@ -14,6 +15,8 @@ export class HoverPreview {
     }
 
     show(card: Card, x: number, y: number) {
+        if (this.suppressed) return;
+
         const isUnit = card.type === CardType.UNIT;
         const formattedText = this.formatEffectText(card.text);
 
@@ -45,6 +48,13 @@ export class HoverPreview {
     move(x: number, y: number) {
         if (this.tooltipElement.style.display === 'none') return;
         this.updatePosition(x, y);
+    }
+
+    setSuppressed(suppressed: boolean) {
+        this.suppressed = suppressed;
+        if (suppressed) {
+            this.hide();
+        }
     }
 
     private formatEffectText(text: string): string {
