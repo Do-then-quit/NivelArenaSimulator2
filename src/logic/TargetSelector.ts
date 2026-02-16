@@ -48,6 +48,19 @@ export class TargetSelector {
             case 'OPP_HAND':
                 if (opponent) candidates = [...opponent.hand];
                 break;
+            case 'MY_DAMAGE':
+                candidates = [...player.damage];
+                break;
+            case 'MY_FIELD_ITEMS':
+                candidates = this.getFieldItems(player);
+                break;
+            case 'OPP_FIELD_ITEMS':
+                if (opponent) candidates = this.getFieldItems(opponent);
+                break;
+            case 'FIELD_ITEMS':
+                candidates = this.getFieldItems(player);
+                if (opponent) candidates.push(...this.getFieldItems(opponent));
+                break;
             case 'SHARED_LANE':
                 candidates = player.unitZones.filter((myZone, idx) => {
                     const oppZone = (opponent || engine.state.players.find(p => p !== player))?.unitZones[idx];
@@ -97,10 +110,24 @@ export class TargetSelector {
                             return unit && this.hasDynamicKeyword(unit, filter.value, zone);
                         });
                         break;
+                    case 'NOT_HAS_KEYWORD':
+                        candidates = candidates.filter(c => {
+                            const unit = this.getUnitFromTarget(c);
+                            if (!unit) return false;
+                            const zone = ('unit' in c) ? c as UnitZoneState : null;
+                            return !this.hasDynamicKeyword(unit, filter.value, zone);
+                        });
+                        break;
                     case 'COST_LIMIT':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
                             return unit && unit.cost <= filter.value;
+                        });
+                        break;
+                    case 'COST_MIN':
+                        candidates = candidates.filter(c => {
+                            const unit = this.getUnitFromTarget(c);
+                            return unit && unit.cost >= filter.value;
                         });
                         break;
                     case 'COST_EQUAL':
@@ -231,6 +258,10 @@ export class TargetSelector {
             case 'MY_TRASH': inScope = player.trash.includes(target); break;
             case 'MY_HAND': inScope = player.hand.includes(target); break;
             case 'OPP_HAND': inScope = opponent ? opponent.hand.includes(target) : false; break;
+            case 'MY_DAMAGE': inScope = player.damage.includes(target); break;
+            case 'MY_FIELD_ITEMS': inScope = this.isItemOnPlayerField(player, target); break;
+            case 'OPP_FIELD_ITEMS': inScope = opponent ? this.isItemOnPlayerField(opponent, target) : false; break;
+            case 'FIELD_ITEMS': inScope = this.isItemOnPlayerField(player, target) || (opponent ? this.isItemOnPlayerField(opponent, target) : false); break;
             case 'SHARED_LANE':
                 const idx = player.unitZones.indexOf(target);
                 if (idx !== -1) inScope = (player.unitZones[idx].unit !== null && (opponent ? opponent.unitZones[idx].unit !== null : false));
@@ -272,7 +303,17 @@ export class TargetSelector {
                             if (!this.hasDynamicKeyword(unit, filter.value, zone)) return false;
                         }
                         break;
+                    case 'NOT_HAS_KEYWORD':
+                        if (!unit) return false;
+                        {
+                            const zone = (target && typeof target === 'object' && 'unit' in target)
+                                ? target as UnitZoneState
+                                : null;
+                            if (this.hasDynamicKeyword(unit, filter.value, zone)) return false;
+                        }
+                        break;
                     case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
+                    case 'COST_MIN': if (!unit || unit.cost < filter.value) return false; break;
                     case 'POWER_LIMIT': if (!unit || engine.getUnitPower(target, this.getOwner(engine, target)) > filter.value) return false; break;
                     case 'COST_LOWER_THAN_COST_PAYMENT':
                         if (!unit || !context.costPaymentCard) return false;
@@ -341,6 +382,18 @@ export class TargetSelector {
     private static getOwner(engine: GameEngine, zone: UnitZoneState): PlayerState {
         if (engine.state.players[0].unitZones.includes(zone)) return engine.state.players[0];
         return engine.state.players[1];
+    }
+
+    private static getFieldItems(player: PlayerState): any[] {
+        const items: any[] = [];
+        player.unitZones.forEach(zone => {
+            items.push(...zone.items);
+        });
+        return items;
+    }
+
+    private static isItemOnPlayerField(player: PlayerState, target: any): boolean {
+        return player.unitZones.some(zone => zone.items.includes(target));
     }
 
     private static hasDynamicKeyword(card: any, keyword: string, zone: UnitZoneState | null): boolean {

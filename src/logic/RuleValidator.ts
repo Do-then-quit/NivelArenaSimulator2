@@ -1,5 +1,6 @@
 ﻿import { PlayerState, Phase, CardType, ActivationCondition } from './types';
 import { GameEngine } from './GameEngine';
+import { TargetSelector } from './TargetSelector';
 
 type ValidationResult = { valid: boolean; reason?: string };
 
@@ -92,6 +93,9 @@ export class RuleValidator {
                     if (val && val.operator === 'GTE' && zone.unit.cost < val.cost) {
                         return { valid: false, reason: `Requires unit cost ${val.cost} or higher` };
                     }
+                    if (val && val.operator === 'LTE' && zone.unit.cost > val.cost) {
+                        return { valid: false, reason: `Requires unit cost ${val.cost} or lower` };
+                    }
                 }
 
                 if (effect.activation === ActivationCondition.PASSIVE && effect.condition?.type === 'HAS_KEYWORD') {
@@ -100,6 +104,15 @@ export class RuleValidator {
                         : effect.condition.value?.keyword;
                     if (requiredKeyword && !this.cardHasKeyword(zone.unit, requiredKeyword)) {
                         return { valid: false, reason: `Requires unit keyword ${requiredKeyword}` };
+                    }
+                }
+
+                if (effect.activation === ActivationCondition.PASSIVE && effect.condition?.type === 'HAS_TRAIT') {
+                    const requiredTrait = typeof effect.condition.value === 'string'
+                        ? effect.condition.value
+                        : effect.condition.value?.trait;
+                    if (requiredTrait && !zone.unit.traits?.includes(requiredTrait)) {
+                        return { valid: false, reason: `Requires unit trait ${requiredTrait}` };
                     }
                 }
             }
@@ -139,7 +152,7 @@ export class RuleValidator {
     static canEndPhase(engine: GameEngine, player: PlayerState): ValidationResult {
         if (engine.state.phase === Phase.ATTACK) {
             const hasReadyBerserker = player.unitZones.some(z => {
-                if (z.unit && (z.unit.keywords?.includes('광전사') || z.unit.keywords?.includes('BERSERK')) && !z.hasAttacked && !z.isExhausted) {
+                if (z.unit && this.zoneHasKeyword(engine, z, '광전사') && !z.hasAttacked && !z.isExhausted) {
                     return true;
                 }
                 return false;
@@ -166,5 +179,47 @@ export class RuleValidator {
         if (card.keywords?.includes(keyword)) return true;
         if (card.effects?.some((effect: any) => (effect.description || '').includes(keyword))) return true;
         return false;
+    }
+
+    private static zoneHasKeyword(engine: GameEngine, zone: any, keyword: string): boolean {
+        if (!zone || !zone.unit) return false;
+        if (this.cardHasKeyword(zone.unit, keyword) || this.cardHasKeyword(zone.unit, 'BERSERK')) return true;
+        if (Array.isArray(zone.items) && zone.items.some((item: any) => this.cardHasKeyword(item, keyword) || this.cardHasKeyword(item, 'BERSERK'))) return true;
+        if (Array.isArray(zone.temporaryEffects) && zone.temporaryEffects.some((effect: any) => (effect.description || '').includes(keyword) || (effect.description || '').includes('BERSERK'))) return true;
+
+        const allSources: Array<{ owner: PlayerState; zone: any; card: any }> = [];
+        engine.state.players.forEach(sourceOwner => {
+            sourceOwner.unitZones.forEach(sourceZone => {
+                if (sourceZone.unit) allSources.push({ owner: sourceOwner, zone: sourceZone, card: sourceZone.unit });
+                sourceZone.items.forEach((item: any) => allSources.push({ owner: sourceOwner, zone: sourceZone, card: item }));
+            });
+            if (sourceOwner.levelZone) allSources.push({ owner: sourceOwner, zone: null, card: sourceOwner.levelZone });
+        });
+
+        return allSources.some(source => {
+            if (!source.card?.effects) return false;
+            const sourceOpponent = engine.state.players.find(player => player.id !== source.owner.id);
+            if (!sourceOpponent) return false;
+
+            return source.card.effects.some((effect: any) => {
+                if (effect.activation !== ActivationCondition.PASSIVE) return false;
+                if (effect.action?.type !== 'GRANT_EFFECT') return false;
+                const granted = effect.action?.params?.effect;
+                if (!granted) return false;
+                const grantedText = granted.description || '';
+                if (!grantedText.includes(keyword) && !grantedText.includes('BERSERK')) return false;
+
+                const context: any = {
+                    player: source.owner,
+                    opponent: sourceOpponent,
+                    sourceCard: source.card,
+                    unitZone: source.zone,
+                    machine: engine,
+                };
+                if (!engine.effectManager.checkCondition(effect, context)) return false;
+                if (!effect.targets) return false;
+                return TargetSelector.isValidTarget(engine, effect.targets, context, zone);
+            });
+        });
     }
 }

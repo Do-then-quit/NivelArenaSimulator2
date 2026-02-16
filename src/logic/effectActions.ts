@@ -88,11 +88,11 @@ const destroyUnit: ActionImplementation = (ctx, params, targets) => {
                         const opponent = ctx.machine.state.players.find((p: any) => p !== owner);
                         const oppZone = opponent.unitZones[idx];
                         if (oppZone.unit) {
-                            ctx.machine.destroyUnit(opponent, oppZone);
+                            ctx.machine.destroyUnit(opponent, oppZone, undefined, 'EFFECT');
                         }
                     }
                 }
-                ctx.machine.destroyUnit(owner, target);
+                ctx.machine.destroyUnit(owner, target, undefined, 'EFFECT');
             }
         }
     });
@@ -110,11 +110,11 @@ const destroyLaneLowest: ActionImplementation = (ctx, _params, _targets) => {
         const oppPower = ctx.machine.getUnitPower(oppZ, opponent);
 
         if (myZ.unit && oppZ.unit) {
-            if (myPower < oppPower) ctx.machine.destroyUnit(player, myZ);
-            else if (oppPower < myPower) ctx.machine.destroyUnit(opponent, oppZ);
+            if (myPower < oppPower) ctx.machine.destroyUnit(player, myZ, undefined, 'EFFECT');
+            else if (oppPower < myPower) ctx.machine.destroyUnit(opponent, oppZ, undefined, 'EFFECT');
             else {
-                ctx.machine.destroyUnit(player, myZ);
-                ctx.machine.destroyUnit(opponent, oppZ);
+                ctx.machine.destroyUnit(player, myZ, undefined, 'EFFECT');
+                ctx.machine.destroyUnit(opponent, oppZ, undefined, 'EFFECT');
             }
         }
     }
@@ -212,7 +212,7 @@ const mutualDestruction: ActionImplementation = (ctx, _params, _targets) => {
         if (killerZone) {
             const owner = getOwnerOfZone(ctx.machine, killerZone);
             if (owner) {
-                ctx.machine.destroyUnit(owner, killerZone);
+                ctx.machine.destroyUnit(owner, killerZone, undefined, 'EFFECT');
             }
         }
     }
@@ -224,12 +224,13 @@ const terminateAttack: ActionImplementation = (ctx, _params, _targets) => {
 
     // Trash self (Defender)
     if (ctx.unitZone) {
-        ctx.machine.destroyUnit(ctx.player, ctx.unitZone);
+        ctx.machine.destroyUnit(ctx.player, ctx.unitZone, undefined, 'EFFECT');
     }
 };
 
 const discard: ActionImplementation = (ctx, params, targets) => {
     const targetPlayer = params.target === 'OPPONENT' ? ctx.opponent : ctx.player;
+    const trashedCards: any[] = [];
 
     if (targets && targets.length > 0) {
         targets.forEach(card => {
@@ -237,6 +238,7 @@ const discard: ActionImplementation = (ctx, params, targets) => {
             if (idx !== -1) {
                 targetPlayer.hand.splice(idx, 1);
                 targetPlayer.trash.push(card);
+                trashedCards.push(card);
                 console.log(`${targetPlayer.name} discarded chosen card: ${card.name}`);
             }
         });
@@ -246,23 +248,81 @@ const discard: ActionImplementation = (ctx, params, targets) => {
             if (targetPlayer.hand.length > 0) {
                 const card = targetPlayer.hand.shift()!;
                 targetPlayer.trash.push(card);
+                trashedCards.push(card);
                 console.log(`${targetPlayer.name} discarded ${card.name} from hand (auto).`);
             }
         }
+    }
+
+    if (trashedCards.length > 0) {
+        ctx.machine.notifyHandTrashed(targetPlayer, trashedCards, {
+            flags: {
+                handTrashByEffect: !params.isRule,
+            },
+        });
     }
 };
 
 const discardAll: ActionImplementation = (ctx, _params) => {
     const player = ctx.player;
     const count = player.hand.length;
+    const trashedCards: any[] = [];
     while (player.hand.length > 0) {
-        player.trash.push(player.hand.pop()!);
+        const card = player.hand.pop()!;
+        player.trash.push(card);
+        trashedCards.push(card);
     }
     console.log(`${player.name} discarded all cards from hand (${count} cards).`);
     (ctx as any).discardedCount = count;
+    if (trashedCards.length > 0) {
+        ctx.machine.notifyHandTrashed(player, trashedCards, {
+            flags: {
+                handTrashByEffect: true,
+            },
+        });
+    }
 };
 
 const destroyEncounter: ActionImplementation = (ctx, params, targets) => {
+    if (params.requireHandItemCostByEncounterHit) {
+        if (!ctx.unitZone) return;
+        const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
+        if (laneIndex < 0) return;
+        const encounterZone = ctx.opponent.unitZones[laneIndex];
+        if (!encounterZone?.unit) return;
+
+        const requiredCount = Math.max(0, ctx.machine.getUnitHit(encounterZone, ctx.opponent));
+        if (requiredCount > 0) {
+            const payableItemCount = ctx.player.hand.filter((card: any) => card.type === CardType.ITEM).length;
+            if (payableItemCount < requiredCount) {
+                console.log(
+                    `Cannot resolve DESTROY_ENCOUNTER cost (${payableItemCount}/${requiredCount}) for ${ctx.sourceCard.name}.`
+                );
+                return;
+            }
+
+            ctx.machine.state.interactionMode = 'SELECT_COST';
+            ctx.machine.state.pendingEffect = {
+                sourceCard: ctx.sourceCard,
+                sourcePlayerId: ctx.player.id,
+                controllerPlayerId: ctx.player.id,
+                actionType: 'DESTROY_ENCOUNTER_WITH_HIT_COST',
+                actionValue: { zoneIndex: laneIndex, requiredCount },
+                effectDescription: 'Pay item hand cost to destroy encounter',
+                costToPay: { type: 'TRASH_HAND', amount: requiredCount, cardTypeFilter: CardType.ITEM },
+                costCardTypeFilter: CardType.ITEM,
+                costPaidCount: 0,
+                selectedTargets: [],
+            };
+            ctx.machine.setPendingRuntime(ctx, null);
+            ctx.machine.setInteractionOwner(ctx.player.id);
+            return;
+        }
+
+        ctx.machine.destroyUnit(ctx.opponent, encounterZone, undefined, 'EFFECT');
+        return;
+    }
+
     targets.forEach(targetZone => {
         const idx = ctx.player.unitZones.indexOf(targetZone);
         if (idx !== -1) {
@@ -275,7 +335,7 @@ const destroyEncounter: ActionImplementation = (ctx, params, targets) => {
                 }
 
                 const unitName = oppZone.unit.name;
-                ctx.machine.destroyUnit(ctx.opponent, oppZone);
+                ctx.machine.destroyUnit(ctx.opponent, oppZone, undefined, 'EFFECT');
                 console.log(`Trashed encounter unit ${unitName} in lane ${idx}`);
             }
         } else {
@@ -289,7 +349,7 @@ const destroyEncounter: ActionImplementation = (ctx, params, targets) => {
                         return;
                     }
 
-                    ctx.machine.destroyUnit(ctx.player, myZone);
+                    ctx.machine.destroyUnit(ctx.player, myZone, undefined, 'EFFECT');
                 }
             }
         }
@@ -348,7 +408,7 @@ const buffPowerAndDrawIfTrashed: ActionImplementation = (ctx, params, targets) =
             if (oldValue > 0 && newValue <= 0) {
                 console.log(`Effect caused ${target.unit.name} to have 0 or less power. Trashing and drawing.`);
                 const owner = getOwnerOfZone(ctx.machine, target);
-                ctx.machine.destroyUnit(owner, target);
+                ctx.machine.destroyUnit(owner, target, undefined, 'EFFECT');
                 const pIdx = ctx.machine.state.players.indexOf(ctx.player);
                 ctx.machine.drawCard(pIdx, params.drawCount || 1);
             }
@@ -521,7 +581,7 @@ const destroyUnitAndDrawByHit: ActionImplementation = (ctx, _params, targets) =>
     const hit = Math.max(0, ctx.machine.getUnitHit(targetZone, owner));
     const controllerIdx = ctx.machine.state.players.indexOf(ctx.player);
 
-    ctx.machine.destroyUnit(owner, targetZone);
+    ctx.machine.destroyUnit(owner, targetZone, undefined, 'EFFECT');
     if (hit > 0 && controllerIdx !== -1) {
         ctx.machine.drawCard(controllerIdx, hit);
         console.log(`Destroyed ${unit.name} and drew ${hit} cards.`);
@@ -539,7 +599,7 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
     const hit = Math.max(0, ctx.machine.getUnitHit(targetZone, owner));
 
     if (hit <= 0) {
-        ctx.machine.destroyUnit(owner, targetZone);
+        ctx.machine.destroyUnit(owner, targetZone, undefined, 'EFFECT');
         console.log(`Destroyed ${unit.name} (no hand cost required).`);
         return;
     }
@@ -572,6 +632,32 @@ const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => 
 };
 
 const complexAction: ActionImplementation = (ctx, params, _targets) => {
+    if ((params as any).mode === 'GUARDIAN_TRANSFER_POWER') {
+        if (!_targets || _targets.length < 2) return;
+        const first = _targets[0] as UnitZoneState;
+        const second = _targets[1] as UnitZoneState;
+        if (!first?.unit || !second?.unit) return;
+
+        const firstIsGuardian = zoneHasKeyword(first, '가디언');
+        const secondIsGuardian = zoneHasKeyword(second, '가디언');
+        if (firstIsGuardian === secondIsGuardian) return;
+
+        const guardianZone = firstIsGuardian ? first : second;
+        const targetZone = firstIsGuardian ? second : first;
+        const guardianOwner = getOwnerOfZone(ctx.machine, guardianZone);
+        if (!guardianOwner) return;
+
+        const transferredPower = Math.max(0, ctx.machine.getUnitPower(guardianZone, guardianOwner));
+        targetZone.buffs.push({
+            id: ctx.machine.createRuntimeId('BUFF'),
+            sourceCard: ctx.sourceCard,
+            type: 'POWER',
+            value: transferredPower,
+            duration: params.duration || 'TURN_END',
+        });
+        return;
+    }
+
     const subActions = (params as any).subActions;
     if (!Array.isArray(subActions)) return;
 
@@ -605,7 +691,7 @@ const sacrificeToBuff: ActionImplementation = (ctx, params, targets) => {
         const trashedUnitName = trashTarget.unit.name;
         const owner = getOwnerOfZone(ctx.machine, trashTarget);
         if (owner) {
-            ctx.machine.destroyUnit(owner, trashTarget);
+            ctx.machine.destroyUnit(owner, trashTarget, undefined, 'EFFECT');
             console.log(`Sacrificed ${trashedUnitName} for effect.`);
         }
     }
@@ -623,6 +709,205 @@ const sacrificeToBuff: ActionImplementation = (ctx, params, targets) => {
     }
 };
 
+const destroyItem: ActionImplementation = (ctx, _params, targets) => {
+    targets.forEach(itemCard => {
+        const located = findItemLocation(ctx.machine, itemCard);
+        if (!located) return;
+        const { owner, zone, itemIndex } = located;
+        const [removed] = zone.items.splice(itemIndex, 1);
+        if (removed) {
+            owner.trash.push(removed);
+        }
+    });
+};
+
+const returnItemToHand: ActionImplementation = (ctx, params, targets) => {
+    if ((!targets || targets.length === 0) && params.fromEquippedSnapshot && Array.isArray(ctx.flags?.equippedItemsSnapshot)) {
+        const owner = ctx.player;
+        const snapshot = (ctx.flags?.equippedItemsSnapshot ?? []) as any[];
+        const card = snapshot[0];
+        const trashIndex = owner.trash.indexOf(card);
+        if (trashIndex !== -1) {
+            owner.trash.splice(trashIndex, 1);
+            owner.hand.push(card);
+        }
+        return;
+    }
+
+    targets.forEach(itemCard => {
+        const located = findItemLocation(ctx.machine, itemCard);
+        if (!located) return;
+        const { owner, zone, itemIndex } = located;
+        const [removed] = zone.items.splice(itemIndex, 1);
+        if (removed) owner.hand.push(removed);
+    });
+};
+
+const moveItemToDeckBottom: ActionImplementation = (ctx, _params, targets) => {
+    targets.forEach(itemCard => {
+        const located = findItemLocation(ctx.machine, itemCard);
+        if (!located) return;
+        const { owner, zone, itemIndex } = located;
+        const [removed] = zone.items.splice(itemIndex, 1);
+        if (removed) owner.deck.unshift(removed);
+    });
+};
+
+const moveFromDamageToHand: ActionImplementation = (ctx, _params, targets) => {
+    targets.forEach(card => {
+        const owner = ctx.machine.state.players.find((player: any) => player.damage.includes(card));
+        if (!owner) return;
+        const idx = owner.damage.indexOf(card);
+        if (idx === -1) return;
+        owner.damage.splice(idx, 1);
+        owner.hand.push(card);
+    });
+};
+
+const moveFromHandToDamage: ActionImplementation = (ctx, _params, targets) => {
+    targets.forEach(card => {
+        const owner = ctx.machine.state.players.find((player: any) => player.hand.includes(card));
+        if (!owner) return;
+        const idx = owner.hand.indexOf(card);
+        if (idx === -1) return;
+        owner.hand.splice(idx, 1);
+        owner.damage.push(card);
+    });
+};
+
+const moveFromTrashToDeckTop: ActionImplementation = (ctx, _params, targets) => {
+    targets.forEach(card => {
+        const idx = ctx.player.trash.indexOf(card);
+        if (idx === -1) return;
+        const [removed] = ctx.player.trash.splice(idx, 1);
+        if (removed) ctx.player.deck.push(removed);
+    });
+};
+
+const moveFromTrashToDeckBottom: ActionImplementation = (ctx, params, targets) => {
+    const movedCards: any[] = [];
+    targets.forEach(card => {
+        const idx = ctx.player.trash.indexOf(card);
+        if (idx === -1) return;
+        const [removed] = ctx.player.trash.splice(idx, 1);
+        if (removed) movedCards.push(removed);
+    });
+
+    if (movedCards.length > 0) {
+        ctx.player.deck.unshift(...movedCards);
+    }
+
+    if (params.thenDestroyEncounter && ctx.unitZone) {
+        const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
+        if (laneIndex !== -1) {
+            const encounterZone = ctx.opponent.unitZones[laneIndex];
+            if (encounterZone?.unit) {
+                ctx.machine.destroyUnit(ctx.opponent, encounterZone, undefined, 'EFFECT');
+            }
+        }
+    }
+};
+
+const drawByTargetHit: ActionImplementation = (ctx, params, targets) => {
+    let totalDraw = 0;
+    if (params.source === 'COST_PAYMENT' || params.fromCostPayment) {
+        totalDraw = Math.max(0, ctx.costPaymentCard?.hit || 0);
+    } else {
+        targets.forEach(target => {
+            if (target && target.unit) {
+                const owner = getOwnerOfZone(ctx.machine, target);
+                if (!owner) return;
+                totalDraw += Math.max(0, ctx.machine.getUnitHit(target, owner));
+                return;
+            }
+            if (target && typeof target === 'object' && 'hit' in target) {
+                totalDraw += Math.max(0, (target.hit as number) || 0);
+            }
+        });
+    }
+
+    if (totalDraw <= 0) return;
+    const pIdx = ctx.machine.state.players.indexOf(ctx.player);
+    ctx.machine.drawCard(pIdx, totalDraw);
+};
+
+const lockAttackUntilTurnEnd: ActionImplementation = (_ctx, _params, targets) => {
+    targets.forEach(target => {
+        if (!target || !('unit' in target) || !target.unit) return;
+        target.hasAttacked = true;
+        target.isExhausted = true;
+    });
+};
+
+const applyDualistMark: ActionImplementation = (_ctx, params, targets) => {
+    targets.forEach(target => {
+        if (!target || !('temporaryEffects' in target) || !target.unit) return;
+        target.temporaryEffects.push({
+            activation: ActivationCondition.ATTACKER,
+            description: '어태커 : 듀얼리스트',
+            action: { type: 'NONE', params: {} },
+            duration: params.duration || 'TURN_END',
+        });
+    });
+};
+
+const applyInfiltrationMark: ActionImplementation = (_ctx, params, targets) => {
+    targets.forEach(target => {
+        if (!target || !('temporaryEffects' in target) || !target.unit) return;
+        target.temporaryEffects.push({
+            activation: ActivationCondition.ATTACKER,
+            description: '어태커 : 침투[1]',
+            action: { type: 'NONE', params: {} },
+            duration: params.duration || 'TURN_END',
+        });
+    });
+};
+
+const revealTopPickToHandThenOrderBottom: ActionImplementation = (ctx, params) => {
+    const player = ctx.player;
+    const count = params.count || 2;
+    const pickCount = params.pickCount || 1;
+    if (player.deck.length === 0) return;
+
+    const revealed = player.deck.splice(-count);
+    ctx.machine.state.revealedCards = revealed;
+
+    const filters = Array.isArray(params.filters)
+        ? params.filters
+        : (params.filter ? [params.filter] : []);
+
+    const selectionEffect = {
+        activation: ActivationCondition.ACTIVE,
+        description: 'Choose revealed cards to hand, then order the rest to deck bottom',
+        action: { type: 'NONE', params: {} },
+        targets: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: pickCount,
+            filters,
+            selectMode: 'MANUAL'
+        }
+    } as any;
+
+    ctx.machine.state.interactionMode = 'SELECT_TARGET';
+    ctx.machine.state.pendingEffect = {
+        sourceCard: ctx.sourceCard,
+        sourcePlayerId: player.id,
+        controllerPlayerId: player.id,
+        actionType: 'PICK_REVEALED_ORDER_BOTTOM',
+        actionValue: {
+            ...params,
+            allowPartialSelection: !!params.allowPartialSelection,
+        },
+        effectDescription: selectionEffect.description,
+        validTargets: 'REVEALED',
+        targetSchema: selectionEffect.targets,
+        selectedTargets: []
+    };
+    ctx.machine.setPendingRuntime(ctx, selectionEffect);
+    ctx.machine.setInteractionOwner(player.id);
+};
+
 const noneAction: ActionImplementation = () => {
     // Intentionally no-op. Used for effects that only gate costs/timing.
 };
@@ -631,6 +916,28 @@ const noneAction: ActionImplementation = () => {
 function getOwnerOfZone(machine: any, zone: UnitZoneState): any {
     if (machine.state.players[0].unitZones.includes(zone)) return machine.state.players[0];
     if (machine.state.players[1].unitZones.includes(zone)) return machine.state.players[1];
+    return null;
+}
+
+function zoneHasKeyword(zone: UnitZoneState, keyword: string): boolean {
+    if (!zone.unit) return false;
+    if (zone.unit.keywords?.includes(keyword)) return true;
+    if (zone.unit.effects?.some((effect: any) => (effect.description || '').includes(keyword))) return true;
+    if (zone.items.some(item => item.keywords?.includes(keyword) || item.effects?.some((effect: any) => (effect.description || '').includes(keyword)))) return true;
+    if (zone.temporaryEffects.some((effect: any) => (effect.description || '').includes(keyword))) return true;
+    return false;
+}
+
+function findItemLocation(machine: any, itemCard: any): { owner: any; zone: UnitZoneState; zoneIndex: number; itemIndex: number } | null {
+    for (const owner of machine.state.players) {
+        for (let zoneIndex = 0; zoneIndex < owner.unitZones.length; zoneIndex++) {
+            const zone = owner.unitZones[zoneIndex];
+            const itemIndex = zone.items.indexOf(itemCard);
+            if (itemIndex !== -1) {
+                return { owner, zone, zoneIndex, itemIndex };
+            }
+        }
+    }
     return null;
 }
 
@@ -705,7 +1012,7 @@ const destroyUnitAndDraw: ActionImplementation = (ctx, params, targets) => {
     const drawCount = params.drawCount || 1;
 
     // Destroy the unit first
-    ctx.machine.destroyUnit(owner, targetZone);
+    ctx.machine.destroyUnit(owner, targetZone, undefined, 'EFFECT');
     console.log(`Destroyed ${unit.name} for DESTROY_UNIT_AND_DRAW effect.`);
 
     // Then draw cards for the effect controller (not the owner)
@@ -744,6 +1051,18 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'DESTROY_UNIT_WITH_HIT_COST': destroyUnitWithHitCost,
     'COMPLEX_ACTION': complexAction,
     'SACRIFICE_TO_BUFF': sacrificeToBuff,
+    'DESTROY_ITEM': destroyItem,
+    'RETURN_ITEM_TO_HAND': returnItemToHand,
+    'MOVE_ITEM_TO_DECK_BOTTOM': moveItemToDeckBottom,
+    'MOVE_FROM_DAMAGE_TO_HAND': moveFromDamageToHand,
+    'MOVE_FROM_HAND_TO_DAMAGE': moveFromHandToDamage,
+    'MOVE_FROM_TRASH_TO_DECK_TOP': moveFromTrashToDeckTop,
+    'MOVE_FROM_TRASH_TO_DECK_BOTTOM': moveFromTrashToDeckBottom,
+    'DRAW_BY_TARGET_HIT': drawByTargetHit,
+    'LOCK_ATTACK_UNTIL_TURN_END': lockAttackUntilTurnEnd,
+    'APPLY_DUALIST_MARK': applyDualistMark,
+    'APPLY_INFILTRATION_MARK': applyInfiltrationMark,
+    'REVEAL_TOP_PICK_TO_HAND_THEN_ORDER_BOTTOM': revealTopPickToHandThenOrderBottom,
     'DAMAGE': damage,
     'DRAW_THEN_DISCARD': drawThenDiscard,
     'DESTROY_UNIT_AND_DRAW': destroyUnitAndDraw,

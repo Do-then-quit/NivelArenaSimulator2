@@ -79,7 +79,11 @@ export class GameEngine {
             damageProcessingDepth: 0,
             globalStep: 0,
             combatStep: 'NONE',
-            combatBlocked: false
+            combatBlocked: false,
+            turnStats: {
+                effectTrashedFriendlyUnitCountByPlayerId: {},
+                handTrashedByEffectCountByPlayerId: {},
+            },
         };
         this.startGame();
         this.assignInteractionOwner(this.currentPlayer.id);
@@ -267,6 +271,94 @@ export class GameEngine {
         return [turnPlayer, nonTurnPlayer];
     }
 
+    private getTurnStats() {
+        if (!this.state.turnStats) {
+            this.state.turnStats = {
+                effectTrashedFriendlyUnitCountByPlayerId: {},
+                handTrashedByEffectCountByPlayerId: {},
+            };
+        }
+        return this.state.turnStats;
+    }
+
+    private incrementEffectTrashedFriendlyUnitCount(playerId: string) {
+        const stats = this.getTurnStats();
+        stats.effectTrashedFriendlyUnitCountByPlayerId[playerId] =
+            (stats.effectTrashedFriendlyUnitCountByPlayerId[playerId] || 0) + 1;
+    }
+
+    private incrementHandTrashedByEffectCount(playerId: string, amount: number) {
+        if (amount <= 0) return;
+        const stats = this.getTurnStats();
+        stats.handTrashedByEffectCountByPlayerId[playerId] =
+            (stats.handTrashedByEffectCountByPlayerId[playerId] || 0) + amount;
+    }
+
+    public getEffectTrashedFriendlyUnitCount(playerId: string): number {
+        return this.getTurnStats().effectTrashedFriendlyUnitCountByPlayerId[playerId] || 0;
+    }
+
+    public getHandTrashedByEffectCount(playerId: string): number {
+        return this.getTurnStats().handTrashedByEffectCountByPlayerId[playerId] || 0;
+    }
+
+    private resetTurnStats() {
+        this.state.turnStats = {
+            effectTrashedFriendlyUnitCountByPlayerId: {},
+            handTrashedByEffectCountByPlayerId: {},
+        };
+    }
+
+    public notifyHandTrashed(player: PlayerState, cards: Card[], sourceContext?: Partial<GameContext>) {
+        if (!cards.length) return;
+        const handTrashByEffect = sourceContext?.flags?.handTrashByEffect !== false;
+        if (!handTrashByEffect) return;
+
+        this.incrementHandTrashedByEffectCount(player.id, cards.length);
+
+        const batchStep = this.incrementAndGetGlobalStep();
+        const [turnPlayer, nonTurnPlayer] = this.getPlayersInTurnOrder();
+        [turnPlayer, nonTurnPlayer].forEach(controller => {
+            const sourceOpponent = this.getOpponentOf(controller);
+
+            if (controller.levelZone) {
+                this.effectManager.processEffects(ActivationCondition.HAND_TRASHED, {
+                    sourceCard: controller.levelZone,
+                    player: controller,
+                    opponent: sourceOpponent,
+                    machine: this,
+                    ...(sourceContext || {}),
+                    flags: {
+                        trashedHandCount: cards.length,
+                        isOwnHandTrash: controller.id === player.id,
+                        handTrashByEffect: true,
+                        ...((sourceContext?.flags as Record<string, any>) || {}),
+                    },
+                }, { enqueueOnly: true, batchStep });
+            }
+
+            controller.unitZones.forEach(zone => {
+                if (!zone.unit) return;
+                this.effectManager.processEffects(ActivationCondition.HAND_TRASHED, {
+                    sourceCard: zone.unit,
+                    player: controller,
+                    opponent: sourceOpponent,
+                    unitZone: zone,
+                    machine: this,
+                    ...(sourceContext || {}),
+                    flags: {
+                        trashedHandCount: cards.length,
+                        isOwnHandTrash: controller.id === player.id,
+                        handTrashByEffect: true,
+                        ...((sourceContext?.flags as Record<string, any>) || {}),
+                    },
+                }, { enqueueOnly: true, batchStep });
+            });
+        });
+
+        this.effectManager.processQueue();
+    }
+
     private getPlayerById(playerId: string): PlayerState | null {
         return this.state.players.find(p => p.id === playerId) ?? null;
     }
@@ -324,6 +416,10 @@ export class GameEngine {
             case 'MY_TRASH':
             case 'MY_HAND':
             case 'OPP_HAND':
+            case 'MY_DAMAGE':
+            case 'MY_FIELD_ITEMS':
+            case 'OPP_FIELD_ITEMS':
+            case 'FIELD_ITEMS':
             case 'REVEALED':
             case 'LAST_DRAWN':
                 return scope;
@@ -474,6 +570,8 @@ export class GameEngine {
             mappedContext.lastDrawnCards = context.lastDrawnCards.map(card => this.mapCardForFork(fork, card));
         }
         if (context.discardedCount !== undefined) mappedContext.discardedCount = context.discardedCount;
+        if (context.trashReason !== undefined) mappedContext.trashReason = context.trashReason;
+        if (context.flags !== undefined) mappedContext.flags = JSON.parse(JSON.stringify(context.flags));
 
         return mappedContext;
     }
@@ -820,6 +918,9 @@ export class GameEngine {
             const requiredCount = targetSchema.count ?? 1;
 
             const shouldAllowConfirm = (candidateTargets: any[]): boolean => {
+                if (pending.actionValue?.allowPartialSelection === true) {
+                    return true;
+                }
                 if (!needsConfirm) {
                     // Single-target manual selection can become impossible due state changes.
                     return candidateTargets.length === 0;
@@ -880,6 +981,50 @@ export class GameEngine {
                     actions.push({ type: 'SELECT_HAND_TARGET', actorPlayerId: id, targetPlayerId, handIndex });
                 });
                 if (shouldAllowConfirm(selectableHandCards)) {
+                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
+                }
+                return;
+            }
+
+            if (pending.validTargets === 'MY_DAMAGE') {
+                const targetPlayerId = context?.player?.id ?? pending.sourcePlayerId;
+                const targetPlayer = this.getPlayerById(targetPlayerId);
+                if (!targetPlayer) return;
+
+                const selectableDamageCards: any[] = [];
+                targetPlayer.damage.forEach((card, damageIndex) => {
+                    if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) return;
+                    selectableDamageCards.push(card);
+                    actions.push({ type: 'SELECT_DAMAGE_TARGET', actorPlayerId: id, targetPlayerId, damageIndex });
+                });
+                if (shouldAllowConfirm(selectableDamageCards)) {
+                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
+                }
+                return;
+            }
+
+            if (
+                pending.validTargets === 'MY_FIELD_ITEMS' ||
+                pending.validTargets === 'OPP_FIELD_ITEMS' ||
+                pending.validTargets === 'FIELD_ITEMS'
+            ) {
+                const selectableItems: any[] = [];
+                this.state.players.forEach(targetPlayer => {
+                    targetPlayer.unitZones.forEach((zone, zoneIndex) => {
+                        zone.items.forEach((item, itemIndex) => {
+                            if (!TargetSelector.isValidTarget(this, targetSchema, context, item)) return;
+                            selectableItems.push(item);
+                            actions.push({
+                                type: 'SELECT_ITEM_TARGET',
+                                actorPlayerId: id,
+                                targetPlayerId: targetPlayer.id,
+                                zoneIndex,
+                                itemIndex,
+                            });
+                        });
+                    });
+                });
+                if (shouldAllowConfirm(selectableItems)) {
                     actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
                 }
                 return;
@@ -953,6 +1098,12 @@ export class GameEngine {
                 return true;
             case 'SELECT_TRASH_TARGET':
                 this.selectTrashTarget(action.trashIndex, action.targetPlayerId);
+                return true;
+            case 'SELECT_DAMAGE_TARGET':
+                this.selectDamageTargetByPlayerId(action.damageIndex, action.targetPlayerId);
+                return true;
+            case 'SELECT_ITEM_TARGET':
+                this.selectItemTargetByPlayerId(action.zoneIndex, action.itemIndex, action.targetPlayerId);
                 return true;
             case 'SELECT_REVEALED_TARGET':
                 this.selectRevealedTarget(action.revealedIndex);
@@ -1157,6 +1308,7 @@ export class GameEngine {
                 params: {
                     target: 'SELF',
                     count: requiredDiscardCount,
+                    isRule: true,
                 },
             },
         };
@@ -1189,6 +1341,8 @@ export class GameEngine {
     }
 
     private endTurn() {
+        this.resetTurnStats();
+
         // Reset per-turn flags
         this.currentPlayer.unitZones.forEach(z => {
             z.hasAttacked = false;
@@ -1456,6 +1610,10 @@ export class GameEngine {
 
     resolveOptionalEffect(confirm: boolean) {
         if (this.state.interactionMode !== 'SELECT_OPTIONAL' || !this.state.pendingEffect) return;
+        if (this.state.pendingEffect.actionType === 'DESTRUCTION_REPLACEMENT') {
+            this.resolveDestructionReplacementChoice(confirm);
+            return;
+        }
 
         const runtime = this.getPendingRuntime();
         const effect = runtime?.effect;
@@ -1505,6 +1663,12 @@ export class GameEngine {
             if (handIndex < 0 || handIndex >= payer.hand.length) return;
             const discarded = payer.hand.splice(handIndex, 1)[0];
             payer.trash.push(discarded);
+            this.notifyHandTrashed(payer, [discarded], {
+                flags: {
+                    handTrashByEffect: pending.actionType !== this.endPhaseHandAdjustActionType,
+                    byCost: true,
+                },
+            });
             console.log(`Paid cost: Trashed ${discarded.name}`);
 
             if (!pending.costPaidCount) pending.costPaidCount = 0;
@@ -1532,14 +1696,38 @@ export class GameEngine {
             return;
         }
 
+        if (pending.actionType === 'DESTRUCTION_REPLACEMENT_PAY_HAND') {
+            this.completeDestructionReplacementAfterHandCost(pending);
+            return;
+        }
+
         if (pending.actionType === 'DESTROY_UNIT_WITH_HIT_COST') {
             const targetZone = pending.selectedTargets?.[0];
             if (targetZone && targetZone.unit) {
                 const owner = this.state.players.find(p => p.unitZones.includes(targetZone));
                 if (owner) {
                     const targetName = targetZone.unit.name;
-                    this.destroyUnit(owner, targetZone);
+                    this.destroyUnit(owner, targetZone, undefined, 'EFFECT');
                     console.log(`Paid hit cost and destroyed ${targetName}.`);
+                }
+            }
+            if (context) {
+                this.handleEffectCompletion(context, pending);
+            } else {
+                this.resetInteractionMode();
+            }
+            return;
+        }
+
+        if (pending.actionType === 'DESTROY_ENCOUNTER_WITH_HIT_COST') {
+            const sourcePlayer = this.getPlayerById(pending.sourcePlayerId);
+            if (sourcePlayer) {
+                const zoneIndex = pending.actionValue?.zoneIndex;
+                if (typeof zoneIndex === 'number' && zoneIndex >= 0 && zoneIndex < sourcePlayer.unitZones.length) {
+                    const encounterZone = this.getOpponentOf(sourcePlayer).unitZones[zoneIndex];
+                    if (encounterZone?.unit) {
+                        this.destroyUnit(this.getOpponentOf(sourcePlayer), encounterZone, undefined, 'EFFECT');
+                    }
                 }
             }
             if (context) {
@@ -1788,7 +1976,7 @@ export class GameEngine {
                 // IMPORTANT: Destroy first, THEN queue result effects. 
                 // Currently destroyUnit triggers EXIT effects (queued).
                 // Proposal says Result Effects (Penetration, Plunder) should be queued AFTER kill.
-                this.destroyUnit(this.opponentPlayer, blockerZone, attackerZone.unit || undefined);
+                this.destroyUnit(this.opponentPlayer, blockerZone, attackerZone.unit || undefined, 'BATTLE');
 
                 // PENETRATION (Rule 10.2.3.2)
                 const penValue = this.getPenetrationValue(attackerZone);
@@ -1845,7 +2033,7 @@ export class GameEngine {
             }
 
             if (blkPower > attPower) {
-                this.destroyUnit(this.currentPlayer, attackerZone, blockerZone.unit || undefined);
+                this.destroyUnit(this.currentPlayer, attackerZone, blockerZone.unit || undefined, 'BATTLE');
             }
         } else {
             // Direct Damage
@@ -2190,8 +2378,225 @@ export class GameEngine {
         });
     }
 
-    public destroyUnit(player: PlayerState, zone: UnitZoneState, killerCard?: Card) {
+    private isReplacementDestroyReason(reason: 'BATTLE' | 'EFFECT' | 'RULE'): boolean {
+        return reason === 'BATTLE' || reason === 'EFFECT';
+    }
+
+    private collectDestroyReplacements(
+        player: PlayerState,
+        zone: UnitZoneState,
+        reason: 'BATTLE' | 'EFFECT' | 'RULE',
+    ): Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }> {
+        if (!this.isReplacementDestroyReason(reason) || !zone.unit) return [];
+        const replacements: Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }> = [];
+        const opponent = this.getOpponentOf(player);
+
+        const unitContext: GameContext = {
+            sourceCard: zone.unit,
+            player,
+            opponent,
+            unitZone: zone,
+            machine: this,
+            trashReason: reason,
+        };
+
+        zone.unit.effects?.forEach(effect => {
+            if (effect.activation !== ActivationCondition.PASSIVE) return;
+            if (effect.action?.type !== 'NONE') return;
+            if (effect.action?.params?.destroyReplacement !== 'TRASH_EQUIPPED_ITEM') return;
+            if (zone.items.length === 0) return;
+            if (!this.effectManager.checkCondition(effect, unitContext)) return;
+
+            replacements.push({
+                type: 'TRASH_EQUIPPED_ITEM',
+                sourceCard: zone.unit!,
+                description: effect.description || '장착 아이템 1장을 트래시하고 파괴를 대체한다.',
+            });
+        });
+
+        zone.items.forEach(item => {
+            const alreadyUsedTurn = (item as any).__replacementUsedTurn as number | undefined;
+            if (alreadyUsedTurn === this.state.turnCount) return;
+
+            const itemContext: GameContext = {
+                sourceCard: item,
+                player,
+                opponent,
+                unitZone: zone,
+                machine: this,
+                trashReason: reason,
+            };
+
+            item.effects?.forEach(effect => {
+                if (effect.activation !== ActivationCondition.PASSIVE) return;
+                if (effect.action?.type !== 'NONE') return;
+                if (effect.action?.params?.destroyReplacement !== 'DISCARD_HAND_BY_HIT') return;
+                if (!this.effectManager.checkCondition(effect, itemContext)) return;
+
+                const requiredHandCount = Math.max(0, this.getUnitHit(zone, player));
+                if (player.hand.length < requiredHandCount) return;
+                replacements.push({
+                    type: 'DISCARD_HAND_BY_HIT',
+                    sourceCard: item,
+                    requiredHandCount,
+                    description: effect.description || '패를 버리고 파괴를 대체한다.',
+                });
+            });
+        });
+
+        return replacements;
+    }
+
+    private beginDestroyReplacementPrompt(
+        destroyPayload: { targetPlayerId: string; zoneIndex: number; reason: 'BATTLE' | 'EFFECT' | 'RULE'; killerCard?: Card },
+        replacements: Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }>,
+        index: number,
+    ) {
+        const replacement = replacements[index];
+        if (!replacement) {
+            this.executePendingDestroyPayload(destroyPayload);
+            return;
+        }
+
+        this.state.interactionMode = 'SELECT_OPTIONAL';
+        this.state.pendingEffect = {
+            sourceCard: replacement.sourceCard,
+            sourcePlayerId: destroyPayload.targetPlayerId,
+            controllerPlayerId: destroyPayload.targetPlayerId,
+            actionType: 'DESTRUCTION_REPLACEMENT',
+            actionValue: {
+                destroyPayload,
+                replacements,
+                index,
+            },
+            effectDescription: replacement.description,
+        };
+        this.clearPendingRuntime();
+        this.assignInteractionOwner(destroyPayload.targetPlayerId);
+    }
+
+    private tryInitiateDestroyReplacement(
+        player: PlayerState,
+        zone: UnitZoneState,
+        killerCard: Card | undefined,
+        reason: 'BATTLE' | 'EFFECT' | 'RULE',
+    ): boolean {
+        const zoneIndex = player.unitZones.indexOf(zone);
+        if (zoneIndex < 0) return false;
+
+        const replacements = this.collectDestroyReplacements(player, zone, reason);
+        if (replacements.length === 0) return false;
+
+        this.beginDestroyReplacementPrompt(
+            { targetPlayerId: player.id, zoneIndex, killerCard, reason },
+            replacements,
+            0,
+        );
+        return true;
+    }
+
+    private executePendingDestroyPayload(payload: { targetPlayerId: string; zoneIndex: number; reason: 'BATTLE' | 'EFFECT' | 'RULE'; killerCard?: Card }) {
+        const owner = this.getPlayerById(payload.targetPlayerId);
+        if (!owner) {
+            this.resetInteractionMode();
+            return;
+        }
+
+        const zone = owner.unitZones[payload.zoneIndex];
+        this.state.interactionMode = 'NORMAL';
+        this.state.pendingEffect = null;
+        this.clearPendingRuntime();
+        this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
+
+        if (zone?.unit) {
+            this.destroyUnit(owner, zone, payload.killerCard, payload.reason, { skipReplacement: true });
+        }
+        this.effectManager.resumeQueue();
+    }
+
+    private completeDestructionReplacementAfterHandCost(pending: PendingEffect) {
+        const replacement = pending.actionValue?.replacement;
+        if (replacement?.sourceCard) {
+            (replacement.sourceCard as any).__replacementUsedTurn = this.state.turnCount;
+        }
+        this.resetInteractionMode();
+    }
+
+    private resolveDestructionReplacementChoice(confirm: boolean) {
+        if (this.state.interactionMode !== 'SELECT_OPTIONAL' || !this.state.pendingEffect) return;
+
+        const pending = this.state.pendingEffect;
+        const actionValue = pending.actionValue ?? {};
+        const destroyPayload = actionValue.destroyPayload as { targetPlayerId: string; zoneIndex: number; reason: 'BATTLE' | 'EFFECT' | 'RULE'; killerCard?: Card } | undefined;
+        const replacements = (actionValue.replacements ?? []) as Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }>;
+        const index = typeof actionValue.index === 'number' ? actionValue.index : 0;
+        const replacement = replacements[index];
+
+        if (!destroyPayload || !replacement) {
+            this.resetInteractionMode();
+            return;
+        }
+
+        if (confirm) {
+            const owner = this.getPlayerById(destroyPayload.targetPlayerId);
+            const zone = owner?.unitZones[destroyPayload.zoneIndex];
+            if (owner && zone?.unit) {
+                if (replacement.type === 'TRASH_EQUIPPED_ITEM') {
+                    if (zone.items.length > 0) {
+                        const trashedItem = zone.items.shift()!;
+                        owner.trash.push(trashedItem);
+                        this.resetInteractionMode();
+                        return;
+                    }
+                }
+
+                if (replacement.type === 'DISCARD_HAND_BY_HIT') {
+                    const requiredHandCount = replacement.requiredHandCount ?? Math.max(0, this.getUnitHit(zone, owner));
+                    if (owner.hand.length >= requiredHandCount) {
+                        this.state.interactionMode = 'SELECT_COST';
+                        this.state.pendingEffect = {
+                            sourceCard: replacement.sourceCard,
+                            sourcePlayerId: owner.id,
+                            controllerPlayerId: owner.id,
+                            actionType: 'DESTRUCTION_REPLACEMENT_PAY_HAND',
+                            actionValue: {
+                                destroyPayload,
+                                replacement,
+                            },
+                            effectDescription: replacement.description,
+                            costToPay: { type: 'TRASH_HAND', amount: requiredHandCount },
+                            costPaidCount: 0,
+                            selectedTargets: [],
+                        };
+                        this.clearPendingRuntime();
+                        this.assignInteractionOwner(owner.id);
+                        return;
+                    }
+                }
+            }
+        }
+
+        const nextIndex = index + 1;
+        if (nextIndex < replacements.length) {
+            this.beginDestroyReplacementPrompt(destroyPayload, replacements, nextIndex);
+            return;
+        }
+
+        this.executePendingDestroyPayload(destroyPayload);
+    }
+
+    public destroyUnit(
+        player: PlayerState,
+        zone: UnitZoneState,
+        killerCard?: Card,
+        reason: 'BATTLE' | 'EFFECT' | 'RULE' = 'EFFECT',
+        options: { skipReplacement?: boolean } = {},
+    ) {
         if (!zone.unit) return;
+
+        if (!options.skipReplacement && this.tryInitiateDestroyReplacement(player, zone, killerCard, reason)) {
+            return;
+        }
 
         const unit = zone.unit;
         const destroyKey = this.getDestroyGuardKey(player, zone, unit);
@@ -2211,13 +2616,19 @@ export class GameEngine {
 
             // 1) Queue EXIT effects in a single batch.
             const exitBatchStep = this.incrementAndGetGlobalStep();
+            const equippedItemsSnapshot = [...zone.items];
             this.effectManager.processEffects(ActivationCondition.EXIT, {
                 sourceCard: unit,
                 player: player,
                 opponent: opponent,
                 unitZone: zone,
                 machine: this,
-                destroyedBy: killerCard
+                destroyedBy: killerCard,
+                trashReason: reason,
+                flags: {
+                    equippedItemsSnapshot,
+                    destroyedUnitId: unit.id,
+                },
             }, { enqueueOnly: true, batchStep: exitBatchStep });
 
             zone.items.forEach(item => {
@@ -2228,7 +2639,12 @@ export class GameEngine {
                     unitZone: zone,
                     machine: this,
                     destroyedBy: killerCard,
-                    trashedUnit: unit
+                    trashedUnit: unit,
+                    trashReason: reason,
+                    flags: {
+                        equippedItemsSnapshot,
+                        destroyedUnitId: unit.id,
+                    },
                 }, { enqueueOnly: true, batchStep: exitBatchStep });
             });
 
@@ -2239,6 +2655,9 @@ export class GameEngine {
             zone.items = [];
             zone.buffs = [];
             zone.temporaryEffects = [];
+            if (reason === 'EFFECT' || reason === 'RULE') {
+                this.incrementEffectTrashedFriendlyUnitCount(player.id);
+            }
 
             // 3) Queue UNIT_TRASHED effects as one simultaneous event in turn-player priority order.
             const trashedBatchStep = this.incrementAndGetGlobalStep();
@@ -2253,7 +2672,11 @@ export class GameEngine {
                         opponent: sourceOpponent,
                         machine: this,
                         trashedUnit: trashedUnit,
-                        trashedUnitOwner: player
+                        trashedUnitOwner: player,
+                        trashReason: reason,
+                        flags: {
+                            destroyedUnitId: trashedUnit.id,
+                        },
                     }, { enqueueOnly: true, batchStep: trashedBatchStep });
                 }
 
@@ -2266,7 +2689,11 @@ export class GameEngine {
                         unitZone: z,
                         machine: this,
                         trashedUnit: trashedUnit,
-                        trashedUnitOwner: player
+                        trashedUnitOwner: player,
+                        trashReason: reason,
+                        flags: {
+                            destroyedUnitId: trashedUnit.id,
+                        },
                     }, { enqueueOnly: true, batchStep: trashedBatchStep });
                 });
             });
@@ -2298,7 +2725,7 @@ export class GameEngine {
                         if (power > 0) return;
 
                         console.log(`Rule Processing: Trashing ${zone.unit.name} due to 0 or less ATK (${power})`);
-                        this.destroyUnit(player, zone);
+                        this.destroyUnit(player, zone, undefined, 'RULE');
                         if (zone.unit?.id !== currentUnitId) {
                             destroyedAny = true;
                         }
@@ -2492,6 +2919,9 @@ export class GameEngine {
                                 } else if (params.dynamic === 'ITEM_COUNT_MULTIPLIER') {
                                     const sourceItemCount = source.zone?.items?.length || 0;
                                     value = sourceItemCount * value;
+                                } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
+                                    const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
+                                    value = equippedUnitCount * value;
                                 }
                                 power += value;
                             }
@@ -2545,7 +2975,20 @@ export class GameEngine {
 
                         if (TargetSelector.isValidTarget(this, effect.targets!, context, zone)) {
                             const params = effect.action.params || {};
-                            hit += (params.value || 0);
+                            let value = params.value || 0;
+                            if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
+                                value = source.owner.leaderLevel * value;
+                            } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
+                                const baseUnitCount = source.owner.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
+                                value = baseUnitCount * value;
+                            } else if (params.dynamic === 'ITEM_COUNT_MULTIPLIER') {
+                                const sourceItemCount = source.zone?.items?.length || 0;
+                                value = sourceItemCount * value;
+                            } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
+                                const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
+                                value = equippedUnitCount * value;
+                            }
+                            hit += value;
                         }
                     }
                 });
@@ -2676,6 +3119,57 @@ export class GameEngine {
             this.state.revealedCards = [];
         }
 
+        if (pending.actionType === 'PICK_REVEALED_ORDER_BOTTOM') {
+            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+            if (!player) return;
+
+            (pending.selectedTargets ?? []).forEach((card: any) => {
+                const idx = this.state.revealedCards.indexOf(card);
+                if (idx !== -1) {
+                    player.hand.push(card);
+                    this.state.revealedCards.splice(idx, 1);
+                }
+            });
+
+            if (this.state.revealedCards.length > 1) {
+                this.state.interactionMode = 'SELECT_TARGET';
+                pending.actionType = 'ORDER_REVEALED_BOTTOM';
+                pending.effectDescription = '덱 맨 아래에 놓을 순서를 정하세요.';
+                pending.validTargets = 'REVEALED';
+                pending.targetSchema = {
+                    scope: 'REVEALED',
+                    type: 'CARD',
+                    count: this.state.revealedCards.length,
+                    selectMode: 'MANUAL',
+                } as any;
+                pending.selectedTargets = [];
+                pending.actionValue = {
+                    ...(pending.actionValue || {}),
+                    allowPartialSelection: false,
+                };
+                this.assignInteractionOwner(pending.controllerPlayerId ?? pending.sourcePlayerId);
+                return;
+            }
+
+            if (this.state.revealedCards.length === 1) {
+                player.deck.unshift(this.state.revealedCards[0]);
+            }
+            this.state.revealedCards = [];
+        }
+
+        if (pending.actionType === 'ORDER_REVEALED_BOTTOM') {
+            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+            if (!player) return;
+
+            const selectedOrder = pending.selectedTargets ?? [];
+            const remaining = this.state.revealedCards.filter(card => !selectedOrder.includes(card));
+            const finalOrder = [...selectedOrder, ...remaining];
+            if (finalOrder.length > 0) {
+                player.deck.unshift(...finalOrder);
+            }
+            this.state.revealedCards = [];
+        }
+
         // Execute Effect via Manager
         this.effectManager.executeEffect(effect, context, pending.selectedTargets ?? []);
 
@@ -2738,6 +3232,86 @@ export class GameEngine {
     public selectHandTarget(handIndex: number, isOpponentHand: boolean) {
         const targetPlayerId = isOpponentHand ? this.opponentPlayer.id : this.currentPlayer.id;
         this.selectHandTargetByPlayerId(handIndex, targetPlayerId);
+    }
+
+    public selectDamageTargetByPlayerId(damageIndex: number, targetPlayerId: string) {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+
+        const pending = this.state.pendingEffect;
+        const runtime = this.getPendingRuntime();
+        const effect = runtime?.effect;
+        const context = runtime?.context;
+        const targetSchema = pending.targetSchema;
+        if (!effect || !context || !targetSchema) return;
+
+        const targetPlayer = this.getPlayerById(targetPlayerId);
+        if (!targetPlayer) return;
+        if (damageIndex < 0 || damageIndex >= targetPlayer.damage.length) return;
+        const targetCard = targetPlayer.damage[damageIndex];
+
+        if (!TargetSelector.isValidTarget(this, targetSchema, context, targetCard)) {
+            console.log("Invalid Damage Target Selected.");
+            return;
+        }
+
+        const maxCount = targetSchema.count || 1;
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
+        if (maxCount > 1) {
+            if (!selectedTargets.includes(targetCard)) {
+                if (selectedTargets.length >= maxCount) {
+                    console.log(`Cannot select more than ${maxCount} targets.`);
+                    return;
+                }
+                selectedTargets.push(targetCard);
+            } else {
+                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetCard);
+            }
+            return;
+        }
+
+        this.effectManager.executeEffect(effect, context, [targetCard]);
+        this.handleEffectCompletion(context, pending);
+    }
+
+    public selectItemTargetByPlayerId(zoneIndex: number, itemIndex: number, targetPlayerId: string) {
+        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
+
+        const pending = this.state.pendingEffect;
+        const runtime = this.getPendingRuntime();
+        const effect = runtime?.effect;
+        const context = runtime?.context;
+        const targetSchema = pending.targetSchema;
+        if (!effect || !context || !targetSchema) return;
+
+        const targetPlayer = this.getPlayerById(targetPlayerId);
+        if (!targetPlayer) return;
+        if (zoneIndex < 0 || zoneIndex >= targetPlayer.unitZones.length) return;
+        const zone = targetPlayer.unitZones[zoneIndex];
+        if (itemIndex < 0 || itemIndex >= zone.items.length) return;
+        const targetCard = zone.items[itemIndex];
+
+        if (!TargetSelector.isValidTarget(this, targetSchema, context, targetCard)) {
+            console.log("Invalid Item Target Selected.");
+            return;
+        }
+
+        const maxCount = targetSchema.count || 1;
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
+        if (maxCount > 1) {
+            if (!selectedTargets.includes(targetCard)) {
+                if (selectedTargets.length >= maxCount) {
+                    console.log(`Cannot select more than ${maxCount} targets.`);
+                    return;
+                }
+                selectedTargets.push(targetCard);
+            } else {
+                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetCard);
+            }
+            return;
+        }
+
+        this.effectManager.executeEffect(effect, context, [targetCard]);
+        this.handleEffectCompletion(context, pending);
     }
 
     public selectHandTargetByPlayerId(handIndex: number, targetPlayerId: string) {
@@ -2826,8 +3400,40 @@ export class GameEngine {
                     this.state.revealedCards.splice(index, 1);
                 }
             }
+            if (pending.actionType === 'PICK_REVEALED_ORDER_BOTTOM') {
+                const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
+                if (player) {
+                    player.hand.push(card);
+                    this.state.revealedCards.splice(index, 1);
+
+                    if (this.state.revealedCards.length > 1) {
+                        this.state.interactionMode = 'SELECT_TARGET';
+                        pending.actionType = 'ORDER_REVEALED_BOTTOM';
+                        pending.effectDescription = '덱 맨 아래에 놓을 순서를 정하세요.';
+                        pending.validTargets = 'REVEALED';
+                        pending.targetSchema = {
+                            scope: 'REVEALED',
+                            type: 'CARD',
+                            count: this.state.revealedCards.length,
+                            selectMode: 'MANUAL',
+                        } as any;
+                        pending.selectedTargets = [];
+                        pending.actionValue = {
+                            ...(pending.actionValue || {}),
+                            allowPartialSelection: false,
+                        };
+                        this.assignInteractionOwner(pending.controllerPlayerId ?? pending.sourcePlayerId);
+                        return;
+                    }
+
+                    if (this.state.revealedCards.length === 1) {
+                        player.deck.unshift(this.state.revealedCards[0]);
+                        this.state.revealedCards = [];
+                    }
+                }
+            }
             // Shuffle rest back
-            if (this.state.revealedCards.length > 0) {
+            if (this.state.revealedCards.length > 0 && pending.actionType !== 'PICK_REVEALED_ORDER_BOTTOM') {
                 const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
                 if (player) {
                     player.deck.push(...this.state.revealedCards);

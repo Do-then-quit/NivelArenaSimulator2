@@ -289,9 +289,14 @@ export class EffectManager {
                 const allItems = context.unitZone.items || [];
                 const minCount = typeof value === 'number' ? value : (value?.minCount ?? 1);
                 const costMin = typeof value === 'object' ? value?.costMin : undefined;
-                const countedItems = costMin !== undefined
-                    ? allItems.filter(item => (item.cost || 0) >= costMin)
-                    : allItems;
+                const traitFilter = typeof value === 'object' ? value?.hasTrait : undefined;
+                const keywordFilter = typeof value === 'object' ? value?.hasKeyword : undefined;
+                const countedItems = allItems.filter(item => {
+                    if (costMin !== undefined && (item.cost || 0) < costMin) return false;
+                    if (traitFilter && !item.traits?.includes(traitFilter)) return false;
+                    if (keywordFilter && !(item.keywords?.includes(keywordFilter) || item.effects?.some((effect: any) => (effect.description || '').includes(keywordFilter)))) return false;
+                    return true;
+                });
                 return countedItems.length >= minCount;
             }
             case 'HAS_KEYWORD': {
@@ -299,6 +304,12 @@ export class EffectManager {
                 if (!keyword) return false;
                 if (context.unitZone?.unit && this.cardHasKeyword(context.unitZone.unit, keyword)) return true;
                 return this.cardHasKeyword(context.sourceCard, keyword);
+            }
+            case 'HAS_TRAIT': {
+                const trait = typeof value === 'string' ? value : value?.trait;
+                if (!trait) return false;
+                if (!context.unitZone?.unit) return false;
+                return !!context.unitZone.unit.traits?.includes(trait);
             }
             case 'YOUR_TURN':
                 return context.machine.currentPlayer === context.player;
@@ -311,6 +322,13 @@ export class EffectManager {
                 if (value.min !== undefined && context.opponent.hand.length < value.min) return false;
                 if (value.max !== undefined && context.opponent.hand.length > value.max) return false;
                 return true;
+            case 'MY_HAND_COUNT':
+                if (typeof value === 'number') {
+                    return context.player.hand.length >= value;
+                }
+                if (value?.min !== undefined && context.player.hand.length < value.min) return false;
+                if (value?.max !== undefined && context.player.hand.length > value.max) return false;
+                return true;
             case 'DISCARDED_COUNT':
                 const count = (context as any).discardedCount || 0;
                 if (typeof value === 'number') return count >= value;
@@ -321,9 +339,74 @@ export class EffectManager {
             case 'LEVEL_LINK':
                 return context.player.leaderLevel >= value;
             case 'ONCE_PER_TURN':
+                if (value?.contextFlag) {
+                    const flagCondition = this.checkCondition({ ...effect, condition: { type: 'CONTEXT_FLAG', value: value.contextFlag } }, context);
+                    if (!flagCondition) return false;
+                }
                 const fired = (this.engine.state as any).firedEffects = (this.engine.state as any).firedEffects || {};
                 const effectId = effect.id || effect.description; // Fallback to description if ID missing
                 return !fired[effectId];
+            case 'EQUIPPED_UNIT_COUNT_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const countEquippedUnits = context.player.unitZones.filter(zone => zone.unit && zone.items.length > 0).length;
+                return countEquippedUnits >= min;
+            }
+            case 'TRASHED_FRIENDLY_BY_EFFECT_THIS_TURN_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const countByEffect = context.machine.getEffectTrashedFriendlyUnitCount(context.player.id);
+                return countByEffect >= min;
+            }
+            case 'TRASH_REASON': {
+                if (!context.trashReason) return false;
+                if (Array.isArray(value)) return value.includes(context.trashReason);
+                return context.trashReason === value;
+            }
+            case 'ITEM_COUNT_GTE_ENCOUNTER_HIT': {
+                if (!context.unitZone) return false;
+                const itemCount = context.unitZone.items.length;
+                const laneIndex = context.player.unitZones.indexOf(context.unitZone);
+                if (laneIndex === -1) return false;
+                const encounterZone = context.opponent.unitZones[laneIndex];
+                const encounterHit = encounterZone?.unit ? context.machine.getUnitHit(encounterZone, context.opponent) : 0;
+                if (value?.requireTrait) {
+                    const hasRequiredTrait = context.unitZone.items.some((item: any) => item.traits?.includes(value.requireTrait));
+                    if (!hasRequiredTrait) return false;
+                }
+                return itemCount >= encounterHit;
+            }
+            case 'CONTEXT_FLAG': {
+                if (typeof value === 'string') {
+                    if (value === 'HAND_TRASH_OWNER_IS_SELF') {
+                        return context.flags?.isOwnHandTrash === true;
+                    }
+                    if (value === 'TRASHED_IS_OTHER') {
+                        return !!context.trashedUnit && context.trashedUnit.id !== context.sourceCard.id;
+                    }
+                    if (value === 'TRASHED_IS_OTHER_BY_EFFECT') {
+                        const byEffect = context.trashReason === 'EFFECT' || context.trashReason === 'RULE';
+                        return byEffect && !!context.trashedUnit && context.trashedUnit.id !== context.sourceCard.id;
+                    }
+                    return !!context.flags?.[value];
+                }
+
+                const key = value?.key;
+                if (!key) return false;
+                let current: any;
+                if (key === 'HAND_TRASH_OWNER_IS_SELF') {
+                    current = context.flags?.isOwnHandTrash === true;
+                } else if (key === 'TRASHED_IS_OTHER') {
+                    current = !!context.trashedUnit && context.trashedUnit.id !== context.sourceCard.id;
+                } else if (key === 'TRASHED_IS_OTHER_BY_EFFECT') {
+                    const byEffect = context.trashReason === 'EFFECT' || context.trashReason === 'RULE';
+                    current = byEffect && !!context.trashedUnit && context.trashedUnit.id !== context.sourceCard.id;
+                } else {
+                    current = context.flags?.[key];
+                }
+
+                if (value.equals !== undefined) return current === value.equals;
+                if (value.min !== undefined) return typeof current === 'number' && current >= value.min;
+                return !!current;
+            }
             default:
                 return true;
         }

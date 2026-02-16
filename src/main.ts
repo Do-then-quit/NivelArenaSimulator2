@@ -217,7 +217,7 @@ function renderMenu() {
                 <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Baseline Bot</button>
                 <button id="bot-replay-btn" class="primary-btn">Simulate Bot vs Bot (Replay)</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
-                <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Tests (ST01 & ST02)</button>
+                <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Logic Verification</button>
             </div>
         </div>
     `;
@@ -1251,11 +1251,14 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
                         <!-- Items -->
                         ${z.items.length > 0 ? `
                             <div class="attached-items">
-                                ${z.items.map((item: Card) => `
-                                    <div class="mini-item-card">
+                                ${z.items.map((item: Card, itemIndex: number) => {
+            const isItemSelected = game!.state.pendingEffect?.selectedTargets?.includes(item);
+            return `
+                                    <div class="mini-item-card ${isItemSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-zone-index="${i}" data-item-index="${itemIndex}">
                                         <img src="${item.imageUrl}" alt="${item.name}">
                                     </div>
-                                `).join('')}
+                                `;
+        }).join('')}
                             </div>
                             <div class="item-tooltip">
                                 ${z.items.map((item: Card) => `
@@ -1295,7 +1298,10 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean) {
             <!-- Bottom Field (2, 4) -->
             <div class="bottom-center">
                 <div class="damage-zone">
-                    ${player.damage.map((c: any) => renderCard(c, true)).join('')}
+                    ${player.damage.map((c: any, damageIndex: number) => {
+        const isDamageSelected = game!.state.pendingEffect?.selectedTargets?.includes(c);
+        return `<div class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${damageIndex}">${renderCard(c, true)}</div>`;
+    }).join('')}
                     ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
                 </div>
                 <div class="skill-zone ${!isOpponent && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
@@ -1674,7 +1680,7 @@ function attachListeners() {
             const isOpponent = el.dataset.player === 'opponent';
             const targetPlayerId = isOpponent ? game!.opponentPlayer.id : game!.currentPlayer.id;
             const zoneKey = `${targetPlayerId}:${zoneIndex}`;
-            const canSelectZone = zoneTargetActions.length === 0 || validZoneKeySet.has(zoneKey);
+            const canSelectZone = zoneTargetActions.length > 0 && validZoneKeySet.has(zoneKey);
             if (!canSelectZone) return;
 
             el.addEventListener('click', () => {
@@ -1746,6 +1752,59 @@ function attachListeners() {
                         game!.selectHandTargetByPlayerId(index, targetPlayerId);
                         render();
                     });
+                });
+            });
+        }
+
+        const damageTargetActions =
+            legalActions.filter(action => action.type === 'SELECT_DAMAGE_TARGET') as Array<{ targetPlayerId: string; damageIndex: number }>;
+        if (damageTargetActions.length > 0) {
+            const targetMap = new Map<string, Set<number>>();
+            damageTargetActions.forEach(action => {
+                const set = targetMap.get(action.targetPlayerId) ?? new Set<number>();
+                set.add(action.damageIndex);
+                targetMap.set(action.targetPlayerId, set);
+            });
+
+            targetMap.forEach((allowedIndexes, targetPlayerId) => {
+                const selector = targetPlayerId === game!.currentPlayer.id
+                    ? '.current .damage-zone .damage-card-item'
+                    : '.opponent .damage-zone .damage-card-item';
+                document.querySelectorAll(selector).forEach(item => {
+                    const el = item as HTMLElement;
+                    const index = parseInt(el.dataset.index!);
+                    if (!allowedIndexes.has(index)) return;
+
+                    el.style.cursor = 'crosshair';
+                    el.style.boxShadow = '0 0 10px #ffeaa7';
+                    el.addEventListener('click', () => {
+                        if (!canLocalHumanInput()) return;
+                        game!.selectDamageTargetByPlayerId(index, targetPlayerId);
+                        render();
+                    });
+                });
+            });
+        }
+
+        const itemTargetActions =
+            legalActions.filter(action => action.type === 'SELECT_ITEM_TARGET') as Array<{ targetPlayerId: string; zoneIndex: number; itemIndex: number }>;
+        if (itemTargetActions.length > 0) {
+            const validItemKeys = new Set(itemTargetActions.map(action => `${action.targetPlayerId}:${action.zoneIndex}:${action.itemIndex}`));
+            document.querySelectorAll('.mini-item-card').forEach(item => {
+                const el = item as HTMLElement;
+                const zoneIndex = parseInt(el.dataset.zoneIndex || '-1');
+                const itemIndex = parseInt(el.dataset.itemIndex || '-1');
+                const playerRef = el.dataset.player === 'opponent' ? game!.opponentPlayer.id : game!.currentPlayer.id;
+                const key = `${playerRef}:${zoneIndex}:${itemIndex}`;
+                if (!validItemKeys.has(key)) return;
+
+                el.style.cursor = 'crosshair';
+                el.style.boxShadow = '0 0 10px #ffeaa7';
+                el.style.border = '2px solid #e17055';
+                el.addEventListener('click', () => {
+                    if (!canLocalHumanInput()) return;
+                    game!.selectItemTargetByPlayerId(zoneIndex, itemIndex, playerRef);
+                    render();
                 });
             });
         }
@@ -1836,7 +1895,9 @@ function attachListeners() {
         const isOpponent = zone.closest('.opponent') !== null;
         const player = isOpponent ? game!.opponentPlayer : game!.currentPlayer;
 
-        zone.querySelectorAll('.card').forEach((cardEl, index) => {
+        zone.querySelectorAll('.damage-card-item').forEach(cardEl => {
+            const index = parseInt((cardEl as HTMLElement).dataset.index || '-1');
+            if (index < 0) return;
             cardEl.addEventListener('mouseenter', (e) => {
                 const card = player.damage[index];
                 if (card) {

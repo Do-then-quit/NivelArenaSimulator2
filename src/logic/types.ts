@@ -39,6 +39,7 @@ export enum ActivationCondition {
     AWAKEN = 'AWAKEN',
     UNIT_TRASHED = 'UNIT_TRASHED', // New: Triggered when any unit is moved to trash
     ESCAPE = 'ESCAPE', // New: When unit is returned to deck bottom from field (Entry of Main Phase)
+    HAND_TRASHED = 'HAND_TRASHED', // New: Triggered when cards are moved from hand to trash
 }
 
 export type ActionType =
@@ -79,15 +80,61 @@ export type ActionType =
     | 'SACRIFICE_TO_BUFF' // Added
     | 'DRAW_THEN_DISCARD' // Added for BT01-068
     | 'DESTROY_UNIT_AND_DRAW' // Added for BT01-071
-    | 'RETURN_UNIT_AND_ITEMS_TO_HAND';
+    | 'RETURN_UNIT_AND_ITEMS_TO_HAND'
+    | 'DESTROY_ITEM'
+    | 'RETURN_ITEM_TO_HAND'
+    | 'MOVE_ITEM_TO_DECK_BOTTOM'
+    | 'MOVE_FROM_DAMAGE_TO_HAND'
+    | 'MOVE_FROM_HAND_TO_DAMAGE'
+    | 'MOVE_FROM_TRASH_TO_DECK_TOP'
+    | 'MOVE_FROM_TRASH_TO_DECK_BOTTOM'
+    | 'DRAW_BY_TARGET_HIT'
+    | 'LOCK_ATTACK_UNTIL_TURN_END'
+    | 'APPLY_DUALIST_MARK'
+    | 'APPLY_INFILTRATION_MARK'
+    | 'REVEAL_TOP_PICK_TO_HAND_THEN_ORDER_BOTTOM';
 
 export interface TargetFilter {
-    type: 'EXCLUDE_SELF' | 'UNIT_TYPE' | 'HAS_TRAIT' | 'HAS_KEYWORD' | 'HAS_NAME' | 'COST_LIMIT' | 'POWER_LIMIT' | 'COST_LOWER_THAN_COST_PAYMENT' | 'COST_EQUAL' | 'COST_HIGHER_THAN_ENCOUNTER' | 'LOWEST_COST_ONLY' | 'ITEM_COUNT_MIN';
+    type:
+    | 'EXCLUDE_SELF'
+    | 'UNIT_TYPE'
+    | 'HAS_TRAIT'
+    | 'HAS_KEYWORD'
+    | 'NOT_HAS_KEYWORD'
+    | 'HAS_NAME'
+    | 'COST_LIMIT'
+    | 'COST_MIN'
+    | 'POWER_LIMIT'
+    | 'COST_LOWER_THAN_COST_PAYMENT'
+    | 'COST_EQUAL'
+    | 'COST_HIGHER_THAN_ENCOUNTER'
+    | 'LOWEST_COST_ONLY'
+    | 'ITEM_COUNT_MIN';
     value?: any;
 }
 
 export interface TargetSchema {
-    scope: 'SELF' | 'MY_FIELD' | 'OPP_FIELD' | 'BOTH_FIELDS' | 'FIELD' | 'MY_LEADER' | 'OPP_LEADER' | 'SHARED_LANE' | 'ADJACENT_LANES' | 'ENCOUNTER' | 'ENCOUNTER_UNIT' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED' | 'LAST_DRAWN';
+    scope:
+    | 'SELF'
+    | 'MY_FIELD'
+    | 'OPP_FIELD'
+    | 'BOTH_FIELDS'
+    | 'FIELD'
+    | 'MY_LEADER'
+    | 'OPP_LEADER'
+    | 'SHARED_LANE'
+    | 'ADJACENT_LANES'
+    | 'ENCOUNTER'
+    | 'ENCOUNTER_UNIT'
+    | 'MY_TRASH'
+    | 'MY_HAND'
+    | 'OPP_HAND'
+    | 'MY_DAMAGE'
+    | 'MY_FIELD_ITEMS'
+    | 'OPP_FIELD_ITEMS'
+    | 'FIELD_ITEMS'
+    | 'REVEALED'
+    | 'LAST_DRAWN';
     type: 'UNIT' | 'LEADER' | 'ALL' | 'CARD';
     count?: number; // 0 = all (e.g., "All units"), 1 = single target, >1 = multi-select
     filters?: TargetFilter[];
@@ -105,7 +152,26 @@ export interface TargetSchema {
 }
 
 export interface EffectCondition {
-    type: 'ALWAYS' | 'LEADER_LEVEL' | 'HAS_ITEM' | 'HAS_KEYWORD' | 'COST_COMPARISON' | 'YOUR_TURN' | 'OPPONENT_TURN' | 'OPPONENT_HAND_COUNT' | 'DISCARDED_COUNT' | 'FRONTLINE' | 'LEVEL_LINK' | 'ONCE_PER_TURN';
+    type:
+    | 'ALWAYS'
+    | 'LEADER_LEVEL'
+    | 'HAS_ITEM'
+    | 'HAS_KEYWORD'
+    | 'HAS_TRAIT'
+    | 'COST_COMPARISON'
+    | 'YOUR_TURN'
+    | 'OPPONENT_TURN'
+    | 'OPPONENT_HAND_COUNT'
+    | 'MY_HAND_COUNT'
+    | 'DISCARDED_COUNT'
+    | 'FRONTLINE'
+    | 'LEVEL_LINK'
+    | 'ONCE_PER_TURN'
+    | 'EQUIPPED_UNIT_COUNT_MIN'
+    | 'TRASHED_FRIENDLY_BY_EFFECT_THIS_TURN_MIN'
+    | 'TRASH_REASON'
+    | 'ITEM_COUNT_GTE_ENCOUNTER_HIT'
+    | 'CONTEXT_FLAG';
     value?: any;
     trashedUnitCostMin?: number; // New: for triggers like Cinderella's UNIT_TRASHED
     friendlyOnly?: boolean; // New: check if trashed unit belongs to player
@@ -139,6 +205,8 @@ export interface GameContext {
     _optionalConfirmed?: boolean;
     lastDrawnCards?: Card[];
     discardedCount?: number;
+    trashReason?: 'BATTLE' | 'EFFECT' | 'RULE';
+    flags?: Record<string, boolean | number>;
 }
 
 export interface EffectQueueItem {
@@ -163,6 +231,8 @@ export type EngineAction =
     | { type: 'SELECT_ZONE_TARGET'; actorPlayerId: string; targetPlayerId: string; zoneIndex: number }
     | { type: 'SELECT_HAND_TARGET'; actorPlayerId: string; targetPlayerId: string; handIndex: number }
     | { type: 'SELECT_TRASH_TARGET'; actorPlayerId: string; targetPlayerId: string; trashIndex: number }
+    | { type: 'SELECT_DAMAGE_TARGET'; actorPlayerId: string; targetPlayerId: string; damageIndex: number }
+    | { type: 'SELECT_ITEM_TARGET'; actorPlayerId: string; targetPlayerId: string; zoneIndex: number; itemIndex: number }
     | { type: 'SELECT_REVEALED_TARGET'; actorPlayerId: string; revealedIndex: number }
     | { type: 'CONFIRM_TARGETS'; actorPlayerId: string };
 
@@ -268,6 +338,10 @@ export interface GameState {
     globalStep: number; // Global Timer for effects
     combatStep: 'NONE' | 'ATTACK_DECLARATION' | 'DEFENSE_DECLARATION' | 'BATTLE' | 'BATTLE_END';
     combatBlocked: boolean; // Tracks if a block was declared
+    turnStats?: {
+        effectTrashedFriendlyUnitCountByPlayerId: Record<string, number>;
+        handTrashedByEffectCountByPlayerId: Record<string, number>;
+    };
 }
 
 export interface PendingEffect {
@@ -277,7 +351,20 @@ export interface PendingEffect {
     actionType: string;
     actionValue: any;
     effectDescription?: string;
-    validTargets?: 'ALL_UNITS' | 'MY_UNITS' | 'OPP_UNITS' | 'SHARED_LANE' | 'MY_TRASH' | 'MY_HAND' | 'OPP_HAND' | 'REVEALED' | 'LAST_DRAWN'; // Simplified target constraint
+    validTargets?:
+    | 'ALL_UNITS'
+    | 'MY_UNITS'
+    | 'OPP_UNITS'
+    | 'SHARED_LANE'
+    | 'MY_TRASH'
+    | 'MY_HAND'
+    | 'OPP_HAND'
+    | 'MY_DAMAGE'
+    | 'MY_FIELD_ITEMS'
+    | 'OPP_FIELD_ITEMS'
+    | 'FIELD_ITEMS'
+    | 'REVEALED'
+    | 'LAST_DRAWN'; // Simplified target constraint
     targetSchema?: TargetSchema;
     costToPay?: EffectCost;
     costCardTypeFilter?: CardType;

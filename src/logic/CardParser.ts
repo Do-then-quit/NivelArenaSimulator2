@@ -11,8 +11,8 @@ export enum ParsedEffectType {
 export class CardParser {
     // Regex Definitions per GameLogicDetailProposal.md
 
-    // Auto: [엔트리], [엑시트], [어태커], [디펜더], [이스케이프], [가디언], [공멸], [관통], [약탈], [종결], [침투]
-    private static AUTO_PATTERN = /\[(엔트리|엑시트|어태커|디펜더|이스케이프|가디언|공멸|관통|약탈|종결|침투)\]/;
+    // Auto: [엔트리], [엑시트], [어태커], [디펜더], [이스케이프], [가디언], [공멸], [관통], [약탈], [종결], [침투], [듀얼리스트]
+    private static AUTO_PATTERN = /\[(엔트리|엑시트|어태커|디펜더|이스케이프|가디언|공멸|관통|약탈|종결|침투|듀얼리스트)\]/;
 
     // Activate: [액티브: 메인], [액티브: 어택], [스킬], [기동]
     // Note: '스킬' usually refers to Skill Cards, effectively Active.
@@ -58,7 +58,7 @@ export class CardParser {
         // Also scan for specific known keywords that might appear without full brackets
         // e.g., "관통[1]", "약탈[1]"
         // FIX: Use negative lookbehind to avoid matching keywords inside conditions (e.g., "어태커 : 관통")
-        const abilityKeywords = ['관통', '약탈', '광전사', '전선구축', '레벨링크', '돌파'];
+        const abilityKeywords = ['관통', '약탈', '광전사', '전선구축', '레벨링크', '돌파', '침투', '듀얼리스트'];
         const conditions = '(어태커|엔트리|디펜더|액티브|트리거|패시브)';
         
         abilityKeywords.forEach(kw => {
@@ -85,7 +85,7 @@ export class CardParser {
 
     private static isValidKeyword(kw: string): boolean {
         const validList = [
-            '엔트리', '엑시트', '어태커', '디펜더', '이스케이프', '가디언', '공멸', '관통', '약탈', '종결', '침투',
+            '엔트리', '엑시트', '어태커', '디펜더', '이스케이프', '가디언', '공멸', '관통', '약탈', '종결', '침투', '듀얼리스트',
             '액티브', '기동',
             '패시브', '암드', '전선구축', '레벨링크', '믹스', '광전사', '트리거', '돌파'
         ];
