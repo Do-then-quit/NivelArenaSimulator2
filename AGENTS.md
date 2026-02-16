@@ -38,7 +38,8 @@
 1. 관련 룰북 조항/카드 텍스트 확인
 2. 실패 테스트(또는 재현 테스트) 먼저 작성
 3. 작은 단위로 구현
-4. 변경 지점 테스트 → 관련 회귀 → 필요 시 전체 테스트
+   - 카드 팩 일괄 구현 요청도 배치 단위로 분할 (권장 5장, 허용 4~6장)
+4. 배치 게이트: 변경 지점 테스트 → 관련 회귀 → (필요 시) 전체 테스트 통과 전 다음 배치 진행 금지
 5. 무관한 리팩터링 혼합 금지, 커밋/PR에 근거 명시
 
 ## 5) Engine Invariants (핵심만)
@@ -53,6 +54,12 @@
 ## 6) Test Policy
 - 테스트 없이 룰/효과 동작 변경 금지
 - 권장 순서: 변경 지점 테스트 → 관련 회귀 묶음 → `npm test`
+- 카드 팩 구현 시 배치마다 아래 순서를 반복:
+  1. 배치 카드에 대한 실패 테스트 작성
+  2. 구현 후 변경 지점 테스트 실행 (`npx vitest run tests/cards/<pack>/...`)
+  3. 관련 `tests/rules_v2_regression/` 회귀 실행
+  4. 모두 통과 시에만 다음 배치 진행
+- 권장: 팩 전체 배치 완료 시 `npm test`로 최종 게이트
 - AI/봇 변경 시 최소 회귀:
   - `tests/rules_v2_regression/rules_v2_ai_ready_stage1_regression.test.ts`
   - `tests/rules_v2_regression/rules_v2_ai_ready_stage2_stage3_regression.test.ts`
