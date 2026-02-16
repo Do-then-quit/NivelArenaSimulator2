@@ -7,7 +7,7 @@ import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 const tests: UnifiedTestCase[] = [
     // === LEADER ===
     {
-        cardId: 'ST03-001',
+        testId: 'ST03-001',
         name: '모더니아 리더 각성',
         description: '레벨 4 각성 후 엑시트 유닛 +1000.',
         setup: (engine, getCard) => {
@@ -33,7 +33,7 @@ const tests: UnifiedTestCase[] = [
     // === UNITS ===
     // ST03-003: 엑시트 효과
     {
-        cardId: 'ST03-003',
+        testId: 'ST03-003',
         name: '프리바티 엑시트 상대버림',
         description: '트래시 시 상대 패 1장 버림.',
         setup: (engine, getCard) => {
@@ -58,7 +58,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-003: 트리거 효과
     {
-        cardId: 'ST03-003-Trigger',
+        testId: 'ST03-003-Trigger',
         name: '프리바티 트리거 상대버림',
         description: '대미지 트리거: 상대 패 3장 이상이면 버림.',
         setup: (engine, getCard) => {
@@ -82,7 +82,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST03-005',
+        testId: 'ST03-005',
         name: '노벨 엔트리 1코 트래시',
         description: '1코 이하 조우 유닛 트래시.',
         setup: (engine, getCard) => {
@@ -103,7 +103,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST03-006',
+        testId: 'ST03-006',
         name: '사쿠라 엑시트 드로우',
         description: '트래시 시 1장 드로우.',
         setup: (engine, getCard) => {
@@ -122,7 +122,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST03-007',
+        testId: 'ST03-007',
         name: 'D 엑시트 공멸',
         description: '전투로 트래시 시 상대 유닛도 트래시.',
         setup: (engine, getCard) => {
@@ -148,7 +148,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST03-008',
+        testId: 'ST03-008',
         name: '엑시아 엑시트 +1000',
         description: '패시브: 엑시트 유닛 +1000.',
         setup: (engine, getCard) => {
@@ -170,7 +170,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-010: 엑시트 효과
     {
-        cardId: 'ST03-010',
+        testId: 'ST03-010',
         name: '로산나 엑시트 회수',
         description: '트래시에서 엑시트 2코 이하 회수.',
         setup: (engine, getCard) => {
@@ -195,7 +195,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-010: 트리거 효과
     {
-        cardId: 'ST03-010-Trigger',
+        testId: 'ST03-010-Trigger',
         name: '로산나 트리거 상대버림',
         description: '대미지 트리거: 상대 패 3장 이상이면 버림.',
         setup: (engine, getCard) => {
@@ -220,7 +220,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-011: 엔트리 효과
     {
-        cardId: 'ST03-011',
+        testId: 'ST03-011',
         name: '모더니아 엔트리 패버림→트래시',
         description: '패 모두 버려 2장 이상이면 조우 트래시.',
         setup: (engine, getCard) => {
@@ -242,7 +242,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-011: 트리거 효과
     {
-        cardId: 'ST03-011-Trigger',
+        testId: 'ST03-011-Trigger',
         name: '모더니아 트리거 패복귀',
         description: '대미지 트리거: 패로 복귀.',
         setup: (engine, getCard) => {
@@ -261,7 +261,7 @@ const tests: UnifiedTestCase[] = [
 
     // === SKILLS ===
     {
-        cardId: 'ST03-012',
+        testId: 'ST03-012',
         name: '기습 서로 버림',
         description: '패 1장 버려 상대도 버림.',
         setup: (engine, getCard) => {
@@ -286,7 +286,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST03-013',
+        testId: 'ST03-013',
         name: '흑화 패트래시→필드트래시',
         description: '패 유닛 버려 더 낮은 코스트 유닛 트래시.',
         setup: (engine, getCard) => {
@@ -313,7 +313,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST03-014',
+        testId: 'ST03-014',
         name: '센스 쉐어링 희생드로우',
         description: '유닛 트래시 후 2장 드로우.',
         setup: (engine, getCard) => {
@@ -336,7 +336,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-015: 스킬 효과
     {
-        cardId: 'ST03-015',
+        testId: 'ST03-015',
         name: '다 덤벼! 스킬',
         description: '자신 유닛과 조우 유닛 모두 트래시.',
         setup: (engine, getCard) => {
@@ -360,7 +360,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST03-015: 트리거 효과
     {
-        cardId: 'ST03-015-Trigger',
+        testId: 'ST03-015-Trigger',
         name: '다 덤벼! 트리거',
         description: '대미지 트리거: 트래시에서 엑시트 회수.',
         setup: (engine, getCard) => {
@@ -385,7 +385,7 @@ const tests: UnifiedTestCase[] = [
 
     // === ITEMS ===
     {
-        cardId: 'ST03-016',
+        testId: 'ST03-016',
         name: '베스트 디펜더 종결',
         description: '방어 시 전투 종료 + 자신 트래시.',
         setup: (engine, getCard) => {
@@ -409,7 +409,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST03-017',
+        testId: 'ST03-017',
         name: '암가드 엑시트 공멸',
         description: '장착 유닛 트래시 시 공멸.',
         setup: (engine, getCard) => {

@@ -744,8 +744,8 @@ function renderTestScreen() {
                     <div class="test-result ${r.success ? 'pass' : 'fail'}" style="margin-bottom: 10px; padding: 10px; border-left: 5px solid ${r.success ? '#00b894' : '#d63031'}; background: rgba(0,0,0,0.3); border-radius: 4px;">
                         <div style="display:flex; justify-content:space-between; align-items: center; font-weight:bold;">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 1.1em;">${r.cardId}</span>
-                                <button class="play-test-btn small-btn" data-cardid="${r.cardId}" style="font-size: 0.8rem; padding: 2px 8px; background: #0984e3; border: none; border-radius: 4px; color: white; cursor: pointer;">Play</button>
+                                <span style="font-size: 1.1em;">${r.testId}</span>
+                                <button class="play-test-btn small-btn" data-testid="${r.testId}" style="font-size: 0.8rem; padding: 2px 8px; background: #0984e3; border: none; border-radius: 4px; color: white; cursor: pointer;">Play</button>
                             </div>
                             <span style="color: ${r.success ? '#00b894' : '#d63031'}">${r.success ? 'PASS' : 'FAIL'}</span>
                         </div>
@@ -808,8 +808,8 @@ function renderTestScreen() {
 
     document.querySelectorAll('.play-test-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const cardId = (e.target as HTMLElement).dataset.cardid!;
-            const { engine, instructions } = cardTester.setupScenario(cardId);
+            const testId = (e.target as HTMLElement).dataset.testid!;
+            const { engine, instructions } = cardTester.setupScenario(testId);
             clearBotStepTimer();
             botByPlayerId.clear();
             botLabelByPlayerId.clear();
@@ -818,7 +818,7 @@ function renderTestScreen() {
             game = engine;
             (window as any).debug = new DebugManager(game, render);
             currentScreen = Screen.GAME;
-            alert(`Scenario Started: ${cardId}\n\n${instructions}`);
+            alert(`Scenario Started: ${testId}\n\n${instructions}`);
             render();
         });
     });

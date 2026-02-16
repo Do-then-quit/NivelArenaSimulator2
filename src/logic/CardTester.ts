@@ -5,7 +5,7 @@ import { findTestModule, CARD_TEST_REGISTRY } from './cardTests/registry';
 import { CardTestContext } from './cardTests/types';
 
 export interface TestResult {
-    cardId: string;
+    testId: string;
     success: boolean;
     logs: string[];
     error?: string;
@@ -45,49 +45,55 @@ export class CardTester {
         this.log(`PASS: ${msg}`);
     }
 
-    private reset(cardId: string) {
+    private reset(testId: string) {
         this.logs = [];
         this.engine = this.createTestEngine();
-        this.log(`Starting test for ${cardId}`);
+        this.log(`Starting test for ${testId}`);
     }
 
     private createCtx(): CardTestContext {
+        const self = this;
         return {
-            engine: this.engine,
-            getCard: (id: string) => this.getCard(id),
-            assert: (condition: boolean, msg: string) => this.assert(condition, msg),
-            log: (msg: string) => this.log(msg)
+            get engine() {
+                return self.engine;
+            },
+            getCard: (id: string) => self.getCard(id),
+            assert: (condition: boolean, msg: string) => self.assert(condition, msg),
+            log: (msg: string) => self.log(msg),
+            resetEngine: () => {
+                self.engine = self.createTestEngine();
+            },
         };
     }
 
-    public setupScenario(cardId: string): { engine: GameEngine, instructions: string } {
-        this.reset(cardId);
+    public setupScenario(testId: string): { engine: GameEngine, instructions: string } {
+        this.reset(testId);
         let instructions = "";
 
-        const module = findTestModule(cardId);
-        if (module && module.setupScenarios[cardId]) {
-            instructions = module.setupScenarios[cardId](this.createCtx());
+        const module = findTestModule(testId);
+        if (module && module.setupScenarios[testId]) {
+            instructions = module.setupScenarios[testId](this.createCtx());
         } else {
-            this.log(`No scenario found for ${cardId}`);
+            this.log(`No scenario found for ${testId}`);
             instructions = "Scenario not implemented.";
         }
 
         return { engine: this.engine, instructions };
     }
 
-    public async runTest(cardId: string): Promise<TestResult> {
-        this.setupScenario(cardId);
+    public async runTest(testId: string): Promise<TestResult> {
+        this.setupScenario(testId);
         try {
-            const module = findTestModule(cardId);
-            if (module && module.runTests[cardId]) {
-                await module.runTests[cardId](this.createCtx());
+            const module = findTestModule(testId);
+            if (module && module.runTests[testId]) {
+                await module.runTests[testId](this.createCtx());
             } else {
-                throw new Error(`Test for ${cardId} not implemented yet`);
+                throw new Error(`Test for ${testId} not implemented yet`);
             }
-            return { cardId, success: true, logs: this.logs };
+            return { testId, success: true, logs: this.logs };
         } catch (e: any) {
             this.log(`ERROR: ${e.message}`);
-            return { cardId, success: false, logs: this.logs, error: e.message };
+            return { testId, success: false, logs: this.logs, error: e.message };
         }
     }
     public getAvailablePacks(): string[] {

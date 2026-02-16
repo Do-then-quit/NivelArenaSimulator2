@@ -6,7 +6,7 @@ import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 
 const tests: UnifiedTestCase[] = [
     {
-        cardId: 'ST05-001',
+        testId: 'ST05-001',
         name: '프리바티 리더 각성 + 암드 유닛 버프',
         description: '레벨 5 각성 후 암드 유닛 +1000.',
         setup: (engine, getCard) => {
@@ -30,7 +30,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-003',
+        testId: 'ST05-003',
         name: '슈가 엔트리 드로우 후 1버림',
         description: '드로우 1, 손패 1장 트래시.',
         setup: (engine, getCard) => {
@@ -53,7 +53,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-005',
+        testId: 'ST05-005',
         name: '맥스웰 암드 +1000',
         description: '아이템 장착 시 +1000.',
         setup: (engine, getCard) => {
@@ -73,7 +73,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-006',
+        testId: 'ST05-006',
         name: '크라운 엔트리 2코 아이템 서치',
         description: '덱에서 2코 아이템 1장 수동 선택 후 패로.',
         setup: (engine, getCard) => {
@@ -98,7 +98,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-006-Trigger',
+        testId: 'ST05-006-Trigger',
         name: '크라운 트리거 1코 이하 아이템 서치',
         description: '대미지 트리거로 1코 이하 아이템 서치 + 셀프 트래시.',
         setup: (engine, getCard) => {
@@ -119,7 +119,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-007',
+        testId: 'ST05-007',
         name: '소다 장착 아이템 수 비례 +파워',
         description: '아이템 2장 장착 시 +2000.',
         setup: (engine, getCard) => {
@@ -139,7 +139,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-008',
+        testId: 'ST05-008',
         name: '리타 패시브 암드 유닛 +1000',
         description: '암드 키워드 유닛 전체 +1000.',
         setup: (engine, getCard) => {
@@ -158,7 +158,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-010',
+        testId: 'ST05-010',
         name: '센티 암드 +2000',
         description: '아이템 장착 시 +2000.',
         setup: (engine, getCard) => {
@@ -178,7 +178,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-011',
+        testId: 'ST05-011',
         name: '프리바티 암드 어태커 상대 패버림',
         description: '아이템 장착 공격 시 상대 손패 1장 버림.',
         setup: (engine, getCard) => {
@@ -203,7 +203,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-011-Trigger',
+        testId: 'ST05-011-Trigger',
         name: '프리바티 트리거 패복귀',
         description: '대미지 트리거 시 패로 복귀.',
         setup: (engine, getCard) => {
@@ -220,7 +220,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-012',
+        testId: 'ST05-012',
         name: '현장검토 트래시 아이템 회수',
         description: '트래시 아이템 1장 회수.',
         setup: (engine, getCard) => {
@@ -242,7 +242,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-012-Trigger',
+        testId: 'ST05-012-Trigger',
         name: '현장검토 트리거 1코 이하 아이템 서치',
         description: '트리거로 덱에서 1코 이하 아이템 서치.',
         setup: (engine, getCard) => {
@@ -262,7 +262,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-013',
+        testId: 'ST05-013',
         name: '리타 부스트 장착 아이템 수만큼 드로우',
         description: '대상 유닛의 1코 이상 아이템 수만큼 드로우.',
         setup: (engine, getCard) => {
@@ -286,7 +286,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-014',
+        testId: 'ST05-014',
         name: '원 포 올 2장착 유닛 희생 후 상대 트래시',
         description: '2개 이상 장착 유닛 희생 후 상대 유닛 트래시.',
         setup: (engine, getCard) => {
@@ -316,7 +316,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-015',
+        testId: 'ST05-015',
         name: '케블라 게이터 +1500',
         description: '장착 유닛 파워 +1500.',
         setup: (engine, getCard) => {
@@ -335,7 +335,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-016',
+        testId: 'ST05-016',
         name: '레어 메탈 건틀렛 장착조건 암드',
         description: '암드 유닛에만 장착 가능, 장착 시 히트+1.',
         setup: (engine, getCard) => {
@@ -357,7 +357,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-016-EquipFail',
+        testId: 'ST05-016-EquipFail',
         name: '레어 메탈 건틀렛 비암드 장착 실패',
         description: '암드 키워드 없는 유닛에는 장착 실패.',
         setup: (engine, getCard) => {
@@ -377,7 +377,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST05-017',
+        testId: 'ST05-017',
         name: '레어 메탈 게이터 +2500',
         description: '장착 유닛 파워 +2500.',
         setup: (engine, getCard) => {

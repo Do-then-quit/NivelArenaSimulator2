@@ -7,7 +7,7 @@ import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 const tests: UnifiedTestCase[] = [
     // === LEADER ===
     {
-        cardId: 'BT01-055 Awaken',
+        testId: 'BT01-055 Awaken',
         name: 'Awaken at level 5',
         description: 'Leader should awaken when level reaches 5.',
         setup: (engine, getCard) => {
@@ -27,7 +27,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-055 UnitTrashedDrawOnce',
+        testId: 'BT01-055 UnitTrashedDrawOnce',
         name: 'Awakened leader draws once per turn on 5+ cost trash',
         description: 'Awakened passive should draw when friendly 5+ cost unit is trashed, once per turn.',
         setup: (engine, getCard) => {
@@ -60,7 +60,7 @@ const tests: UnifiedTestCase[] = [
 
     // === UNITS ===
     {
-        cardId: 'BT01-056',
+        testId: 'BT01-056',
         name: 'Exit target -2000',
         description: 'On exit, choose an opponent unit and apply -2000 power.',
         setup: (engine, getCard) => {
@@ -85,7 +85,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-058',
+        testId: 'BT01-058',
         name: 'Defender terminate attack',
         description: 'Defender should terminate attack and trash itself.',
         setup: (engine, getCard) => {
@@ -108,7 +108,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-060 PassiveAttackCost',
+        testId: 'BT01-060 PassiveAttackCost',
         name: 'Attack requires discard cost',
         description: 'Attacking with this unit should require discarding 1 card from hand.',
         setup: (engine, getCard) => {
@@ -137,7 +137,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-061 ActiveSacrificeToBuff',
+        testId: 'BT01-061 ActiveSacrificeToBuff',
         name: 'Active: sacrifice one, buff one +2000',
         description: 'Select 2 friendly units, sacrifice one and give +2000 to the other.',
         setup: (engine, getCard) => {
@@ -170,7 +170,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-063',
+        testId: 'BT01-063',
         name: 'Passive mutual-destruction units +2000',
         description: 'Units with Mutual Destruction keyword/effect should gain +2000 power.',
         setup: (engine, getCard) => {
@@ -193,7 +193,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-064 EntryOptionalDestroyEncounter',
+        testId: 'BT01-064 EntryOptionalDestroyEncounter',
         name: 'Entry optional: discard 2 then destroy encounter',
         description: 'Confirm optional effect, pay 2 discard cost, and destroy encounter unit.',
         setup: (engine, getCard) => {
@@ -227,7 +227,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-065 PassiveAttackCost',
+        testId: 'BT01-065 PassiveAttackCost',
         name: 'Attack requires discard cost',
         description: 'Attacking with this unit should require discarding 1 card from hand.',
         setup: (engine, getCard) => {
@@ -256,7 +256,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-066',
+        testId: 'BT01-066',
         name: 'Exit: opponent discards 1 when hand>=3',
         description: 'On exit, if opponent has 3+ cards, discard 1 selected card from opponent hand.',
         setup: (engine, getCard) => {
@@ -282,7 +282,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-067',
+        testId: 'BT01-067',
         name: 'Exit mutual destruction',
         description: 'If destroyed by equal/lower cost attacker, destroy attacker too.',
         setup: (engine, getCard) => {
@@ -312,7 +312,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-068',
+        testId: 'BT01-068',
         name: 'Exit: draw 2 then discard 1',
         description: 'On exit, draw 2 and discard 1 selected drawn card.',
         setup: (engine, getCard) => {
@@ -336,7 +336,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-069',
+        testId: 'BT01-069',
         name: 'Entry destroy encounter if cost<=2',
         description: 'Destroys encounter unit only when its cost is 2 or lower.',
         setup: (engine, getCard) => {
@@ -358,7 +358,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-070',
+        testId: 'BT01-070',
         name: 'Defender terminate attack',
         description: 'Defender should terminate attack and trash itself.',
         setup: (engine, getCard) => {
@@ -381,7 +381,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-071 EntryDestroyOwnAndDraw',
+        testId: 'BT01-071 EntryDestroyOwnAndDraw',
         name: 'Entry: destroy 1 friendly unit and draw 1',
         description: 'On entry, destroy selected friendly unit and draw 1 card.',
         setup: (engine, getCard) => {
@@ -406,7 +406,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-071 TriggerReturnHand',
+        testId: 'BT01-071 TriggerReturnHand',
         name: 'Damage trigger: return this card to hand',
         description: 'When revealed by damage, this card should move to hand.',
         setup: (engine, getCard) => {
@@ -424,7 +424,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-072 PassiveGrantExitDraw',
+        testId: 'BT01-072 PassiveGrantExitDraw',
         name: 'Passive grants exit draw to other friendly units',
         description: 'While this unit is on field, other friendly unit should draw 1 on exit.',
         setup: (engine, getCard) => {
@@ -445,7 +445,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-073 EntryDestroyEncounter',
+        testId: 'BT01-073 EntryDestroyEncounter',
         name: 'Entry optional: discard higher-cost unit to destroy encounter',
         description: 'Confirm optional effect, discard higher-cost unit, then destroy encounter unit.',
         setup: (engine, getCard) => {
@@ -481,7 +481,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-073 TriggerDiscard',
+        testId: 'BT01-073 TriggerDiscard',
         name: 'Damage trigger: opponent discards 1 if hand>=3',
         description: 'When triggered from damage, opponent discards 1 and this card moves from damage zone to trash.',
         setup: (engine, getCard) => {
@@ -509,7 +509,7 @@ const tests: UnifiedTestCase[] = [
 
     // === SKILLS ===
     {
-        cardId: 'BT01-074 ActiveDestroyOwnAndDrawByHit',
+        testId: 'BT01-074 ActiveDestroyOwnAndDrawByHit',
         name: 'Active: destroy own unit and draw by hit',
         description: 'On skill use, destroy one friendly unit and draw cards equal to that unit hit.',
         setup: (engine, getCard) => {
@@ -538,7 +538,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-074 TriggerReturnHand',
+        testId: 'BT01-074 TriggerReturnHand',
         name: 'Damage trigger: return this card to hand',
         description: 'When revealed by damage, this card should move to hand.',
         setup: (engine, getCard) => {
@@ -556,7 +556,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-075 ActiveCostHandling',
+        testId: 'BT01-075 ActiveCostHandling',
         name: 'Active requires discard cost',
         description: 'Playing this skill should enter discard-cost selection and consume 1 hand card.',
         setup: (engine, getCard) => {
@@ -584,7 +584,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-076',
+        testId: 'BT01-076',
         name: 'Active buff mutual-destruction unit +4500',
         description: 'Select one mutual-destruction unit and give it +4500 power.',
         setup: (engine, getCard) => {
@@ -608,7 +608,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-077 ActiveDestroyWithHitCost',
+        testId: 'BT01-077 ActiveDestroyWithHitCost',
         name: 'Active: pay hand equal to target hit, then destroy target',
         description: 'Select a unit, pay hand cost equal to its hit, then destroy that unit.',
         setup: (engine, getCard) => {
@@ -650,7 +650,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-078 ActiveDestroyTargets',
+        testId: 'BT01-078 ActiveDestroyTargets',
         name: 'Active destroys selected opponent units',
         description: 'Select up to 2 opponent units and destroy them.',
         setup: (engine, getCard) => {
@@ -684,7 +684,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-078 TriggerRecoverExit',
+        testId: 'BT01-078 TriggerRecoverExit',
         name: 'Damage trigger recovers 1 exit unit from trash',
         description: 'When revealed by damage, recover one exit unit from your trash to hand.',
         setup: (engine, getCard) => {
@@ -705,7 +705,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-079',
+        testId: 'BT01-079',
         name: 'Recover up to 2 cost<=2 exit units from trash',
         description: 'Select 2 valid trash targets and move them to hand.',
         setup: (engine, getCard) => {
@@ -740,7 +740,7 @@ const tests: UnifiedTestCase[] = [
 
     // === ITEMS ===
     {
-        cardId: 'BT01-080',
+        testId: 'BT01-080',
         name: 'Item exit: draw 2',
         description: 'When equipped unit is destroyed, draw 2 cards.',
         setup: (engine, getCard) => {
@@ -760,7 +760,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-081',
+        testId: 'BT01-081',
         name: 'Item exit: return unit from trash at turn end',
         description: 'Destroyed equipped unit should return to hand at turn end; item remains in trash.',
         setup: (engine, getCard) => {

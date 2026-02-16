@@ -24,7 +24,7 @@ export interface TestResult {
  * @example
  * ```ts
  * const test: UnifiedTestCase = {
- *     cardId: 'BT01-001',
+ *     testId: 'BT01-001',
  *     name: 'Leader Awakening',
  *     description: '레벨업하여 리더 각성 확인',
  *     setup: (engine, getCard) => {
@@ -39,8 +39,8 @@ export interface TestResult {
  * ```
  */
 export interface UnifiedTestCase {
-    /** Card ID this test is for (e.g., 'BT01-001') */
-    cardId: string;
+    /** Test ID shown and used by runners (e.g., 'BT01-001-Trigger') */
+    testId: string;
 
     /** Short test name */
     name: string;
