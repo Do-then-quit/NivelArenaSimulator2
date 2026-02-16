@@ -54,18 +54,18 @@ export function runUnifiedTest(test: UnifiedTestCase): void {
  */
 export function runUnifiedModule(module: UnifiedTestModule): void {
     describe(module.displayName, () => {
-        // Group tests by cardId
+        // Group tests by testId
         const byCard = new Map<string, UnifiedTestCase[]>();
         for (const test of module.tests) {
-            if (!byCard.has(test.cardId)) {
-                byCard.set(test.cardId, []);
+            if (!byCard.has(test.testId)) {
+                byCard.set(test.testId, []);
             }
-            byCard.get(test.cardId)!.push(test);
+            byCard.get(test.testId)!.push(test);
         }
 
         // Create nested describe blocks by card
-        for (const [cardId, tests] of byCard) {
-            describe(cardId, () => {
+        for (const [testId, tests] of byCard) {
+            describe(testId, () => {
                 for (const test of tests) {
                     runUnifiedTest(test);
                 }
@@ -77,9 +77,9 @@ export function runUnifiedModule(module: UnifiedTestModule): void {
 /**
  * Run tests for a specific card from a module.
  */
-export function runTestsForCard(module: UnifiedTestModule, cardId: string): void {
-    const tests = module.tests.filter(t => t.cardId === cardId);
-    describe(`${cardId} Tests`, () => {
+export function runTestsForCard(module: UnifiedTestModule, testId: string): void {
+    const tests = module.tests.filter(t => t.testId === testId);
+    describe(`${testId} Tests`, () => {
         for (const test of tests) {
             runUnifiedTest(test);
         }

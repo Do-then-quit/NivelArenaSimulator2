@@ -7,7 +7,7 @@ import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 const tests: UnifiedTestCase[] = [
     // === LEADER ===
     {
-        cardId: 'ST02-001',
+        testId: 'ST02-001',
         name: '길티 리더 각성',
         description: '레벨 6 각성 후 사이즈 +1.',
         setup: (engine, getCard) => {
@@ -29,7 +29,7 @@ const tests: UnifiedTestCase[] = [
 
     // === UNITS ===
     {
-        cardId: 'ST02-003',
+        testId: 'ST02-003',
         name: '미카 엑시트 레벨+1',
         description: '트래시 시 리더 레벨 +1.',
         setup: (engine, getCard) => {
@@ -48,7 +48,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST02-005',
+        testId: 'ST02-005',
         name: '얀 엔트리 레벨+1',
         description: '배치 시 리더 레벨 +1.',
         setup: (engine, getCard) => {
@@ -68,7 +68,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-007: 액티브 효과
     {
-        cardId: 'ST02-007',
+        testId: 'ST02-007',
         name: '브리드 액티브 베이스 히트+1',
         description: '패 1장 트래시 → 베이스 유닛 히트+1.',
         setup: (engine, getCard) => {
@@ -93,7 +93,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-007: 트리거 효과
     {
-        cardId: 'ST02-007-Trigger',
+        testId: 'ST02-007-Trigger',
         name: '브리드 트리거 레벨+1',
         description: '대미지 트리거: 리더 레벨+1.',
         setup: (engine, getCard) => {
@@ -113,7 +113,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-009: 트리거 효과
     {
-        cardId: 'ST02-009-Trigger',
+        testId: 'ST02-009-Trigger',
         name: '길티 트리거 3코 트래시',
         description: '대미지 트리거: 3코 이하 상대 유닛 트래시.',
         setup: (engine, getCard) => {
@@ -138,7 +138,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-010: 어태커 효과
     {
-        cardId: 'ST02-010',
+        testId: 'ST02-010',
         name: '스노우 화이트 돌파',
         description: '2코 이하 유닛은 방어 불가.',
         setup: (engine, getCard) => {
@@ -158,7 +158,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-010: 트리거 효과
     {
-        cardId: 'ST02-010-Trigger',
+        testId: 'ST02-010-Trigger',
         name: '스노우 화이트 트리거 패복귀',
         description: '대미지 트리거: 패로 복귀.',
         setup: (engine, getCard) => {
@@ -175,7 +175,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST02-011',
+        testId: 'ST02-011',
         name: '디젤 레벨×1000',
         description: '패시브: 리더 레벨×1000 파워 증가.',
         setup: (engine, getCard) => {
@@ -196,7 +196,7 @@ const tests: UnifiedTestCase[] = [
 
     // === SKILLS ===
     {
-        cardId: 'ST02-012',
+        testId: 'ST02-012',
         name: '크레센도 +3000',
         description: '스킬 → 자신 유닛 +3000.',
         setup: (engine, getCard) => {
@@ -218,7 +218,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST02-013',
+        testId: 'ST02-013',
         name: '스승의 은혜 레벨+1',
         description: '스킬 → 리더 레벨+1.',
         setup: (engine, getCard) => {
@@ -237,7 +237,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST02-014',
+        testId: 'ST02-014',
         name: '프라이즈 덱 공개',
         description: '덱 3장 공개 → 1장 선택.',
         setup: (engine, getCard) => {
@@ -256,7 +256,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-015: 스킬 효과
     {
-        cardId: 'ST02-015',
+        testId: 'ST02-015',
         name: '엑셀러레이션 스킬',
         description: '레인 최저 파워 유닛 트래시.',
         setup: (engine, getCard) => {
@@ -282,7 +282,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST02-015: 트리거 효과
     {
-        cardId: 'ST02-015-Trigger',
+        testId: 'ST02-015-Trigger',
         name: '엑셀러레이션 트리거',
         description: '대미지 트리거: 3코 이하 상대 유닛 트래시.',
         setup: (engine, getCard) => {
@@ -308,7 +308,7 @@ const tests: UnifiedTestCase[] = [
 
     // === ITEMS ===
     {
-        cardId: 'ST02-016',
+        testId: 'ST02-016',
         name: '프로텍터 패시브 +2000',
         description: '아이템 장착 시 +2000.',
         setup: (engine, getCard) => {
@@ -329,7 +329,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST02-017',
+        testId: 'ST02-017',
         name: '헬멧 4코이상 히트+1',
         description: '4코스트 이상 유닛에 히트+1.',
         setup: (engine, getCard) => {

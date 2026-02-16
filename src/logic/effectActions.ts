@@ -722,14 +722,14 @@ const destroyItem: ActionImplementation = (ctx, _params, targets) => {
 };
 
 const returnItemToHand: ActionImplementation = (ctx, params, targets) => {
-    if ((!targets || targets.length === 0) && params.fromEquippedSnapshot && Array.isArray(ctx.flags?.equippedItemsSnapshot)) {
+    if (params.fromEquippedSnapshot && Array.isArray(ctx.flags?.equippedItemsSnapshot)) {
         const owner = ctx.player;
         const snapshot = (ctx.flags?.equippedItemsSnapshot ?? []) as any[];
-        const card = snapshot[0];
-        const trashIndex = owner.trash.indexOf(card);
-        if (trashIndex !== -1) {
+        const cardInTrash = snapshot.find(card => owner.trash.includes(card));
+        if (cardInTrash) {
+            const trashIndex = owner.trash.indexOf(cardInTrash);
             owner.trash.splice(trashIndex, 1);
-            owner.hand.push(card);
+            owner.hand.push(cardInTrash);
         }
         return;
     }

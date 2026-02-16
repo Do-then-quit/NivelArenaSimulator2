@@ -14,7 +14,7 @@ function resolveBaseTrait(getCard: (id: string) => any): string {
 const tests: UnifiedTestCase[] = [
     // === LEADER ===
     {
-        cardId: 'BT01-028 Awaken',
+        testId: 'BT01-028 Awaken',
         name: 'Awaken at level 5',
         description: 'Leader should awaken when level reaches 5.',
         setup: (engine, getCard) => {
@@ -34,7 +34,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-028 PassiveBaseBuff',
+        testId: 'BT01-028 PassiveBaseBuff',
         name: 'Awakened passive buffs Base units',
         description: 'Awakened leader should give +1000 power to Base trait units only.',
         setup: (engine, getCard) => {
@@ -69,7 +69,7 @@ const tests: UnifiedTestCase[] = [
 
     // === UNITS ===
     {
-        cardId: 'BT01-029',
+        testId: 'BT01-029',
         name: 'Entry +1000',
         description: 'On entry, this unit gains +1000 power.',
         setup: (engine, getCard) => {
@@ -88,7 +88,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-030',
+        testId: 'BT01-030',
         name: 'Frontline +3000',
         description: 'Gets +3000 power while all 3 lanes have units.',
         setup: (engine, getCard) => {
@@ -108,7 +108,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-032',
+        testId: 'BT01-032',
         name: 'Base count scaling',
         description: 'Gets +500 power per Base trait unit on your field.',
         setup: (engine, getCard) => {
@@ -136,7 +136,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-033',
+        testId: 'BT01-033',
         name: 'Entry hit +1',
         description: 'On entry, this unit gets +1 hit.',
         setup: (engine, getCard) => {
@@ -156,7 +156,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-034 TriggerReturnHand',
+        testId: 'BT01-034 TriggerReturnHand',
         name: 'Damage trigger return to hand',
         description: 'When revealed by damage, it should move from damage zone to hand.',
         setup: (engine, getCard) => {
@@ -174,7 +174,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-035',
+        testId: 'BT01-035',
         name: 'Attacker breakthrough cost<=1',
         description: 'Can bypass block against cost 1 or less encounter unit.',
         setup: (engine, getCard) => {
@@ -197,7 +197,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-036',
+        testId: 'BT01-036',
         name: 'Passive Base +2000',
         description: 'Gives +2000 power to Base trait units.',
         setup: (engine, getCard) => {
@@ -228,7 +228,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-037',
+        testId: 'BT01-037',
         name: 'Frontline hit +1',
         description: 'Gets +1 hit while all 3 lanes have units.',
         setup: (engine, getCard) => {
@@ -248,7 +248,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-038 ActiveDiscardBuff',
+        testId: 'BT01-038 ActiveDiscardBuff',
         name: 'Active: discard 1, target +4000',
         description: 'Active effect discards 1 hand card and gives +4000 to one friendly unit.',
         setup: (engine, getCard) => {
@@ -282,7 +282,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-039',
+        testId: 'BT01-039',
         name: 'Entry +3000',
         description: 'On entry, this unit gains +3000 power.',
         setup: (engine, getCard) => {
@@ -302,7 +302,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-040 PassivePowerScale',
+        testId: 'BT01-040 PassivePowerScale',
         name: 'Passive: leader level x500 power',
         description: 'Gets +500 power per leader level.',
         setup: (engine, getCard) => {
@@ -321,7 +321,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-040 PassiveLevelLink',
+        testId: 'BT01-040 PassiveLevelLink',
         name: 'Passive: level link hit +1',
         description: 'At leader level 10, this unit gets +1 hit.',
         setup: (engine, getCard) => {
@@ -340,7 +340,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-041',
+        testId: 'BT01-041',
         name: 'Entry target +2000',
         description: 'On entry, choose one friendly unit and give it +2000 power.',
         setup: (engine, getCard) => {
@@ -364,7 +364,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-044 EntryRevealBase',
+        testId: 'BT01-044 EntryRevealBase',
         name: 'Entry reveal 3 and pick Base',
         description: 'Reveals top 3 cards and adds one Base trait unit to hand.',
         setup: (engine, getCard) => {
@@ -402,7 +402,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-044 TriggerGainLevel',
+        testId: 'BT01-044 TriggerGainLevel',
         name: 'Damage trigger gain level',
         description: 'When triggered from damage, gain +1 leader level.',
         setup: (engine, getCard) => {
@@ -421,7 +421,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-044 TriggerTrashSelf',
+        testId: 'BT01-044 TriggerTrashSelf',
         name: 'Damage trigger trashes self',
         description: 'After trigger resolves, this card should leave damage zone and go to trash.',
         setup: (engine, getCard) => {
@@ -440,7 +440,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-045',
+        testId: 'BT01-045',
         name: 'Passive cost 1 units +2000',
         description: 'Gives +2000 power to all friendly cost-1 units.',
         setup: (engine, getCard) => {
@@ -470,7 +470,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-046 EntryGrantBreakthrough',
+        testId: 'BT01-046 EntryGrantBreakthrough',
         name: 'Entry grants breakthrough cost<=3',
         description: 'On entry, choose a Base unit; it gains breakthrough[3] for this turn.',
         setup: (engine, getCard) => {
@@ -514,7 +514,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-046 TriggerReturnHand',
+        testId: 'BT01-046 TriggerReturnHand',
         name: 'Damage trigger return to hand',
         description: 'When revealed by damage, this card should return to hand.',
         setup: (engine, getCard) => {
@@ -534,7 +534,7 @@ const tests: UnifiedTestCase[] = [
 
     // === SKILLS ===
     {
-        cardId: 'BT01-047',
+        testId: 'BT01-047',
         name: 'Set hit to 2',
         description: 'Sets selected cost-1 Base unit hit to 2.',
         setup: (engine, getCard) => {
@@ -563,7 +563,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-048',
+        testId: 'BT01-048',
         name: 'All friendly units +500',
         description: 'Current friendly field units gain +500 power.',
         setup: (engine, getCard) => {
@@ -588,7 +588,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-049',
+        testId: 'BT01-049',
         name: 'Draw by Base count',
         description: 'Draw cards equal to your Base unit count.',
         setup: (engine, getCard) => {
@@ -618,7 +618,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-050',
+        testId: 'BT01-050',
         name: 'Frontline all +1500',
         description: 'If all 3 lanes are occupied, all current friendly units gain +1500.',
         setup: (engine, getCard) => {
@@ -647,7 +647,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-051 ActiveRevealTakeAll',
+        testId: 'BT01-051 ActiveRevealTakeAll',
         name: 'Reveal 3 and take all cost<=3',
         description: 'Reveal top 3 cards and add all cost 3 or lower cards to hand.',
         setup: (engine, getCard) => {
@@ -680,7 +680,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-051 TriggerDestroyCost3OrLess',
+        testId: 'BT01-051 TriggerDestroyCost3OrLess',
         name: 'Damage trigger destroy enemy cost<=3',
         description: 'When triggered from damage, destroys one opponent unit with cost 3 or lower.',
         setup: (engine, getCard) => {
@@ -707,7 +707,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-051 TriggerTrashSelf',
+        testId: 'BT01-051 TriggerTrashSelf',
         name: 'Damage trigger trashes self',
         description: 'After trigger resolves, this card should leave damage zone and go to trash.',
         setup: (engine, getCard) => {
@@ -725,7 +725,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-052',
+        testId: 'BT01-052',
         name: 'Base hit +1',
         description: 'All current Base trait friendly units gain +1 hit.',
         setup: (engine, getCard) => {
@@ -760,7 +760,7 @@ const tests: UnifiedTestCase[] = [
 
     // === ITEMS ===
     {
-        cardId: 'BT01-053',
+        testId: 'BT01-053',
         name: 'Breakthrough cost<=2',
         description: 'Equipped unit can bypass block against cost 2 or lower encounter unit.',
         setup: (engine, getCard) => {
@@ -784,7 +784,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-054',
+        testId: 'BT01-054',
         name: 'Passive +5000 power',
         description: 'Equipped unit gets +5000 power.',
         setup: (engine, getCard) => {

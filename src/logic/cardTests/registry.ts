@@ -47,17 +47,17 @@ export const CARD_TEST_REGISTRY: Record<string, CardTestModule> = {
     'BT02번개': UnifiedBT02Lightning,
 };
 
-export function findTestModule(cardId: string): CardTestModule | undefined {
-    const packId = cardId.split('-')[0];
+export function findTestModule(testId: string): CardTestModule | undefined {
+    const packId = testId.split('-')[0];
     // BT01/BT02 cards need special handling to find by attribute group.
     if (packId === 'BT01') {
-        const num = parseInt(cardId.split('-')[1]);
+        const num = parseInt(testId.split('-')[1]);
         if (num <= 27) return CARD_TEST_REGISTRY['BT01화염'];
         if (num <= 54) return CARD_TEST_REGISTRY['BT01대지'];
         return CARD_TEST_REGISTRY['BT01폭풍'];
     }
     if (packId === 'BT02') {
-        const num = parseInt(cardId.split('-')[1]);
+        const num = parseInt(testId.split('-')[1]);
         if (num <= 9) return CARD_TEST_REGISTRY['BT02화염'];
         if (num <= 18) return CARD_TEST_REGISTRY['BT02대지'];
         if (num <= 27) return CARD_TEST_REGISTRY['BT02폭풍'];

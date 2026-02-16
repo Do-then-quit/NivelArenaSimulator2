@@ -9,7 +9,7 @@ import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 const tests: UnifiedTestCase[] = [
     // === LEADER ===
     {
-        cardId: 'BT01-001 Awaken',
+        testId: 'BT01-001 Awaken',
         name: '레드 후드 각성',
         description: '레벨업 시 각성(레벨 6) 확인.',
         setup: (engine, getCard) => {
@@ -29,7 +29,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-001 Passive',
+        testId: 'BT01-001 Passive',
         name: '레드 후드 각성면 패시브',
         description: '각성면 패시브: 아군 어태커 유닛 +2000.',
         setup: (engine, getCard) => {
@@ -57,7 +57,7 @@ const tests: UnifiedTestCase[] = [
 
     // === UNITS ===
     {
-        cardId: 'BT01-002',
+        testId: 'BT01-002',
         name: '어태커 +2000',
         description: '공격 시 파워 +2000. Attack 버튼으로 공격.',
         setup: (engine, getCard) => {
@@ -78,7 +78,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-004',
+        testId: 'BT01-004',
         name: '관통[1]',
         description: '공격 → 방어 후 관통 대미지 1 확인.',
         setup: (engine, getCard) => {
@@ -101,7 +101,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-005',
+        testId: 'BT01-005',
         name: '광전사',
         description: '광전사(강제 공격) 패시브 효과 등록 확인.',
         setup: (engine, getCard) => {
@@ -118,7 +118,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-006 AttackerPower',
+        testId: 'BT01-006 AttackerPower',
         name: '아니스: 어태커 +2000',
         description: '어태커 효과로 공격 시 +2000.',
         setup: (engine, getCard) => {
@@ -139,7 +139,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-006 AttackerPlunder',
+        testId: 'BT01-006 AttackerPlunder',
         name: '아니스: 약탈[1]',
         description: '상대 유닛 트래시 후 카드 1장 드로우.',
         setup: (engine, getCard) => {
@@ -163,7 +163,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-006 TriggerTrashSelf',
+        testId: 'BT01-006 TriggerTrashSelf',
         name: '아니스 트리거: 자기 자신 트래시',
         description: '대미지 트리거 발동 시 이 카드가 damage zone에서 트래시로 이동.',
         setup: (engine, getCard) => {
@@ -181,7 +181,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-006 TriggerMinus5000',
+        testId: 'BT01-006 TriggerMinus5000',
         name: '아니스 트리거: 상대 유닛 -5000',
         description: '트리거로 상대 유닛 1체를 선택해 -5000.',
         setup: (engine, getCard) => {
@@ -207,7 +207,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-008',
+        testId: 'BT01-008',
         name: '관통 유닛 +1500',
         description: '패시브: 관통 유닛 파워 +1500.',
         setup: (engine, getCard) => {
@@ -226,7 +226,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-009',
+        testId: 'BT01-009',
         name: '어태커 +1000',
         description: '공격 시 파워 +1000.',
         setup: (engine, getCard) => {
@@ -247,7 +247,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-011',
+        testId: 'BT01-011',
         name: '액티브 -1500',
         description: '유닛 클릭 → Activate 버튼 → 상대 유닛 선택.',
         setup: (engine, getCard) => {
@@ -270,7 +270,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-012',
+        testId: 'BT01-012',
         name: '엔트리: 아군에 어태커 +1000 부여',
         description: '배치 후 아군 유닛 공격 시 +1000 적용 확인.',
         setup: (engine, getCard) => {
@@ -295,7 +295,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-013',
+        testId: 'BT01-013',
         name: '어태커 +1000',
         description: '공격 시 파워 +1000.',
         setup: (engine, getCard) => {
@@ -316,7 +316,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-014 Passive',
+        testId: 'BT01-014 Passive',
         name: '홍련: 광전사 패시브',
         description: '광전사 패시브 효과 등록 확인.',
         setup: (engine, getCard) => {
@@ -333,7 +333,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-014 TriggerTrashSelf',
+        testId: 'BT01-014 TriggerTrashSelf',
         name: '홍련 트리거: 자기 자신 트래시',
         description: '대미지 트리거 발동 시 이 카드가 damage zone에서 트래시로 이동.',
         setup: (engine, getCard) => {
@@ -351,7 +351,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-014 TriggerRecover',
+        testId: 'BT01-014 TriggerRecover',
         name: '홍련 트리거: 2코 이하 유닛 회수',
         description: '트리거로 트래시의 2코 이하 유닛 1장 회수.',
         setup: (engine, getCard) => {
@@ -374,7 +374,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-015',
+        testId: 'BT01-015',
         name: '엔트리: 조우 유닛 -4000',
         description: '배치 시 조우 유닛 파워 -4000.',
         setup: (engine, getCard) => {
@@ -397,7 +397,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-016',
+        testId: 'BT01-016',
         name: '어태커 +2000',
         description: '공격 시 파워 +2000.',
         setup: (engine, getCard) => {
@@ -418,7 +418,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-017',
+        testId: 'BT01-017',
         name: '엔트리: 조우 유닛 파워 1000',
         description: '배치 시 조우 유닛 파워를 1000으로 설정.',
         setup: (engine, getCard) => {
@@ -441,7 +441,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-018',
+        testId: 'BT01-018',
         name: '패시브: 어태커 유닛 +2000',
         description: '필드의 아군 어태커 유닛 전체 +2000.',
         setup: (engine, getCard) => {
@@ -464,7 +464,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-019 EntryPenetration',
+        testId: 'BT01-019 EntryPenetration',
         name: '레드 후드 엔트리: 관통 부여',
         description: '배치 시 자신 유닛 전체에 관통 부여.',
         setup: (engine, getCard) => {
@@ -492,7 +492,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-019 TriggerReturnHand',
+        testId: 'BT01-019 TriggerReturnHand',
         name: '레드 후드 트리거: 패 복귀',
         description: '대미지 트리거 발동 시 이 카드가 패로 돌아온다.',
         setup: (engine, getCard) => {
@@ -512,7 +512,7 @@ const tests: UnifiedTestCase[] = [
 
     // === SKILLS ===
     {
-        cardId: 'BT01-020',
+        testId: 'BT01-020',
         name: '관통 부여',
         description: '스킬 사용 → 어태커 유닛에 관통 부여.',
         setup: (engine, getCard) => {
@@ -543,7 +543,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-021',
+        testId: 'BT01-021',
         name: '전체 -1000',
         description: '스킬 사용 → 상대 전체 -1000.',
         setup: (engine, getCard) => {
@@ -569,7 +569,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-022',
+        testId: 'BT01-022',
         name: '상대 2체 -2000',
         description: '스킬 사용 후 상대 유닛 최대 2장 선택해 -2000.',
         setup: (engine, getCard) => {
@@ -601,7 +601,7 @@ const tests: UnifiedTestCase[] = [
     },
 
     {
-        cardId: 'BT01-023',
+        testId: 'BT01-023',
         name: '어태커 +2500',
         description: '스킬 사용 → 어태커 유닛 +2500.',
         setup: (engine, getCard) => {
@@ -622,7 +622,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-024',
+        testId: 'BT01-024',
         name: '-3000 후 트래시 시 1드로우',
         description: '스킬로 상대 1체 -3000, 트래시되면 1드로우.',
         setup: (engine, getCard) => {
@@ -652,7 +652,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-025',
+        testId: 'BT01-025',
         name: '어태커 회수',
         description: '스킬 사용 → 트래시 어태커 유닛 1장 패로.',
         setup: (engine, getCard) => {
@@ -674,7 +674,7 @@ const tests: UnifiedTestCase[] = [
 
     // === ITEMS ===
     {
-        cardId: 'BT01-026 AttackerPenetration',
+        testId: 'BT01-026 AttackerPenetration',
         name: '아이템 관통[1]',
         description: '아이템 장착 유닛 공격 → 관통 대미지.',
         setup: (engine, getCard) => {
@@ -699,7 +699,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-026 TriggerReturnHand',
+        testId: 'BT01-026 TriggerReturnHand',
         name: '아이템 트리거: 패 복귀',
         description: '대미지 트리거 발동 시 이 카드가 패로 돌아온다.',
         setup: (engine, getCard) => {
@@ -717,7 +717,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-027 AttackerPower',
+        testId: 'BT01-027 AttackerPower',
         name: '아이템: 어태커 +2000',
         description: '장착 유닛 공격 시 +2000.',
         setup: (engine, getCard) => {
@@ -741,7 +741,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'BT01-027 AttackerPlunder',
+        testId: 'BT01-027 AttackerPlunder',
         name: '아이템: 약탈[1]',
         description: '장착 유닛이 상대 유닛 트래시 시 드로우 1.',
         setup: (engine, getCard) => {

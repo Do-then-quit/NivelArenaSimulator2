@@ -6,7 +6,7 @@ import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 
 const tests: UnifiedTestCase[] = [
     {
-        cardId: 'ST04-001',
+        testId: 'ST04-001',
         name: '도로시 리더 각성 + 상대턴 버프',
         description: '레벨 4 각성, 상대 턴에 자신 유닛 +1000.',
         setup: (engine, getCard) => {
@@ -31,7 +31,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-005',
+        testId: 'ST04-005',
         name: '메어리 엔트리 드로우',
         description: '배치 시 1장 드로우.',
         setup: (engine, getCard) => {
@@ -51,7 +51,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-006',
+        testId: 'ST04-006',
         name: '노아 디펜더 +3000 전투 결과',
         description: '방어 시 +3000으로 상대한테 유리한 교환.',
         setup: (engine, getCard) => {
@@ -75,7 +75,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-010',
+        testId: 'ST04-010',
         name: '헬름 패시브 가디언 +2000',
         description: '가디언 키워드 유닛만 +2000.',
         setup: (engine, getCard) => {
@@ -98,7 +98,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-014',
+        testId: 'ST04-014',
         name: '너싱 2드로우',
         description: '스킬 사용 시 2장 드로우.',
         setup: (engine, getCard) => {
@@ -117,7 +117,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-003',
+        testId: 'ST04-003',
         name: '마리안 가디언 방벽[1]',
         description: '인접 레인 가디언 블록 시 패 1장 코스트.',
         setup: (engine, getCard) => {
@@ -145,7 +145,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-008',
+        testId: 'ST04-008',
         name: '루드밀라 가디언 방벽[2]',
         description: '인접 레인 가디언 블록 시 패 2장 코스트.',
         setup: (engine, getCard) => {
@@ -176,7 +176,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-011',
+        testId: 'ST04-011',
         name: '도로시(유닛) 가디언 방벽[3]',
         description: '인접 레인 가디언 블록 시 패 3장 코스트.',
         setup: (engine, getCard) => {
@@ -206,7 +206,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-012',
+        testId: 'ST04-012',
         name: '선배의 응원 가디언 +2000',
         description: '가디언 유닛 1장 선택 +2000(OPP_TURN_END).',
         setup: (engine, getCard) => {
@@ -230,7 +230,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-013',
+        testId: 'ST04-013',
         name: '약오르죠? 가디언 히트+1',
         description: '가디언 유닛 1장 선택, 턴 종료까지 히트+1.',
         setup: (engine, getCard) => {
@@ -254,7 +254,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-013-Trigger',
+        testId: 'ST04-013-Trigger',
         name: '약오르죠? 트리거 1드로우',
         description: '대미지 트리거 시 1드로우 후 셀프 트래시.',
         setup: (engine, getCard) => {
@@ -272,7 +272,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-007',
+        testId: 'ST04-007',
         name: '앨리스 돌파[4코 이상]',
         description: '4코 이상 유닛은 방어 불가.',
         setup: (engine, getCard) => {
@@ -294,7 +294,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-007-Trigger',
+        testId: 'ST04-007-Trigger',
         name: '앨리스 트리거 패복귀',
         description: '대미지 트리거 시 패로 복귀.',
         setup: (engine, getCard) => {
@@ -311,7 +311,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-015',
+        testId: 'ST04-015',
         name: '실낙원 부여 돌파(ALL)',
         description: '가디언 대상에게 완전 돌파 부여.',
         setup: (engine, getCard) => {
@@ -339,7 +339,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-015-Trigger',
+        testId: 'ST04-015-Trigger',
         name: '실낙원 트리거 최저코 유닛+아이템 패복귀',
         description: '최저 코스트 상대 유닛과 장착 아이템을 패로 되돌림.',
         setup: (engine, getCard) => {
@@ -368,7 +368,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-016',
+        testId: 'ST04-016',
         name: '케블라 자켓 디펜더 +2000',
         description: '아이템 장착 유닛이 방어 시 +2000.',
         setup: (engine, getCard) => {
@@ -394,7 +394,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-017',
+        testId: 'ST04-017',
         name: '레어 메탈 글러브 장착조건 디펜더',
         description: '디펜더 없는 유닛에는 장착 실패.',
         setup: (engine, getCard) => {
@@ -414,7 +414,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST04-017-Active',
+        testId: 'ST04-017-Active',
         name: '레어 메탈 글러브 액티브메인 드로우',
         description: '디펜더 유닛 장착 후 액티브메인으로 1드로우.',
         setup: (engine, getCard) => {

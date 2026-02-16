@@ -2226,18 +2226,40 @@ export class GameEngine {
             return false;
         };
 
-        const allEffects: Effect[] = [];
-        if (attackerZone.unit?.effects) allEffects.push(...attackerZone.unit.effects);
+        const allEffects: Array<{ effect: Effect; sourceCard: Card }> = [];
+        if (attackerZone.unit?.effects) {
+            attackerZone.unit.effects.forEach(effect => {
+                allEffects.push({ effect, sourceCard: attackerZone.unit! });
+            });
+        }
         attackerZone.items.forEach(item => {
-            if (item.effects) allEffects.push(...item.effects);
+            if (item.effects) {
+                item.effects.forEach(effect => {
+                    allEffects.push({ effect, sourceCard: item });
+                });
+            }
         });
-        allEffects.push(...attackerZone.temporaryEffects);
+        attackerZone.temporaryEffects.forEach(effect => {
+            allEffects.push({ effect, sourceCard: attackerZone.unit! });
+        });
 
-        return allEffects.some(effect =>
-            effect.activation === ActivationCondition.ATTACKER &&
-            effect.action?.type === 'BREAKTHROUGH' &&
-            checkRule(effect.action.params)
-        );
+        return allEffects.some(({ effect, sourceCard }) => {
+            if (effect.action?.type !== 'BREAKTHROUGH') return false;
+            if (effect.activation !== ActivationCondition.ATTACKER && effect.activation !== ActivationCondition.PASSIVE) {
+                return false;
+            }
+
+            const context: GameContext = {
+                sourceCard,
+                player: this.currentPlayer,
+                opponent: this.opponentPlayer,
+                unitZone: attackerZone,
+                machine: this,
+            };
+
+            if (!this.effectManager.checkCondition(effect, context)) return false;
+            return checkRule(effect.action.params);
+        });
     }
 
     private commitBlockDeclaration(blockerZoneIndex: number) {
@@ -2285,7 +2307,17 @@ export class GameEngine {
         if (!zone.unit) return 0;
         let value = 0;
 
-        if (this.hasKeywordInZone(zone, '관통') || this.hasKeywordInZone(zone, 'PENETRATION')) {
+        const hasPenetrationActionSource = (() => {
+            const effects: Effect[] = [];
+            if (zone.unit?.effects) effects.push(...zone.unit.effects);
+            zone.items.forEach(item => {
+                if (item.effects) effects.push(...item.effects);
+            });
+            effects.push(...zone.temporaryEffects);
+            return effects.some(effect => effect.action?.type === 'PENETRATION');
+        })();
+
+        if (!hasPenetrationActionSource && (this.hasKeywordInZone(zone, '관통') || this.hasKeywordInZone(zone, 'PENETRATION'))) {
             value = Math.max(value, zone.unit.hit || 0);
         }
 

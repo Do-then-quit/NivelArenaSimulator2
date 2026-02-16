@@ -7,7 +7,7 @@ import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 const tests: UnifiedTestCase[] = [
     // === LEADER ===
     {
-        cardId: 'ST01-001',
+        testId: 'ST01-001',
         name: '라피 리더 각성',
         description: '레벨 5 각성 후 자신 유닛 +1000.',
         setup: (engine, getCard) => {
@@ -32,7 +32,7 @@ const tests: UnifiedTestCase[] = [
 
     // === UNITS ===
     {
-        cardId: 'ST01-003',
+        testId: 'ST01-003',
         name: '베스티 어태커 +1000',
         description: '공격 시 파워 +1000.',
         setup: (engine, getCard) => {
@@ -52,7 +52,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST01-005',
+        testId: 'ST01-005',
         name: '노이즈 어태커 +2000',
         description: '공격 시 파워 +2000.',
         setup: (engine, getCard) => {
@@ -72,7 +72,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST01-006',
+        testId: 'ST01-006',
         name: '누아르 엔트리 -3000',
         description: '배치 시 조우 유닛 -3000.',
         setup: (engine, getCard) => {
@@ -94,7 +94,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST01-007',
+        testId: 'ST01-007',
         name: '바이퍼 어태커 +1000',
         description: '공격 시 파워 +1000.',
         setup: (engine, getCard) => {
@@ -114,7 +114,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST01-008',
+        testId: 'ST01-008',
         name: '블랑 패시브 어태커 +1000',
         description: '어태커 키워드 유닛에 +1000.',
         setup: (engine, getCard) => {
@@ -138,7 +138,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-010: 액티브 효과
     {
-        cardId: 'ST01-010',
+        testId: 'ST01-010',
         name: '아니스 액티브 -3000',
         description: '패 1장 덱으로 → 조우 유닛 -3000.',
         setup: (engine, getCard) => {
@@ -162,7 +162,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-010: 트리거 효과
     {
-        cardId: 'ST01-010-Trigger',
+        testId: 'ST01-010-Trigger',
         name: '아니스 트리거 -5000',
         description: '대미지 트리거: 상대 유닛 -5000.',
         setup: (engine, getCard) => {
@@ -188,7 +188,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-011: 관통
     {
-        cardId: 'ST01-011',
+        testId: 'ST01-011',
         name: '라피 유닛 관통',
         description: '공격 → 방어 후 관통 대미지.',
         setup: (engine, getCard) => {
@@ -213,7 +213,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-011: 트리거 패복귀
     {
-        cardId: 'ST01-011-Trigger',
+        testId: 'ST01-011-Trigger',
         name: '라피 트리거 패복귀',
         description: '대미지 트리거: 패로 복귀.',
         setup: (engine, getCard) => {
@@ -233,7 +233,7 @@ const tests: UnifiedTestCase[] = [
 
     // === SKILLS ===
     {
-        cardId: 'ST01-012',
+        testId: 'ST01-012',
         name: '약점 간파 -2000',
         description: '스킬 → 상대 유닛 -2000.',
         setup: (engine, getCard) => {
@@ -257,7 +257,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-013: 스킬 효과
     {
-        cardId: 'ST01-013',
+        testId: 'ST01-013',
         name: '전력 보강 스킬',
         description: '트래시에서 2코 이하 유닛 회수.',
         setup: (engine, getCard) => {
@@ -280,7 +280,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-013: 트리거 효과
     {
-        cardId: 'ST01-013-Trigger',
+        testId: 'ST01-013-Trigger',
         name: '전력 보강 트리거',
         description: '대미지 트리거: 2코 이하 유닛 회수.',
         setup: (engine, getCard) => {
@@ -303,7 +303,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST01-014',
+        testId: 'ST01-014',
         name: '화력뿐이야 전체 +2000',
         description: '스킬 → 자신 유닛 전체 +2000.',
         setup: (engine, getCard) => {
@@ -329,7 +329,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-015: 스킬 효과
     {
-        cardId: 'ST01-015',
+        testId: 'ST01-015',
         name: '미사일 스킬 -5000',
         description: '스킬 → 상대 유닛 -5000.',
         setup: (engine, getCard) => {
@@ -353,7 +353,7 @@ const tests: UnifiedTestCase[] = [
     },
     // ST01-015: 트리거 효과
     {
-        cardId: 'ST01-015-Trigger',
+        testId: 'ST01-015-Trigger',
         name: '미사일 트리거 -5000',
         description: '대미지 트리거: 상대 유닛 -5000.',
         setup: (engine, getCard) => {
@@ -380,7 +380,7 @@ const tests: UnifiedTestCase[] = [
 
     // === ITEMS ===
     {
-        cardId: 'ST01-016',
+        testId: 'ST01-016',
         name: '부츠 어태커 +2000',
         description: '아이템 장착 → 공격 시 +2000.',
         setup: (engine, getCard) => {
@@ -402,7 +402,7 @@ const tests: UnifiedTestCase[] = [
         }
     },
     {
-        cardId: 'ST01-017',
+        testId: 'ST01-017',
         name: '글러브 약탈[1]',
         description: '공격으로 유닛 트래시 시 드로우 1.',
         setup: (engine, getCard) => {
