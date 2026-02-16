@@ -1,5 +1,5 @@
 import { GameEngine } from './GameEngine';
-import { TargetSchema, GameContext, UnitZoneState, PlayerState } from './types';
+import { TargetSchema, GameContext, UnitZoneState, PlayerState, CardType } from './types';
 
 export class TargetSelector {
     static resolve(engine: GameEngine, schema: TargetSchema, context: GameContext): any[] {
@@ -78,7 +78,7 @@ export class TargetSelector {
 
         // 2. Type filtering
         if (schema.type === 'UNIT') {
-            candidates = candidates.filter(c => this.getUnitFromTarget(c) !== null);
+            candidates = candidates.filter(c => this.getCardFromTarget(c)?.type === CardType.UNIT);
         }
 
         // 3. Advanced Filters
@@ -278,7 +278,7 @@ export class TargetSelector {
 
         // 2. Type Check
         if (schema.type === 'UNIT') {
-            if (this.getUnitFromTarget(target) === null) return false;
+            if (this.getCardFromTarget(target)?.type !== CardType.UNIT) return false;
         }
 
         // 3. Filter Check

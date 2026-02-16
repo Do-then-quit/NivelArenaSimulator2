@@ -78,10 +78,16 @@ const tests: UnifiedTestCase[] = [
             const legal = engine.getLegalActions(p2.id).filter(action => action.type === 'RESOLVE_BLOCK');
             const hasEncounterBlock = legal.some(action => action.type === 'RESOLVE_BLOCK' && action.shouldBlock && action.blockerZoneIndex === 0);
             const hasGuardianBlock = legal.some(action => action.type === 'RESOLVE_BLOCK' && action.shouldBlock && action.blockerZoneIndex === 1);
+            const hasPass = legal.some(action => action.type === 'RESOLVE_BLOCK' && action.shouldBlock === false);
+            const beforeDamage = p2.damage.length;
+            engine.resolveBlock(false);
+            const afterDamage = p2.damage.length;
             return [
                 { pass: buffed >= base + 4000, message: `어태커 +4000 (${buffed})` },
                 { pass: hasEncounterBlock, message: '조우 레인 방어 가능' },
                 { pass: hasGuardianBlock === false, message: '듀얼리스트로 가디언 방어 제한' },
+                { pass: hasPass === false, message: '듀얼리스트 강제 방어 시 Pass 불가' },
+                { pass: afterDamage === beforeDamage, message: 'Pass 시도에도 강제 방어로 직격 대미지 불가' },
             ];
         },
     },
@@ -253,15 +259,28 @@ const tests: UnifiedTestCase[] = [
             const p1 = engine.currentPlayer;
             setBt02TestSize(engine);
             p1.deck = [getCard('ST01-002'), getCard('BT02-009')];
-            p1.trash = [getCard('ST01-002')];
+            p1.trash = [getCard('ST01-002'), getCard('BT02-009')];
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
             const p1 = engine.currentPlayer;
             engine.dealDamage(p1, 1);
+            if (engine.state.interactionMode !== 'SELECT_TARGET') {
+                return [{ pass: false, message: '타겟 선택 상태 진입 실패' }];
+            }
+
+            const legal = engine.getLegalActions(p1.id).filter(action => action.type === 'SELECT_TRASH_TARGET');
+            const canSelectUnit = legal.some(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-002'));
+            const canSelectItem = legal.some(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('BT02-009'));
+            const unitAction = legal.find(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-002'));
+            if (unitAction) {
+                engine.step(unitAction);
+            }
             resolveInteractionLoop(engine);
             return [
                 { pass: p1.trash.some(card => card.id.startsWith('BT02-009')), message: '트리거 카드 자기 트래시' },
+                { pass: canSelectUnit === true, message: '2코 이하 유닛 타겟 가능' },
+                { pass: canSelectItem === false, message: '2코 이하 아이템 타겟 불가' },
                 { pass: p1.hand.some(card => card.id.startsWith('ST01-002')), message: '2코 이하 유닛 회수 성공' },
             ];
         },

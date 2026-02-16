@@ -781,10 +781,13 @@ export class GameEngine {
                     const attackerZoneIndex = this.state.pendingAttackerIndex;
                     if (attackerZoneIndex === null) return;
                     const candidateBlockers = this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
+                    const encounterBlockForced = this.isEncounterBlockForced(attackerZoneIndex, candidateBlockers);
                     candidateBlockers.forEach(blockerZoneIndex => {
                         actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: true, blockerZoneIndex });
                     });
-                    actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: false });
+                    if (!encounterBlockForced) {
+                        actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: false });
+                    }
                     return;
                 }
 
@@ -2073,7 +2076,10 @@ export class GameEngine {
         if (!attackerZone.unit) return;
 
         const candidateBlockers = this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
-        if (!shouldBlock || candidateBlockers.length === 0) {
+        const encounterBlockForced = this.isEncounterBlockForced(attackerZoneIndex, candidateBlockers);
+        const effectiveShouldBlock = encounterBlockForced ? true : shouldBlock;
+        const effectiveBlockerZoneIndex = encounterBlockForced ? attackerZoneIndex : blockerZoneIndex;
+        if (!effectiveShouldBlock || candidateBlockers.length === 0) {
             this.state.combatBlocked = false;
             this.state.pendingBlockerZoneIndex = null;
             this.assignInteractionOwner(this.currentPlayer.id);
@@ -2084,8 +2090,10 @@ export class GameEngine {
         }
 
         let selectedBlockerZoneIndex: number | null = null;
-        if (blockerZoneIndex !== undefined && candidateBlockers.includes(blockerZoneIndex)) {
-            selectedBlockerZoneIndex = blockerZoneIndex;
+        if (encounterBlockForced && candidateBlockers.includes(attackerZoneIndex)) {
+            selectedBlockerZoneIndex = attackerZoneIndex;
+        } else if (effectiveBlockerZoneIndex !== undefined && candidateBlockers.includes(effectiveBlockerZoneIndex)) {
+            selectedBlockerZoneIndex = effectiveBlockerZoneIndex;
         } else if (candidateBlockers.includes(attackerZoneIndex)) {
             selectedBlockerZoneIndex = attackerZoneIndex;
         } else if (candidateBlockers.length === 1) {
@@ -2155,6 +2163,17 @@ export class GameEngine {
 
     private hasKeyword(card: Card, keyword: string): boolean {
         return card.keywords?.includes(keyword) || false;
+    }
+
+    private isEncounterBlockForced(attackerZoneIndex: number, candidateBlockers?: number[]): boolean {
+        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
+        if (!attackerZone?.unit) return false;
+
+        const isDualist = this.hasKeywordInZone(attackerZone, '듀얼리스트') || this.hasKeywordInZone(attackerZone, 'DUALIST');
+        if (!isDualist) return false;
+
+        const availableBlockers = candidateBlockers ?? this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
+        return availableBlockers.includes(attackerZoneIndex);
     }
 
     private getAvailableBlockerZoneIndexes(attackerZoneIndex: number): number[] {
