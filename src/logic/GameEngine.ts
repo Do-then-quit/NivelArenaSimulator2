@@ -1903,6 +1903,11 @@ export class GameEngine {
     }
 
     private advanceCombatStep() {
+        // Combat progression must pause while any interaction window is open.
+        if (this.state.interactionMode !== 'NORMAL') {
+            return;
+        }
+
         const attackerZone = this.currentPlayer.unitZones[this.state.pendingAttackerIndex!];
 
         switch (this.state.combatStep) {

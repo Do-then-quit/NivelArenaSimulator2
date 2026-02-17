@@ -59,6 +59,61 @@ describe('Rules v2 AI Ready Stage1 Regression', () => {
         expect(p2Actions.filter(a => a.type === 'RESOLVE_BLOCK')).toHaveLength(2);
     });
 
+    it('keeps damage-trigger manual target ownership on damaged player after direct attack to empty lane', () => {
+        const engine = createEngine();
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+
+        p1.unitZones[0].unit = makeUnit('ATK_0', { power: 7000, hit: 1 });
+        p2.unitZones.forEach(zone => {
+            zone.unit = null;
+            zone.items = [];
+        });
+
+        const triggerCard = makeUnit('BT01-006_SIM', {
+            effects: [
+                {
+                    activation: ActivationCondition.DAMAGE_TRIGGER,
+                    description: '이 카드를 트래시한다.',
+                    action: { type: 'TRASH_SELF', params: {} },
+                },
+                {
+                    activation: ActivationCondition.DAMAGE_TRIGGER,
+                    description: '필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.',
+                    targets: { scope: 'OPP_FIELD', type: 'UNIT', selectMode: 'MANUAL', count: 1 },
+                    action: { type: 'BUFF_POWER', params: { value: -5000 } },
+                    duration: 'TURN_END',
+                },
+            ],
+        });
+
+        p2.deck = [makeUnit('FILLER'), triggerCard];
+
+        engine.attack(0);
+
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        expect(engine.state.interactionOwnerPlayerId).toBe(p2.id);
+        expect(engine.state.pendingEffect?.sourcePlayerId).toBe(p2.id);
+        expect(engine.state.pendingEffect?.controllerPlayerId).toBe(p2.id);
+
+        const p1Actions = engine.getLegalActions(p1.id);
+        const p2Actions = engine.getLegalActions(p2.id);
+
+        expect(p1Actions.some(a => a.type === 'SELECT_ZONE_TARGET')).toBe(false);
+        const botSelectAction = p2Actions.find(
+            (a): a is Extract<EngineAction, { type: 'SELECT_ZONE_TARGET' }> =>
+                a.type === 'SELECT_ZONE_TARGET' && a.targetPlayerId === p1.id && a.zoneIndex === 0,
+        );
+        expect(botSelectAction).toBeDefined();
+
+        const beforePower = engine.getUnitPower(p1.unitZones[0], p1);
+        expect(engine.step(botSelectAction!)).toBe(true);
+        expect(engine.getUnitPower(p1.unitZones[0], p1)).toBe(beforePower - 5000);
+    });
+
     it('enumerates normal-phase legal actions only for turn player', () => {
         const engine = createEngine();
         const p1 = engine.state.players[0];
@@ -154,4 +209,3 @@ describe('Rules v2 AI Ready Stage1 Regression', () => {
         expect(engine.state.interactionMode).toBe('NORMAL');
     });
 });
-
