@@ -4,6 +4,9 @@
 - 이 문서는 **짧은 허브 문서**다. 상세 규칙/구조/계획은 하단 포인터 문서를 우선 참조한다.
 - 구현/테스트/리팩터링은 항상 `NivelArena_Comprehensive_Rules_Ver.2.0.pdf` 기준으로 진행한다.
 - 룰 해석이 애매하면 코드 관성보다 룰북 조항 번호를 우선한다.
+- AI 작업은 아래 **활성 로드맵**을 우선 적용한다:
+  - `docs/roadmaps/aiRoadmap.fixed_matchup.ko.md`
+  - 기본 원칙: 단기에는 고정 매치업 플레이 봇 강화에 집중하고, 덱 탐색/메타 생성은 장기 백로그로 분리한다.
 
 ## 1) Project Overview
 - 프로젝트명: `NivelArenaSimulator2`
@@ -71,6 +74,8 @@
 - 아키텍처 상세: `docs/agent/Architecture.md`
 - 기능 구현 워크플로우 상세: `docs/agent/Workflow.md`
 - AI 계획/로드맵 포인터: `docs/agent/Plans.md`
+- AI 활성 실행 로드맵(최우선):
+  - `docs/roadmaps/aiRoadmap.fixed_matchup.ko.md`
 - AI 체크리스트/실행 단계:
   - `docs/plans/AiReadyTask.md`
   - `docs/plans/phases/Phase0.md`

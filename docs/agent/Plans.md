@@ -8,6 +8,7 @@
   - `docs/plans/phases/Phase2.md`
 
 ## Roadmaps
+- Active (KO, short/mid-term): `docs/roadmaps/aiRoadmap.fixed_matchup.ko.md`
 - EN: `docs/roadmaps/aiRoadmap.md`
 - KO: `docs/roadmaps/aiRoadmap.ko.md`
 
