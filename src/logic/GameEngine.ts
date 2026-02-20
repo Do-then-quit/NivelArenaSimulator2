@@ -3,6 +3,46 @@ import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
 import { createRandomProvider, RandomProvider } from './random';
+import { buildLegalActions } from './engine/targeting/LegalActionBuilder';
+import {
+    confirmTargets as runConfirmTargets,
+    handleEffectCompletion as runHandleEffectCompletion,
+    selectDamageTargetByPlayerId as runSelectDamageTargetByPlayerId,
+    selectHandTargetByPlayerId as runSelectHandTargetByPlayerId,
+    selectItemTargetByPlayerId as runSelectItemTargetByPlayerId,
+    selectRevealedTarget as runSelectRevealedTarget,
+    selectTrashTarget as runSelectTrashTarget,
+    selectZoneTargetByPlayerId as runSelectZoneTargetByPlayerId,
+} from './engine/targeting/TargetSelectionFlow';
+import {
+    advanceCombatStep as runAdvanceCombatStep,
+    clearBattleScopedEffects as runClearBattleScopedEffects,
+    commitBlockDeclaration as runCommitBlockDeclaration,
+    getAvailableBlockerZoneIndexes as runGetAvailableBlockerZoneIndexes,
+    getGuardianBarrierCost as runGetGuardianBarrierCost,
+    getPenetrationValue as runGetPenetrationValue,
+    getPlunderValue as runGetPlunderValue,
+    hasKeyword as runHasKeyword,
+    hasKeywordInZone as runHasKeywordInZone,
+    isBlockPreventedByBreakthrough as runIsBlockPreventedByBreakthrough,
+    isEncounterBlockForced as runIsEncounterBlockForced,
+    resolveBlock as runResolveBlock,
+    stepBattleEnd as runStepBattleEnd,
+    stepBattleResolution as runStepBattleResolution,
+    stepDefenseDeclaration as runStepDefenseDeclaration,
+} from './engine/combat/CombatFlow';
+import {
+    beginDestroyReplacementPrompt as runBeginDestroyReplacementPrompt,
+    collectDestroyReplacements as runCollectDestroyReplacements,
+    completeDestructionReplacementAfterHandCost as runCompleteDestructionReplacementAfterHandCost,
+    executePendingDestroyPayload as runExecutePendingDestroyPayload,
+    resolveDestructionReplacementChoice as runResolveDestructionReplacementChoice,
+    tryInitiateDestroyReplacement as runTryInitiateDestroyReplacement,
+} from './engine/destroy/DestroyReplacementFlow';
+import {
+    destroyUnit as runDestroyUnit,
+    processPassiveGrantedExitEffects as runProcessPassiveGrantedExitEffects,
+} from './engine/destroy/DestroyExecutor';
 
 type EngineAction = import('./types').EngineAction;
 type EngineObservation = import('./types').EngineObservation;
@@ -87,6 +127,33 @@ export class GameEngine {
         };
         this.startGame();
         this.assignInteractionOwner(this.currentPlayer.id);
+        this.keepDelegateMembersReferencedForTypeChecks();
+    }
+
+    // Delegate-heavy refactors keep some members invoked indirectly from extracted modules.
+    // Touching them here avoids false positives from noUnusedLocals on private members.
+    private keepDelegateMembersReferencedForTypeChecks() {
+        void this.destroyInProgressKeys;
+        void this.incrementEffectTrashedFriendlyUnitCount;
+        void this.stepDefenseDeclaration;
+        void this.stepBattleResolution;
+        void this.stepBattleEnd;
+        void this.clearBattleScopedEffects;
+        void this.hasKeyword;
+        void this.isEncounterBlockForced;
+        void this.getAvailableBlockerZoneIndexes;
+        void this.getGuardianBarrierCost;
+        void this.isBlockPreventedByBreakthrough;
+        void this.getPenetrationValue;
+        void this.getPlunderValue;
+        void this.hasKeywordInZone;
+        void this.processPassiveGrantedExitEffects;
+        void this.isReplacementDestroyReason;
+        void this.collectDestroyReplacements;
+        void this.beginDestroyReplacementPrompt;
+        void this.tryInitiateDestroyReplacement;
+        void this.executePendingDestroyPayload;
+        void this.getDestroyGuardKey;
     }
 
     public incrementGlobalStep() {
@@ -756,298 +823,7 @@ export class GameEngine {
     }
 
     public getLegalActions(actorPlayerId?: string): EngineAction[] {
-        if (this.state.winner) return [];
-
-        const actorIds = actorPlayerId ? [actorPlayerId] : this.state.players.map(p => p.id);
-        const actions: EngineAction[] = [];
-
-        actorIds.forEach(id => {
-            const actor = this.getPlayerById(id);
-            if (!actor) return;
-            if (!this.canActorInput(id)) return;
-
-            if (this.state.interactionMode === 'SELECT_MULLIGAN') {
-                const currentActorId = this.state.mulliganState?.pendingPlayerIds[0];
-                if (!currentActorId || currentActorId !== id) return;
-
-                actions.push({ type: 'RESOLVE_MULLIGAN', actorPlayerId: id, shouldMulligan: false });
-                actions.push({ type: 'RESOLVE_MULLIGAN', actorPlayerId: id, shouldMulligan: true });
-                return;
-            }
-
-            if (this.state.interactionMode === 'NORMAL') {
-                if (this.state.phase === Phase.BLOCK) {
-                    if (id !== this.opponentPlayer.id) return;
-                    const attackerZoneIndex = this.state.pendingAttackerIndex;
-                    if (attackerZoneIndex === null) return;
-                    const candidateBlockers = this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
-                    const encounterBlockForced = this.isEncounterBlockForced(attackerZoneIndex, candidateBlockers);
-                    candidateBlockers.forEach(blockerZoneIndex => {
-                        actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: true, blockerZoneIndex });
-                    });
-                    if (!encounterBlockForced) {
-                        actions.push({ type: 'RESOLVE_BLOCK', actorPlayerId: id, shouldBlock: false });
-                    }
-                    return;
-                }
-
-                if (id !== this.currentPlayer.id) return;
-
-                if (RuleValidator.canEndPhase(this, actor).valid) {
-                    actions.push({ type: 'NEXT_PHASE', actorPlayerId: id });
-                }
-
-                if (this.state.phase === Phase.MAIN) {
-                    actor.hand.forEach((_card, handIndex) => {
-                        for (let zoneIndex = 0; zoneIndex < actor.unitZones.length; zoneIndex++) {
-                            if (RuleValidator.canPlayUnit(this, actor, handIndex, zoneIndex).valid) {
-                                actions.push({ type: 'PLAY_UNIT', actorPlayerId: id, handIndex, zoneIndex });
-                            }
-                            if (RuleValidator.canPlayItem(this, actor, handIndex, zoneIndex).valid) {
-                                actions.push({ type: 'PLAY_ITEM', actorPlayerId: id, handIndex, zoneIndex });
-                            }
-                        }
-
-                        if (RuleValidator.canPlaySkill(this, actor, handIndex).valid) {
-                            actions.push({ type: 'PLAY_SKILL', actorPlayerId: id, handIndex });
-                        }
-                    });
-                }
-
-                actor.unitZones.forEach((zone, zoneIndex) => {
-                    if (
-                        this.state.phase === Phase.ATTACK &&
-                        RuleValidator.canAttack(this, actor, zoneIndex).valid
-                    ) {
-                        actions.push({ type: 'ATTACK', actorPlayerId: id, attackerZoneIndex: zoneIndex });
-                    }
-
-                    const collectActivatableEffectActions = (
-                        sourceCard: Card | null,
-                        sourceType: 'UNIT' | 'ITEM',
-                        itemIndex?: number
-                    ) => {
-                        if (!sourceCard?.effects) return;
-                        sourceCard.effects.forEach((effect, effectIndex) => {
-                            const activatableInPhase =
-                                (effect.activation === ActivationCondition.ACTIVE && (this.state.phase === Phase.MAIN || this.state.phase === Phase.ATTACK)) ||
-                                (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase === Phase.MAIN);
-                            if (!activatableInPhase) return;
-
-                            const effectKey = sourceType === 'ITEM'
-                                ? `${sourceCard.id}_${itemIndex}_${effect.id || effectIndex}`
-                                : `${sourceCard.id}_${effect.id || effectIndex}`;
-                            if (zone.activatedEffectKeys?.[effectKey]) return;
-
-                            const context: GameContext = {
-                                sourceCard,
-                                player: actor,
-                                opponent: this.getOpponentOf(actor),
-                                unitZone: zone,
-                                machine: this,
-                            };
-
-                            if (!this.effectManager.checkCondition(effect, context)) return;
-
-                            if (effect.cost && effect.cost.type !== 'NONE') {
-                                if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
-                                    const requiredAmount = effect.cost.amount || 1;
-                                    const costFilter = effect.cost.cardTypeFilter;
-                                    const payableCount = actor.hand.filter(card => !costFilter || card.type === costFilter).length;
-                                    if (payableCount < requiredAmount) return;
-                                }
-                            }
-
-                            if (effect.targets && effect.targets.selectMode === 'MANUAL') {
-                                const candidates = TargetSelector.resolve(this, effect.targets, context);
-                                if (candidates.length === 0) return;
-                            }
-
-                            actions.push({
-                                type: 'ACTIVATE_EFFECT',
-                                actorPlayerId: id,
-                                zoneIndex,
-                                effectIndex,
-                                sourceType,
-                                itemIndex
-                            });
-                        });
-                    };
-
-                    collectActivatableEffectActions(zone.unit, 'UNIT');
-                    zone.items.forEach((item, itemIndex) => {
-                        collectActivatableEffectActions(item, 'ITEM', itemIndex);
-                    });
-                });
-
-                return;
-            }
-
-            const pending = this.state.pendingEffect;
-            if (!pending) return;
-
-            if (this.state.interactionMode === 'SELECT_OPTIONAL') {
-                actions.push({ type: 'RESOLVE_OPTIONAL', actorPlayerId: id, confirm: true });
-                actions.push({ type: 'RESOLVE_OPTIONAL', actorPlayerId: id, confirm: false });
-                return;
-            }
-
-            if (this.state.interactionMode === 'SELECT_COST') {
-                const payer = this.getPlayerById(pending.sourcePlayerId) ?? actor;
-                if (payer.id !== id) return;
-                const payableHandIndexes = this.getPayableHandIndexesForCost(payer, pending.costToPay ?? {
-                    type: 'TRASH_HAND',
-                    amount: 1,
-                    cardTypeFilter: pending.costCardTypeFilter
-                } as any);
-                payableHandIndexes.forEach(handIndex => {
-                    actions.push({ type: 'SELECT_COST_HAND', actorPlayerId: id, handIndex });
-                });
-                return;
-            }
-
-            if (this.state.interactionMode !== 'SELECT_TARGET') return;
-
-            const runtime = this.getPendingRuntime();
-            const context = runtime?.context;
-            const targetSchema = pending.targetSchema;
-            if (!context || !targetSchema) return;
-
-            const needsConfirm =
-                (targetSchema.count ?? 1) !== 1 ||
-                targetSchema.selectMode === 'ALL' ||
-                pending.actionType === 'TAKE_ALL_REVEALED';
-            const selectedTargets = pending.selectedTargets ?? [];
-            const requiredCount = targetSchema.count ?? 1;
-
-            const shouldAllowConfirm = (candidateTargets: any[]): boolean => {
-                if (pending.actionValue?.allowPartialSelection === true) {
-                    return true;
-                }
-                if (!needsConfirm) {
-                    // Single-target manual selection can become impossible due state changes.
-                    return candidateTargets.length === 0;
-                }
-                if (targetSchema.selectMode === 'ALL' || pending.actionType === 'TAKE_ALL_REVEALED') return true;
-                if (requiredCount <= 0) return true;
-
-                const selectedCount = selectedTargets.length;
-                if (selectedCount >= requiredCount) return true;
-
-                // Rule 1.3.2: if remaining valid targets cannot fill the requirement, allow partial confirm.
-                const remainingSelectableCount = candidateTargets.filter(target => !selectedTargets.includes(target)).length;
-                return selectedCount + remainingSelectableCount < requiredCount;
-            };
-
-            if (pending.validTargets === 'MY_TRASH') {
-                const targetPlayerId = pending.sourcePlayerId;
-                const targetPlayer = this.getPlayerById(targetPlayerId);
-                if (!targetPlayer) return;
-                const selectableTrashCards: any[] = [];
-                targetPlayer.trash.forEach((card, trashIndex) => {
-                    if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) return;
-                    selectableTrashCards.push(card);
-                    actions.push({ type: 'SELECT_TRASH_TARGET', actorPlayerId: id, targetPlayerId, trashIndex });
-                });
-                if (shouldAllowConfirm(selectableTrashCards)) {
-                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
-                }
-                return;
-            }
-
-            if (pending.validTargets === 'REVEALED') {
-                const selectableRevealedCards: any[] = [];
-                this.state.revealedCards.forEach((card, revealedIndex) => {
-                    if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) return;
-                    selectableRevealedCards.push(card);
-                    actions.push({ type: 'SELECT_REVEALED_TARGET', actorPlayerId: id, revealedIndex });
-                });
-                if (shouldAllowConfirm(selectableRevealedCards)) {
-                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
-                }
-                return;
-            }
-
-            if (pending.validTargets === 'MY_HAND' || pending.validTargets === 'OPP_HAND' || pending.validTargets === 'LAST_DRAWN') {
-                const targetPlayerId =
-                    pending.validTargets === 'OPP_HAND'
-                        ? (context?.opponent?.id ?? this.getOpponentOf(this.getPlayerById(pending.sourcePlayerId) ?? this.currentPlayer).id)
-                        : (context?.player?.id ?? pending.sourcePlayerId);
-
-                const targetPlayer = this.getPlayerById(targetPlayerId);
-                if (!targetPlayer) return;
-
-                const selectableHandCards: any[] = [];
-                targetPlayer.hand.forEach((card, handIndex) => {
-                    if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) return;
-                    selectableHandCards.push(card);
-                    actions.push({ type: 'SELECT_HAND_TARGET', actorPlayerId: id, targetPlayerId, handIndex });
-                });
-                if (shouldAllowConfirm(selectableHandCards)) {
-                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
-                }
-                return;
-            }
-
-            if (pending.validTargets === 'MY_DAMAGE') {
-                const targetPlayerId = context?.player?.id ?? pending.sourcePlayerId;
-                const targetPlayer = this.getPlayerById(targetPlayerId);
-                if (!targetPlayer) return;
-
-                const selectableDamageCards: any[] = [];
-                targetPlayer.damage.forEach((card, damageIndex) => {
-                    if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) return;
-                    selectableDamageCards.push(card);
-                    actions.push({ type: 'SELECT_DAMAGE_TARGET', actorPlayerId: id, targetPlayerId, damageIndex });
-                });
-                if (shouldAllowConfirm(selectableDamageCards)) {
-                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
-                }
-                return;
-            }
-
-            if (
-                pending.validTargets === 'MY_FIELD_ITEMS' ||
-                pending.validTargets === 'OPP_FIELD_ITEMS' ||
-                pending.validTargets === 'FIELD_ITEMS'
-            ) {
-                const selectableItems: any[] = [];
-                this.state.players.forEach(targetPlayer => {
-                    targetPlayer.unitZones.forEach((zone, zoneIndex) => {
-                        zone.items.forEach((item, itemIndex) => {
-                            if (!TargetSelector.isValidTarget(this, targetSchema, context, item)) return;
-                            selectableItems.push(item);
-                            actions.push({
-                                type: 'SELECT_ITEM_TARGET',
-                                actorPlayerId: id,
-                                targetPlayerId: targetPlayer.id,
-                                zoneIndex,
-                                itemIndex,
-                            });
-                        });
-                    });
-                });
-                if (shouldAllowConfirm(selectableItems)) {
-                    actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
-                }
-                return;
-            }
-
-            const selectableZones: UnitZoneState[] = [];
-            this.state.players.forEach(targetPlayer => {
-                targetPlayer.unitZones.forEach((targetZone, zoneIndex) => {
-                    if (TargetSelector.isValidTarget(this, targetSchema, context, targetZone)) {
-                        selectableZones.push(targetZone);
-                        actions.push({ type: 'SELECT_ZONE_TARGET', actorPlayerId: id, targetPlayerId: targetPlayer.id, zoneIndex });
-                    }
-                });
-            });
-            if (shouldAllowConfirm(selectableZones)) {
-                actions.push({ type: 'CONFIRM_TARGETS', actorPlayerId: id });
-            }
-        });
-
-        return actions;
+        return buildLegalActions(this, actorPlayerId);
     }
 
     public step(action: EngineAction): boolean {
@@ -1903,485 +1679,64 @@ export class GameEngine {
     }
 
     private advanceCombatStep() {
-        // Combat progression must pause while any interaction window is open.
-        if (this.state.interactionMode !== 'NORMAL') {
-            return;
-        }
-
-        const attackerZone = this.currentPlayer.unitZones[this.state.pendingAttackerIndex!];
-
-        switch (this.state.combatStep) {
-            case 'ATTACK_DECLARATION':
-                // Proceed to Defense Declaration
-                this.stepDefenseDeclaration(attackerZone);
-                break;
-            case 'DEFENSE_DECLARATION':
-                // Proceed to Battle Resolution
-                this.stepBattleResolution(attackerZone);
-                break;
-            case 'BATTLE':
-                // Proceed to Battle End
-                this.stepBattleEnd();
-                break;
-            case 'BATTLE_END':
-                // End Combat
-                this.state.combatStep = 'NONE';
-                this.state.pendingAttackerIndex = null;
-                this.state.pendingBlockerZoneIndex = null;
-                this.state.phase = Phase.ATTACK; // Return to Attack Available
-                this.assignInteractionOwner(this.currentPlayer.id);
-                break;
-        }
+        runAdvanceCombatStep(this);
     }
 
     private stepDefenseDeclaration(attackerZone: UnitZoneState) {
-        this.state.combatStep = 'DEFENSE_DECLARATION';
-        const attackerZoneIndex = this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
-
-        const candidateBlockers = this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
-        if (candidateBlockers.length === 0) {
-            this.state.combatBlocked = false;
-            this.state.pendingBlockerZoneIndex = null;
-            this.assignInteractionOwner(this.currentPlayer.id);
-            this.advanceCombatStep();
-            return;
-        }
-
-        this.state.phase = Phase.BLOCK;
-        this.assignInteractionOwner(this.opponentPlayer.id);
-        console.log("Waiting for Block Declaration...");
+        runStepDefenseDeclaration(this, attackerZone);
     }
 
     private stepBattleResolution(attackerZone: UnitZoneState) {
-        this.state.combatStep = 'BATTLE';
-        const blockerZoneIndex = this.state.pendingBlockerZoneIndex
-            ?? this.state.players[this.state.turnPlayerIndex].unitZones.indexOf(attackerZone);
-        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
-
-        // 1. Check Attack Terminated
-        if (this.state.attackTerminated) {
-            console.log("Attack Terminated during resolution.");
-            this.advanceCombatStep();
-            return;
-        }
-
-        // 2. Pre-Combat Effects? (e.g. Infiltration)
-        // INFILTRATION (Rule 10.2.3.1): If Infiltration & No Blocker -> Draw 1
-        // Wait, Proposal says "Pre-Combat Effect".
-        if (!this.state.combatBlocked && (this.hasKeywordInZone(attackerZone, '침투') || this.hasKeywordInZone(attackerZone, 'INFILTRATION'))) {
-            console.log("Infiltration Triggered.");
-            this.drawCard(this.state.turnPlayerIndex, 1);
-        }
-
-        // 3. Resolution
-        // 3. Resolution
-        if (this.state.combatBlocked && blockerZone?.unit) {
-            // Combat Resolution
-            const attPower = this.getUnitPower(attackerZone, this.currentPlayer);
-            const blkPower = this.getUnitPower(blockerZone, this.opponentPlayer);
-            console.log(`Combat! Attacker Power: ${attPower}, Blocker Power: ${blkPower}`);
-
-            if (attPower >= blkPower) {
-                // IMPORTANT: Destroy first, THEN queue result effects. 
-                // Currently destroyUnit triggers EXIT effects (queued).
-                // Proposal says Result Effects (Penetration, Plunder) should be queued AFTER kill.
-                this.destroyUnit(this.opponentPlayer, blockerZone, attackerZone.unit || undefined, 'BATTLE');
-
-                // PENETRATION (Rule 10.2.3.2)
-                const penValue = this.getPenetrationValue(attackerZone);
-                if (penValue > 0) {
-                    console.log("[Combat] Queuing PENETRATION Effect");
-                    // Create ephemeral effect
-                    const penEffect: any = {
-                        activation: 'AUTO_RESOLVED_COMBAT' as any, // Pseudo-condition or use ATTACKER
-                        action: { type: 'DAMAGE', params: { value: penValue } },
-                        description: `Penetration Damage: ${penValue}`,
-                        id: this.createRuntimeId('PEN')
-                    };
-                    // Queue it directly? Or use processEffects with source?
-                    // Use processEffects with a custom activation? 
-                    // Let's manually queue it using internal logic or a helper to ensure it's a "New Stamp".
-                    // Actually, if we use effectManager.processEffects with a custom activation, it creates a new timestamp.
-                    // But these effects belong to the ATTACKING UNIT.
-
-                    // Let's use a new activation 'COMBAT_RESULT' or generic 'AUTO'?
-                    // For now, let's inject it into the queue directly to force it as a NEW timestamp,
-                    // OR add a "One-shot" effect to the unit and trigger it?
-                    // Simplest: Create a dummy effect object and use effectManager.processEffects with a special condition.
-                    // BUT processEffects filters by card effects. The unit doesn't have this effect explicitly.
-
-                    // ALTERNATIVE: Use `effectManager.executeEffects` directly? 
-                    // NO, we need it in the QUEUE.
-
-                    // We must expose a method to "Queue Single Effect Immediately"
-                    this.effectManager.queueEphemeralEffect(penEffect, {
-                        sourceCard: attackerZone.unit!,
-                        player: this.currentPlayer,
-                        opponent: this.opponentPlayer,
-                        machine: this
-                    });
-                }
-
-                // PLUNDER (Rule 10.2.3.3)
-                const pluValue = this.getPlunderValue(attackerZone);
-                if (pluValue > 0) {
-                    console.log("[Combat] Queuing PLUNDER Effect");
-                    const pluEffect: any = {
-                        activation: 'AUTO_RESOLVED_COMBAT' as any,
-                        action: { type: 'DRAW', params: { count: pluValue } },
-                        description: `Plunder Draw: ${pluValue}`,
-                        id: this.createRuntimeId('PLU')
-                    };
-                    this.effectManager.queueEphemeralEffect(pluEffect, {
-                        sourceCard: attackerZone.unit!,
-                        player: this.currentPlayer,
-                        opponent: this.opponentPlayer,
-                        machine: this
-                    });
-                }
-            }
-
-            if (blkPower > attPower) {
-                this.destroyUnit(this.currentPlayer, attackerZone, blockerZone.unit || undefined, 'BATTLE');
-            }
-        } else {
-            // Direct Damage
-            this.dealDamage(this.opponentPlayer, this.getUnitHit(attackerZone, this.currentPlayer));
-        }
-
-        // Queue might have new effects (Destruction triggers).
-        // If queue empty, advance to End.
-        if (this.state.effectQueue.length === 0) {
-            this.advanceCombatStep();
-        }
+        runStepBattleResolution(this, attackerZone);
     }
 
     private stepBattleEnd() {
-        this.state.combatStep = 'BATTLE_END';
-        this.clearBattleScopedEffects();
-
-        if (this.state.effectQueue.length === 0) {
-            this.advanceCombatStep();
-        }
+        runStepBattleEnd(this);
     }
 
     private clearBattleScopedEffects() {
-        this.state.players.forEach(player => {
-            player.unitZones.forEach(zone => {
-                zone.buffs = zone.buffs.filter(buff => buff.duration !== 'BATTLE_END');
-                zone.temporaryEffects = zone.temporaryEffects.filter(effect => effect.duration !== 'BATTLE_END');
-            });
-        });
+        runClearBattleScopedEffects(this);
     }
 
     resolveBlock(shouldBlock: boolean, blockerZoneIndex?: number) {
-        if (this.state.phase !== Phase.BLOCK || this.state.pendingAttackerIndex === null) return;
-
-        const attackerZoneIndex = this.state.pendingAttackerIndex;
-        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
-        if (!attackerZone.unit) return;
-
-        const candidateBlockers = this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
-        const encounterBlockForced = this.isEncounterBlockForced(attackerZoneIndex, candidateBlockers);
-        const effectiveShouldBlock = encounterBlockForced ? true : shouldBlock;
-        const effectiveBlockerZoneIndex = encounterBlockForced ? attackerZoneIndex : blockerZoneIndex;
-        if (!effectiveShouldBlock || candidateBlockers.length === 0) {
-            this.state.combatBlocked = false;
-            this.state.pendingBlockerZoneIndex = null;
-            this.assignInteractionOwner(this.currentPlayer.id);
-            if (this.state.effectQueue.length === 0) {
-                this.advanceCombatStep();
-            }
-            return;
-        }
-
-        let selectedBlockerZoneIndex: number | null = null;
-        if (encounterBlockForced && candidateBlockers.includes(attackerZoneIndex)) {
-            selectedBlockerZoneIndex = attackerZoneIndex;
-        } else if (effectiveBlockerZoneIndex !== undefined && candidateBlockers.includes(effectiveBlockerZoneIndex)) {
-            selectedBlockerZoneIndex = effectiveBlockerZoneIndex;
-        } else if (candidateBlockers.includes(attackerZoneIndex)) {
-            selectedBlockerZoneIndex = attackerZoneIndex;
-        } else if (candidateBlockers.length === 1) {
-            selectedBlockerZoneIndex = candidateBlockers[0];
-        }
-
-        if (selectedBlockerZoneIndex === null) {
-            this.state.combatBlocked = false;
-            this.state.pendingBlockerZoneIndex = null;
-            this.assignInteractionOwner(this.currentPlayer.id);
-            if (this.state.effectQueue.length === 0) {
-                this.advanceCombatStep();
-            }
-            return;
-        }
-
-        const selectedBlockerZone = this.opponentPlayer.unitZones[selectedBlockerZoneIndex];
-        if (!selectedBlockerZone.unit) {
-            this.state.combatBlocked = false;
-            this.state.pendingBlockerZoneIndex = null;
-            this.assignInteractionOwner(this.currentPlayer.id);
-            if (this.state.effectQueue.length === 0) {
-                this.advanceCombatStep();
-            }
-            return;
-        }
-
-        const isGuardianBlock = selectedBlockerZoneIndex !== attackerZoneIndex;
-        const barrierCost = isGuardianBlock ? this.getGuardianBarrierCost(selectedBlockerZone) : 0;
-        if (isGuardianBlock && barrierCost > 0) {
-            if (this.opponentPlayer.hand.length < barrierCost) {
-                this.state.combatBlocked = false;
-                this.state.pendingBlockerZoneIndex = null;
-                this.assignInteractionOwner(this.currentPlayer.id);
-                if (this.state.effectQueue.length === 0) {
-                    this.advanceCombatStep();
-                }
-                return;
-            }
-
-            const controllerPlayerId = this.opponentPlayer.id;
-            this.state.interactionMode = 'SELECT_COST';
-            this.state.pendingEffect = {
-                sourceCard: selectedBlockerZone.unit,
-                sourcePlayerId: this.opponentPlayer.id,
-                controllerPlayerId,
-                actionType: 'GUARDIAN_BLOCK_COST',
-                actionValue: { blockerZoneIndex: selectedBlockerZoneIndex, barrierCost },
-                effectDescription: `Guardian barrier cost (${barrierCost})`,
-                costToPay: { type: 'TRASH_HAND', amount: barrierCost },
-                selectedTargets: []
-            };
-            this.setPendingRuntime({
-                sourceCard: selectedBlockerZone.unit,
-                player: this.opponentPlayer,
-                opponent: this.currentPlayer,
-                unitZone: selectedBlockerZone,
-                machine: this
-            }, null);
-            this.assignInteractionOwner(controllerPlayerId);
-            return;
-        }
-
-        this.commitBlockDeclaration(selectedBlockerZoneIndex);
+        runResolveBlock(this, shouldBlock, blockerZoneIndex);
     }
 
 
     private hasKeyword(card: Card, keyword: string): boolean {
-        return card.keywords?.includes(keyword) || false;
+        return runHasKeyword(card, keyword);
     }
 
     private isEncounterBlockForced(attackerZoneIndex: number, candidateBlockers?: number[]): boolean {
-        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
-        if (!attackerZone?.unit) return false;
-
-        const isDualist = this.hasKeywordInZone(attackerZone, '듀얼리스트') || this.hasKeywordInZone(attackerZone, 'DUALIST');
-        if (!isDualist) return false;
-
-        const availableBlockers = candidateBlockers ?? this.getAvailableBlockerZoneIndexes(attackerZoneIndex);
-        return availableBlockers.includes(attackerZoneIndex);
+        return runIsEncounterBlockForced(this, attackerZoneIndex, candidateBlockers);
     }
 
     private getAvailableBlockerZoneIndexes(attackerZoneIndex: number): number[] {
-        const attackerZone = this.currentPlayer.unitZones[attackerZoneIndex];
-        if (!attackerZone?.unit) return [];
-
-        const defender = this.opponentPlayer;
-        const candidateSet = new Set<number>();
-        const isDualist = this.hasKeywordInZone(attackerZone, '듀얼리스트') || this.hasKeywordInZone(attackerZone, 'DUALIST');
-
-        const encounterZone = defender.unitZones[attackerZoneIndex];
-        if (encounterZone.unit && !this.isBlockPreventedByBreakthrough(attackerZone, encounterZone)) {
-            candidateSet.add(attackerZoneIndex);
-        }
-
-        if (!isDualist) {
-            defender.unitZones.forEach((zone, zoneIndex) => {
-                if (zoneIndex === attackerZoneIndex) return;
-                if (Math.abs(zoneIndex - attackerZoneIndex) !== 1) return;
-                if (!zone.unit) return;
-                if (!(this.hasKeywordInZone(zone, '가디언') || this.hasKeywordInZone(zone, 'GUARDIAN'))) return;
-                if (this.isBlockPreventedByBreakthrough(attackerZone, zone)) return;
-
-                const barrierCost = this.getGuardianBarrierCost(zone);
-                if (defender.hand.length < barrierCost) return;
-                candidateSet.add(zoneIndex);
-            });
-        }
-
-        return Array.from(candidateSet).sort((a, b) => a - b);
+        return runGetAvailableBlockerZoneIndexes(this, attackerZoneIndex);
     }
 
     private getGuardianBarrierCost(zone: UnitZoneState): number {
-        let maxCost = 0;
-        const allEffects: Effect[] = [];
-
-        if (zone.unit?.effects) allEffects.push(...zone.unit.effects);
-        zone.items.forEach(item => {
-            if (item.effects) allEffects.push(...item.effects);
-        });
-        allEffects.push(...zone.temporaryEffects);
-
-        allEffects.forEach(effect => {
-            const explicit = effect.action?.params?.guardianBarrierCost;
-            if (typeof explicit === 'number') {
-                maxCost = Math.max(maxCost, explicit);
-                return;
-            }
-
-            const text = effect.description || '';
-            const match = text.match(/방벽\[(\d+)\]/);
-            if (match) {
-                maxCost = Math.max(maxCost, parseInt(match[1], 10));
-            }
-        });
-
-        return maxCost;
+        return runGetGuardianBarrierCost(this, zone);
     }
 
     private isBlockPreventedByBreakthrough(attackerZone: UnitZoneState, blockerZone: UnitZoneState): boolean {
-        if (!blockerZone.unit) return true;
-        const blockerCost = blockerZone.unit.cost || 0;
-
-        const checkRule = (params: any): boolean => {
-            if (!params) return false;
-            if (params.mode === 'ALL' || params.costMode === 'ALL' || params.all === true) return true;
-            if (params.costMax !== undefined && blockerCost <= params.costMax) return true;
-            if (params.costMin !== undefined && blockerCost >= params.costMin) return true;
-            return false;
-        };
-
-        const allEffects: Array<{ effect: Effect; sourceCard: Card }> = [];
-        if (attackerZone.unit?.effects) {
-            attackerZone.unit.effects.forEach(effect => {
-                allEffects.push({ effect, sourceCard: attackerZone.unit! });
-            });
-        }
-        attackerZone.items.forEach(item => {
-            if (item.effects) {
-                item.effects.forEach(effect => {
-                    allEffects.push({ effect, sourceCard: item });
-                });
-            }
-        });
-        attackerZone.temporaryEffects.forEach(effect => {
-            allEffects.push({ effect, sourceCard: attackerZone.unit! });
-        });
-
-        return allEffects.some(({ effect, sourceCard }) => {
-            if (effect.action?.type !== 'BREAKTHROUGH') return false;
-            if (effect.activation !== ActivationCondition.ATTACKER && effect.activation !== ActivationCondition.PASSIVE) {
-                return false;
-            }
-
-            const context: GameContext = {
-                sourceCard,
-                player: this.currentPlayer,
-                opponent: this.opponentPlayer,
-                unitZone: attackerZone,
-                machine: this,
-            };
-
-            if (!this.effectManager.checkCondition(effect, context)) return false;
-            return checkRule(effect.action.params);
-        });
+        return runIsBlockPreventedByBreakthrough(this, attackerZone, blockerZone);
     }
 
     private commitBlockDeclaration(blockerZoneIndex: number) {
-        const blockerZone = this.opponentPlayer.unitZones[blockerZoneIndex];
-        if (!blockerZone.unit) {
-            this.state.combatBlocked = false;
-            this.state.pendingBlockerZoneIndex = null;
-            this.assignInteractionOwner(this.currentPlayer.id);
-            if (this.state.effectQueue.length === 0) {
-                this.advanceCombatStep();
-            }
-            return;
-        }
-
-        this.state.pendingBlockerZoneIndex = blockerZoneIndex;
-        this.state.combatBlocked = true;
-
-        const defenderBatchStep = this.incrementAndGetGlobalStep();
-        this.effectManager.processEffects(ActivationCondition.DEFENDER, {
-            sourceCard: blockerZone.unit,
-            player: this.opponentPlayer,
-            opponent: this.currentPlayer,
-            unitZone: blockerZone,
-            machine: this
-        }, { enqueueOnly: true, batchStep: defenderBatchStep });
-
-        blockerZone.items.forEach(item => {
-            this.effectManager.processEffects(ActivationCondition.DEFENDER, {
-                sourceCard: item,
-                player: this.opponentPlayer,
-                opponent: this.currentPlayer,
-                unitZone: blockerZone,
-                machine: this
-            }, { enqueueOnly: true, batchStep: defenderBatchStep });
-        });
-        this.effectManager.processQueue();
-
-        this.assignInteractionOwner(this.currentPlayer.id);
-        if (this.state.effectQueue.length === 0) {
-            this.advanceCombatStep();
-        }
+        runCommitBlockDeclaration(this, blockerZoneIndex);
     }
 
     private getPenetrationValue(zone: UnitZoneState): number {
-        if (!zone.unit) return 0;
-        let value = 0;
-
-        const hasPenetrationActionSource = (() => {
-            const effects: Effect[] = [];
-            if (zone.unit?.effects) effects.push(...zone.unit.effects);
-            zone.items.forEach(item => {
-                if (item.effects) effects.push(...item.effects);
-            });
-            effects.push(...zone.temporaryEffects);
-            return effects.some(effect => effect.action?.type === 'PENETRATION');
-        })();
-
-        if (!hasPenetrationActionSource && (this.hasKeywordInZone(zone, '관통') || this.hasKeywordInZone(zone, 'PENETRATION'))) {
-            value = Math.max(value, zone.unit.hit || 0);
-        }
-
-        // 2. Buffs (from explicitly called PENETRATION actions)
-        zone.buffs.forEach(b => {
-            if (b.type === 'PENETRATION') value = Math.max(value, b.value);
-        });
-
-        return value;
+        return runGetPenetrationValue(this, zone);
     }
 
     private getPlunderValue(zone: UnitZoneState): number {
-        if (!zone.unit) return 0;
-        let value = 0;
-
-        if (this.hasKeywordInZone(zone, '약탈') || this.hasKeywordInZone(zone, 'PLUNDER')) {
-            value = Math.max(value, 1);
-        }
-
-        zone.buffs.forEach(b => {
-            if (b.type === 'PLUNDER') value = Math.max(value, b.value);
-        });
-
-        return value;
+        return runGetPlunderValue(this, zone);
     }
 
     private hasKeywordInZone(zone: UnitZoneState, keyword: string): boolean {
-        if (!zone.unit) return false;
-
-        // Check Unit
-        if (this.hasKeyword(zone.unit, keyword)) return true;
-
-        // Check Items
-        if (zone.items.some(item => this.hasKeyword(item, keyword))) return true;
-
-        // Check Temporary Effects (which might grant the keyword)
-        if (zone.temporaryEffects.some(effect => effect.description.includes(keyword))) return true;
-
-        return false;
+        return runHasKeywordInZone(this, zone, keyword);
     }
 
     private processPassiveGrantedExitEffects(
@@ -2390,49 +1745,7 @@ export class GameEngine {
         destroyedUnit: Card,
         killerCard?: Card
     ) {
-        this.state.players.forEach(sourceOwner => {
-            const sourceOpponent = sourceOwner === this.state.players[0] ? this.state.players[1] : this.state.players[0];
-            const sources: { card: Card; zone?: UnitZoneState }[] = [];
-
-            sourceOwner.unitZones.forEach(sourceZone => {
-                if (sourceZone.unit) sources.push({ card: sourceZone.unit, zone: sourceZone });
-                sourceZone.items.forEach(item => sources.push({ card: item, zone: sourceZone }));
-            });
-            if (sourceOwner.levelZone) sources.push({ card: sourceOwner.levelZone });
-
-            sources.forEach(source => {
-                if (!source.card.effects) return;
-                source.card.effects.forEach(passive => {
-                    if (passive.activation !== ActivationCondition.PASSIVE) return;
-                    if (passive.action?.type !== 'GRANT_EFFECT') return;
-
-                    const granted = passive.action?.params?.effect;
-                    if (!granted || granted.activation !== ActivationCondition.EXIT) return;
-
-                    const sourceContext: GameContext = {
-                        player: sourceOwner,
-                        opponent: sourceOpponent,
-                        sourceCard: source.card,
-                        unitZone: source.zone,
-                        machine: this
-                    };
-
-                    if (!this.effectManager.checkCondition(passive, sourceContext)) return;
-                    if (passive.targets && !TargetSelector.isValidTarget(this, passive.targets, sourceContext, destroyedZone)) return;
-
-                    const grantedContext: GameContext = {
-                        player: destroyedOwner,
-                        opponent: destroyedOwner === this.state.players[0] ? this.state.players[1] : this.state.players[0],
-                        sourceCard: destroyedUnit,
-                        unitZone: destroyedZone,
-                        machine: this,
-                        destroyedBy: killerCard
-                    };
-
-                    this.effectManager.executeEffect(granted, grantedContext, [destroyedZone]);
-                });
-            });
-        });
+        runProcessPassiveGrantedExitEffects(this, destroyedOwner, destroyedZone, destroyedUnit, killerCard);
     }
 
     private isReplacementDestroyReason(reason: 'BATTLE' | 'EFFECT' | 'RULE'): boolean {
@@ -2444,64 +1757,7 @@ export class GameEngine {
         zone: UnitZoneState,
         reason: 'BATTLE' | 'EFFECT' | 'RULE',
     ): Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }> {
-        if (!this.isReplacementDestroyReason(reason) || !zone.unit) return [];
-        const replacements: Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }> = [];
-        const opponent = this.getOpponentOf(player);
-
-        const unitContext: GameContext = {
-            sourceCard: zone.unit,
-            player,
-            opponent,
-            unitZone: zone,
-            machine: this,
-            trashReason: reason,
-        };
-
-        zone.unit.effects?.forEach(effect => {
-            if (effect.activation !== ActivationCondition.PASSIVE) return;
-            if (effect.action?.type !== 'NONE') return;
-            if (effect.action?.params?.destroyReplacement !== 'TRASH_EQUIPPED_ITEM') return;
-            if (zone.items.length === 0) return;
-            if (!this.effectManager.checkCondition(effect, unitContext)) return;
-
-            replacements.push({
-                type: 'TRASH_EQUIPPED_ITEM',
-                sourceCard: zone.unit!,
-                description: effect.description || '장착 아이템 1장을 트래시하고 파괴를 대체한다.',
-            });
-        });
-
-        zone.items.forEach(item => {
-            const alreadyUsedTurn = (item as any).__replacementUsedTurn as number | undefined;
-            if (alreadyUsedTurn === this.state.turnCount) return;
-
-            const itemContext: GameContext = {
-                sourceCard: item,
-                player,
-                opponent,
-                unitZone: zone,
-                machine: this,
-                trashReason: reason,
-            };
-
-            item.effects?.forEach(effect => {
-                if (effect.activation !== ActivationCondition.PASSIVE) return;
-                if (effect.action?.type !== 'NONE') return;
-                if (effect.action?.params?.destroyReplacement !== 'DISCARD_HAND_BY_HIT') return;
-                if (!this.effectManager.checkCondition(effect, itemContext)) return;
-
-                const requiredHandCount = Math.max(0, this.getUnitHit(zone, player));
-                if (player.hand.length < requiredHandCount) return;
-                replacements.push({
-                    type: 'DISCARD_HAND_BY_HIT',
-                    sourceCard: item,
-                    requiredHandCount,
-                    description: effect.description || '패를 버리고 파괴를 대체한다.',
-                });
-            });
-        });
-
-        return replacements;
+        return runCollectDestroyReplacements(this, player, zone, reason);
     }
 
     private beginDestroyReplacementPrompt(
@@ -2509,27 +1765,7 @@ export class GameEngine {
         replacements: Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }>,
         index: number,
     ) {
-        const replacement = replacements[index];
-        if (!replacement) {
-            this.executePendingDestroyPayload(destroyPayload);
-            return;
-        }
-
-        this.state.interactionMode = 'SELECT_OPTIONAL';
-        this.state.pendingEffect = {
-            sourceCard: replacement.sourceCard,
-            sourcePlayerId: destroyPayload.targetPlayerId,
-            controllerPlayerId: destroyPayload.targetPlayerId,
-            actionType: 'DESTRUCTION_REPLACEMENT',
-            actionValue: {
-                destroyPayload,
-                replacements,
-                index,
-            },
-            effectDescription: replacement.description,
-        };
-        this.clearPendingRuntime();
-        this.assignInteractionOwner(destroyPayload.targetPlayerId);
+        runBeginDestroyReplacementPrompt(this, destroyPayload, replacements, index);
     }
 
     private tryInitiateDestroyReplacement(
@@ -2538,108 +1774,19 @@ export class GameEngine {
         killerCard: Card | undefined,
         reason: 'BATTLE' | 'EFFECT' | 'RULE',
     ): boolean {
-        const zoneIndex = player.unitZones.indexOf(zone);
-        if (zoneIndex < 0) return false;
-
-        const replacements = this.collectDestroyReplacements(player, zone, reason);
-        if (replacements.length === 0) return false;
-
-        this.beginDestroyReplacementPrompt(
-            { targetPlayerId: player.id, zoneIndex, killerCard, reason },
-            replacements,
-            0,
-        );
-        return true;
+        return runTryInitiateDestroyReplacement(this, player, zone, killerCard, reason);
     }
 
     private executePendingDestroyPayload(payload: { targetPlayerId: string; zoneIndex: number; reason: 'BATTLE' | 'EFFECT' | 'RULE'; killerCard?: Card }) {
-        const owner = this.getPlayerById(payload.targetPlayerId);
-        if (!owner) {
-            this.resetInteractionMode();
-            return;
-        }
-
-        const zone = owner.unitZones[payload.zoneIndex];
-        this.state.interactionMode = 'NORMAL';
-        this.state.pendingEffect = null;
-        this.clearPendingRuntime();
-        this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
-
-        if (zone?.unit) {
-            this.destroyUnit(owner, zone, payload.killerCard, payload.reason, { skipReplacement: true });
-        }
-        this.effectManager.resumeQueue();
+        runExecutePendingDestroyPayload(this, payload);
     }
 
     private completeDestructionReplacementAfterHandCost(pending: PendingEffect) {
-        const replacement = pending.actionValue?.replacement;
-        if (replacement?.sourceCard) {
-            (replacement.sourceCard as any).__replacementUsedTurn = this.state.turnCount;
-        }
-        this.resetInteractionMode();
+        runCompleteDestructionReplacementAfterHandCost(this, pending);
     }
 
     private resolveDestructionReplacementChoice(confirm: boolean) {
-        if (this.state.interactionMode !== 'SELECT_OPTIONAL' || !this.state.pendingEffect) return;
-
-        const pending = this.state.pendingEffect;
-        const actionValue = pending.actionValue ?? {};
-        const destroyPayload = actionValue.destroyPayload as { targetPlayerId: string; zoneIndex: number; reason: 'BATTLE' | 'EFFECT' | 'RULE'; killerCard?: Card } | undefined;
-        const replacements = (actionValue.replacements ?? []) as Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }>;
-        const index = typeof actionValue.index === 'number' ? actionValue.index : 0;
-        const replacement = replacements[index];
-
-        if (!destroyPayload || !replacement) {
-            this.resetInteractionMode();
-            return;
-        }
-
-        if (confirm) {
-            const owner = this.getPlayerById(destroyPayload.targetPlayerId);
-            const zone = owner?.unitZones[destroyPayload.zoneIndex];
-            if (owner && zone?.unit) {
-                if (replacement.type === 'TRASH_EQUIPPED_ITEM') {
-                    if (zone.items.length > 0) {
-                        const trashedItem = zone.items.shift()!;
-                        owner.trash.push(trashedItem);
-                        this.resetInteractionMode();
-                        return;
-                    }
-                }
-
-                if (replacement.type === 'DISCARD_HAND_BY_HIT') {
-                    const requiredHandCount = replacement.requiredHandCount ?? Math.max(0, this.getUnitHit(zone, owner));
-                    if (owner.hand.length >= requiredHandCount) {
-                        this.state.interactionMode = 'SELECT_COST';
-                        this.state.pendingEffect = {
-                            sourceCard: replacement.sourceCard,
-                            sourcePlayerId: owner.id,
-                            controllerPlayerId: owner.id,
-                            actionType: 'DESTRUCTION_REPLACEMENT_PAY_HAND',
-                            actionValue: {
-                                destroyPayload,
-                                replacement,
-                            },
-                            effectDescription: replacement.description,
-                            costToPay: { type: 'TRASH_HAND', amount: requiredHandCount },
-                            costPaidCount: 0,
-                            selectedTargets: [],
-                        };
-                        this.clearPendingRuntime();
-                        this.assignInteractionOwner(owner.id);
-                        return;
-                    }
-                }
-            }
-        }
-
-        const nextIndex = index + 1;
-        if (nextIndex < replacements.length) {
-            this.beginDestroyReplacementPrompt(destroyPayload, replacements, nextIndex);
-            return;
-        }
-
-        this.executePendingDestroyPayload(destroyPayload);
+        runResolveDestructionReplacementChoice(this, confirm);
     }
 
     public destroyUnit(
@@ -2649,116 +1796,7 @@ export class GameEngine {
         reason: 'BATTLE' | 'EFFECT' | 'RULE' = 'EFFECT',
         options: { skipReplacement?: boolean } = {},
     ) {
-        if (!zone.unit) return;
-
-        if (!options.skipReplacement && this.tryInitiateDestroyReplacement(player, zone, killerCard, reason)) {
-            return;
-        }
-
-        const unit = zone.unit;
-        const destroyKey = this.getDestroyGuardKey(player, zone, unit);
-        if (this.destroyInProgressKeys.has(destroyKey)) {
-            return;
-        }
-
-        this.destroyInProgressKeys.add(destroyKey);
-        try {
-            const opponent = this.getOpponentOf(player);
-
-            // Apply passive "grant EXIT effect" auras before removing the unit from the zone.
-            this.processPassiveGrantedExitEffects(player, zone, unit, killerCard);
-
-            // Remove from zone first to avoid recursive state inconsistencies while effects resolve.
-            zone.unit = null;
-
-            // 1) Queue EXIT effects in a single batch.
-            const exitBatchStep = this.incrementAndGetGlobalStep();
-            const equippedItemsSnapshot = [...zone.items];
-            this.effectManager.processEffects(ActivationCondition.EXIT, {
-                sourceCard: unit,
-                player: player,
-                opponent: opponent,
-                unitZone: zone,
-                machine: this,
-                destroyedBy: killerCard,
-                trashReason: reason,
-                flags: {
-                    equippedItemsSnapshot,
-                    destroyedUnitId: unit.id,
-                },
-            }, { enqueueOnly: true, batchStep: exitBatchStep });
-
-            zone.items.forEach(item => {
-                this.effectManager.processEffects(ActivationCondition.EXIT, {
-                    sourceCard: item,
-                    player: player,
-                    opponent: opponent,
-                    unitZone: zone,
-                    machine: this,
-                    destroyedBy: killerCard,
-                    trashedUnit: unit,
-                    trashReason: reason,
-                    flags: {
-                        equippedItemsSnapshot,
-                        destroyedUnitId: unit.id,
-                    },
-                }, { enqueueOnly: true, batchStep: exitBatchStep });
-            });
-
-            // 2) Move cards to trash and clear lane state.
-            player.trash.push(unit);
-            const trashedUnit = unit;
-            zone.items.forEach(i => player.trash.push(i));
-            zone.items = [];
-            zone.buffs = [];
-            zone.temporaryEffects = [];
-            if (reason === 'EFFECT' || reason === 'RULE') {
-                this.incrementEffectTrashedFriendlyUnitCount(player.id);
-            }
-
-            // 3) Queue UNIT_TRASHED effects as one simultaneous event in turn-player priority order.
-            const trashedBatchStep = this.incrementAndGetGlobalStep();
-            const [turnPlayer, nonTurnPlayer] = this.getPlayersInTurnOrder();
-            [turnPlayer, nonTurnPlayer].forEach(p => {
-                const sourceOpponent = this.getOpponentOf(p);
-
-                if (p.levelZone) {
-                    this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
-                        sourceCard: p.levelZone,
-                        player: p,
-                        opponent: sourceOpponent,
-                        machine: this,
-                        trashedUnit: trashedUnit,
-                        trashedUnitOwner: player,
-                        trashReason: reason,
-                        flags: {
-                            destroyedUnitId: trashedUnit.id,
-                        },
-                    }, { enqueueOnly: true, batchStep: trashedBatchStep });
-                }
-
-                p.unitZones.forEach(z => {
-                    if (!z.unit) return;
-                    this.effectManager.processEffects(ActivationCondition.UNIT_TRASHED, {
-                        sourceCard: z.unit,
-                        player: p,
-                        opponent: sourceOpponent,
-                        unitZone: z,
-                        machine: this,
-                        trashedUnit: trashedUnit,
-                        trashedUnitOwner: player,
-                        trashReason: reason,
-                        flags: {
-                            destroyedUnitId: trashedUnit.id,
-                        },
-                    }, { enqueueOnly: true, batchStep: trashedBatchStep });
-                });
-            });
-
-            this.effectManager.processQueue();
-        } finally {
-            this.destroyInProgressKeys.delete(destroyKey);
-        }
+        runDestroyUnit(this, player, zone, killerCard, reason, options);
     }
 
     public checkRuleProcessing() {
@@ -3062,228 +2100,15 @@ export class GameEngine {
     }
 
     public selectZoneTargetByPlayerId(zoneIndex: number, targetPlayerId: string) {
-        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
-
-        // This logic handles the manual selection input from the UI
-        const pending = this.state.pendingEffect;
-        const runtime = this.getPendingRuntime();
-        const effect = runtime?.effect;
-        const context = runtime?.context;
-        const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
-        const targetPlayer = this.getPlayerById(targetPlayerId);
-        if (!targetPlayer) return;
-        if (zoneIndex < 0 || zoneIndex >= targetPlayer.unitZones.length) return;
-        const targetZone = targetPlayer.unitZones[zoneIndex];
-        const scope = targetSchema.scope;
-
-        // NEW: Full validation using TargetSelector
-        if (!TargetSelector.isValidTarget(this, targetSchema, context, targetZone)) {
-            console.log("Invalid Target Selected. Mode maintained.");
-            return;
-        }
-
-        // Shared Lane validation (extra layer for clarity, though isValidTarget covers it)
-        if (scope === 'SHARED_LANE') {
-            const myUnit = context.player.unitZones[zoneIndex]?.unit;
-            const oppUnit = context.opponent.unitZones[zoneIndex]?.unit;
-            if (!myUnit || !oppUnit) {
-                console.log("Invalid Target: Lane is not shared.");
-                return;
-            }
-        }
-
-
-        // If everything good, execute
-        if (effect.action.type === 'DESTROY_LANE_LOWEST') {
-            context.selectedLaneIndex = zoneIndex;
-        }
-
-        // Multi-target logic
-        const maxCount = targetSchema.count || 1;
-        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
-        if (maxCount > 1) {
-            if (!selectedTargets.includes(targetZone)) {
-                if (selectedTargets.length >= maxCount) {
-                    console.log(`Cannot select more than ${maxCount} targets.`);
-                    return;
-                }
-                selectedTargets.push(targetZone);
-                console.log(`Target added. ${selectedTargets.length}/${maxCount}`);
-            } else {
-                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetZone);
-                console.log(`Target removed. ${(pending.selectedTargets ?? []).length}/${maxCount}`);
-            }
-            // Do not execute yet. Wait for Confirm.
-            return;
-        } else {
-            // Single target behavior: Execute immediately
-            this.effectManager.executeEffect(effect, context, [targetZone]);
-            this.handleEffectCompletion(context, pending);
-        }
+        runSelectZoneTargetByPlayerId(this, zoneIndex, targetPlayerId);
     }
 
     public confirmTargets() {
-        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
-
-        const pending = this.state.pendingEffect;
-        const runtime = this.getPendingRuntime();
-        const effect = runtime?.effect;
-        const context = runtime?.context;
-        const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
-
-        // Validation - can be empty if no valid targets were found among revealed
-
-        // Special logic for PICK_REVEALED
-        if (pending.actionType === 'PICK_REVEALED') {
-            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
-            if (player) {
-                (pending.selectedTargets ?? []).forEach((card: any) => {
-                    const idx = this.state.revealedCards.indexOf(card);
-                    if (idx !== -1) {
-                        player.hand.push(card);
-                        this.state.revealedCards.splice(idx, 1);
-                    }
-                });
-                // Shuffle rest back
-                if (this.state.revealedCards.length > 0) {
-                    player.deck.push(...this.state.revealedCards);
-                    this.shuffle(player.deck);
-                }
-            }
-            this.state.revealedCards = [];
-        }
-
-        // SPECIAL LOGIC for TAKE_ALL_REVEALED (VIP Gift)
-        if (pending.actionType === 'TAKE_ALL_REVEALED') {
-            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
-            if (player) {
-                const candidates = TargetSelector.resolve(this, targetSchema, context);
-                candidates.forEach(card => {
-                    const idx = this.state.revealedCards.indexOf(card);
-                    if (idx !== -1) {
-                        player.hand.push(card);
-                        this.state.revealedCards.splice(idx, 1);
-                    }
-                });
-                // Shuffle rest back
-                if (this.state.revealedCards.length > 0) {
-                    player.deck.push(...this.state.revealedCards);
-                    this.shuffle(player.deck);
-                }
-            }
-            this.state.revealedCards = [];
-        }
-
-        if (pending.actionType === 'PICK_REVEALED_ORDER_BOTTOM') {
-            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
-            if (!player) return;
-
-            (pending.selectedTargets ?? []).forEach((card: any) => {
-                const idx = this.state.revealedCards.indexOf(card);
-                if (idx !== -1) {
-                    player.hand.push(card);
-                    this.state.revealedCards.splice(idx, 1);
-                }
-            });
-
-            if (this.state.revealedCards.length > 1) {
-                this.state.interactionMode = 'SELECT_TARGET';
-                pending.actionType = 'ORDER_REVEALED_BOTTOM';
-                pending.effectDescription = '덱 맨 아래에 놓을 순서를 정하세요.';
-                pending.validTargets = 'REVEALED';
-                pending.targetSchema = {
-                    scope: 'REVEALED',
-                    type: 'CARD',
-                    count: this.state.revealedCards.length,
-                    selectMode: 'MANUAL',
-                } as any;
-                pending.selectedTargets = [];
-                pending.actionValue = {
-                    ...(pending.actionValue || {}),
-                    allowPartialSelection: false,
-                };
-                this.assignInteractionOwner(pending.controllerPlayerId ?? pending.sourcePlayerId);
-                return;
-            }
-
-            if (this.state.revealedCards.length === 1) {
-                player.deck.unshift(this.state.revealedCards[0]);
-            }
-            this.state.revealedCards = [];
-        }
-
-        if (pending.actionType === 'ORDER_REVEALED_BOTTOM') {
-            const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
-            if (!player) return;
-
-            const selectedOrder = pending.selectedTargets ?? [];
-            const remaining = this.state.revealedCards.filter(card => !selectedOrder.includes(card));
-            const finalOrder = [...selectedOrder, ...remaining];
-            if (finalOrder.length > 0) {
-                player.deck.unshift(...finalOrder);
-            }
-            this.state.revealedCards = [];
-        }
-
-        // Execute Effect via Manager
-        this.effectManager.executeEffect(effect, context, pending.selectedTargets ?? []);
-
-        this.handleEffectCompletion(context, pending);
+        runConfirmTargets(this);
     }
 
     public selectTrashTarget(trashIndex: number, targetPlayerId?: string) {
-        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
-
-        const pending = this.state.pendingEffect;
-        const runtime = this.getPendingRuntime();
-        const effect = runtime?.effect;
-        const context = runtime?.context;
-        const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
-        // Verify scope is MY_TRASH
-        if (pending.validTargets !== 'MY_TRASH') {
-            console.log("Invalid Target: Expected Trash selection.");
-            return;
-        }
-
-        // Use the effect source player's trash, not the current turn player's trash
-        // This is important for trigger effects that activate on opponent's turn
-        const expectedPlayerId = pending.sourcePlayerId;
-        if (targetPlayerId && targetPlayerId !== expectedPlayerId) return;
-        const player = this.state.players.find(p => p.id === expectedPlayerId);
-        if (!player) {
-            console.log("Source player not found for trash selection.");
-            return;
-        }
-        if (trashIndex < 0 || trashIndex >= player.trash.length) return;
-        const card = player.trash[trashIndex];
-
-        // Validate with TargetSelector
-        if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) {
-            console.log("Invalid Trash Target Selected.");
-            return;
-        }
-
-        // Multi-target logic for trash
-        const maxCount = targetSchema.count || 1;
-        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
-        if (maxCount > 1) {
-            if (!selectedTargets.includes(card)) {
-                if (selectedTargets.length >= maxCount) {
-                    console.log(`Cannot select more than ${maxCount} targets.`);
-                    return;
-                }
-                selectedTargets.push(card);
-            } else {
-                pending.selectedTargets = selectedTargets.filter((t: any) => t !== card);
-            }
-        } else {
-            // Execute
-            this.effectManager.executeEffect(effect, context, [card]);
-            this.handleEffectCompletion(context, pending);
-        }
+        runSelectTrashTarget(this, trashIndex, targetPlayerId);
     }
 
     public selectHandTarget(handIndex: number, isOpponentHand: boolean) {
@@ -3292,233 +2117,23 @@ export class GameEngine {
     }
 
     public selectDamageTargetByPlayerId(damageIndex: number, targetPlayerId: string) {
-        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
-
-        const pending = this.state.pendingEffect;
-        const runtime = this.getPendingRuntime();
-        const effect = runtime?.effect;
-        const context = runtime?.context;
-        const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
-
-        const targetPlayer = this.getPlayerById(targetPlayerId);
-        if (!targetPlayer) return;
-        if (damageIndex < 0 || damageIndex >= targetPlayer.damage.length) return;
-        const targetCard = targetPlayer.damage[damageIndex];
-
-        if (!TargetSelector.isValidTarget(this, targetSchema, context, targetCard)) {
-            console.log("Invalid Damage Target Selected.");
-            return;
-        }
-
-        const maxCount = targetSchema.count || 1;
-        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
-        if (maxCount > 1) {
-            if (!selectedTargets.includes(targetCard)) {
-                if (selectedTargets.length >= maxCount) {
-                    console.log(`Cannot select more than ${maxCount} targets.`);
-                    return;
-                }
-                selectedTargets.push(targetCard);
-            } else {
-                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetCard);
-            }
-            return;
-        }
-
-        this.effectManager.executeEffect(effect, context, [targetCard]);
-        this.handleEffectCompletion(context, pending);
+        runSelectDamageTargetByPlayerId(this, damageIndex, targetPlayerId);
     }
 
     public selectItemTargetByPlayerId(zoneIndex: number, itemIndex: number, targetPlayerId: string) {
-        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
-
-        const pending = this.state.pendingEffect;
-        const runtime = this.getPendingRuntime();
-        const effect = runtime?.effect;
-        const context = runtime?.context;
-        const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
-
-        const targetPlayer = this.getPlayerById(targetPlayerId);
-        if (!targetPlayer) return;
-        if (zoneIndex < 0 || zoneIndex >= targetPlayer.unitZones.length) return;
-        const zone = targetPlayer.unitZones[zoneIndex];
-        if (itemIndex < 0 || itemIndex >= zone.items.length) return;
-        const targetCard = zone.items[itemIndex];
-
-        if (!TargetSelector.isValidTarget(this, targetSchema, context, targetCard)) {
-            console.log("Invalid Item Target Selected.");
-            return;
-        }
-
-        const maxCount = targetSchema.count || 1;
-        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
-        if (maxCount > 1) {
-            if (!selectedTargets.includes(targetCard)) {
-                if (selectedTargets.length >= maxCount) {
-                    console.log(`Cannot select more than ${maxCount} targets.`);
-                    return;
-                }
-                selectedTargets.push(targetCard);
-            } else {
-                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetCard);
-            }
-            return;
-        }
-
-        this.effectManager.executeEffect(effect, context, [targetCard]);
-        this.handleEffectCompletion(context, pending);
+        runSelectItemTargetByPlayerId(this, zoneIndex, itemIndex, targetPlayerId);
     }
 
     public selectHandTargetByPlayerId(handIndex: number, targetPlayerId: string) {
-        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
-
-        const pending = this.state.pendingEffect;
-        const runtime = this.getPendingRuntime();
-        const effect = runtime?.effect;
-        const context = runtime?.context;
-        const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
-
-        const targetPlayer = this.getPlayerById(targetPlayerId);
-        if (!targetPlayer) return;
-        if (handIndex < 0 || handIndex >= targetPlayer.hand.length) return;
-
-        const targetCard = targetPlayer.hand[handIndex];
-
-        // Validate
-        if (!TargetSelector.isValidTarget(this, targetSchema, context, targetCard)) {
-            console.log("Invalid Hand Target Selected.");
-            return;
-        }
-
-        // Multi-target logic for hand
-        const maxCount = targetSchema.count || 1;
-        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
-        if (maxCount > 1) {
-            if (!selectedTargets.includes(targetCard)) {
-                if (selectedTargets.length >= maxCount) {
-                    console.log(`Cannot select more than ${maxCount} targets.`);
-                    return;
-                }
-                selectedTargets.push(targetCard);
-            } else {
-                pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetCard);
-            }
-        } else {
-            // Execute Effect via Manager
-            this.effectManager.executeEffect(effect, context, [targetCard]);
-
-            this.handleEffectCompletion(context, pending);
-        }
+        runSelectHandTargetByPlayerId(this, handIndex, targetPlayerId);
     }
 
     public selectRevealedTarget(index: number) {
-        if (this.state.interactionMode !== 'SELECT_TARGET' || !this.state.pendingEffect) return;
-        if (index < 0 || index >= this.state.revealedCards.length) return;
-
-        const pending = this.state.pendingEffect;
-        const runtime = this.getPendingRuntime();
-        const effect = runtime?.effect;
-        const context = runtime?.context;
-        const targetSchema = pending.targetSchema;
-        if (!effect || !context || !targetSchema) return;
-        if (pending.validTargets !== 'REVEALED') return;
-
-        const card = this.state.revealedCards[index];
-
-        // Validate
-        if (!TargetSelector.isValidTarget(this, targetSchema, context, card)) {
-            console.log("Invalid Revealed Target Selected.");
-            return;
-        }
-
-        const maxCount = targetSchema.count || 1;
-        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
-        if (maxCount > 1) {
-            if (!selectedTargets.includes(card)) {
-                if (selectedTargets.length >= maxCount) {
-                    console.log(`Cannot select more than ${maxCount} targets.`);
-                    return;
-                }
-                selectedTargets.push(card);
-            } else {
-                pending.selectedTargets = selectedTargets.filter((t: any) => t !== card);
-            }
-        } else {
-            // Execute
-            this.effectManager.executeEffect(effect, context, [card]);
-            // Move card to hand (if required by the specific action type)
-            if (pending.actionType === 'PICK_REVEALED') {
-                const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
-                if (player) {
-                    player.hand.push(card);
-                    this.state.revealedCards.splice(index, 1);
-                }
-            }
-            if (pending.actionType === 'PICK_REVEALED_ORDER_BOTTOM') {
-                const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
-                if (player) {
-                    player.hand.push(card);
-                    this.state.revealedCards.splice(index, 1);
-
-                    if (this.state.revealedCards.length > 1) {
-                        this.state.interactionMode = 'SELECT_TARGET';
-                        pending.actionType = 'ORDER_REVEALED_BOTTOM';
-                        pending.effectDescription = '덱 맨 아래에 놓을 순서를 정하세요.';
-                        pending.validTargets = 'REVEALED';
-                        pending.targetSchema = {
-                            scope: 'REVEALED',
-                            type: 'CARD',
-                            count: this.state.revealedCards.length,
-                            selectMode: 'MANUAL',
-                        } as any;
-                        pending.selectedTargets = [];
-                        pending.actionValue = {
-                            ...(pending.actionValue || {}),
-                            allowPartialSelection: false,
-                        };
-                        this.assignInteractionOwner(pending.controllerPlayerId ?? pending.sourcePlayerId);
-                        return;
-                    }
-
-                    if (this.state.revealedCards.length === 1) {
-                        player.deck.unshift(this.state.revealedCards[0]);
-                        this.state.revealedCards = [];
-                    }
-                }
-            }
-            // Shuffle rest back
-            if (this.state.revealedCards.length > 0 && pending.actionType !== 'PICK_REVEALED_ORDER_BOTTOM') {
-                const player = this.state.players.find(p => p.id === pending.sourcePlayerId);
-                if (player) {
-                    player.deck.push(...this.state.revealedCards);
-                    this.shuffle(player.deck);
-                    this.state.revealedCards = [];
-                }
-            }
-            // Reset
-            this.handleEffectCompletion(context, pending);
-        }
+        runSelectRevealedTarget(this, index);
     }
 
     private handleEffectCompletion(context: GameContext, currentPending: GameState['pendingEffect']) {
-        console.log(`[GameEngine] Handling completion for ${context.sourceCard.name}`);
-        // Queue Architecture: If a new interaction mode started, it means the processed effect caused a trigger.
-        // We do NOTHING here. The queue already has the remaining effects.
-        // The new interaction will block the queue until it is resolved.
-        if (this.state.interactionMode !== 'NORMAL' && this.state.pendingEffect !== currentPending) {
-            console.log("[GameEngine] Action triggered a nested selection mode. Queue paused.");
-        } else {
-            this.resetInteractionMode();
-        }
-
-        if (
-            currentPending?.actionType === this.endPhaseHandAdjustActionType
-        ) {
-            this.finalizeEndPhaseHandAdjustmentIfReady();
-        }
+        runHandleEffectCompletion(this, context, currentPending);
     }
 
     private resetInteractionMode() {
