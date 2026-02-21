@@ -191,7 +191,15 @@ export const ST10_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.ACTIVE,
             description: "필드에 있는 자신 유닛을 1장 골라 트래시할 수 있다.",
+            condition: { type: 'CONTEXT_FLAG', value: { key: 'LAST_EFFECT_SKIPPED_NO_TARGET', equals: false } },
             optional: true,
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'DESTROY_UNIT', params: {} }
+        },
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "상대 유닛을 고르지 못했다면 필드에 있는 자신 유닛을 1장 골라 트래시한다.",
+            condition: { type: 'CONTEXT_FLAG', value: { key: 'LAST_EFFECT_SKIPPED_NO_TARGET', equals: true } },
             targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
             action: { type: 'DESTROY_UNIT', params: {} }
         },

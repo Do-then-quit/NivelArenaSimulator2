@@ -270,6 +270,27 @@ describe('ST10 Effects Regression', () => {
         expect(engine.getUnitPower(p2.unitZones[0], p2)).toBe(beforeOppPower - 1000);
     });
 
+    it('ST10-013 can be played without enemy unit and must trash own unit', () => {
+        const engine = createEngine(10011);
+        const p1 = engine.state.players[0];
+
+        p1.hand = [getCard('ST10-013')];
+        p1.unitZones[0].unit = getCard('ST10-005');
+        engine.state.phase = Phase.MAIN;
+
+        engine.playSkill(0);
+
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        const optionalAction = findAction(engine, p1.id, 'RESOLVE_OPTIONAL');
+        expect(optionalAction).toBeUndefined();
+
+        const pickOwn0 = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', action => action.zoneIndex === 0 && action.targetPlayerId === p1.id);
+        expect(pickOwn0).toBeDefined();
+        if (pickOwn0) expect(engine.step(pickOwn0)).toBe(true);
+
+        expect(p1.unitZones[0].unit).toBeNull();
+    });
+
     it('ST10-014 main effect enforces hand-size total cost and excludes self-id', () => {
         const engine = createEngine(10008);
         const p1 = engine.state.players[0];

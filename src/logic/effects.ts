@@ -235,6 +235,8 @@ export class EffectManager {
 
         if (effect.targets && effect.targets.selectMode === 'MANUAL') {
             const candidates = TargetSelector.resolve(this.engine, effect.targets, context);
+            context.flags = context.flags || {};
+            context.flags.LAST_EFFECT_SKIPPED_NO_TARGET = candidates.length === 0;
             console.log(`[EffectManager] Resolving targets for "${effect.description}". Scope: ${effect.targets.scope}, Candidates: ${candidates.length}`);
             if (candidates.length > 0) {
                 this.engine.initiateTargetSelection(effect, context);
