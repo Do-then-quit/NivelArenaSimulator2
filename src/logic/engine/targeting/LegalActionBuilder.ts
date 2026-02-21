@@ -3,6 +3,7 @@ import {
     Phase,
     type Card,
     type EngineAction,
+    type Effect,
     type GameContext,
     type UnitZoneState,
 } from '../../types';
@@ -168,7 +169,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const leader = actor.levelZone;
             if (leader?.effects) {
                 const leaderActivatedKeys = ((actor as any).leaderActivatedEffectKeys || {}) as Record<string, boolean>;
-                leader.effects.forEach((effect, effectIndex) => {
+                leader.effects.forEach((effect: Effect, effectIndex: number) => {
                     const activatableInPhase =
                         (effect.activation === ActivationCondition.ACTIVE && (engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK)) ||
                         (effect.activation === ActivationCondition.ACTIVE_MAIN && engine.state.phase === Phase.MAIN);

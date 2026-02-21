@@ -246,16 +246,17 @@ const tests: UnifiedTestCase[] = [
 
             const buffAfterBattle = p1.unitZones[0].buffs.find(buff => buff.type === 'POWER' && buff.value === 2000);
             const grantedAfterBattle = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
+            const isLevelUpPhase = () => (engine.state.phase as Phase) === Phase.LEVEL_UP;
 
             let guard = 0;
-            while (!(engine.currentPlayer.id === p2.id && engine.state.phase === Phase.LEVEL_UP) && guard < 12) {
+            while (!(engine.currentPlayer.id === p2.id && isLevelUpPhase()) && guard < 12) {
                 engine.nextPhase();
                 guard += 1;
             }
             const grantedAfterOwnTurnEnd = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
 
             guard = 0;
-            while (!(engine.currentPlayer.id === p1.id && engine.state.phase === Phase.LEVEL_UP) && guard < 12) {
+            while (!(engine.currentPlayer.id === p1.id && isLevelUpPhase()) && guard < 12) {
                 engine.nextPhase();
                 guard += 1;
             }
