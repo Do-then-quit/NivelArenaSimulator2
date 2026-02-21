@@ -9,8 +9,8 @@ describe('CardDatabase (Vitest)', () => {
 
     it('should load cards from all packs', () => {
         const packPrefixes = [
-            'ST01', 'ST02', 'ST03', 'ST04', 'ST05', 'ST06', 'ST07', 'ST08', 'ST09',
-            'BT01', 'BT02', 'BT03', 'BT04', 'BT05', 'SB01'
+            'ST01', 'ST02', 'ST03', 'ST04', 'ST05', 'ST06', 'ST07', 'ST08', 'ST09', 'ST10', 'ST11',
+            'BT01', 'BT02', 'BT03', 'BT04', 'BT05', 'BT06', 'SB01'
         ];
 
         packPrefixes.forEach(prefix => {

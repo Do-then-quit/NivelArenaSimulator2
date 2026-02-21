@@ -4,13 +4,88 @@
     "name": "길티",
     "type": "리더",
     "attribute": "대지",
-    "cost": "레어도",
+    "cost": "",
     "power": "-",
     "hit": "-",
     "traits": "미실리스",
     "keywords": "패시브",
-    "text": "기본면 서약 : 자신의 덱에 대지 : 카드만 넣을 수 있다. 각성 : 자신의 리더 레벨이 6 이상이라면 이 카드를 뒤집는다. 각성면 패시브 : 자신의 사이즈+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_8r73Wfk2_44687c34aec25c97f9e94176b4287cd242dbd5d3.jpg"
+    "text": "기본면 [서약] 자신의 덱에 [대지] 카드만 넣을 수 있다. [각성] 자신의 리더 레벨이 6 이상이라면 이 카드를 뒤집는다. 각성면 [패시브] 자신의 사이즈+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_UTtyfVov_fa8938b7f25cec7e80318e93845d139fe9b2c451.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "기본면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[서약] 자신의 덱에 [대지] 카드만 넣을 수 있다.",
+        "headerTokens": [
+          "서약"
+        ],
+        "headerKeywords": [
+          "서약"
+        ],
+        "mentionedKeywords": [
+          "서약"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[각성] 자신의 리더 레벨이 6 이상이라면 이 카드를 뒤집는다.",
+        "headerTokens": [
+          "각성"
+        ],
+        "headerKeywords": [
+          "각성"
+        ],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "각성면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [
+          "각성"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 5,
+        "text": "[패시브] 자신의 사이즈+1.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "884",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=884",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-002",
@@ -23,7 +98,22 @@
     "traits": "베이스 / 미실리스",
     "keywords": "-",
     "text": "-",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_KszaILqC_87495d27e6189e486a7e63a65fbeec3c1b7872de.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_KszaILqC_87495d27e6189e486a7e63a65fbeec3c1b7872de.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "-",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "34",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=34",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-003",
@@ -35,8 +125,31 @@
     "hit": "1",
     "traits": "이펙트 / 테트라",
     "keywords": "엑시트",
-    "text": "엑시트 : 자신의 리더 레벨+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_8XpU4lSG_f655a557af7829c5f988b54c99c62414ed8b2fc6.jpg"
+    "text": "[엑시트] 자신의 리더 레벨+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_8XpU4lSG_f655a557af7829c5f988b54c99c62414ed8b2fc6.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엑시트] 자신의 리더 레벨+1.",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "33",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=33",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-004",
@@ -49,7 +162,22 @@
     "traits": "베이스 / 미실리스",
     "keywords": "-",
     "text": "-",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_1sjJ5cnI_7bab5aa94a77d5b031380be1961b90c501b854b5.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_1sjJ5cnI_7bab5aa94a77d5b031380be1961b90c501b854b5.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "-",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "32",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=32",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-005",
@@ -61,8 +189,31 @@
     "hit": "1",
     "traits": "이펙트 / 테트라",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 리더 레벨+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_tT4Y9Gen_7494d921b3820cda7e02859826e09984d364a4fb.jpg"
+    "text": "[엔트리] 자신의 리더 레벨+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NVTJ3aoq_6cab0236cbfd71e730ece184f1c5ad46ae6b5ba6.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 리더 레벨+1.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "882",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=882",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-006",
@@ -75,7 +226,22 @@
     "traits": "베이스 / 테트라",
     "keywords": "-",
     "text": "-",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_DpEsKj3A_36fa4ff03df70e669f8948dae3ef42f110ff6ba8.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_DpEsKj3A_36fa4ff03df70e669f8948dae3ef42f110ff6ba8.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "-",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "30",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=30",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-007",
@@ -87,8 +253,42 @@
     "hit": "1",
     "traits": "이펙트 / 엘리시온",
     "keywords": "액티브",
-    "text": "엑티브메인 : 자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 《베이스》를 가진 모든 자신 유닛은 이 턴이 끝날 때까지&nbsp;히트+1. 트리거 / 이 카드를 트래시한다. 자신의 리더 레벨+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OXsYkHrl_b522702f950e5210d641979fe90984a0d873ff39.jpg"
+    "text": "[엑티브메인] 자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 《베이스》를 가진 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1. 트리거 / 이 카드를 트래시한다. 자신의 리더 레벨+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OXsYkHrl_b522702f950e5210d641979fe90984a0d873ff39.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엑티브메인] 자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 《베이스》를 가진 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1.",
+        "headerTokens": [
+          "엑티브메인"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 리더 레벨+1.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "29",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=29",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-008",
@@ -101,7 +301,22 @@
     "traits": "베이스 / 엘리시온",
     "keywords": "-",
     "text": "-",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_WoTs9Ner_23cbfa4979a28925d2efbef253b76452ee349ffa.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_WoTs9Ner_23cbfa4979a28925d2efbef253b76452ee349ffa.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "-",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "28",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=28",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-009",
@@ -114,7 +329,28 @@
     "traits": "베이스 / 미실리스",
     "keywords": "-",
     "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_vtJVSiQN_b182c58f8b846377afc7ee78ab50a266d01885d6.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_cL8qZVAl_65cbe9a16bb798f0a274a7fdbdb42aabd67bf19b.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "881",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=881",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-010",
@@ -126,8 +362,46 @@
     "hit": "2",
     "traits": "이펙트 / 필그림",
     "keywords": "어태커",
-    "text": "어태커 : 돌파[2코스트 이하] (2코스트 이하인 상대 유닛은 이 유닛의 공격을 방어할 수 없다). 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_jEVbhy4M_273715ab81fb5559d9f09adc30a326710b05b5cc.jpg"
+    "text": "[어태커] 돌파[2코스트 이하] . 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_k5vNITDC_865b20eca52b814481f7fb649c93ebd7e5658205.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 돌파[2코스트 이하] .",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "880",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=880",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-011",
@@ -139,8 +413,31 @@
     "hit": "3",
     "traits": "이펙트 / 엘리시온",
     "keywords": "패시브",
-    "text": "패시브 : 이 유닛의 파워가 자신의 리더 레벨×1000만큼 증가한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_rDgm4tLi_7016c781d1974ccfc35e87a9c66661cb3c98b2ee.jpg"
+    "text": "[패시브] 자신의 리더 레벨 1마다 파워+1000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_26j90WDy_d47dea24a4d8675549612410f3c4458cb265d103.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 자신의 리더 레벨 1마다 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "878",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=878",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-012",
@@ -153,7 +450,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_pu1iyxe0_26ec7829b2f307ee549d60e5f97eace8bea02aa3.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_pu1iyxe0_26ec7829b2f307ee549d60e5f97eace8bea02aa3.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "24",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=24",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-013",
@@ -166,7 +478,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "자신의 리더 레벨+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_xyubF7pV_58f92ef389e7da1c0a34147a14ba1067721b9bba.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/614_copy_623_cfbf01727a7e461ec5930f5d552f8bff_c7hj3sLo_aabbf7fc0ccf68acd02e2e0fc417534c4edf1e8b.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 리더 레벨+1.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "913",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=913",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-014",
@@ -179,7 +506,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "자신의 덱 맨 위에서 카드를 3장 공개하고, 그 중 1장을 골라 자신의 패에 넣는다. 나머지 2장은 다시 덱에 넣고 섞는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_dyYQCzko_97676045c35fdecbf8de9442b206c12991f0a735.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_dyYQCzko_97676045c35fdecbf8de9442b206c12991f0a735.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 덱 맨 위에서 카드를 3장 공개하고, 그 중 1장을 골라 자신의 패에 넣는다. 나머지 2장은 다시 덱에 넣고 섞는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "22",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=22",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-015",
@@ -191,8 +533,38 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "자신 유닛과 상대 유닛이 모두 있는 레인을 하나 골라, 그 레인에서 파워가 가장 낮은 유닛을 트래시한다. 같다면 모두 트래시한다. 트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_6ywPSY5b_45cd73a396794c8661f1fe6e06a524bc6b3afc22.jpg"
+    "text": "자신 유닛과 상대 유닛이 모두 있는 레인을 하나 골라 그 레인에서 파워가 가장 낮은 유닛을 트래시한다. 같다면 모두 트래시한다. 트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Q8UJfIFd_4d9a529394ce1b80f3a15628f608cc40f3602372.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신 유닛과 상대 유닛이 모두 있는 레인을 하나 골라 그 레인에서 파워가 가장 낮은 유닛을 트래시한다. 같다면 모두 트래시한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "877",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=877",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-016",
@@ -204,8 +576,34 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "장착조건 없음 : 파워+2000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_o8AEiNJX_2e742a9f8b01d15e1c6ef7a137c2fd83bb9c0df4.jpg"
+    "text": "[장착조건 없음] 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_o8AEiNJX_2e742a9f8b01d15e1c6ef7a137c2fd83bb9c0df4.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착조건 없음]",
+        "headerTokens": [
+          "장착조건 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "파워+2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "20",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=20",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   },
   {
     "id": "ST02-017",
@@ -217,7 +615,33 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "장착조건 4코스트이상 : 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_4ARf9hZH_cad53cf877aee827a30f573ddf220170ea1958db.jpg"
+    "text": "[장착조건 4코스트이상] 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/5abf82a892f0549c26939bd53be4bda8_4ARf9hZH_cad53cf877aee827a30f573ddf220170ea1958db.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착조건 4코스트이상]",
+        "headerTokens": [
+          "장착조건 4코스트이상"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "히트+1.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "19",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=19",
+    "scrapedAt": "2026-02-21T06:32:59.704946+00:00"
   }
 ]

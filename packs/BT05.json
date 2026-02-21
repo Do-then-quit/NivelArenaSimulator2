@@ -1,5 +1,906 @@
 [
   {
+    "id": "BT05-001",
+    "name": "훈련소장 카티야",
+    "type": "리더",
+    "attribute": "화염",
+    "cost": "",
+    "power": "-",
+    "hit": "-",
+    "traits": "아카데미",
+    "keywords": "액티브",
+    "text": "기본면 [서약] 자신의 덱에 [화염] 카드를 넣어야 한다. [화염] 이외의 카드는 모두 같은 속성이어야 한다. [각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 자신의 필드에 [화염] 이외의 카드가 있다면 상대는 카드를 1장 드로우할 수 있다. 각성면 [액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 자신의 트래시 존에서 [트리거]를 가지지 않고 2코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_5Yq6Q1XH_6602b9da18693a6c84be53b22380fe741566554d.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "기본면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[서약] 자신의 덱에 [화염] 카드를 넣어야 한다. [화염] 이외의 카드는 모두 같은 속성이어야 한다.",
+        "headerTokens": [
+          "서약"
+        ],
+        "headerKeywords": [
+          "서약"
+        ],
+        "mentionedKeywords": [
+          "서약"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 자신의 필드에 [화염] 이외의 카드가 있다면 상대는 카드를 1장 드로우할 수 있다.",
+        "headerTokens": [
+          "각성"
+        ],
+        "headerKeywords": [
+          "각성"
+        ],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "각성면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [
+          "각성"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 5,
+        "text": "[액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 자신의 트래시 존에서 [트리거]를 가지지 않고 2코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "816",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=816",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-002",
+    "name": "스위트 데빌 레니",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "1",
+    "power": "1000",
+    "hit": "1",
+    "traits": "이펙트 / 실험체",
+    "keywords": "어태커, 믹스",
+    "text": "[믹스][어태커] 자신의 필드에 [화염] 이외의 카드가 있다면 이 공격이 끝날 때까지 조우 유닛의 파워-2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_4CjkAWdl_1bda9ad18eb74b4cc635dfd378e3d1aaf89196a6.jpg",
+    "keywordList": [
+      "어태커",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][어태커] 자신의 필드에 [화염] 이외의 카드가 있다면 이 공격이 끝날 때까지 조우 유닛의 파워-2000.",
+        "headerTokens": [
+          "믹스",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "814",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=814",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-003",
+    "name": "사격 교관 테오도르",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "2500",
+    "hit": "1",
+    "traits": "이펙트 / 아카데미",
+    "keywords": "엔트리, 믹스, 크레딧",
+    "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. [믹스][엔트리] 자신의 필드에 [화염] 이외의 카드가 있다면 이 턴이 끝날 때까지 조우 유닛의 파워-4000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KdefbFr6_75131f64f1c7b7f2a2b9fc03062f3817fb56c2df.jpg",
+    "keywordList": [
+      "엔트리",
+      "믹스",
+      "크레딧"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "크레딧: 1"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[믹스][엔트리] 자신의 필드에 [화염] 이외의 카드가 있다면 이 턴이 끝날 때까지 조우 유닛의 파워-4000.",
+        "headerTokens": [
+          "믹스",
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "813",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=813",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-004",
+    "name": "발렌타인 로지",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "2000",
+    "hit": "1",
+    "traits": "이펙트 / 발렌타인",
+    "keywords": "패시브, 이스케이프",
+    "text": "[패시브] 필드에 있는 모든 자신 유닛은 [어태커] 약탈[1] 과 「[어태커] 이 공격이 끝날 때까지 파워+2000」을 얻는다. [이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 이 턴 동안 자신이 다음에 패에서 배치하는 유닛 1장은 이 턴이 끝날 때까지 [어태커] 관통[1] 을 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_JcRaCWby_7071596d9983e6a79e061b3d1e7f74999e6a6b20.jpg",
+    "keywordList": [
+      "패시브",
+      "이스케이프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 모든 자신 유닛은 [어태커] 약탈[1] 과 「[어태커] 이 공격이 끝날 때까지 파워+2000」을 얻는다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "약탈",
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "약탈"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 이 턴 동안 자신이 다음에 패에서 배치하는 유닛 1장은 이 턴이 끝날 때까지 [어태커] 관통[1] 을 얻는다.",
+        "headerTokens": [
+          "이스케이프"
+        ],
+        "headerKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "이스케이프",
+          "관통"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "관통"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "812",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=812",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-005",
+    "name": "비터스윗 라우라",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "5000",
+    "hit": "1",
+    "traits": "이펙트 / 발렌타인",
+    "keywords": "이스케이프",
+    "text": "[이스케이프] 자신의 메인 페이즈가 시작할 때 필드에 있는 상대 유닛을 2장까지 고른다. 이 턴이 끝날 때까지 고른 유닛의 파워가 이 유닛의 파워만큼 감소한다. 이 유닛을 주인의 덱 맨 아래에 놓는다. 트리거 / 이 카드를 트래시한다. 코스트 합이 2코스트 이하가 되도록 자신의 트래시 존에서 [트리거]를 가지지 않은 카드를 2장까지 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_LxcWNhm2_7c0a9261b4ac1602368f326fc867e3baee309875.jpg",
+    "keywordList": [
+      "이스케이프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[이스케이프] 자신의 메인 페이즈가 시작할 때 필드에 있는 상대 유닛을 2장까지 고른다. 이 턴이 끝날 때까지 고른 유닛의 파워가 이 유닛의 파워만큼 감소한다. 이 유닛을 주인의 덱 맨 아래에 놓는다.",
+        "headerTokens": [
+          "이스케이프"
+        ],
+        "headerKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 코스트 합이 2코스트 이하가 되도록 자신의 트래시 존에서 [트리거]를 가지지 않은 카드를 2장까지 골라 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "811",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=811",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-006",
+    "name": "발렌타인 타지아",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "4500",
+    "hit": "2",
+    "traits": "이펙트 / 발렌타인",
+    "keywords": "패시브, 크레딧",
+    "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. [패시브] 필드에 있는 다른 모든 자신 유닛은 「[어태커] 이 공격이 끝날 때까지 파워+3000」을 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_N6rOkpM7_7fec9f0216e82a9ca915b5cebe3eeea47b44308b.jpg",
+    "keywordList": [
+      "패시브",
+      "크레딧"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "크레딧: 1"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[패시브] 필드에 있는 다른 모든 자신 유닛은 「[어태커] 이 공격이 끝날 때까지 파워+3000」을 얻는다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "809",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=809",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-007",
+    "name": "용 다이린",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "4500",
+    "hit": "2",
+    "traits": "이펙트 / 실험체",
+    "keywords": "엔트리, 어태커",
+    "text": "[엔트리] 이 턴이 끝날 때까지 상대는 [디펜더]와 [엑시트] 효과를 발동할 수 없다. [어태커] 이 공격이 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Hxv6jleO_986f666c16cb5e62b7f6eba1aa44b578465ced3d.jpg",
+    "keywordList": [
+      "엔트리",
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 이 턴이 끝날 때까지 상대는 [디펜더]와 [엑시트] 효과를 발동할 수 없다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "엑시트",
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트",
+          "디펜더"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 이 공격이 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "808",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=808",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-008",
+    "name": "심연의 마왕 레녹스",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "4000",
+    "hit": "2",
+    "traits": "이펙트 / 레기온",
+    "keywords": "액티브, 믹스, 크레딧",
+    "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. [믹스][액티브: 메인] 자신의 필드에 [화염] 이외의 카드가 있다면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000. 이 효과는 이 턴 동안 발동한 스킬의 수만큼 추가로 처리한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_pLPHceVt_9177026f6953ca48fe3bfa4619e346cc50991661.jpg",
+    "keywordList": [
+      "액티브",
+      "믹스",
+      "크레딧"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "크레딧: 1"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[믹스][액티브: 메인] 자신의 필드에 [화염] 이외의 카드가 있다면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000. 이 효과는 이 턴 동안 발동한 스킬의 수만큼 추가로 처리한다.",
+        "headerTokens": [
+          "믹스",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "807",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=807",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-009",
+    "name": "멧현우",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "5",
+    "power": "1000",
+    "hit": "2",
+    "traits": "이펙트 / 파자마",
+    "keywords": "어태커, 크레딧",
+    "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. [어태커] 이 공격이 끝날 때까지 조우 유닛의 파워-4000. 이 효과로 그 유닛을 트래시했다면 자신의 트래시 존에서 [트리거]를 가지지 않고 2코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_souvCRXD_e0f9cfdc082c90bfad5cbe36cdb3841278dd36b4.jpg",
+    "keywordList": [
+      "어태커",
+      "크레딧"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "크레딧: 1"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 이 공격이 끝날 때까지 조우 유닛의 파워-4000. 이 효과로 그 유닛을 트래시했다면 자신의 트래시 존에서 [트리거]를 가지지 않고 2코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "805",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=805",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-010",
+    "name": "몽환의 악마 시셀라",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "6",
+    "power": "3000",
+    "hit": "2",
+    "traits": "이펙트 / 레기온",
+    "keywords": "엔트리",
+    "text": "[엔트리] 자신의 트래시 존에서 〈몽환의 악마 시셀라〉 이외의 [트리거]를 가지지 않은 카드를 1장 골라 덱 맨 아래에 놓는다. 그러면 이 턴이 끝날 때까지 조우 유닛의 파워-1000. 이 효과는 조우 유닛이 있다면 추가로 발동할 수 있다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_zWj6oMuR_fead606965becfc3550683d72b62d39c64ea8bc8.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 트래시 존에서 〈몽환의 악마 시셀라〉 이외의 [트리거]를 가지지 않은 카드를 1장 골라 덱 맨 아래에 놓는다. 그러면 이 턴이 끝날 때까지 조우 유닛의 파워-1000. 이 효과는 조우 유닛이 있다면 추가로 발동할 수 있다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "804",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=804",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-011",
+    "name": "훈련소장 카티야",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "9",
+    "power": "7500",
+    "hit": "3",
+    "traits": "이펙트 / 아카데미",
+    "keywords": "엔트리, 어태커, 믹스",
+    "text": "[믹스][엔트리] 자신의 필드에 [화염] 이외의 카드가 있고 2코스트 이상인 스킬이 2장 이상이라면 그중 1장을 골라 트래시한다. 이 효과로 트래시한 스킬의 효과를 발동할 수 있다. [어태커] 관통[X: 이 턴 동안 발동한 스킬의 수] . X가 3 이상이라면 추가로 이 공격이 끝날 때까지 듀얼리스트 를 얻는다. 트리거 / 이 카드를 트래시한다. 코스트 합이 2코스트 이하가 되도록 자신의 트래시 존에서 [트리거]를 가지지 않은 카드를 2장까지 골라 패에 넣는다.이 카드를 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0NGI5XT3_ab86c317e0ff22058da1f6bf67fe36a567a90251.jpg",
+    "keywordList": [
+      "엔트리",
+      "어태커",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][엔트리] 자신의 필드에 [화염] 이외의 카드가 있고 2코스트 이상인 스킬이 2장 이상이라면 그중 1장을 골라 트래시한다. 이 효과로 트래시한 스킬의 효과를 발동할 수 있다.",
+        "headerTokens": [
+          "믹스",
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 관통[X: 이 턴 동안 발동한 스킬의 수] . X가 3 이상이라면 추가로 이 공격이 끝날 때까지 듀얼리스트 를 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "관통",
+          "듀얼리스트"
+        ],
+        "mentionedKeywordsInBody": [
+          "관통",
+          "듀얼리스트"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 트래시한다. 코스트 합이 2코스트 이하가 되도록 자신의 트래시 존에서 [트리거]를 가지지 않은 카드를 2장까지 골라 패에 넣는다.이 카드를 트래시한다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "803",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=803",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-012",
+    "name": "모두 집중.",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 골라, 자신의 턴이 끝날 때까지 파워-3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_xXR1CnhG_1f5d66fa6d5c460eb4e79fc291a831e0d8a00f3e.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 골라, 자신의 턴이 끝날 때까지 파워-3000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "801",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=801",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-013",
+    "name": "이 맛이지~",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 [트리거]를 가지지 않은 자신 유닛을 1장 고른다. 그러면 자신의 트래시 존에서 그 유닛보다 코스트가 낮고 [트리거]를 가지지 않은 카드를 1장 골라 패에 넣는다. 고른 유닛을 주인의 덱 맨 아래에 놓는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_U27asgMQ_2d515e31d8cdbc7715cd2a807991b56a8af29afc.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 [트리거]를 가지지 않은 자신 유닛을 1장 고른다. 그러면 자신의 트래시 존에서 그 유닛보다 코스트가 낮고 [트리거]를 가지지 않은 카드를 1장 골라 패에 넣는다. 고른 유닛을 주인의 덱 맨 아래에 놓는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "800",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=800",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-014",
+    "name": "활약할 시간이야.",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 코스트가 자신의 리더 레벨 이하인 모든 자신 유닛은 이 턴이 끝날 때까지 [어태커] 듀얼리스트 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_P2JIxDX0_f0fb2de94312b1082dfd34c68ed2b443579141f5.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 코스트가 자신의 리더 레벨 이하인 모든 자신 유닛은 이 턴이 끝날 때까지 [어태커] 듀얼리스트 를 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "어태커",
+          "듀얼리스트"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "듀얼리스트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "799",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=799",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-015",
+    "name": "꽤 아플걸.",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「[패시브] 이 유닛이 트래시되면 자신의 트래시 존에 있는 이 카드를 대미지 존에 놓는다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Ik9S2RtX_6064b2fcf513f716e3388e5816f464220cad631c.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「[패시브] 이 유닛이 트래시되면 자신의 트래시 존에 있는 이 카드를 대미지 존에 놓는다」를 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "패시브"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "798",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=798",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-016",
+    "name": "주작자문",
+    "type": "아이템",
+    "attribute": "화염",
+    "cost": "0",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "패시브",
+    "text": "[장착 조건: 없음] [패시브] 자신의 턴 동안 파워+1000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_uNkS6gsv_f2fbc60be4c880f669801dbcced4543ec5604069.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[패시브] 자신의 턴 동안 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "797",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=797",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-017",
+    "name": "현자총통",
+    "type": "아이템",
+    "attribute": "화염",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "어태커, 믹스",
+    "text": "[장착 조건: 어태커를 가진 유닛] [믹스][어태커] 자신의 필드에 [화염] 이외의 카드가 있다면 관통[1] 을 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3eo5jUJ0_af5bbd95db82efc4ad83d4f839e5ee847bbb7260.jpg",
+    "keywordList": [
+      "어태커",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 어태커를 가진 유닛]",
+        "headerTokens": [
+          "장착 조건: 어태커를 가진 유닛"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[믹스][어태커] 자신의 필드에 [화염] 이외의 카드가 있다면 관통[1] 을 얻는다.",
+        "headerTokens": [
+          "믹스",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "관통",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [
+          "관통"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "796",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=796",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
+    "id": "BT05-018",
+    "name": "도깨비불에 이끌린 이안",
+    "type": "유닛",
+    "attribute": "대지",
+    "cost": "1",
+    "power": "2000",
+    "hit": "1",
+    "traits": "이펙트 / 마츠리",
+    "keywords": "레벨링크, 크레딧",
+    "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. [레벨링크: 4] 자신의 리더 레벨이 4 이상이라면 필드에 있는 다른 모든 자신 유닛의 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WlgUH7cr_c3ca4e7ec412c96098c1107b0d716883e9f2dd31.jpg",
+    "keywordList": [
+      "레벨링크",
+      "크레딧"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "크레딧: 1"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[레벨링크: 4] 자신의 리더 레벨이 4 이상이라면 필드에 있는 다른 모든 자신 유닛의 파워+2000.",
+        "headerTokens": [
+          "레벨링크: 4"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "795",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=795",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
+  },
+  {
     "id": "BT05-019",
     "name": "운명의 푸른 가약 케네스",
     "type": "유닛",
@@ -9,8 +910,31 @@
     "hit": "1",
     "traits": "이펙트 / 마츠리",
     "keywords": "액티브",
-    "text": "액티브: 메인 필드에 있는 자신 유닛을 1장 골라 그 유닛의 히트만큼 자신의 덱 맨 위에서 카드를 공개한다. 그중 1장을 골라 패에 넣고 나머지는 트래시한다. 고른 유닛을 주인의 덱 맨 아래에 놓는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_tqZ976T2_acf4ce0ef0940305b02cf0ebf0777e204b992adb.jpg"
+    "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 골라 그 유닛의 히트만큼 자신의 덱 맨 위에서 카드를 공개한다. 그중 1장을 골라 패에 넣고 나머지는 트래시한다. 고른 유닛을 주인의 덱 맨 아래에 놓는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_tqZ976T2_acf4ce0ef0940305b02cf0ebf0777e204b992adb.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 골라 그 유닛의 히트만큼 자신의 덱 맨 위에서 카드를 공개한다. 그중 1장을 골라 패에 넣고 나머지는 트래시한다. 고른 유닛을 주인의 덱 맨 아래에 놓는다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "794",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=794",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-020",
@@ -22,8 +946,31 @@
     "hit": "1",
     "traits": "이펙트 / 학교",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 리더 레벨+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OViUaeN3_1c54958bec89b5bc01519c517c0dbfe0e44c0ae8.jpg"
+    "text": "[엔트리] 자신의 리더 레벨+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OViUaeN3_1c54958bec89b5bc01519c517c0dbfe0e44c0ae8.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 리더 레벨+1.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "793",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=793",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-021",
@@ -35,8 +982,35 @@
     "hit": "2",
     "traits": "이펙트 / 학교",
     "keywords": "엔트리, 믹스",
-    "text": "믹스 : 엔트리 : 자신의 필드에 대지 : 이외의 카드가 있고 자신의 리더 레벨이 10 이상이라면 이 턴이 끝날 때까지 자신의 사이즈+5. 9 이하라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 리더 레벨+2.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_jEiL6sW8_dbe7725dee79ba26fa790753cbc295f5350810e4.jpg"
+    "text": "[믹스][엔트리] 자신의 필드에 [대지] 이외의 카드가 있고 자신의 리더 레벨이 10 이상이라면 이 턴이 끝날 때까지 자신의 사이즈+5. 9 이하라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 리더 레벨+2.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_jEiL6sW8_dbe7725dee79ba26fa790753cbc295f5350810e4.jpg",
+    "keywordList": [
+      "엔트리",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][엔트리] 자신의 필드에 [대지] 이외의 카드가 있고 자신의 리더 레벨이 10 이상이라면 이 턴이 끝날 때까지 자신의 사이즈+5. 9 이하라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 리더 레벨+2.",
+        "headerTokens": [
+          "믹스",
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "792",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=792",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-022",
@@ -48,8 +1022,46 @@
     "hit": "2",
     "traits": "이펙트 / 애니버서리",
     "keywords": "레벨링크",
-    "text": "레벨링크: 6 자신의 리더 레벨이 6 이상이라면 파워+2000. 레벨링크: 8 자신의 리더 레벨이 8 이상이라면 파워+2000, 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_snYkDUJH_e07a304cee979cca70d0979bcd146c292b284a6d.jpg"
+    "text": "[레벨링크: 6] 자신의 리더 레벨이 6 이상이라면 파워+2000. [레벨링크: 8] 자신의 리더 레벨이 8 이상이라면 파워+2000, 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_snYkDUJH_e07a304cee979cca70d0979bcd146c292b284a6d.jpg",
+    "keywordList": [
+      "레벨링크"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[레벨링크: 6] 자신의 리더 레벨이 6 이상이라면 파워+2000.",
+        "headerTokens": [
+          "레벨링크: 6"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[레벨링크: 8] 자신의 리더 레벨이 8 이상이라면 파워+2000, 히트+1.",
+        "headerTokens": [
+          "레벨링크: 8"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "791",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=791",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-023",
@@ -61,8 +1073,31 @@
     "hit": "2",
     "traits": "이펙트 / 애니버서리",
     "keywords": "이스케이프",
-    "text": "이스케이프 : 자신의 메인 페이즈가 시작할 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛보다 파워가 낮은 상대 유닛을 1장 골라 트래시한다. 이 유닛을 주인의 덱 맨 아래에 놓는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0rJWnx7f_3d05e1860eabb44c4115949f4c1ad7ccc298e4e9.jpg"
+    "text": "[이스케이프] 자신의 메인 페이즈가 시작할 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛보다 파워가 낮은 상대 유닛을 1장 골라 트래시한다. 이 유닛을 주인의 덱 맨 아래에 놓는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0rJWnx7f_3d05e1860eabb44c4115949f4c1ad7ccc298e4e9.jpg",
+    "keywordList": [
+      "이스케이프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[이스케이프] 자신의 메인 페이즈가 시작할 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛보다 파워가 낮은 상대 유닛을 1장 골라 트래시한다. 이 유닛을 주인의 덱 맨 아래에 놓는다.",
+        "headerTokens": [
+          "이스케이프"
+        ],
+        "headerKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "790",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=790",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-024",
@@ -74,8 +1109,66 @@
     "hit": "3",
     "traits": "이펙트 / 마츠리",
     "keywords": "어태커, 레벨링크, 믹스",
-    "text": "믹스 : 어태커 : 자신의 필드에 대지 : 이외의 카드가 있고 자신의 리더 레벨이 10 이상이라면 조우 유닛은 이 턴이 끝날 때까지 공격을 방어할 수 없다. 9 이하라면 자신의 리더 레벨+2. 레벨링크: 8 자신의 리더 레벨이 8 이상이라면 필드에 있는 다른 모든 자신 유닛의 파워+3000. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_PK5W2xEa_701e96fa395020d1dea791959499153f37349225.jpg"
+    "text": "[믹스][어태커] 자신의 필드에 [대지] 이외의 카드가 있고 자신의 리더 레벨이 10 이상이라면 조우 유닛은 이 턴이 끝날 때까지 공격을 방어할 수 없다. 9 이하라면 자신의 리더 레벨+2. [레벨링크: 8] 자신의 리더 레벨이 8 이상이라면 필드에 있는 다른 모든 자신 유닛의 파워+3000. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_PK5W2xEa_701e96fa395020d1dea791959499153f37349225.jpg",
+    "keywordList": [
+      "어태커",
+      "레벨링크",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][어태커] 자신의 필드에 [대지] 이외의 카드가 있고 자신의 리더 레벨이 10 이상이라면 조우 유닛은 이 턴이 끝날 때까지 공격을 방어할 수 없다. 9 이하라면 자신의 리더 레벨+2.",
+        "headerTokens": [
+          "믹스",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[레벨링크: 8] 자신의 리더 레벨이 8 이상이라면 필드에 있는 다른 모든 자신 유닛의 파워+3000.",
+        "headerTokens": [
+          "레벨링크: 8"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "789",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=789",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-025",
@@ -87,8 +1180,53 @@
     "hit": "3",
     "traits": "이펙트 / 애니버서리",
     "keywords": "액티브, 레벨링크",
-    "text": "레벨링크: 7 자신의 리더 레벨이 7 이상이라면 파워+5000. 레벨링크: 9 액티브: 메인 자신의 리더 레벨이 9 이상이라면 자신의 패를 원하는 수만큼 골라 트래시할 수 있다. 그러면 이 턴이 끝날 때까지 트래시한 카드 1장마다 파워+1000. 조우 유닛보다 파워가 12000 이상 높다면 이 턴이 끝날 때까지 어태커 : 돌파 를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OogTHRqr_ba41625851c4e55fdc7b931f93df66b6eaae1194.jpg"
+    "text": "[레벨링크: 7] 자신의 리더 레벨이 7 이상이라면 파워+5000. [레벨링크: 9][액티브: 메인] 자신의 리더 레벨이 9 이상이라면 자신의 패를 원하는 수만큼 골라 트래시할 수 있다. 그러면 이 턴이 끝날 때까지 트래시한 카드 1장마다 파워+1000. 조우 유닛보다 파워가 12000 이상 높다면 이 턴이 끝날 때까지 [어태커] 돌파 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OogTHRqr_ba41625851c4e55fdc7b931f93df66b6eaae1194.jpg",
+    "keywordList": [
+      "액티브",
+      "레벨링크"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[레벨링크: 7] 자신의 리더 레벨이 7 이상이라면 파워+5000.",
+        "headerTokens": [
+          "레벨링크: 7"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[레벨링크: 9][액티브: 메인] 자신의 리더 레벨이 9 이상이라면 자신의 패를 원하는 수만큼 골라 트래시할 수 있다. 그러면 이 턴이 끝날 때까지 트래시한 카드 1장마다 파워+1000. 조우 유닛보다 파워가 12000 이상 높다면 이 턴이 끝날 때까지 [어태커] 돌파 를 얻는다.",
+        "headerTokens": [
+          "레벨링크: 9",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "액티브",
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "787",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=787",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-026",
@@ -100,8 +1238,27 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「어태커 : 조우 유닛보다 파워가 높다면 이 공격이 끝날 때까지 돌파 를 얻는다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NYJR1xqV_1381ea4f6891c99bbb5824f577e7b7f09aed5bc6.jpg"
+    "text": "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「[어태커] 조우 유닛보다 파워가 높다면 이 공격이 끝날 때까지 돌파 를 얻는다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NYJR1xqV_1381ea4f6891c99bbb5824f577e7b7f09aed5bc6.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「[어태커] 조우 유닛보다 파워가 높다면 이 공격이 끝날 때까지 돌파 를 얻는다」를 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "785",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=785",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-027",
@@ -114,7 +1271,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 자신 유닛을 1장 골라 주인의 덱 맨 아래에 놓는다. 그러면 자신의 패에서 그 유닛의 코스트+3 이하인 유닛 카드를 1장 골라 그 유닛이 있던 유닛 존에 사이즈를 무시하고 배치한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_UxE3TqcC_815bfa5c87195a9d0f0039e42277dbf45f306927.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_UxE3TqcC_815bfa5c87195a9d0f0039e42277dbf45f306927.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 골라 주인의 덱 맨 아래에 놓는다. 그러면 자신의 패에서 그 유닛의 코스트+3 이하인 유닛 카드를 1장 골라 그 유닛이 있던 유닛 존에 사이즈를 무시하고 배치한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "784",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=784",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-028",
@@ -127,7 +1299,37 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 자신 유닛을 1장 골라 주인의 덱 맨 아래에 놓는다. 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다. 그 유닛의 코스트가 자신의 리더 레벨 이하라면 이 스킬은 이 턴이 끝날 때까지 0코스트가 된다. 나머지는 모두 트래시한다. 트리거 / 이 카드를 트래시할 수 있다. 그렇지 않으면 자신의 리더 레벨+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_FboArVUi_35b919f51fd9c959ea9da55df9729a0ab152df5d.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_FboArVUi_35b919f51fd9c959ea9da55df9729a0ab152df5d.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 골라 주인의 덱 맨 아래에 놓는다. 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다. 그 유닛의 코스트가 자신의 리더 레벨 이하라면 이 스킬은 이 턴이 끝날 때까지 0코스트가 된다. 나머지는 모두 트래시한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시할 수 있다. 그렇지 않으면 자신의 리더 레벨+1.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "783",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=783",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-029",
@@ -140,7 +1342,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 자신 유닛 1장과 그 유닛의 파워 이하인 상대 유닛을 1장 고른다. 고른 자신 유닛을 주인의 덱 맨 아래에 놓는다. 그러면 고른 상대 유닛은 이 턴이 끝날 때까지 공격을 방어할 수 없다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_5Cy4Epi1_dc7a001ca836ad18b34c65b8aab17d4e3d6ed4da.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_5Cy4Epi1_dc7a001ca836ad18b34c65b8aab17d4e3d6ed4da.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛 1장과 그 유닛의 파워 이하인 상대 유닛을 1장 고른다. 고른 자신 유닛을 주인의 덱 맨 아래에 놓는다. 그러면 고른 상대 유닛은 이 턴이 끝날 때까지 공격을 방어할 수 없다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "781",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=781",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-030",
@@ -152,8 +1369,45 @@
     "hit": "-",
     "traits": "-",
     "keywords": "어태커",
-    "text": "장착 조건: 없음 어태커 : 조우 유닛보다 파워가 3000 이상 높다면 이 공격이 끝날 때까지 관통[1] 을 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_AtV9aSxC_9f3547d65c43fd76600221b72679de6bdf311c25.jpg"
+    "text": "[장착 조건: 없음] [어태커] 조우 유닛보다 파워가 3000 이상 높다면 이 공격이 끝날 때까지 관통[1] 을 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_AtV9aSxC_9f3547d65c43fd76600221b72679de6bdf311c25.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 조우 유닛보다 파워가 3000 이상 높다면 이 공격이 끝날 때까지 관통[1] 을 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "관통"
+        ],
+        "mentionedKeywordsInBody": [
+          "관통"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "780",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=780",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-031",
@@ -165,21 +1419,144 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "장착 조건: 없음 파워+3000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WRYKsp18_e531ff84cb3a17510225e86c38772490b4eb5240.jpg"
+    "text": "[장착 조건: 없음] 파워+3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WRYKsp18_e531ff84cb3a17510225e86c38772490b4eb5240.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "파워+3000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "779",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=779",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-032",
     "name": "언럭키 바니 니키",
     "type": "리더",
     "attribute": "폭풍",
-    "cost": "레어도",
+    "cost": "",
     "power": "-",
     "hit": "-",
     "traits": "럭키",
     "keywords": "액티브",
-    "text": "기본면 서약 : 자신의 덱에 폭풍 : 카드를 넣어야 한다. 폭풍 : 이외의 카드는 모두 같은 속성이어야 한다. 각성 : 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 자신의 필드에 폭풍 : 이외의 카드가 있다면 상대는 카드를 1장 드로우할 수 있다. 각성면 액티브: 메인 아래 효과 중 하나를 고른다. ・필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 엑시트 : 귀환 을 얻는다. ・필드에 있는 자신 유닛을 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_lqAf6ezr_5c0a2f2ff1c1505696df1a4f3620bfeacccc3b6d.jpg"
+    "text": "기본면 [서약] 자신의 덱에 [폭풍]카드를 넣어야 한다. [폭풍] 이외의 카드는 모두 같은 속성이어야 한다. [각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 자신의 필드에 [폭풍] 이외의 카드가 있다면 상대는 카드를 1장 드로우할 수 있다. 각성면 [액티브: 메인] 아래 효과 중 하나를 고른다. ・필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 [엑시트] 귀환 을 얻는다. ・필드에 있는 자신 유닛을 1장 골라 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_lqAf6ezr_5c0a2f2ff1c1505696df1a4f3620bfeacccc3b6d.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "기본면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[서약] 자신의 덱에 [폭풍]카드를 넣어야 한다. [폭풍] 이외의 카드는 모두 같은 속성이어야 한다.",
+        "headerTokens": [
+          "서약"
+        ],
+        "headerKeywords": [
+          "서약"
+        ],
+        "mentionedKeywords": [
+          "서약"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 자신의 필드에 [폭풍] 이외의 카드가 있다면 상대는 카드를 1장 드로우할 수 있다.",
+        "headerTokens": [
+          "각성"
+        ],
+        "headerKeywords": [
+          "각성"
+        ],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "각성면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [
+          "각성"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 5,
+        "text": "[액티브: 메인] 아래 효과 중 하나를 고른다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 6,
+        "text": "・필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 [엑시트] 귀환 을 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 7,
+        "text": "・필드에 있는 자신 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "778",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=778",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-033",
@@ -191,8 +1568,31 @@
     "hit": "1",
     "traits": "이펙트 / 럭키",
     "keywords": "엑시트",
-    "text": "엑시트 : 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000. 자신의 필드에 폭풍 : 이외의 카드가 있다면 추가로 파워-2000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_AfmP6Vqb_45d313e62f22afdcddfcccfac9cbf1b91ef0826c.jpg"
+    "text": "[엑시트] 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000. 자신의 필드에 [폭풍] 이외의 카드가 있다면 추가로 파워-2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_AfmP6Vqb_45d313e62f22afdcddfcccfac9cbf1b91ef0826c.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엑시트] 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000. 자신의 필드에 [폭풍] 이외의 카드가 있다면 추가로 파워-2000.",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "776",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=776",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-034",
@@ -204,8 +1604,34 @@
     "hit": "1",
     "traits": "이펙트 / 고스트헌터",
     "keywords": "엔트리",
-    "text": "엔트리 : 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 엑시트 : 귀환 을 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0vi9PLcs_4045ed3acc66928513fb5e96d32d199e0d0a7e2a.jpg"
+    "text": "[엔트리] 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 [엑시트] 귀환 을 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0vi9PLcs_4045ed3acc66928513fb5e96d32d199e0d0a7e2a.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 [엑시트] 귀환 을 얻는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "775",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=775",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-035",
@@ -217,8 +1643,34 @@
     "hit": "1",
     "traits": "이펙트 / 실험체",
     "keywords": "액티브",
-    "text": "액티브: 메인 필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 이 턴이 끝날 때까지 어태커 : 돌파 를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_t4YmEqMU_53661fe5c71f0576f533fc842f2ab4e1766c1636.jpg"
+    "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 이 턴이 끝날 때까지 [어태커] 돌파 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_t4YmEqMU_53661fe5c71f0576f533fc842f2ab4e1766c1636.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 이 턴이 끝날 때까지 [어태커] 돌파 를 얻는다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "774",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=774",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-036",
@@ -230,8 +1682,48 @@
     "hit": "2",
     "traits": "이펙트 / 고스트헌터",
     "keywords": "엔트리, 크레딧",
-    "text": "크레딧: 1 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. 엔트리 : 자신의 트래시 존에서 엑시트 : 를 가지고 트리거 : 를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 엑시트 : 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_DQ70zYEL_49bcdc6e831d5de205898bc5cc6dbd10c1f86c52.jpg"
+    "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. [엔트리] 자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 [엑시트] 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_DQ70zYEL_49bcdc6e831d5de205898bc5cc6dbd10c1f86c52.jpg",
+    "keywordList": [
+      "엔트리",
+      "크레딧"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "크레딧: 1"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엔트리] 자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 [엑시트] 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "엑시트",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트",
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "773",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=773",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-037",
@@ -243,8 +1735,53 @@
     "hit": "2",
     "traits": "이펙트 / 럭키",
     "keywords": "엑시트, 믹스",
-    "text": "믹스 : 자신의 필드에 폭풍 : 이외의 카드가 있다면 파워+2000. 믹스 : 엑시트 : 자신의 필드에 폭풍 : 이외의 카드가 있다면 자신의 트래시 존에서 트리거 : 를 가지지 않고 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_63HK1Zvp_e6c06139c9f16598ace1da8bf9735ed78d80a116.jpg"
+    "text": "[믹스] 자신의 필드에 [폭풍] 이외의 카드가 있다면 파워+2000. [믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 자신의 트래시 존에서 [트리거]를 가지지 않고 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_63HK1Zvp_e6c06139c9f16598ace1da8bf9735ed78d80a116.jpg",
+    "keywordList": [
+      "엑시트",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스] 자신의 필드에 [폭풍] 이외의 카드가 있다면 파워+2000.",
+        "headerTokens": [
+          "믹스"
+        ],
+        "headerKeywords": [
+          "믹스"
+        ],
+        "mentionedKeywords": [
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 자신의 트래시 존에서 [트리거]를 가지지 않고 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다.",
+        "headerTokens": [
+          "믹스",
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "믹스",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "772",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=772",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-038",
@@ -256,8 +1793,51 @@
     "hit": "2",
     "traits": "이펙트 / 럭키",
     "keywords": "엔트리, 엑시트, 믹스",
-    "text": "엔트리 : 필드에 있는 자신 유닛을 1장 골라 트래시한다. 믹스 : 엑시트 : 자신의 필드에 폭풍 : 이외의 카드가 있다면 필드에 있는 조우 유닛을 가지지 않은 상대 유닛을 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_QyCcHmOG_d1215dfb36a206a31618f53e5dbf59feb3eb82ea.jpg"
+    "text": "[엔트리] 필드에 있는 자신 유닛을 1장 골라 트래시한다. [믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 필드에 있는 조우 유닛을 가지지 않은 상대 유닛을 1장 골라 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_QyCcHmOG_d1215dfb36a206a31618f53e5dbf59feb3eb82ea.jpg",
+    "keywordList": [
+      "엔트리",
+      "엑시트",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 자신 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 필드에 있는 조우 유닛을 가지지 않은 상대 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [
+          "믹스",
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "771",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=771",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-039",
@@ -269,8 +1849,59 @@
     "hit": "2",
     "traits": "이펙트 / 럭키",
     "keywords": "엔트리, 엑시트, 믹스",
-    "text": "엔트리 : 자신의 트래시 존에서 엑시트 : 를 가지고 트리거 : 를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 엑시트 : 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다. 믹스 : 엑시트 : 자신의 필드에 폭풍 : 이외의 카드가 있다면 자신의 트래시 존에서 트리거 : 를 가지지 않고 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EDSuBMOW_f034afe994a1b31b05d137d94b37fbbdb4473398.jpg"
+    "text": "[엔트리] 자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 [엑시트] 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다. [믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 자신의 트래시 존에서 [트리거]를 가지지 않고 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EDSuBMOW_f034afe994a1b31b05d137d94b37fbbdb4473398.jpg",
+    "keywordList": [
+      "엔트리",
+      "엑시트",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 [엑시트] 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "엑시트",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트",
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 자신의 트래시 존에서 [트리거]를 가지지 않고 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다.",
+        "headerTokens": [
+          "믹스",
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "믹스",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "770",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=770",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-040",
@@ -282,8 +1913,51 @@
     "hit": "3",
     "traits": "이펙트 / 고스트헌터",
     "keywords": "엔트리, 엑시트, 믹스",
-    "text": "엔트리 : 필드에 있는 다른 자신 유닛을 1장 골라 트래시한다. 그렇지 않으면 자신의 패를 1장 골라 트래시한다. 믹스 : 엑시트 : 자신의 필드에 폭풍 : 이외의 카드가 있다면 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_gw8kvoyp_00593d65c8930cbf6ad928a03bbf466f51ad1559.jpg"
+    "text": "[엔트리] 필드에 있는 다른 자신 유닛을 1장 골라 트래시한다. 그렇지 않으면 자신의 패를 1장 골라 트래시한다. [믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_gw8kvoyp_00593d65c8930cbf6ad928a03bbf466f51ad1559.jpg",
+    "keywordList": [
+      "엔트리",
+      "엑시트",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 다른 자신 유닛을 1장 골라 트래시한다. 그렇지 않으면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [
+          "믹스",
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "768",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=768",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-041",
@@ -295,8 +1969,71 @@
     "hit": "3",
     "traits": "이펙트 / 럭키",
     "keywords": "엑시트, 믹스",
-    "text": "믹스 : 엑시트 : 자신의 필드에 폭풍 : 이외의 카드가 있다면 자신의 트래시 존에서 트리거 : 를 가지지 않은 카드를 9장까지 골라 덱 맨 아래에 놓을 수 있다. 그러면 이 효과로 되돌린 카드 3장마다 상대에게 1대미지를 준다. 믹스 : 엑시트 : 자신의 필드에 폭풍 : 이외의 카드가 있다면 귀환 을 얻는다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_hCwSMyc8_228eaa4a91687c86438471231a8df6f94056dcdc.jpg"
+    "text": "[믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 자신의 트래시 존에서 [트리거]를 가지지 않은 카드를 9장까지 골라 덱 맨 아래에 놓을 수 있다. 그러면 이 효과로 되돌린 카드 3장마다 상대에게 1대미지를 준다. [믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 귀환 을 얻는다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_hUd0PZwW_fc11463448688054da503cd7b0b9ea3cf49cbc26.jpg",
+    "keywordList": [
+      "엑시트",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 자신의 트래시 존에서 [트리거]를 가지지 않은 카드를 9장까지 골라 덱 맨 아래에 놓을 수 있다. 그러면 이 효과로 되돌린 카드 3장마다 상대에게 1대미지를 준다.",
+        "headerTokens": [
+          "믹스",
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "믹스",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[믹스][엑시트] 자신의 필드에 [폭풍] 이외의 카드가 있다면 귀환 을 얻는다.",
+        "headerTokens": [
+          "믹스",
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "767",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=767",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-042",
@@ -308,8 +2045,29 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "자신의 트래시 존에서 엑시트 : 를 가지고 트리거 : 를 가지지 않은 유닛 카드를 1장 골라 덱 맨 아래에 놓는다. 그러면 그 카드의 코스트 이하인 자신 유닛을 필드에서 1장 골라, 이 턴이 끝날 때까지 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_GxAcJdqD_fdca4f499b625a6e9c3207bf070a195b45f5abf4.jpg"
+    "text": "자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 덱 맨 아래에 놓는다. 그러면 그 카드의 코스트 이하인 자신 유닛을 필드에서 1장 골라, 이 턴이 끝날 때까지 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_GxAcJdqD_fdca4f499b625a6e9c3207bf070a195b45f5abf4.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 덱 맨 아래에 놓는다. 그러면 그 카드의 코스트 이하인 자신 유닛을 필드에서 1장 골라, 이 턴이 끝날 때까지 히트+1.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "엑시트",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트",
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "765",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=765",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-043",
@@ -322,7 +2080,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "자신의 패에서 유닛 카드를 1장 골라 트래시한다. 그러면 그 카드보다 코스트가 낮은 유닛을 필드에서 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Uq8T6s9C_5e2b5afa9a1f6893d35ab2187a578cf7e191ce1b.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Uq8T6s9C_5e2b5afa9a1f6893d35ab2187a578cf7e191ce1b.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 패에서 유닛 카드를 1장 골라 트래시한다. 그러면 그 카드보다 코스트가 낮은 유닛을 필드에서 1장 골라 트래시한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "764",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=764",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-044",
@@ -334,8 +2107,47 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "자신의 트래시 존에서 엑시트 : 를 가지고 트리거 : 를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 엑시트 : 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다. 이 스킬의 효과는 자신의 필드에 폭풍 : 이외의 카드가 있다면 1번만 더 처리할 수 있다. 트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 엑시트 : 를 가지고 트리거 : 를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 엑시트 : 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_BV3UaTwR_badda04f89375da054c5206729454b7be0002eed.jpg"
+    "text": "자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 [엑시트] 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다. 이 스킬의 효과는 자신의 필드에 [폭풍] 이외의 카드가 있다면 1번만 더 처리할 수 있다. 트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 [엑시트] 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_fFhr2PTX_af4aca755a06f8b758b2edbd216f5464f78b950e.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 [엑시트] 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다. 이 스킬의 효과는 자신의 필드에 [폭풍] 이외의 카드가 있다면 1번만 더 처리할 수 있다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "엑시트",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트",
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 [엑시트]를 가지고 [트리거]를 가지지 않은 유닛 카드를 1장 골라 그 카드가 가진 [엑시트] 효과를 하나 골라 발동할 수 있다. 그러면 그 카드를 덱 맨 아래에 놓는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "763",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=763",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-045",
@@ -348,7 +2160,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 2장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KohiXF26_3777410e2525c60ca182dd2ecfe2bb992414223f.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KohiXF26_3777410e2525c60ca182dd2ecfe2bb992414223f.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 2장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "761",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=761",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-046",
@@ -360,8 +2187,51 @@
     "hit": "-",
     "traits": "-",
     "keywords": "패시브",
-    "text": "장착 조건: 없음 파워+2000. 패시브 : 상대의 턴이 끝날 때 자신의 패를 1장 골라 트래시할 수 있다. 그렇지 않으면 이 유닛을 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_SIVM8A6i_2591fa35ef7a8d78583cf08428dbedb7841935e8.jpg"
+    "text": "[장착 조건: 없음] 파워+2000. [패시브] 상대의 턴이 끝날 때 자신의 패를 1장 골라 트래시할 수 있다. 그렇지 않으면 이 유닛을 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_SIVM8A6i_2591fa35ef7a8d78583cf08428dbedb7841935e8.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "파워+2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[패시브] 상대의 턴이 끝날 때 자신의 패를 1장 골라 트래시할 수 있다. 그렇지 않으면 이 유닛을 트래시한다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "760",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=760",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-047",
@@ -373,8 +2243,42 @@
     "hit": "-",
     "traits": "-",
     "keywords": "엑시트",
-    "text": "장착 조건: 3코스트 이상인 유닛 엑시트 : 귀환 .",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_aIWoxskm_3c7d8b3eb2163e99a0ee7fbee4800f92f662de1e.jpg"
+    "text": "[장착 조건: 3코스트 이상인 유닛] [엑시트] 귀환 .",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_aIWoxskm_3c7d8b3eb2163e99a0ee7fbee4800f92f662de1e.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 3코스트 이상인 유닛]",
+        "headerTokens": [
+          "장착 조건: 3코스트 이상인 유닛"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엑시트] 귀환 .",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "759",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=759",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-048",
@@ -386,8 +2290,50 @@
     "hit": "1",
     "traits": "이펙트 / 실험체",
     "keywords": "패시브, 이스케이프",
-    "text": "패시브 : 이스케이프 : 를 가진 모든 자신 유닛의 파워+1500. 이스케이프 : 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WC4a2sif_8e24174b8c53e7281e6ca45b679463d84c371475.jpg"
+    "text": "[패시브] [이스케이프]를 가진 모든 자신 유닛의 파워+1500. [이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WC4a2sif_8e24174b8c53e7281e6ca45b679463d84c371475.jpg",
+    "keywordList": [
+      "패시브",
+      "이스케이프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] [이스케이프]를 가진 모든 자신 유닛의 파워+1500.",
+        "headerTokens": [
+          "패시브",
+          "이스케이프"
+        ],
+        "headerKeywords": [
+          "패시브",
+          "이스케이프"
+        ],
+        "mentionedKeywords": [
+          "이스케이프",
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "이스케이프"
+        ],
+        "headerKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "758",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=758",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-049",
@@ -399,8 +2345,31 @@
     "hit": "1",
     "traits": "이펙트 / 눈꽃",
     "keywords": "디펜더",
-    "text": "디펜더 : 공격한 유닛의 히트-1만큼 자신의 패를 골라 트래시할 수 있다. 그러면 이번 공격을 종료한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_lhEtgSV8_0d7b92a7c2cae5780efdde3d5fd6302e5ba5dc77.jpg"
+    "text": "[디펜더] 공격한 유닛의 히트-1만큼 자신의 패를 골라 트래시할 수 있다. 그러면 이번 공격을 종료한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_lhEtgSV8_0d7b92a7c2cae5780efdde3d5fd6302e5ba5dc77.jpg",
+    "keywordList": [
+      "디펜더"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[디펜더] 공격한 유닛의 히트-1만큼 자신의 패를 골라 트래시할 수 있다. 그러면 이번 공격을 종료한다.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "757",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=757",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-050",
@@ -412,8 +2381,53 @@
     "hit": "1",
     "traits": "이펙트 / 썸머",
     "keywords": "어태커, 믹스",
-    "text": "믹스 : 어태커 : 자신의 필드에 파도 : 이외의 카드가 있다면 침투[1] 을 얻는다. 어태커 : 자신의 패가 6장 이상이라면 이 공격이 끝날 때까지 돌파 를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_p2C0TeEv_335715f66d2ff0589ca53af9977669b7ce6b93c1.jpg"
+    "text": "[믹스][어태커]자신의 필드에 [파도] 이외의 카드가 있다면 침투[1] 을 얻는다. [어태커] 자신의 패가 6장 이상이라면 이 공격이 끝날 때까지 돌파 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_p2C0TeEv_335715f66d2ff0589ca53af9977669b7ce6b93c1.jpg",
+    "keywordList": [
+      "어태커",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][어태커]자신의 필드에 [파도] 이외의 카드가 있다면 침투[1] 을 얻는다.",
+        "headerTokens": [
+          "믹스",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "침투",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [
+          "침투"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 자신의 패가 6장 이상이라면 이 공격이 끝날 때까지 돌파 를 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "756",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=756",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-051",
@@ -425,8 +2439,43 @@
     "hit": "2",
     "traits": "이펙트 / 눈꽃",
     "keywords": "엔트리, 크레딧",
-    "text": "크레딧: 1 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. 엔트리 : 조우 유닛이 4코스트 이하라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛을 패로 되돌리고 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ZWSxL6hj_75188440d6492dcf159dd32aaedc4ad192776058.jpg"
+    "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다. [엔트리] 조우 유닛이 4코스트 이하라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛을 패로 되돌리고 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ZWSxL6hj_75188440d6492dcf159dd32aaedc4ad192776058.jpg",
+    "keywordList": [
+      "엔트리",
+      "크레딧"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "크레딧: 1"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엔트리] 조우 유닛이 4코스트 이하라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛을 패로 되돌리고 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "755",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=755",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-052",
@@ -438,8 +2487,47 @@
     "hit": "2",
     "traits": "이펙트 / 스플래쉬",
     "keywords": "엔트리, 이스케이프",
-    "text": "엔트리 : 조우 유닛이 4코스트 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛을 패로 되돌리고 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다. 이스케이프 : 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_7FXcfAQi_0b98711e92a144ce8ae7ca2dc4827cad799cf0db.jpg"
+    "text": "[엔트리] 조우 유닛이 4코스트 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛을 패로 되돌리고 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다. [이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_7FXcfAQi_0b98711e92a144ce8ae7ca2dc4827cad799cf0db.jpg",
+    "keywordList": [
+      "엔트리",
+      "이스케이프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 조우 유닛이 4코스트 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛을 패로 되돌리고 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "이스케이프"
+        ],
+        "headerKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "754",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=754",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-053",
@@ -451,8 +2539,49 @@
     "hit": "2",
     "traits": "이펙트 / 스플래쉬",
     "keywords": "액티브",
-    "text": "액티브: 메인 필드에 있는 자신 유닛을 1장 고르고 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 어태커 : 돌파[코스트 초과] (이 유닛보다 코스트가 높은 상대 유닛은 이 유닛의 공격을 방어할 수 없다)를 얻는다. 트리거 / 이 카드를 트래시한다. 자신의 덱 맨 위에서 카드를 1장 공개하고, 그중 스킬 카드를 1장 골라 트래시할 수 있다. 그러면 그 카드의 효과를 발동한다. 나머지는 모두 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_iVTFrRt0_dfc9cc50946d21572248680b5aa4b80c72b7920e.jpg"
+    "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 고르고 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 [어태커] 돌파[코스트 초과] (이 유닛보다 코스트가 높은 상대 유닛은 이 유닛의 공격을 방어할 수 없다)를 얻는다. 트리거 / 이 카드를 트래시한다. 자신의 덱 맨 위에서 카드를 1장 공개하고, 그중 스킬 카드를 1장 골라 트래시할 수 있다. 그러면 그 카드의 효과를 발동한다. 나머지는 모두 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_iVTFrRt0_dfc9cc50946d21572248680b5aa4b80c72b7920e.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 고르고 자신의 패를 1장 골라 트래시할 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 [어태커] 돌파[코스트 초과] (이 유닛보다 코스트가 높은 상대 유닛은 이 유닛의 공격을 방어할 수 없다)를 얻는다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 덱 맨 위에서 카드를 1장 공개하고, 그중 스킬 카드를 1장 골라 트래시할 수 있다. 그러면 그 카드의 효과를 발동한다. 나머지는 모두 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "753",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=753",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-054",
@@ -464,8 +2593,47 @@
     "hit": "2",
     "traits": "이펙트 / 스플래쉬",
     "keywords": "가디언, 이스케이프",
-    "text": "가디언 : 방벽[2] . 이스케이프 : 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_yJE6otPi_0363c25290f7e7cc063b4a66d84e88ba64e9461e.jpg"
+    "text": "[가디언] 방벽[2] . [이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_yJE6otPi_0363c25290f7e7cc063b4a66d84e88ba64e9461e.jpg",
+    "keywordList": [
+      "가디언",
+      "이스케이프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[가디언] 방벽[2] .",
+        "headerTokens": [
+          "가디언"
+        ],
+        "headerKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "이스케이프"
+        ],
+        "headerKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "751",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=751",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-055",
@@ -477,8 +2645,57 @@
     "hit": "2",
     "traits": "이펙트 / 스플래쉬",
     "keywords": "엔트리, 액티브, 믹스",
-    "text": "믹스 : 엔트리 : 자신의 필드에 파도 : 이외의 카드가 있다면 필드에 있는 자신 유닛을 1장 골라 주인의 덱 맨 아래에 놓을 수 있다. 그 유닛이 이스케이프 : 를 가지고 있다면 상대에게 1대미지를 준다. 액티브: 메인 필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 다음 자신의 턴이 끝날 때까지 「이스케이프 : 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우하고 상대에게 1대미지를 준다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_q4OcNk03_38b0846b2e8711c0a5c9c6de65f6e3e84cfd685e.jpg"
+    "text": "[믹스][엔트리] 자신의 필드에 [파도] 이외의 카드가 있다면 필드에 있는 자신 유닛을 1장 골라 주인의 덱 맨 아래에 놓을 수 있다. 그 유닛이 [이스케이프]를 가지고 있다면 상대에게 1대미지를 준다. [액티브: 메인] 필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 다음 자신의 턴이 끝날 때까지 「[이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우하고 상대에게 1대미지를 준다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_q4OcNk03_38b0846b2e8711c0a5c9c6de65f6e3e84cfd685e.jpg",
+    "keywordList": [
+      "엔트리",
+      "액티브",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][엔트리] 자신의 필드에 [파도] 이외의 카드가 있다면 필드에 있는 자신 유닛을 1장 골라 주인의 덱 맨 아래에 놓을 수 있다. 그 유닛이 [이스케이프]를 가지고 있다면 상대에게 1대미지를 준다.",
+        "headerTokens": [
+          "믹스",
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "이스케이프",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [
+          "이스케이프"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 다음 자신의 턴이 끝날 때까지 「[이스케이프] 자신의 메인 페이즈가 시작할 때 이 유닛을 주인의 덱 맨 아래에 놓는다. 카드를 1장 드로우하고 상대에게 1대미지를 준다」를 얻는다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "이스케이프",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "이스케이프"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "750",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=750",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-056",
@@ -490,8 +2707,31 @@
     "hit": "2",
     "traits": "이펙트 / 스플래쉬",
     "keywords": "액티브",
-    "text": "액티브: 메인 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 스킬 존에 있는 스킬의 수만큼 상대에게 대미지를 준다. 이 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Gg5Q8nDx_ca7eed8e097268b895b1e7190696504e75504259.jpg"
+    "text": "[액티브: 메인] 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 스킬 존에 있는 스킬의 수만큼 상대에게 대미지를 준다. 이 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Gg5Q8nDx_ca7eed8e097268b895b1e7190696504e75504259.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 스킬 존에 있는 스킬의 수만큼 상대에게 대미지를 준다. 이 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "748",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=748",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-057",
@@ -503,8 +2743,42 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "필드에 있는 이스케이프 : 를 가진 자신 유닛을 1장 고른다. 그 유닛이 가진 이스케이프 : 효과를 하나 골라 발동한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0n9d6xaY_796d04466298a95cbc02b304d086aee70374f0ae.jpg"
+    "text": "필드에 있는 [이스케이프]를 가진 자신 유닛을 1장 고른다. 그 유닛이 가진 [이스케이프] 효과를 하나 골라 발동한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0n9d6xaY_796d04466298a95cbc02b304d086aee70374f0ae.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 [이스케이프]를 가진 자신 유닛을 1장 고른다. 그 유닛이 가진 [이스케이프] 효과를 하나 골라 발동한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywordsInBody": [
+          "이스케이프"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "747",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=747",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-058",
@@ -516,8 +2790,27 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "필드에 있는 조우 유닛을 가지고 이스케이프 : 를 가진 자신 유닛을 1장 고른다. 상대는 그 유닛의 조우 유닛을 패로 되돌릴 수 있다. 그렇지 않으면 자신은 고른 유닛의 히트만큼 카드를 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Rvgfshba_8b163e11836e1905452d689b5b2a38bddfbaef12.jpg"
+    "text": "필드에 있는 조우 유닛을 가지고 [이스케이프]를 가진 자신 유닛을 1장 고른다. 상대는 그 유닛의 조우 유닛을 패로 되돌릴 수 있다. 그렇지 않으면 자신은 고른 유닛의 히트만큼 카드를 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Rvgfshba_8b163e11836e1905452d689b5b2a38bddfbaef12.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 조우 유닛을 가지고 [이스케이프]를 가진 자신 유닛을 1장 고른다. 상대는 그 유닛의 조우 유닛을 패로 되돌릴 수 있다. 그렇지 않으면 자신은 고른 유닛의 히트만큼 카드를 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "이스케이프"
+        ],
+        "mentionedKeywordsInBody": [
+          "이스케이프"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "745",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=745",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-059",
@@ -530,7 +2823,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 코스트가 자신의 리더 레벨 이상인 상대 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 공격을 방어할 수 없다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_2kG3TMro_79162a59a59b068208433287ff279e8187b1ba40.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_2kG3TMro_79162a59a59b068208433287ff279e8187b1ba40.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 코스트가 자신의 리더 레벨 이상인 상대 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 공격을 방어할 수 없다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "744",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=744",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-060",
@@ -543,7 +2851,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "카드를 2장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OjUPxMgi_1a2009666304037e7c3912b7e1875c0ff987edbe.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OjUPxMgi_1a2009666304037e7c3912b7e1875c0ff987edbe.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "카드를 2장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "743",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=743",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-061",
@@ -555,8 +2878,42 @@
     "hit": "-",
     "traits": "-",
     "keywords": "어태커",
-    "text": "장착 조건: 6코스트 이하인 유닛 어태커 : 조우 유닛보다 코스트가 3 이상 낮다면 이 공격이 끝날 때까지 돌파 를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_HpRF6LK1_c4d4a2f3fad2f22047a9bc4209dc801a8a356602.jpg"
+    "text": "[장착 조건: 6코스트 이하인 유닛] [어태커] 조우 유닛보다 코스트가 3 이상 낮다면 이 공격이 끝날 때까지 돌파 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_HpRF6LK1_c4d4a2f3fad2f22047a9bc4209dc801a8a356602.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 6코스트 이하인 유닛]",
+        "headerTokens": [
+          "장착 조건: 6코스트 이하인 유닛"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 조우 유닛보다 코스트가 3 이상 낮다면 이 공격이 끝날 때까지 돌파 를 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "742",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=742",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-062",
@@ -568,21 +2925,130 @@
     "hit": "-",
     "traits": "-",
     "keywords": "가디언",
-    "text": "장착 조건: 없음 가디언 : 방벽[2] .",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_4MVS5m2A_0dd6b436d14154aeb08ce0970eb9aaa7276b39e6.jpg"
+    "text": "[장착 조건: 없음] [가디언] 방벽[2] .",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_4MVS5m2A_0dd6b436d14154aeb08ce0970eb9aaa7276b39e6.jpg",
+    "keywordList": [
+      "가디언"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[가디언] 방벽[2] .",
+        "headerTokens": [
+          "가디언"
+        ],
+        "headerKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "741",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=741",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-063",
     "name": "사관후보생 아야",
     "type": "리더",
     "attribute": "번개",
-    "cost": "레어도",
+    "cost": "",
     "power": "-",
     "hit": "-",
     "traits": "사관후보생",
     "keywords": "액티브",
-    "text": "기본면 서약 : 자신의 덱에 번개 : 카드를 넣어야 한다. 번개 : 이외의 카드는 모두 같은 속성이어야 한다. 각성 : 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 자신의 필드에 번개 : 이외의 카드가 있다면 상대는 카드를 1장 드로우할 수 있다. 각성면 액티브: 메인 자신의 패를 1장 골라 트래시한다. 그러면 자신의 트래시 존에서 이 효과로 트래시한 카드와 카드명이 다른 아이템 카드를 1장 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 장착할 수 있다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ajEp1BGh_aacad34a7ec063730079153e75cd9a72cd06ab79.jpg"
+    "text": "기본면 [서약] 자신의 덱에 [번개] 카드를 넣어야 한다. [번개] 이외의 카드는 모두 같은 속성이어야 한다. [각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 자신의 필드에 [번개] 이외의 카드가 있다면 상대는 카드를 1장 드로우할 수 있다. 각성면 [액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 자신의 트래시 존에서 이 효과로 트래시한 카드와 카드명이 다른 아이템 카드를 1장 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 장착할 수 있다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_2ZEf8qos_33674693ef4f4cd8cb8ae529cfb7ed88502ae482.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "기본면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[서약] 자신의 덱에 [번개] 카드를 넣어야 한다. [번개] 이외의 카드는 모두 같은 속성이어야 한다.",
+        "headerTokens": [
+          "서약"
+        ],
+        "headerKeywords": [
+          "서약"
+        ],
+        "mentionedKeywords": [
+          "서약"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 자신의 필드에 [번개] 이외의 카드가 있다면 상대는 카드를 1장 드로우할 수 있다.",
+        "headerTokens": [
+          "각성"
+        ],
+        "headerKeywords": [
+          "각성"
+        ],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "각성면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [
+          "각성"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 5,
+        "text": "[액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 자신의 트래시 존에서 이 효과로 트래시한 카드와 카드명이 다른 아이템 카드를 1장 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 장착할 수 있다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "740",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=740",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-064",
@@ -594,8 +3060,27 @@
     "hit": "1",
     "traits": "이펙트 / 체인지",
     "keywords": "크레딧",
-    "text": "크레딧: 1 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Unc3w9JW_311e446494865d248861576fc2be8951748ba364.jpg"
+    "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Unc3w9JW_311e446494865d248861576fc2be8951748ba364.jpg",
+    "keywordList": [
+      "크레딧"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[크레딧: 1] 이 유닛이 배치되면 카드를 1장 드로우한다. 이 유닛이 트래시되면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "크레딧: 1"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "738",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=738",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-065",
@@ -607,8 +3092,59 @@
     "hit": "1",
     "traits": "이펙트 / 사관후보생",
     "keywords": "엔트리, 믹스",
-    "text": "믹스 : 엔트리 : 자신의 필드에 번개 : 이외의 카드가 있다면 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 자신의 대미지 존에서 카드를 1장 골라 패에 넣는다. 트리거 / 이 카드를 트래시한다. 자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_RKqaSctG_be061eed0799dd6ce115d7346f0a474fa23f7cd9.jpg"
+    "text": "[믹스][엔트리] 자신의 필드에 [번개] 이외의 카드가 있다면 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 자신의 대미지 존에서 카드를 1장 골라 패에 넣는다. 트리거 / 이 카드를 트래시한다. 자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_fPnBEXDz_f473bd40294c441c3d3c5ed44fca99b0fa64e0c9.jpg",
+    "keywordList": [
+      "엔트리",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][엔트리]",
+        "headerTokens": [
+          "믹스",
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "자신의 필드에 [번개] 이외의 카드가 있다면 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 자신의 대미지 존에서 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "737",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=737",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-066",
@@ -620,8 +3156,31 @@
     "hit": "1",
     "traits": "이펙트 / 사관후보생",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 덱 맨 위에서 카드를 3장 트래시한다. 이 효과로 트래시한 아이템 카드가 1장 이상이라면 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KVjxmJeU_bd57a762602d4cd407b8eb038344b24e74587739.jpg"
+    "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 트래시한다. 이 효과로 트래시한 아이템 카드가 1장 이상이라면 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KVjxmJeU_bd57a762602d4cd407b8eb038344b24e74587739.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 트래시한다. 이 효과로 트래시한 아이템 카드가 1장 이상이라면 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "735",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=735",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-067",
@@ -633,8 +3192,53 @@
     "hit": "1",
     "traits": "이펙트 / 사관후보생",
     "keywords": "암드, 믹스",
-    "text": "믹스 : 암드 : 자신의 필드에 번개 : 이외의 카드가 있다면 이 유닛이 장착한 아이템 1종류마다 파워+2000. 이 유닛이 장착한 아이템이 4종류 이상이라면 추가로 「어태커 : 카드를 1장 드로우한다. 상대에게 2대미지를 준다」를 얻는다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KXCm2aUq_abb047ceb26d9db8fb02fcc8ebf2195bc3a1211c.jpg"
+    "text": "[믹스][암드] 자신의 필드에 [번개] 이외의 카드가 있다면 이 유닛이 장착한 아이템 1종류마다 파워+2000. 이 유닛이 장착한 아이템이 4종류 이상이라면 추가로 「[어태커] 카드를 1장 드로우한다. 상대에게 2대미지를 준다」를 얻는다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_i6IxMdwS_6b030d0cfcc10737fa9ffff1d9410a2cdf8b18dc.jpg",
+    "keywordList": [
+      "암드",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][암드] 자신의 필드에 [번개] 이외의 카드가 있다면 이 유닛이 장착한 아이템 1종류마다 파워+2000. 이 유닛이 장착한 아이템이 4종류 이상이라면 추가로 「[어태커] 카드를 1장 드로우한다. 상대에게 2대미지를 준다」를 얻는다.",
+        "headerTokens": [
+          "믹스",
+          "암드"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "암드"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "암드",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "734",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=734",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-068",
@@ -646,8 +3250,31 @@
     "hit": "1",
     "traits": "이펙트 / 실험체",
     "keywords": "패시브",
-    "text": "패시브 : 필드에 있는 아이템을 장착한 모든 자신 유닛의 파워+2000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_P2QJXlVh_55d1de35d9f8941dd0b55f9ff484b7c5dbe81e2c.jpg"
+    "text": "[패시브] 필드에 있는 아이템을 장착한 모든 자신 유닛의 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_P2QJXlVh_55d1de35d9f8941dd0b55f9ff484b7c5dbe81e2c.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 아이템을 장착한 모든 자신 유닛의 파워+2000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "732",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=732",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-069",
@@ -659,8 +3286,38 @@
     "hit": "1",
     "traits": "이펙트 / 체인지",
     "keywords": "엑시트, 믹스",
-    "text": "믹스 : 엑시트 : 자신의 필드에 번개 : 이외의 카드가 있다면 자신의 대미지 존에서 카드를 1장 골라 패에 넣는다. 그러면 자신의 트래시 존에서 트리거 : 를 가지지 않은 카드를 1장 골라 대미지 존에 놓는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_wnuiyxXU_490e2e30240c20b57ccb6dc7bbd2ef873019cd75.jpg"
+    "text": "[믹스][엑시트] 자신의 필드에 [번개] 이외의 카드가 있다면 자신의 대미지 존에서 카드를 1장 골라 패에 넣는다. 그러면 자신의 트래시 존에서 [트리거]를 가지지 않은 카드를 1장 골라 대미지 존에 놓는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_wnuiyxXU_490e2e30240c20b57ccb6dc7bbd2ef873019cd75.jpg",
+    "keywordList": [
+      "엑시트",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][엑시트] 자신의 필드에 [번개] 이외의 카드가 있다면 자신의 대미지 존에서 카드를 1장 골라 패에 넣는다. 그러면 자신의 트래시 존에서 [트리거]를 가지지 않은 카드를 1장 골라 대미지 존에 놓는다.",
+        "headerTokens": [
+          "믹스",
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "믹스",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "731",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=731",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-070",
@@ -672,8 +3329,31 @@
     "hit": "1",
     "traits": "이펙트 / 실험체",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 패를 2장까지 골라 트래시하고, 트래시한 수만큼 카드를 드로우한다. 이 효과로 트래시한 아이템 카드가 2장 이상이라면 추가로 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_IkSpLZ02_634ba4b27e84a7fa2c47adfca915c69d86f520a9.jpg"
+    "text": "[엔트리] 자신의 패를 2장까지 골라 트래시하고, 트래시한 수만큼 카드를 드로우한다. 이 효과로 트래시한 아이템 카드가 2장 이상이라면 추가로 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_IkSpLZ02_634ba4b27e84a7fa2c47adfca915c69d86f520a9.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 패를 2장까지 골라 트래시하고, 트래시한 수만큼 카드를 드로우한다. 이 효과로 트래시한 아이템 카드가 2장 이상이라면 추가로 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "730",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=730",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-071",
@@ -685,8 +3365,35 @@
     "hit": "2",
     "traits": "이펙트 / 사관후보생",
     "keywords": "암드, 믹스",
-    "text": "믹스 : 암드 : 자신의 필드에 번개 : 이외의 카드가 있고 아이템을 장착하고 있다면 파워+3000, 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_nLpDR46r_a0b795bcadef33ef1de2bf87c80182bc223172de.jpg"
+    "text": "[믹스][암드] 자신의 필드에 [번개] 이외의 카드가 있고 아이템을 장착하고 있다면 파워+3000, 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_nLpDR46r_a0b795bcadef33ef1de2bf87c80182bc223172de.jpg",
+    "keywordList": [
+      "암드",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스][암드] 자신의 필드에 [번개] 이외의 카드가 있고 아이템을 장착하고 있다면 파워+3000, 히트+1.",
+        "headerTokens": [
+          "믹스",
+          "암드"
+        ],
+        "headerKeywords": [
+          "믹스",
+          "암드"
+        ],
+        "mentionedKeywords": [
+          "암드",
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "729",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=729",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-072",
@@ -698,8 +3405,31 @@
     "hit": "2",
     "traits": "이펙트 / 사관후보생",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 덱 맨 위에서 카드를 3장 공개한다. 그중 3장까지 골라 트래시하고 나머지는 모두 다시 덱에 넣고 섞는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OYVDfBy7_c888acf034ae60fe3cc51bc641c5262d31d8a40f.jpg"
+    "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 공개한다. 그중 3장까지 골라 트래시하고 나머지는 모두 다시 덱에 넣고 섞는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OYVDfBy7_c888acf034ae60fe3cc51bc641c5262d31d8a40f.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 공개한다. 그중 3장까지 골라 트래시하고 나머지는 모두 다시 덱에 넣고 섞는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "728",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=728",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-073",
@@ -711,8 +3441,62 @@
     "hit": "2",
     "traits": "이펙트 / 사관후보생",
     "keywords": "어태커, 믹스",
-    "text": "믹스 : 자신의 필드에 번개 : 이외의 카드가 있다면 아이템을 1장 이상 장착할 때마다 카드를 1장 드로우한다. 어태커 : 이 공격이 끝날 때까지 이 유닛이 장착한 아이템 1장마다 파워+2000. 이 유닛이 장착한 아이템을 2장 골라 트래시할 수 있다. 그러면 다른 레인에 있는 상대 유닛을 1장 골라 트래시한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_fsvNpGSq_0c79fcde20f34dc548cd772d6d652f712a5a4fc9.jpg"
+    "text": "[믹스] 자신의 필드에 [번개] 이외의 카드가 있다면 아이템을 1장 이상 장착할 때마다 카드를 1장 드로우한다. [어태커] 이 공격이 끝날 때까지 이 유닛이 장착한 아이템 1장마다 파워+2000. 이 유닛이 장착한 아이템을 2장 골라 트래시할 수 있다. 그러면 다른 레인에 있는 상대 유닛을 1장 골라 트래시한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_75oU8qbH_7e1ed3373a0b5e4909d2550ddf911accdad63048.jpg",
+    "keywordList": [
+      "어태커",
+      "믹스"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[믹스] 자신의 필드에 [번개] 이외의 카드가 있다면 아이템을 1장 이상 장착할 때마다 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "믹스"
+        ],
+        "headerKeywords": [
+          "믹스"
+        ],
+        "mentionedKeywords": [
+          "믹스"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 이 공격이 끝날 때까지 이 유닛이 장착한 아이템 1장마다 파워+2000. 이 유닛이 장착한 아이템을 2장 골라 트래시할 수 있다. 그러면 다른 레인에 있는 상대 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "726",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=726",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-074",
@@ -725,7 +3509,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "자신의 패에서 아이템 카드를 1장 이상 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Zo1j7Bzg_c0d380972e39771d0be59e00fd5fa0488a1490ab.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Zo1j7Bzg_c0d380972e39771d0be59e00fd5fa0488a1490ab.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 패에서 아이템 카드를 1장 이상 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "724",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=724",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-075",
@@ -738,7 +3537,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 아이템을 장착한 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EuUWlHqp_fad912b0931431c95e4e344c5183c33ce17810b3.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EuUWlHqp_fad912b0931431c95e4e344c5183c33ce17810b3.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 아이템을 장착한 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 히트+1.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "723",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=723",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-076",
@@ -750,8 +3564,42 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "카드를 2장 드로우한다. 그러면 자신의 패를 2장 골라 트래시한다. 자신의 트래시 존에서 트리거 : 를 가지지 않고 카드명이 다른 아이템 카드를 2장까지 골라 자신의 패에 넣는다. 트리거 / 이 카드를 트래시한다. 자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NKtklw7H_97249c1758df567abd81cc341dfe7fd3fdfc07af.jpg"
+    "text": "카드를 2장 드로우한다. 그러면 자신의 패를 2장 골라 트래시한다. 자신의 트래시 존에서 [트리거]를 가지지 않고 카드명이 다른 아이템 카드를 2장까지 골라 자신의 패에 넣는다. 트리거 / 이 카드를 트래시한다. 자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NKtklw7H_97249c1758df567abd81cc341dfe7fd3fdfc07af.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "카드를 2장 드로우한다. 그러면 자신의 패를 2장 골라 트래시한다. 자신의 트래시 존에서 [트리거]를 가지지 않고 카드명이 다른 아이템 카드를 2장까지 골라 자신의 패에 넣는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "722",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=722",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-077",
@@ -763,8 +3611,23 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "자신의 트래시 존에서 아이템 카드를 1장 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 장착한다. 자신의 필드에 번개 : 이외의 카드가 있다면 이 카드를 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_dHbOvBxj_9a5fcc25742d75d5c776e30c694dd6edd6155aa3.jpg"
+    "text": "자신의 트래시 존에서 아이템 카드를 1장 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 장착한다. 자신의 필드에 [번개] 이외의 카드가 있다면 이 카드를 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_dHbOvBxj_9a5fcc25742d75d5c776e30c694dd6edd6155aa3.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 트래시 존에서 아이템 카드를 1장 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 장착한다. 자신의 필드에 [번개] 이외의 카드가 있다면 이 카드를 트래시한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "721",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=721",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-078",
@@ -776,8 +3639,23 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "필드에 있는 아이템을 장착한 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 2장 드로우하고 자신의 필드에 번개 : 이외의 카드가 있다면 상대에게 1대미지를 준다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0dDV19LR_e582c8d7029401dbe80193df0ce9793637cbe0d7.jpg"
+    "text": "필드에 있는 아이템을 장착한 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 2장 드로우하고 자신의 필드에 [번개] 이외의 카드가 있다면 상대에게 1대미지를 준다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0dDV19LR_e582c8d7029401dbe80193df0ce9793637cbe0d7.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 아이템을 장착한 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 2장 드로우하고 자신의 필드에 [번개] 이외의 카드가 있다면 상대에게 1대미지를 준다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "720",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=720",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-079",
@@ -789,8 +3667,42 @@
     "hit": "-",
     "traits": "-",
     "keywords": "패시브",
-    "text": "장착 조건: 없음 패시브 : 자신과 상대의 턴마다 1번씩, 이 유닛이 전투나 효과로 트래시될 때 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 이 효과로 트래시한 아이템 카드가 1장 이상이라면 이 유닛은 트래시되지 않는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_n4udx9tz_eefde9019ce38b5b9fe1b28f44880cc09f6e4153.jpg"
+    "text": "[장착 조건: 없음] [패시브] 자신과 상대의 턴마다 1번씩, 이 유닛이 전투나 효과로 트래시될 때 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 이 효과로 트래시한 아이템 카드가 1장 이상이라면 이 유닛은 트래시되지 않는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_n4udx9tz_eefde9019ce38b5b9fe1b28f44880cc09f6e4153.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[패시브] 자신과 상대의 턴마다 1번씩, 이 유닛이 전투나 효과로 트래시될 때 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 이 효과로 트래시한 아이템 카드가 1장 이상이라면 이 유닛은 트래시되지 않는다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "719",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=719",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-080",
@@ -802,8 +3714,51 @@
     "hit": "-",
     "traits": "-",
     "keywords": "액티브",
-    "text": "장착 조건: 없음 파워+1000. 액티브: 어택 필드에 있는 자신 유닛이 장착한 〈아스트라페〉 이외의 아이템을 1장 골라 다른 자신 유닛에 장착한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_tvB3N2Wm_ace54a88daed38476495e9c04a33050027168ca6.jpg"
+    "text": "[장착 조건: 없음] 파워+1000. [액티브: 어택] 필드에 있는 자신 유닛이 장착한 〈아스트라페〉 이외의 아이템을 1장 골라 다른 자신 유닛에 장착한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_tvB3N2Wm_ace54a88daed38476495e9c04a33050027168ca6.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "파워+1000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[액티브: 어택] 필드에 있는 자신 유닛이 장착한 〈아스트라페〉 이외의 아이템을 1장 골라 다른 자신 유닛에 장착한다.",
+        "headerTokens": [
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "718",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=718",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-081",
@@ -815,8 +3770,51 @@
     "hit": "-",
     "traits": "-",
     "keywords": "패시브",
-    "text": "장착 조건: 없음 파워+2000. 패시브 : 자신의 필드에 번개 : 이외의 카드가 있다면 추가로 파워+1000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Awh0pNuD_822442170d6a8ea9012f0fd324cfbd26ee6da207.jpg"
+    "text": "[장착 조건: 없음] 파워+2000. [패시브] 자신의 필드에 [번개] 이외의 카드가 있다면 추가로 파워+1000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Awh0pNuD_822442170d6a8ea9012f0fd324cfbd26ee6da207.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "파워+2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[패시브] 자신의 필드에 [번개] 이외의 카드가 있다면 추가로 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "717",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=717",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-082",
@@ -828,8 +3826,42 @@
     "hit": "-",
     "traits": "-",
     "keywords": "액티브",
-    "text": "장착 조건: 없음 액티브: 메인 카드를 1장 드로우한다. 그러면 자신의 패를 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_HUvOftJF_59c0e7e4f19437eb49754749f5a5fa7430069e89.jpg"
+    "text": "[장착 조건: 없음] [액티브: 메인] 카드를 1장 드로우한다. 그러면 자신의 패를 1장 골라 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_HUvOftJF_59c0e7e4f19437eb49754749f5a5fa7430069e89.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[액티브: 메인] 카드를 1장 드로우한다. 그러면 자신의 패를 1장 골라 트래시한다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "716",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=716",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-083",
@@ -841,8 +3873,42 @@
     "hit": "-",
     "traits": "-",
     "keywords": "어태커",
-    "text": "장착 조건: 없음 어태커 : 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_HtB1QNhP_ec04a74a075107009ad1755376a20513e14005eb.jpg"
+    "text": "[장착 조건: 없음] [어태커] 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_HtB1QNhP_ec04a74a075107009ad1755376a20513e14005eb.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "715",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=715",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-084",
@@ -854,8 +3920,42 @@
     "hit": "-",
     "traits": "-",
     "keywords": "패시브",
-    "text": "장착 조건: 없음 패시브 : 이 유닛이 장착한 아이템 1장마다 파워+1000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_N0dW9DIK_f0acea8d2ad4785c3d9286cea7329402bfb306a1.jpg"
+    "text": "[장착 조건: 없음] [패시브] 이 유닛이 장착한 아이템 1장마다 파워+1000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_N0dW9DIK_f0acea8d2ad4785c3d9286cea7329402bfb306a1.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[패시브] 이 유닛이 장착한 아이템 1장마다 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "714",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=714",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-085",
@@ -867,8 +3967,34 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "장착 조건: 없음 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ShqKaL75_f46d2e33ad36e4bec97b990500036f321c1077c0.jpg"
+    "text": "[장착 조건: 없음] 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ShqKaL75_f46d2e33ad36e4bec97b990500036f321c1077c0.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "히트+1.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "713",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=713",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   },
   {
     "id": "BT05-086",
@@ -880,7 +4006,44 @@
     "hit": "-",
     "traits": "-",
     "keywords": "어태커",
-    "text": "장착 조건: 없음 어태커 : 자신의 트래시 존에서 트리거 : 를 가지지 않고 코스트가 이 유닛이 장착한 아이템의 수 이하인 스킬 카드나 아이템 카드를 1장 골라 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ELCarQkl_c24d6391e9ba2f68e28e496ef1c2e6ab8dc7fbb9.jpg"
+    "text": "[장착 조건: 없음] [어태커] 자신의 트래시 존에서 [트리거]를 가지지 않고 코스트가 이 유닛이 장착한 아이템의 수 이하인 스킬 카드나 아이템 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ELCarQkl_c24d6391e9ba2f68e28e496ef1c2e6ab8dc7fbb9.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 자신의 트래시 존에서 [트리거]를 가지지 않고 코스트가 이 유닛이 장착한 아이템의 수 이하인 스킬 카드나 아이템 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "712",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=712",
+    "scrapedAt": "2026-02-21T06:37:55.523778+00:00"
   }
 ]

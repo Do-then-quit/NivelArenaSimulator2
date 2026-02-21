@@ -9,8 +9,31 @@
     "hit": "1",
     "traits": "이펙트 / 테트라",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 스킬 존에서 스킬을 1장 골라 트래시할 수 있다. 그러면 필드에 있는 상대 유닛을 1장 고른다. 이 턴이 끝날 때까지 트래시한 스킬의 1코스트마다 그 유닛의 파워-2000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_pF4P0D2s_412a4dcb17b7b3ba12c38ce2423a105b42fa7d9e.jpg"
+    "text": "[엔트리] 자신의 스킬 존에서 스킬을 1장 골라 트래시할 수 있다. 그러면 필드에 있는 상대 유닛을 1장 고른다. 이 턴이 끝날 때까지 트래시한 스킬의 1코스트마다 그 유닛의 파워-2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_pF4P0D2s_412a4dcb17b7b3ba12c38ce2423a105b42fa7d9e.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 스킬 존에서 스킬을 1장 골라 트래시할 수 있다. 그러면 필드에 있는 상대 유닛을 1장 고른다. 이 턴이 끝날 때까지 트래시한 스킬의 1코스트마다 그 유닛의 파워-2000.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "892",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=892",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-001",
@@ -22,8 +45,31 @@
     "hit": "1",
     "traits": "이펙트 / 테트라",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 스킬 존에서 스킬을 1장 골라 트래시할 수 있다. 그러면 필드에 있는 상대 유닛을 1장 고른다. 이 턴이 끝날 때까지 트래시한 스킬의 1코스트마다 그 유닛의 파워-2000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/588_copy_591_cfbf01727a7e461ec5930f5d552f8bff_OW4Lxb1A_7b14e71c63b88a8b28b5a6a6e8badd7be29ecc0e.jpg"
+    "text": "[엔트리] 자신의 스킬 존에서 스킬을 1장 골라 트래시할 수 있다. 그러면 필드에 있는 상대 유닛을 1장 고른다. 이 턴이 끝날 때까지 트래시한 스킬의 1코스트마다 그 유닛의 파워-2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/588_copy_591_cfbf01727a7e461ec5930f5d552f8bff_OW4Lxb1A_7b14e71c63b88a8b28b5a6a6e8badd7be29ecc0e.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 스킬 존에서 스킬을 1장 골라 트래시할 수 있다. 그러면 필드에 있는 상대 유닛을 1장 고른다. 이 턴이 끝날 때까지 트래시한 스킬의 1코스트마다 그 유닛의 파워-2000.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "891",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=891",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-002",
@@ -35,8 +81,53 @@
     "hit": "2",
     "traits": "이펙트 / 테트라",
     "keywords": "어태커, 액티브",
-    "text": "어태커 : 필드에 있는 어태커 : 를 가진 자신 유닛이 3장 이상이라면 이 공격이 끝날 때까지 관통[1] 을 얻는다. 액티브: 메인 자신의 패를 1장 골라 트래시한다. 그러면 코스트가 트래시한 카드의 코스트 이하이고 어태커 : 를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 트래시한 카드의 1코스트마다 파워+1000. 추가로 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_aJt0Vsfo_960e254c90f74516884186ca6882ed55e2eb2766.jpg"
+    "text": "[어태커] 필드에 있는 [어태커]를 가진 자신 유닛이 3장 이상이라면 이 공격이 끝날 때까지 관통[1] 을 얻는다. [액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 코스트가 트래시한 카드의 코스트 이하이고 [어태커]를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 트래시한 카드의 1코스트마다 파워+1000. 추가로 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_aJt0Vsfo_960e254c90f74516884186ca6882ed55e2eb2766.jpg",
+    "keywordList": [
+      "어태커",
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 필드에 있는 [어태커]를 가진 자신 유닛이 3장 이상이라면 이 공격이 끝날 때까지 관통[1] 을 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "관통"
+        ],
+        "mentionedKeywordsInBody": [
+          "관통"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 코스트가 트래시한 카드의 코스트 이하이고 [어태커]를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 트래시한 카드의 1코스트마다 파워+1000. 추가로 히트+1.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "890",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=890",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-002",
@@ -48,8 +139,53 @@
     "hit": "2",
     "traits": "이펙트 / 테트라",
     "keywords": "어태커, 액티브",
-    "text": "어태커 : 필드에 있는 어태커 : 를 가진 자신 유닛이 3장 이상이라면 이 공격이 끝날 때까지 관통[1] 을 얻는다. 액티브: 메인 자신의 패를 1장 골라 트래시한다. 그러면 코스트가 트래시한 카드의 코스트 이하이고 어태커 : 를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 트래시한 카드의 1코스트마다 파워+1000. 추가로 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Ucaglvqe_eb9cd8d7de99035222a01452cd5a31c740908428.jpg"
+    "text": "[어태커] 필드에 있는 [어태커]를 가진 자신 유닛이 3장 이상이라면 이 공격이 끝날 때까지 관통[1] 을 얻는다. [액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 코스트가 트래시한 카드의 코스트 이하이고 [어태커]를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 트래시한 카드의 1코스트마다 파워+1000. 추가로 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Ucaglvqe_eb9cd8d7de99035222a01452cd5a31c740908428.jpg",
+    "keywordList": [
+      "어태커",
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 필드에 있는 [어태커]를 가진 자신 유닛이 3장 이상이라면 이 공격이 끝날 때까지 관통[1] 을 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "관통"
+        ],
+        "mentionedKeywordsInBody": [
+          "관통"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 코스트가 트래시한 카드의 코스트 이하이고 [어태커]를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 트래시한 카드의 1코스트마다 파워+1000. 추가로 히트+1.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "889",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=889",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-003",
@@ -61,8 +197,64 @@
     "hit": "2",
     "traits": "이펙트 / 엘리시온",
     "keywords": "어태커",
-    "text": "어태커 : 듀얼리스트 . 어태커 : 이 공격이 끝날 때까지 자신의 대미지 존에 있는 카드 1장마다 파워+500. 이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 트래시한 유닛의 히트 이하가 되도록 자신의 패를 골라 트래시할 수 있다. 그러면 트래시한 패 1장마다 상대에게 1대미지를 준다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_rGFuhmiW_6c2515f8b93c05f5d03cfd04326605a7f16b80cd.jpg"
+    "text": "[어태커] 듀얼리스트 . [어태커] 이 공격이 끝날 때까지 자신의 대미지 존에 있는 카드 1장마다 파워+500. 이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 트래시한 유닛의 히트 이하가 되도록 자신의 패를 골라 트래시할 수 있다. 그러면 트래시한 패 1장마다 상대에게 1대미지를 준다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_rGFuhmiW_6c2515f8b93c05f5d03cfd04326605a7f16b80cd.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 듀얼리스트 .",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "듀얼리스트"
+        ],
+        "mentionedKeywordsInBody": [
+          "듀얼리스트"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 이 공격이 끝날 때까지 자신의 대미지 존에 있는 카드 1장마다 파워+500. 이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 트래시한 유닛의 히트 이하가 되도록 자신의 패를 골라 트래시할 수 있다. 그러면 트래시한 패 1장마다 상대에게 1대미지를 준다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "888",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=888",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-003",
@@ -74,8 +266,64 @@
     "hit": "2",
     "traits": "이펙트 / 엘리시온",
     "keywords": "어태커",
-    "text": "어태커 : 듀얼리스트 . 어태커 : 이 공격이 끝날 때까지 자신의 대미지 존에 있는 카드 1장마다 파워+500. 이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 트래시한 유닛의 히트 이하가 되도록 자신의 패를 골라 트래시할 수 있다. 그러면 트래시한 패 1장마다 상대에게 1대미지를 준다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0l6nfHsN_260af48ff46d8f485c7c77ee37932b06399672d9.jpg"
+    "text": "[어태커] 듀얼리스트 . [어태커] 이 공격이 끝날 때까지 자신의 대미지 존에 있는 카드 1장마다 파워+500. 이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 트래시한 유닛의 히트 이하가 되도록 자신의 패를 골라 트래시할 수 있다. 그러면 트래시한 패 1장마다 상대에게 1대미지를 준다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0l6nfHsN_260af48ff46d8f485c7c77ee37932b06399672d9.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 듀얼리스트 .",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "듀얼리스트"
+        ],
+        "mentionedKeywordsInBody": [
+          "듀얼리스트"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 이 공격이 끝날 때까지 자신의 대미지 존에 있는 카드 1장마다 파워+500. 이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 트래시한 유닛의 히트 이하가 되도록 자신의 패를 골라 트래시할 수 있다. 그러면 트래시한 패 1장마다 상대에게 1대미지를 준다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "887",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=887",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-004",
@@ -87,8 +335,27 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "필드에 있는 어태커 : 를 가진 자신 유닛의 수만큼 카드를 드로우한다. 상대의 턴이 끝날 때까지 상대가 효과로 카드를 1장 이상 드로우하면 상대에게 1대미지를 준다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3Gb1jChn_20b22bda68c3e230b75f57c02030c5536865adc1.jpg"
+    "text": "필드에 있는 [어태커]를 가진 자신 유닛의 수만큼 카드를 드로우한다. 상대의 턴이 끝날 때까지 상대가 효과로 카드를 1장 이상 드로우하면 상대에게 1대미지를 준다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3Gb1jChn_20b22bda68c3e230b75f57c02030c5536865adc1.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 [어태커]를 가진 자신 유닛의 수만큼 카드를 드로우한다. 상대의 턴이 끝날 때까지 상대가 효과로 카드를 1장 이상 드로우하면 상대에게 1대미지를 준다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "886",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=886",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-005",
@@ -100,8 +367,29 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "카드를 1장 드로우한다. 필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「패시브 : 이 유닛이 트래시되면 자신의 트래시 존에 있는 이 카드를 대미지 존에 놓는다」를 얻는다. 필드에 있는 어태커 : 를 가진 자신 유닛이 2장 이상이라면 이 스킬을 트래시할 수 있다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3uyrAOms_6d63a35e21130ee6b4a2a15817dfeffb8bb976fe.jpg"
+    "text": "카드를 1장 드로우한다. 필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「[패시브] 이 유닛이 트래시되면 자신의 트래시 존에 있는 이 카드를 대미지 존에 놓는다」를 얻는다. 필드에 있는 [어태커]를 가진 자신 유닛이 2장 이상이라면 이 스킬을 트래시할 수 있다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3uyrAOms_6d63a35e21130ee6b4a2a15817dfeffb8bb976fe.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "카드를 1장 드로우한다. 필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「[패시브] 이 유닛이 트래시되면 자신의 트래시 존에 있는 이 카드를 대미지 존에 놓는다」를 얻는다. 필드에 있는 [어태커]를 가진 자신 유닛이 2장 이상이라면 이 스킬을 트래시할 수 있다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "어태커",
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "패시브"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "885",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=885",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-006",
@@ -113,8 +401,34 @@
     "hit": "1",
     "traits": "이펙트 / 엘리시온",
     "keywords": "액티브",
-    "text": "액티브: 어택 자신의 사이즈가 자신의 필드에 있는 카드의 코스트 합보다 3 이상 높다면 자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 어태커 : 돌파 를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_cPWTlHMI_99c091788a8bf9de516f72f969332f5eec9dd9af.jpg"
+    "text": "[액티브: 어택] 자신의 사이즈가 자신의 필드에 있는 카드의 코스트 합보다 3 이상 높다면 자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 돌파 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_cPWTlHMI_99c091788a8bf9de516f72f969332f5eec9dd9af.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 어택] 자신의 사이즈가 자신의 필드에 있는 카드의 코스트 합보다 3 이상 높다면 자신의 패를 1장 골라 트래시한다. 그러면 필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 돌파 를 얻는다.",
+        "headerTokens": [
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "875",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=875",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-007",
@@ -126,8 +440,31 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "엑시트",
-    "text": "엑시트 : 자신의 덱 맨 위에서 카드를 1장 공개할 수 있다. 자신의 패를 1장 골라 트래시하면 그중 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 0코스트가 된다. 나머지는 모두 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_S9ULZGTe_16ec4b2793e1eb815df48e1a6d791f105cc8311c.jpg"
+    "text": "[엑시트] 자신의 덱 맨 위에서 카드를 1장 공개할 수 있다. 자신의 패를 1장 골라 트래시하면 그중 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 0코스트가 된다. 나머지는 모두 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_S9ULZGTe_16ec4b2793e1eb815df48e1a6d791f105cc8311c.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엑시트] 자신의 덱 맨 위에서 카드를 1장 공개할 수 있다. 자신의 패를 1장 골라 트래시하면 그중 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 0코스트가 된다. 나머지는 모두 트래시한다.",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "874",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=874",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-007",
@@ -139,8 +476,31 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "엑시트",
-    "text": "엑시트 : 자신의 덱 맨 위에서 카드를 1장 공개할 수 있다. 자신의 패를 1장 골라 트래시하면 그중 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 0코스트가 된다. 나머지는 모두 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_8wsNnvhW_c8259adc4143bac7ed8ca0bb17cfb58759e44be2.jpg"
+    "text": "[엑시트] 자신의 덱 맨 위에서 카드를 1장 공개할 수 있다. 자신의 패를 1장 골라 트래시하면 그중 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 0코스트가 된다. 나머지는 모두 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_8wsNnvhW_c8259adc4143bac7ed8ca0bb17cfb58759e44be2.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엑시트] 자신의 덱 맨 위에서 카드를 1장 공개할 수 있다. 자신의 패를 1장 골라 트래시하면 그중 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 0코스트가 된다. 나머지는 모두 트래시한다.",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "873",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=873",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-008",
@@ -152,8 +512,34 @@
     "hit": "1",
     "traits": "이펙트 / 필그림",
     "keywords": "전선구축",
-    "text": "전선구축 : 자신의 모든 유닛 존에 유닛이 있다면 파워+2000. 필드에 있는 3코스트 이하인 모든 자신 유닛은 「엑시트 : 효과로 트래시됐다면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 비어 있는 자신의 유닛 존에 이 유닛 카드를 배치한다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_kfto7jF1_837441825ae54884404408de07fab28383601e79.jpg"
+    "text": "[전선구축] 자신의 모든 유닛 존에 유닛이 있다면 파워+2000. 필드에 있는 3코스트 이하인 모든 자신 유닛은 「[엑시트] 효과로 트래시됐다면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 비어 있는 자신의 유닛 존에 이 유닛 카드를 배치한다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_kfto7jF1_837441825ae54884404408de07fab28383601e79.jpg",
+    "keywordList": [
+      "전선구축"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[전선구축] 자신의 모든 유닛 존에 유닛이 있다면 파워+2000. 필드에 있는 3코스트 이하인 모든 자신 유닛은 「[엑시트] 효과로 트래시됐다면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 비어 있는 자신의 유닛 존에 이 유닛 카드를 배치한다」를 얻는다.",
+        "headerTokens": [
+          "전선구축"
+        ],
+        "headerKeywords": [
+          "전선구축"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "전선구축"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "872",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=872",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-008",
@@ -165,8 +551,34 @@
     "hit": "1",
     "traits": "이펙트 / 필그림",
     "keywords": "전선구축",
-    "text": "전선구축 : 자신의 모든 유닛 존에 유닛이 있다면 파워+2000. 필드에 있는 3코스트 이하인 모든 자신 유닛은 「엑시트 : 효과로 트래시됐다면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 비어 있는 자신의 유닛 존에 이 유닛 카드를 배치한다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0ldFbJSY_6e63add45059e7258a8babd80aa287202b8c741d.jpg"
+    "text": "[전선구축] 자신의 모든 유닛 존에 유닛이 있다면 파워+2000. 필드에 있는 3코스트 이하인 모든 자신 유닛은 「[엑시트] 효과로 트래시됐다면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 비어 있는 자신의 유닛 존에 이 유닛 카드를 배치한다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0ldFbJSY_6e63add45059e7258a8babd80aa287202b8c741d.jpg",
+    "keywordList": [
+      "전선구축"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[전선구축] 자신의 모든 유닛 존에 유닛이 있다면 파워+2000. 필드에 있는 3코스트 이하인 모든 자신 유닛은 「[엑시트] 효과로 트래시됐다면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 비어 있는 자신의 유닛 존에 이 유닛 카드를 배치한다」를 얻는다.",
+        "headerTokens": [
+          "전선구축"
+        ],
+        "headerKeywords": [
+          "전선구축"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "전선구축"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "871",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=871",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-009",
@@ -178,8 +590,31 @@
     "hit": "2",
     "traits": "이펙트 / 미실리스",
     "keywords": "레벨링크",
-    "text": "레벨링크: 6 자신의 리더 레벨이 6 이상이라면 상대는 패에서 4코스트 이하인 유닛을 이 유닛이 있는 레인에 배치할 수 없다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_FQWg6UJz_e41909fa2de6ba749b03a5107e76b7f662b71294.jpg"
+    "text": "[레벨링크: 6] 자신의 리더 레벨이 6 이상이라면 상대는 패에서 4코스트 이하인 유닛을 이 유닛이 있는 레인에 배치할 수 없다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_FQWg6UJz_e41909fa2de6ba749b03a5107e76b7f662b71294.jpg",
+    "keywordList": [
+      "레벨링크"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[레벨링크: 6] 자신의 리더 레벨이 6 이상이라면 상대는 패에서 4코스트 이하인 유닛을 이 유닛이 있는 레인에 배치할 수 없다.",
+        "headerTokens": [
+          "레벨링크: 6"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "870",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=870",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-010",
@@ -191,8 +626,62 @@
     "hit": "3",
     "traits": "이펙트 / 필그림",
     "keywords": "어태커, 레벨링크",
-    "text": "레벨링크: 8 자신의 리더 레벨이 8 이상이라면 히트+1. 어태커 : 이 공격이 끝날 때까지 상대는 이 유닛보다 히트가 낮은 유닛으로 방어하려면 그 차이만큼 패를 골라 트래시해야 한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_BbQlGLPM_a1e3b91c9c891a5586ff932c2afbc44f6e6080ac.jpg"
+    "text": "[레벨링크: 8] 자신의 리더 레벨이 8 이상이라면 히트+1. [어태커] 이 공격이 끝날 때까지 상대는 이 유닛보다 히트가 낮은 유닛으로 방어하려면 그 차이만큼 패를 골라 트래시해야 한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_BbQlGLPM_a1e3b91c9c891a5586ff932c2afbc44f6e6080ac.jpg",
+    "keywordList": [
+      "어태커",
+      "레벨링크"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[레벨링크: 8] 자신의 리더 레벨이 8 이상이라면 히트+1.",
+        "headerTokens": [
+          "레벨링크: 8"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 이 공격이 끝날 때까지 상대는 이 유닛보다 히트가 낮은 유닛으로 방어하려면 그 차이만큼 패를 골라 트래시해야 한다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "869",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=869",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-010",
@@ -204,8 +693,62 @@
     "hit": "3",
     "traits": "이펙트 / 필그림",
     "keywords": "어태커, 레벨링크",
-    "text": "레벨링크: 8 자신의 리더 레벨이 8 이상이라면 히트+1. 어태커 : 이 공격이 끝날 때까지 상대는 이 유닛보다 히트가 낮은 유닛으로 방어하려면 그 차이만큼 패를 골라 트래시해야 한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_qmtSYw07_b909210738e29bed71ee2ef84c9b48c12a75e9d6.jpg"
+    "text": "[레벨링크: 8] 자신의 리더 레벨이 8 이상이라면 히트+1. [어태커] 이 공격이 끝날 때까지 상대는 이 유닛보다 히트가 낮은 유닛으로 방어하려면 그 차이만큼 패를 골라 트래시해야 한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_qmtSYw07_b909210738e29bed71ee2ef84c9b48c12a75e9d6.jpg",
+    "keywordList": [
+      "어태커",
+      "레벨링크"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[레벨링크: 8] 자신의 리더 레벨이 8 이상이라면 히트+1.",
+        "headerTokens": [
+          "레벨링크: 8"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "레벨링크"
+        ],
+        "mentionedKeywordsInBody": [
+          "레벨링크"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 이 공격이 끝날 때까지 상대는 이 유닛보다 히트가 낮은 유닛으로 방어하려면 그 차이만큼 패를 골라 트래시해야 한다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "868",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=868",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-011",
@@ -217,8 +760,31 @@
     "hit": "1",
     "traits": "이펙트 / 테트라",
     "keywords": "엑시트",
-    "text": "엑시트 : 자신의 턴이라면 이 턴 동안 효과로 트래시된 자신 유닛의 수만큼 카드를 드로우한다. 이 효과로 드로우한 카드가 3장 이상이라면 상대에게 1대미지를 준다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_dTalVRsh_566b8a7bc7fa073f7f5c2dd340d7ad34c345c695.jpg"
+    "text": "[엑시트] 자신의 턴이라면 이 턴 동안 효과로 트래시된 자신 유닛의 수만큼 카드를 드로우한다. 이 효과로 드로우한 카드가 3장 이상이라면 상대에게 1대미지를 준다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_dTalVRsh_566b8a7bc7fa073f7f5c2dd340d7ad34c345c695.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엑시트] 자신의 턴이라면 이 턴 동안 효과로 트래시된 자신 유닛의 수만큼 카드를 드로우한다. 이 효과로 드로우한 카드가 3장 이상이라면 상대에게 1대미지를 준다.",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "858",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=858",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-012",
@@ -230,8 +796,46 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "액티브",
-    "text": "액티브: 메인 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 유닛을 트래시한다. 그러면 상대에게 1대미지를 준다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EMCe3G8A_05b6ce37c9230bef2fa4df7c7a7bc388bd43510e.jpg"
+    "text": "[액티브: 메인] 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 유닛을 트래시한다. 그러면 상대에게 1대미지를 준다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EMCe3G8A_05b6ce37c9230bef2fa4df7c7a7bc388bd43510e.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 유닛을 트래시한다. 그러면 상대에게 1대미지를 준다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "857",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=857",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-012",
@@ -243,8 +847,46 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "액티브",
-    "text": "액티브: 메인 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 유닛을 트래시한다. 그러면 상대에게 1대미지를 준다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_96Iy0XOv_87c8a226942d86ac7ee35111b795c6fb489bbbe1.jpg"
+    "text": "[액티브: 메인] 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 유닛을 트래시한다. 그러면 상대에게 1대미지를 준다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_96Iy0XOv_87c8a226942d86ac7ee35111b795c6fb489bbbe1.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 유닛을 트래시한다. 그러면 상대에게 1대미지를 준다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "856",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=856",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-013",
@@ -256,8 +898,34 @@
     "hit": "1",
     "traits": "이펙트 / 필그림",
     "keywords": "엔트리",
-    "text": "엔트리 : 이 턴이 끝날 때까지 자신의 액티브 : 효과로 상대에게 1대미지를 줄 때 대신 2대미지를 준다. 이 유닛을 트래시할 수 있다. 그러면 자신의 패에서 5코스트인 유닛 카드를 1장 골라 이 유닛이 있던 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 이 턴이 끝날 때까지 3코스트가 된다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ykUxlwTN_4f67949a7580340fcff4b26090907f16c3dcf124.jpg"
+    "text": "[엔트리] 이 턴이 끝날 때까지 자신의 [액티브] 효과로 상대에게 1대미지를 줄 때 대신 2대미지를 준다. 이 유닛을 트래시할 수 있다. 그러면 자신의 패에서 5코스트인 유닛 카드를 1장 골라 이 유닛이 있던 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 이 턴이 끝날 때까지 3코스트가 된다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ykUxlwTN_4f67949a7580340fcff4b26090907f16c3dcf124.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 이 턴이 끝날 때까지 자신의 [액티브] 효과로 상대에게 1대미지를 줄 때 대신 2대미지를 준다. 이 유닛을 트래시할 수 있다. 그러면 자신의 패에서 5코스트인 유닛 카드를 1장 골라 이 유닛이 있던 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 이 턴이 끝날 때까지 3코스트가 된다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "액티브"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "855",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=855",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-013",
@@ -269,8 +937,34 @@
     "hit": "1",
     "traits": "이펙트 / 필그림",
     "keywords": "엔트리",
-    "text": "엔트리 : 이 턴이 끝날 때까지 자신의 액티브 : 효과로 상대에게 1대미지를 줄 때 대신 2대미지를 준다. 이 유닛을 트래시할 수 있다. 그러면 자신의 패에서 5코스트인 유닛 카드를 1장 골라 이 유닛이 있던 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 이 턴이 끝날 때까지 3코스트가 된다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_F3HIKGaC_0688b8a7c10a3c5f73edc1448d9434bdfbf0bc11.jpg"
+    "text": "[엔트리] 이 턴이 끝날 때까지 자신의 [액티브] 효과로 상대에게 1대미지를 줄 때 대신 2대미지를 준다. 이 유닛을 트래시할 수 있다. 그러면 자신의 패에서 5코스트인 유닛 카드를 1장 골라 이 유닛이 있던 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 이 턴이 끝날 때까지 3코스트가 된다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_F3HIKGaC_0688b8a7c10a3c5f73edc1448d9434bdfbf0bc11.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 이 턴이 끝날 때까지 자신의 [액티브] 효과로 상대에게 1대미지를 줄 때 대신 2대미지를 준다. 이 유닛을 트래시할 수 있다. 그러면 자신의 패에서 5코스트인 유닛 카드를 1장 골라 이 유닛이 있던 유닛 존에 배치할 수 있다. 이 효과로 배치한 유닛은 이 턴이 끝날 때까지 3코스트가 된다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "액티브"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "854",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=854",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-014",
@@ -282,8 +976,27 @@
     "hit": "-",
     "traits": "-",
     "keywords": "-",
-    "text": "자신의 트래시 존에서 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다. 그 유닛은 이 턴이 끝날 때까지 「패시브 : 이 유닛이 트래시되면 자신의 스킬 존에서 〈페인 이터〉를 1장 골라 트래시한다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_5KgEbkih_1ada2004dd35f7398406f4e57c3627575bdd13cd.jpg"
+    "text": "자신의 트래시 존에서 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다. 그 유닛은 이 턴이 끝날 때까지 「[패시브] 이 유닛이 트래시되면 자신의 스킬 존에서 〈페인 이터〉를 1장 골라 트래시한다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_5KgEbkih_1ada2004dd35f7398406f4e57c3627575bdd13cd.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 트래시 존에서 2코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 사이즈를 무시하고 배치한다. 그 유닛은 이 턴이 끝날 때까지 「[패시브] 이 유닛이 트래시되면 자신의 스킬 존에서 〈페인 이터〉를 1장 골라 트래시한다」를 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "패시브"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "853",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=853",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-015",
@@ -296,7 +1009,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 5코스트 이하인 자신 유닛을 1장 골라 트래시한다. 그러면 트래시한 유닛의 원래 코스트와 같은 코스트이고 카드명이 같은 유닛 카드를 자신의 트래시 존에서 1장 골라 그 유닛이 있던 유닛 존에 배치한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NWr8ptRl_d55c62b966007f89c8f42b9ca9785e8e3759a54d.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NWr8ptRl_d55c62b966007f89c8f42b9ca9785e8e3759a54d.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 5코스트 이하인 자신 유닛을 1장 골라 트래시한다. 그러면 트래시한 유닛의 원래 코스트와 같은 코스트이고 카드명이 같은 유닛 카드를 자신의 트래시 존에서 1장 골라 그 유닛이 있던 유닛 존에 배치한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "852",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=852",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-015",
@@ -309,7 +1037,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 5코스트 이하인 자신 유닛을 1장 골라 트래시한다. 그러면 트래시한 유닛의 원래 코스트와 같은 코스트이고 카드명이 같은 유닛 카드를 자신의 트래시 존에서 1장 골라 그 유닛이 있던 유닛 존에 배치한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_YMKfqC7y_de5dc20dd3d045e15cb46f5eaee6be6b5834399a.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_YMKfqC7y_de5dc20dd3d045e15cb46f5eaee6be6b5834399a.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 5코스트 이하인 자신 유닛을 1장 골라 트래시한다. 그러면 트래시한 유닛의 원래 코스트와 같은 코스트이고 카드명이 같은 유닛 카드를 자신의 트래시 존에서 1장 골라 그 유닛이 있던 유닛 존에 배치한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "851",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=851",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-016",
@@ -321,8 +1064,50 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "디펜더, 패시브",
-    "text": "패시브 : 필드에 있는 디펜더 : 를 가진 자신 유닛 1장마다 필드에 있는 모든 자신 유닛의 파워+1000. 디펜더 : 필드에 있는 상대 유닛을 1장 고를 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_q3J0bg4G_c24a1fe2ca2054ad90f984c5a0eae914f41659d5.jpg"
+    "text": "[패시브] 필드에 있는 [디펜더]를 가진 자신 유닛 1장마다 필드에 있는 모든 자신 유닛의 파워+1000. [디펜더] 필드에 있는 상대 유닛을 1장 고를 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_q3J0bg4G_c24a1fe2ca2054ad90f984c5a0eae914f41659d5.jpg",
+    "keywordList": [
+      "디펜더",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 [디펜더]를 가진 자신 유닛 1장마다 필드에 있는 모든 자신 유닛의 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "디펜더",
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "디펜더"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 필드에 있는 상대 유닛을 1장 고를 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "841",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=841",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-016",
@@ -334,8 +1119,50 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "디펜더, 패시브",
-    "text": "패시브 : 필드에 있는 디펜더 : 를 가진 자신 유닛 1장마다 필드에 있는 모든 자신 유닛의 파워+1000. 디펜더 : 필드에 있는 상대 유닛을 1장 고를 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_eg4dyGoC_233e3d88945ac703593f5a2003e527a9084b126e.jpg"
+    "text": "[패시브] 필드에 있는 [디펜더]를 가진 자신 유닛 1장마다 필드에 있는 모든 자신 유닛의 파워+1000. [디펜더] 필드에 있는 상대 유닛을 1장 고를 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_eg4dyGoC_233e3d88945ac703593f5a2003e527a9084b126e.jpg",
+    "keywordList": [
+      "디펜더",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 [디펜더]를 가진 자신 유닛 1장마다 필드에 있는 모든 자신 유닛의 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "디펜더",
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "디펜더"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 필드에 있는 상대 유닛을 1장 고를 수 있다. 그러면 그 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "840",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=840",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-017",
@@ -347,8 +1174,47 @@
     "hit": "1",
     "traits": "이펙트 / 엘리시온",
     "keywords": "디펜더, 가디언",
-    "text": "가디언 : 방벽[1] . 디펜더 : 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 전투에서 공격한 유닛은 다음 상대의 턴이 끝날 때까지 공격할 수 없다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NweL7lvf_4637805a148a4b10408b2eaafd452e6c292f628f.jpg"
+    "text": "[가디언] 방벽[1] . [디펜더] 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 전투에서 공격한 유닛은 다음 상대의 턴이 끝날 때까지 공격할 수 없다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NweL7lvf_4637805a148a4b10408b2eaafd452e6c292f628f.jpg",
+    "keywordList": [
+      "디펜더",
+      "가디언"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[가디언] 방벽[1] .",
+        "headerTokens": [
+          "가디언"
+        ],
+        "headerKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 전투에서 공격한 유닛은 다음 상대의 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "839",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=839",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-018",
@@ -360,8 +1226,47 @@
     "hit": "1",
     "traits": "이펙트 / 엘리시온",
     "keywords": "엔트리, 디펜더",
-    "text": "엔트리 : 조우 유닛이 4코스트 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 조우 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다. 디펜더 : 이 방어가 끝날 때까지 파워+3000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_IL06Qrmx_68b000e7379c63609e2dadc40018d653465ee442.jpg"
+    "text": "[엔트리] 조우 유닛이 4코스트 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 조우 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다. [디펜더] 이 방어가 끝날 때까지 파워+3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_IL06Qrmx_68b000e7379c63609e2dadc40018d653465ee442.jpg",
+    "keywordList": [
+      "엔트리",
+      "디펜더"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 조우 유닛이 4코스트 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 조우 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+3000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "838",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=838",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-019",
@@ -373,8 +1278,65 @@
     "hit": "2",
     "traits": "이펙트 / 미실리스",
     "keywords": "디펜더, 패시브",
-    "text": "패시브 : 필드에 있는 디펜더 : 를 가진 모든 자신 유닛은 「디펜더 : 상대에게 1대미지를 준다」를 얻는다. 이 유닛의 파워가 5000 이상이라면 추가로 필드에 있는 디펜더 : 를 가진 모든 자신 유닛은 「디펜더 : 카드를 1장 드로우한다」를 얻는다. 디펜더 : 이 방어가 끝날 때까지 파워+4000. 트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 그 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_STPnvgyW_ea0d1ea84e21c5feeadf44a21e755967569a01c0.jpg"
+    "text": "[패시브] 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[디펜더] 상대에게 1대미지를 준다」를 얻는다. 이 유닛의 파워가 5000 이상이라면 추가로 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[디펜더] 카드를 1장 드로우한다」를 얻는다. [디펜더] 이 방어가 끝날 때까지 파워+4000. 트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 그 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_STPnvgyW_ea0d1ea84e21c5feeadf44a21e755967569a01c0.jpg",
+    "keywordList": [
+      "디펜더",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[디펜더] 상대에게 1대미지를 준다」를 얻는다. 이 유닛의 파워가 5000 이상이라면 추가로 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[디펜더] 카드를 1장 드로우한다」를 얻는다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "디펜더",
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "디펜더"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+4000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 그 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "837",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=837",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-019",
@@ -386,8 +1348,65 @@
     "hit": "2",
     "traits": "이펙트 / 미실리스",
     "keywords": "디펜더, 패시브",
-    "text": "패시브 : 필드에 있는 디펜더 : 를 가진 모든 자신 유닛은 「디펜더 : 상대에게 1대미지를 준다」를 얻는다. 이 유닛의 파워가 5000 이상이라면 추가로 필드에 있는 디펜더 : 를 가진 모든 자신 유닛은 「디펜더 : 카드를 1장 드로우한다」를 얻는다. 디펜더 : 이 방어가 끝날 때까지 파워+4000. 트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 그 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_q8snpQgE_c05fd5a54f3e8a3c66c98c2c974b17ed688fb46a.jpg"
+    "text": "[패시브] 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[디펜더] 상대에게 1대미지를 준다」를 얻는다. 이 유닛의 파워가 5000 이상이라면 추가로 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[디펜더] 카드를 1장 드로우한다」를 얻는다. [디펜더] 이 방어가 끝날 때까지 파워+4000. 트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 그 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_q8snpQgE_c05fd5a54f3e8a3c66c98c2c974b17ed688fb46a.jpg",
+    "keywordList": [
+      "디펜더",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[디펜더] 상대에게 1대미지를 준다」를 얻는다. 이 유닛의 파워가 5000 이상이라면 추가로 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[디펜더] 카드를 1장 드로우한다」를 얻는다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "디펜더",
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "디펜더"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+4000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛 중 코스트가 가장 낮은 유닛을 1장 골라 그 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "836",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=836",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-020",
@@ -399,8 +1418,67 @@
     "hit": "2",
     "traits": "이펙트 / 필그림",
     "keywords": "디펜더, 패시브",
-    "text": "패시브 : 필드에 있는 디펜더 : 를 가진 모든 자신 유닛은 「패시브 : 조우 유닛은 광전사 를 얻는다」를 얻는다. 이 유닛의 파워가 6000 이상이라면 상대의 효과로 트래시될 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛은 트래시되지 않는다. 디펜더 : 이 방어가 끝날 때까지 파워+4000. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3uDlJC16_f622d565ba345c224c9137389f0dafe7ed1c3f68.jpg"
+    "text": "[패시브] 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다. 이 유닛의 파워가 6000 이상이라면 상대의 효과로 트래시될 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛은 트래시되지 않는다. [디펜더] 이 방어가 끝날 때까지 파워+4000. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3uDlJC16_f622d565ba345c224c9137389f0dafe7ed1c3f68.jpg",
+    "keywordList": [
+      "디펜더",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다. 이 유닛의 파워가 6000 이상이라면 상대의 효과로 트래시될 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛은 트래시되지 않는다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "디펜더",
+          "패시브",
+          "광전사"
+        ],
+        "mentionedKeywordsInBody": [
+          "디펜더",
+          "광전사"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+4000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "835",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=835",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-020",
@@ -412,8 +1490,67 @@
     "hit": "2",
     "traits": "이펙트 / 필그림",
     "keywords": "디펜더, 패시브",
-    "text": "패시브 : 필드에 있는 디펜더 : 를 가진 모든 자신 유닛은 「패시브 : 조우 유닛은 광전사 를 얻는다」를 얻는다. 이 유닛의 파워가 6000 이상이라면 상대의 효과로 트래시될 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛은 트래시되지 않는다. 디펜더 : 이 방어가 끝날 때까지 파워+4000. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_tndAZONk_4a174fed43818740e53161b9a55123c608aa645d.jpg"
+    "text": "[패시브] 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다. 이 유닛의 파워가 6000 이상이라면 상대의 효과로 트래시될 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛은 트래시되지 않는다. [디펜더] 이 방어가 끝날 때까지 파워+4000. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_tndAZONk_4a174fed43818740e53161b9a55123c608aa645d.jpg",
+    "keywordList": [
+      "디펜더",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 [디펜더]를 가진 모든 자신 유닛은 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다. 이 유닛의 파워가 6000 이상이라면 상대의 효과로 트래시될 때 자신의 패를 1장 골라 트래시할 수 있다. 그러면 이 유닛은 트래시되지 않는다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "디펜더",
+          "패시브",
+          "광전사"
+        ],
+        "mentionedKeywordsInBody": [
+          "디펜더",
+          "광전사"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+4000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "834",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=834",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-021",
@@ -425,8 +1562,62 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "엔트리, 암드",
-    "text": "엔트리 : 필드에 있는 자신 유닛의 수만큼 자신의 트래시 존과 패에서 아이템 카드를 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 1장씩 장착한다. 암드 : 필드에 있는 아이템을 장착한 자신 유닛이 3장 이상이라면 파워+2000, 히트+1. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ierJDuzY_a75ecc1476226b02e11655640c29653175b912c8.jpg"
+    "text": "[엔트리] 필드에 있는 자신 유닛의 수만큼 자신의 트래시 존과 패에서 아이템 카드를 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 1장씩 장착한다. [암드] 필드에 있는 아이템을 장착한 자신 유닛이 3장 이상이라면 파워+2000, 히트+1. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ierJDuzY_a75ecc1476226b02e11655640c29653175b912c8.jpg",
+    "keywordList": [
+      "엔트리",
+      "암드"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 자신 유닛의 수만큼 자신의 트래시 존과 패에서 아이템 카드를 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 1장씩 장착한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[암드] 필드에 있는 아이템을 장착한 자신 유닛이 3장 이상이라면 파워+2000, 히트+1.",
+        "headerTokens": [
+          "암드"
+        ],
+        "headerKeywords": [
+          "암드"
+        ],
+        "mentionedKeywords": [
+          "암드"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "824",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=824",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-021",
@@ -438,8 +1629,62 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "엔트리, 암드",
-    "text": "엔트리 : 필드에 있는 자신 유닛의 수만큼 자신의 트래시 존과 패에서 아이템 카드를 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 1장씩 장착한다. 암드 : 필드에 있는 아이템을 장착한 자신 유닛이 3장 이상이라면 파워+2000, 히트+1. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Xsy075rA_8776ca99d33a1d5a0522cc179b8afd456552fbb4.jpg"
+    "text": "[엔트리] 필드에 있는 자신 유닛의 수만큼 자신의 트래시 존과 패에서 아이템 카드를 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 1장씩 장착한다. [암드] 필드에 있는 아이템을 장착한 자신 유닛이 3장 이상이라면 파워+2000, 히트+1. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Xsy075rA_8776ca99d33a1d5a0522cc179b8afd456552fbb4.jpg",
+    "keywordList": [
+      "엔트리",
+      "암드"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 자신 유닛의 수만큼 자신의 트래시 존과 패에서 아이템 카드를 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 1장씩 장착한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[암드] 필드에 있는 아이템을 장착한 자신 유닛이 3장 이상이라면 파워+2000, 히트+1.",
+        "headerTokens": [
+          "암드"
+        ],
+        "headerKeywords": [
+          "암드"
+        ],
+        "mentionedKeywords": [
+          "암드"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "823",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=823",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-022",
@@ -451,8 +1696,34 @@
     "hit": "1",
     "traits": "이펙트 / 테트라",
     "keywords": "패시브",
-    "text": "패시브 : 필드에 있는 모든 자신 유닛은 「암드 : 조우 유닛이 전투나 자신의 효과로 트래시되면 상대는 패를 1장 골라 트래시한다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_wAvqTn45_20face4144d6ffa4088a0268b855884718371458.jpg"
+    "text": "[패시브] 필드에 있는 모든 자신 유닛은 「[암드] 조우 유닛이 전투나 자신의 효과로 트래시되면 상대는 패를 1장 골라 트래시한다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_wAvqTn45_20face4144d6ffa4088a0268b855884718371458.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 모든 자신 유닛은 「[암드] 조우 유닛이 전투나 자신의 효과로 트래시되면 상대는 패를 1장 골라 트래시한다」를 얻는다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브",
+          "암드"
+        ],
+        "mentionedKeywordsInBody": [
+          "암드"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "822",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=822",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-023",
@@ -464,8 +1735,31 @@
     "hit": "1",
     "traits": "이펙트 / 미실리스",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 패를 2장까지 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다. 이 효과로 트래시한 아이템 카드가 2장 이상이라면 추가로 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ikBfeP8H_12c3ac4bdcee74fde968243a38887ca057e814e1.jpg"
+    "text": "[엔트리] 자신의 패를 2장까지 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다. 이 효과로 트래시한 아이템 카드가 2장 이상이라면 추가로 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ikBfeP8H_12c3ac4bdcee74fde968243a38887ca057e814e1.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 패를 2장까지 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다. 이 효과로 트래시한 아이템 카드가 2장 이상이라면 추가로 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "821",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=821",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-024",
@@ -477,8 +1771,50 @@
     "hit": "1",
     "traits": "이펙트 / 테트라",
     "keywords": "액티브, 암드",
-    "text": "암드 : 액티브: 메인 아이템을 장착하고 있다면 자신의 트래시 존에서 코스트가 이 유닛이 장착한 아이템의 수 이하인 카드를 1장 골라 패에 넣는다. 암드 : 아이템을 장착하고 있다면 파워+3000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_K1H2Yel0_2de0b994e3e424efcd074676f31ff17271f584d7.jpg"
+    "text": "[암드][액티브: 메인] 아이템을 장착하고 있다면 자신의 트래시 존에서 코스트가 이 유닛이 장착한 아이템의 수 이하인 카드를 1장 골라 패에 넣는다. [암드] 아이템을 장착하고 있다면 파워+3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_K1H2Yel0_2de0b994e3e424efcd074676f31ff17271f584d7.jpg",
+    "keywordList": [
+      "액티브",
+      "암드"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[암드][액티브: 메인] 아이템을 장착하고 있다면 자신의 트래시 존에서 코스트가 이 유닛이 장착한 아이템의 수 이하인 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "암드",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "암드",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "암드"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[암드] 아이템을 장착하고 있다면 파워+3000.",
+        "headerTokens": [
+          "암드"
+        ],
+        "headerKeywords": [
+          "암드"
+        ],
+        "mentionedKeywords": [
+          "암드"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "820",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=820",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-024",
@@ -490,8 +1826,50 @@
     "hit": "1",
     "traits": "이펙트 / 테트라",
     "keywords": "액티브, 암드",
-    "text": "암드 : 액티브: 메인 아이템을 장착하고 있다면 자신의 트래시 존에서 코스트가 이 유닛이 장착한 아이템의 수 이하인 카드를 1장 골라 패에 넣는다. 암드 : 아이템을 장착하고 있다면 파워+3000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0yC8Izwj_0786e0aab5ceed59bf51d69a73b43f80349cc23f.jpg"
+    "text": "[암드][액티브: 메인] 아이템을 장착하고 있다면 자신의 트래시 존에서 코스트가 이 유닛이 장착한 아이템의 수 이하인 카드를 1장 골라 패에 넣는다. [암드] 아이템을 장착하고 있다면 파워+3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0yC8Izwj_0786e0aab5ceed59bf51d69a73b43f80349cc23f.jpg",
+    "keywordList": [
+      "액티브",
+      "암드"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[암드][액티브: 메인] 아이템을 장착하고 있다면 자신의 트래시 존에서 코스트가 이 유닛이 장착한 아이템의 수 이하인 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "암드",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "암드",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "암드"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[암드] 아이템을 장착하고 있다면 파워+3000.",
+        "headerTokens": [
+          "암드"
+        ],
+        "headerKeywords": [
+          "암드"
+        ],
+        "mentionedKeywords": [
+          "암드"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "819",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=819",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-025",
@@ -504,7 +1882,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "자신의 패에서 아이템 카드를 1장 이상 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0ipFxfly_39864f74a89b9c86ab3395e6033271e9ab93428b.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0ipFxfly_39864f74a89b9c86ab3395e6033271e9ab93428b.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 패에서 아이템 카드를 1장 이상 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "818",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=818",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   },
   {
     "id": "SB01-025",
@@ -517,6 +1910,21 @@
     "traits": "-",
     "keywords": "-",
     "text": "자신의 패에서 아이템 카드를 1장 이상 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_p1voEiN8_f1626434bb5ab20b5a11c033a9424a828d364c39.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_p1voEiN8_f1626434bb5ab20b5a11c033a9424a828d364c39.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 패에서 아이템 카드를 1장 이상 골라 트래시한다. 그러면 트래시한 수만큼 카드를 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "817",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=817",
+    "scrapedAt": "2026-02-21T06:39:05.864553+00:00"
   }
 ]

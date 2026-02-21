@@ -4,13 +4,88 @@
     "name": "리나크",
     "type": "리더",
     "attribute": "화염",
-    "cost": "레어도",
+    "cost": "",
     "power": "-",
     "hit": "-",
     "traits": "계승자",
     "keywords": "액티브",
-    "text": "기본면 서약 : 자신의 덱에 화염 : 카드만 넣을 수 있다. 각성 : 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 각성면 액티브: 메인 필드에 있는 0코스트인 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+2000, 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0o2BOqr8_ef2e3a0119f57424bd9ed56c45cce648c61e1dc6.jpg"
+    "text": "기본면 [서약] 자신의 덱에 [화염]카드만 넣을 수 있다. [각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 각성면 [액티브: 메인] 필드에 있는 0코스트인 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+2000, 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0o2BOqr8_ef2e3a0119f57424bd9ed56c45cce648c61e1dc6.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "기본면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[서약] 자신의 덱에 [화염]카드만 넣을 수 있다.",
+        "headerTokens": [
+          "서약"
+        ],
+        "headerKeywords": [
+          "서약"
+        ],
+        "mentionedKeywords": [
+          "서약"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다.",
+        "headerTokens": [
+          "각성"
+        ],
+        "headerKeywords": [
+          "각성"
+        ],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "각성면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [
+          "각성"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 5,
+        "text": "[액티브: 메인] 필드에 있는 0코스트인 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+2000, 히트+1.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "707",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=707",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-002",
@@ -22,8 +97,31 @@
     "hit": "1",
     "traits": "이펙트 / 나탈론 학원",
     "keywords": "엔트리",
-    "text": "엔트리 : 필드에 있는 다른 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_9RDlwvfh_f372b10bce4e30e930df6a17eeb57e16f9d9dca3.jpg"
+    "text": "[엔트리] 필드에 있는 다른 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_9RDlwvfh_f372b10bce4e30e930df6a17eeb57e16f9d9dca3.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 다른 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+3000.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "516",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=516",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-003",
@@ -35,8 +133,31 @@
     "hit": "1",
     "traits": "이펙트 / 던 블라이아",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 덱 맨 위에서 카드를 5장 공개하고, 그중 《성약》을 가진 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Maj6mDVI_cf4fc0dba123852c2d926e2c2a02531c639362ee.jpg"
+    "text": "[엔트리] 자신의 덱 맨 위에서 카드를 5장 공개하고, 그중 《성약》을 가진 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Maj6mDVI_cf4fc0dba123852c2d926e2c2a02531c639362ee.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 5장 공개하고, 그중 《성약》을 가진 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "515",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=515",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-004",
@@ -48,8 +169,50 @@
     "hit": "1",
     "traits": "이펙트 / 계승자",
     "keywords": "엔트리, 패시브",
-    "text": "패시브 : 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000. 엔트리 : 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「어태커 : 이 공격이 끝날 때까지 파워+3000」을 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_JQCkFlBv_36c4c8909a9748f4dca7f65126aae4ddb3ebe474.jpg"
+    "text": "[패시브] 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000. [엔트리] 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「[어태커] 이 공격이 끝날 때까지 파워+3000」을 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_JQCkFlBv_36c4c8909a9748f4dca7f65126aae4ddb3ebe474.jpg",
+    "keywordList": [
+      "엔트리",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엔트리] 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「[어태커] 이 공격이 끝날 때까지 파워+3000」을 얻는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "514",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=514",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-005",
@@ -61,8 +224,31 @@
     "hit": "1",
     "traits": "이펙트 / 정령왕",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 《계승자》를 가진 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_jmyOgzf3_66222b6627cafd2172cda034c3d5fb265c9c99c6.jpg"
+    "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 《계승자》를 가진 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_jmyOgzf3_66222b6627cafd2172cda034c3d5fb265c9c99c6.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 《계승자》를 가진 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "513",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=513",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-006",
@@ -74,8 +260,47 @@
     "hit": "1",
     "traits": "이펙트 / 계승자",
     "keywords": "엔트리, 패시브",
-    "text": "패시브 : 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000. 엔트리 : 〈이세리아〉 이외의 《계승자》를 가진 자신 유닛을 필드에서 1장 고른다. 그 유닛이 가진 엔트리 : 효과를 하나 골라 발동한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Xh5zQf7E_212dd6186f8eed2c7eafbb5492017c2a2e1305e9.jpg"
+    "text": "[패시브] 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000. [엔트리] 〈이세리아〉 이외의 《계승자》를 가진 자신 유닛을 필드에서 1장 고른다. 그 유닛이 가진 [엔트리] 효과를 하나 골라 발동한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Xh5zQf7E_212dd6186f8eed2c7eafbb5492017c2a2e1305e9.jpg",
+    "keywordList": [
+      "엔트리",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엔트리] 〈이세리아〉 이외의 《계승자》를 가진 자신 유닛을 필드에서 1장 고른다. 그 유닛이 가진 [엔트리] 효과를 하나 골라 발동한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "512",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=512",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-007",
@@ -87,8 +312,31 @@
     "hit": "1",
     "traits": "이펙트 / 과거 혹은 미래",
     "keywords": "패시브",
-    "text": "패시브 : 자신의 스킬 존에 있는 스킬이 1장 이상이라면 파워+5000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_wc0npqUd_a121260a4b3c6afa288ca9b52fd1a4e28193d782.jpg"
+    "text": "[패시브] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 파워+5000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_wc0npqUd_a121260a4b3c6afa288ca9b52fd1a4e28193d782.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 파워+5000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "511",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=511",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-008",
@@ -100,8 +348,67 @@
     "hit": "1",
     "traits": "이펙트 / 계승자",
     "keywords": "엔트리, 패시브",
-    "text": "패시브 : 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000. 엔트리 : 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 어태커 : 듀얼리스트 (이 유닛의 조우 유닛은 가능하다면 반드시 방어해야 한다)와 「어태커 : 이 공격이 끝날 때까지 파워+2000」을 얻는다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EDMfgOqK_a4a114208faa2bda5a0399ba8e7b96208fe1e658.jpg"
+    "text": "[패시브] 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000. [엔트리] 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 듀얼리스트 (이 유닛의 조우 유닛은 가능하다면 반드시 방어해야 한다)와 「[어태커] 이 공격이 끝날 때까지 파워+2000」을 얻는다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EDMfgOqK_a4a114208faa2bda5a0399ba8e7b96208fe1e658.jpg",
+    "keywordList": [
+      "엔트리",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엔트리] 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 듀얼리스트 (이 유닛의 조우 유닛은 가능하다면 반드시 방어해야 한다)와 「[어태커] 이 공격이 끝날 때까지 파워+2000」을 얻는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "어태커",
+          "듀얼리스트"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "듀얼리스트"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "510",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=510",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-009",
@@ -113,8 +420,31 @@
     "hit": "2",
     "traits": "이펙트 / 전승자",
     "keywords": "어태커",
-    "text": "어태커 : 이 공격이 끝날 때까지 파워+2000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0i1OPv9m_e70282cb7097a6fb9656ae51376c63118aaa2c08.jpg"
+    "text": "[어태커] 이 공격이 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0i1OPv9m_e70282cb7097a6fb9656ae51376c63118aaa2c08.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 이 공격이 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "509",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=509",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-010",
@@ -126,8 +456,52 @@
     "hit": "2",
     "traits": "이펙트 / 계승자",
     "keywords": "엔트리, 패시브",
-    "text": "패시브 : 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000. 엔트리 : 자신의 패를 1장 골라 트래시할 수 있다. 그러면 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 어태커 : 관통[1] (이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 상대에게 1대미지를 준다)을 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_q98jAP6b_b5a924ae8c95623938d36610e2804270909260a7.jpg"
+    "text": "[패시브] 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000. [엔트리] 자신의 패를 1장 골라 트래시할 수 있다. 그러면 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 관통[1] (이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 상대에게 1대미지를 준다)을 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_q98jAP6b_b5a924ae8c95623938d36610e2804270909260a7.jpg",
+    "keywordList": [
+      "엔트리",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 《계승자》나 《과거 혹은 미래》를 가진 다른 자신 유닛 1장마다 파워+1000.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엔트리] 자신의 패를 1장 골라 트래시할 수 있다. 그러면 필드에 있는 다른 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 관통[1] (이 유닛이 공격하여 상대 유닛을 전투로 트래시했다면 상대에게 1대미지를 준다)을 얻는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "어태커",
+          "관통"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "관통"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "508",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=508",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-011",
@@ -139,8 +513,46 @@
     "hit": "2",
     "traits": "이펙트 / 과거 혹은 미래",
     "keywords": "어태커",
-    "text": "어태커 : 필드에 있는 상대 유닛을 1장 고른다. 그 유닛의 히트만큼 자신의 패를 골라 트래시하면 이 턴이 끝날 때까지 그 유닛의 파워가 필드에 있는 모든 자신 유닛의 현재 파워 합만큼 감소한다. 트리거 / 이 카드를 트래시한다. 필드에 있는 유닛을 1장까지 골라, 자신의 턴이 끝날 때까지 파워-3000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3EKjbiTr_45d177877359b8892131870b1a0ce5af3529fd7d.jpg"
+    "text": "[어태커] 필드에 있는 상대 유닛을 1장 고른다. 그 유닛의 히트만큼 자신의 패를 골라 트래시하면 이 턴이 끝날 때까지 그 유닛의 파워가 필드에 있는 모든 자신 유닛의 현재 파워 합만큼 감소한다. 트리거 / 이 카드를 트래시한다. 필드에 있는 유닛을 1장까지 골라, 자신의 턴이 끝날 때까지 파워-3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3EKjbiTr_45d177877359b8892131870b1a0ce5af3529fd7d.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 필드에 있는 상대 유닛을 1장 고른다. 그 유닛의 히트만큼 자신의 패를 골라 트래시하면 이 턴이 끝날 때까지 그 유닛의 파워가 필드에 있는 모든 자신 유닛의 현재 파워 합만큼 감소한다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 유닛을 1장까지 골라, 자신의 턴이 끝날 때까지 파워-3000.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "507",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=507",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-012",
@@ -152,8 +564,46 @@
     "hit": "3",
     "traits": "이펙트 / 과거 혹은 미래",
     "keywords": "액티브",
-    "text": "액티브: 메인 자신의 패에서 스킬 카드를 2장까지 골라 트래시한다. 이 턴이 끝날 때까지 트래시한 카드의 코스트 합 1마다 조우 유닛의 파워-1000. 트리거 / 자신의 트래시 존에서 《계승자》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_rLwdveiT_b63cef9c0554c0731f4aa6ef3c29768d0486c3f4.jpg"
+    "text": "[액티브: 메인] 자신의 패에서 스킬 카드를 2장까지 골라 트래시한다. 이 턴이 끝날 때까지 트래시한 카드의 코스트 합 1마다 조우 유닛의 파워-1000. 트리거 / 자신의 트래시 존에서 《계승자》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_rLwdveiT_b63cef9c0554c0731f4aa6ef3c29768d0486c3f4.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 자신의 패에서 스킬 카드를 2장까지 골라 트래시한다. 이 턴이 끝날 때까지 트래시한 카드의 코스트 합 1마다 조우 유닛의 파워-1000.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 자신의 트래시 존에서 《계승자》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "506",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=506",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-013",
@@ -166,7 +616,22 @@
     "traits": "성약",
     "keywords": "-",
     "text": "자신은 이 턴이 끝날 때까지 《성약》을 가진 스킬을 발동할 수 없다. 필드에 있는 유닛을 1장 골라, 이 턴이 끝날 때까지 그 유닛의 파워-3000. 필드에 있는 《계승자》를 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 0코스트가 된다. 그러면 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_8jgkymFv_23ec1d0514c12d14feeec73367c1b0c004a8843a.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_8jgkymFv_23ec1d0514c12d14feeec73367c1b0c004a8843a.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신은 이 턴이 끝날 때까지 《성약》을 가진 스킬을 발동할 수 없다. 필드에 있는 유닛을 1장 골라, 이 턴이 끝날 때까지 그 유닛의 파워-3000. 필드에 있는 《계승자》를 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 0코스트가 된다. 그러면 카드를 1장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "505",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=505",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-014",
@@ -179,7 +644,37 @@
     "traits": "-",
     "keywords": "-",
     "text": "코스트 합이 자신의 대미지 존에 있는 카드의 수 이하가 되도록 자신의 트래시 존에서 〈찬란한 영원〉이 아닌 카드를 2장까지 골라 패에 넣는다. 트리거 / 이 카드를 트래시한다. 필드에 있는 유닛을 1장까지 골라, 자신의 턴이 끝날 때까지 파워-3000.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_9OJszpwr_9b8afb8217aa6d810b4bf76efd6b8a30350893ee.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EaPXH3b7_6fed602059ba806464698b8fea2d651706f1a970.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "코스트 합이 자신의 대미지 존에 있는 카드의 수 이하가 되도록 자신의 트래시 존에서 〈찬란한 영원〉이 아닌 카드를 2장까지 골라 패에 넣는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 유닛을 1장까지 골라, 자신의 턴이 끝날 때까지 파워-3000.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "905",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=905",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-015",
@@ -192,7 +687,22 @@
     "traits": "성약",
     "keywords": "-",
     "text": "자신은 이 턴이 끝날 때까지 《성약》을 가진 스킬을 발동할 수 없다. 필드에 있는 상대 유닛을 1장 고른다. 그 유닛의 파워가 필드에 있는 모든 자신 유닛의 현재 파워 합 이하라면 그 유닛을 트래시한다. 필드에 있는 《계승자》를 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 0코스트가 된다. 그러면 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_6gzqYRFL_e76fd35a5fa2d7618b67d94cfd44798145441b1f.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_6gzqYRFL_e76fd35a5fa2d7618b67d94cfd44798145441b1f.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신은 이 턴이 끝날 때까지 《성약》을 가진 스킬을 발동할 수 없다. 필드에 있는 상대 유닛을 1장 고른다. 그 유닛의 파워가 필드에 있는 모든 자신 유닛의 현재 파워 합 이하라면 그 유닛을 트래시한다. 필드에 있는 《계승자》를 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 0코스트가 된다. 그러면 카드를 1장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "503",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=503",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-016",
@@ -205,7 +715,22 @@
     "traits": "성약",
     "keywords": "-",
     "text": "자신은 이 턴이 끝날 때까지 《성약》을 가진 스킬을 발동할 수 없다. 필드에 있는 조우 유닛을 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴의 어택 페이즈 중 1번 더 공격할 수 있고, 이 턴이 끝날 때까지 파워+2000. 필드에 있는 《계승자》를 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 0코스트가 된다. 그러면 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NKFT76cC_2cf91374ead3646a1448f04194bc0cf3e0fdeb3d.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_NKFT76cC_2cf91374ead3646a1448f04194bc0cf3e0fdeb3d.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신은 이 턴이 끝날 때까지 《성약》을 가진 스킬을 발동할 수 없다. 필드에 있는 조우 유닛을 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴의 어택 페이즈 중 1번 더 공격할 수 있고, 이 턴이 끝날 때까지 파워+2000. 필드에 있는 《계승자》를 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 0코스트가 된다. 그러면 카드를 1장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "502",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=502",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   },
   {
     "id": "ST06-017",
@@ -217,7 +742,41 @@
     "hit": "-",
     "traits": "-",
     "keywords": "엑시트",
-    "text": "장착 조건: 없음 엑시트 : 자신의 트래시 존에서 이 유닛 카드보다 코스트가 낮은 유닛 카드를 1장 골라 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_JYwVUPpB_b6a19d63caf9b626f473a6e8a27e33a62b1084fd.jpg"
+    "text": "[장착 조건: 없음] [엑시트] 자신의 트래시 존에서 이 유닛 카드보다 코스트가 낮은 유닛 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_JYwVUPpB_b6a19d63caf9b626f473a6e8a27e33a62b1084fd.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엑시트] 자신의 트래시 존에서 이 유닛 카드보다 코스트가 낮은 유닛 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "501",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=501",
+    "scrapedAt": "2026-02-21T06:33:35.038308+00:00"
   }
 ]

@@ -1,0 +1,3536 @@
+[
+  {
+    "id": "BT06-001",
+    "name": "와일드독 루벤시아",
+    "type": "리더",
+    "attribute": "화염",
+    "cost": "",
+    "power": "-",
+    "hit": "-",
+    "traits": "판도라 시티",
+    "keywords": "액티브",
+    "text": "기본면 [서약] 자신의 덱에 [화염] 카드만 넣을 수 있다. [각성] 자신의 리더 레벨이 6 이상이라면 이 카드를 뒤집는다. 각성면 [액티브: 어택] 필드에 있는 [액티브: 어택]을 가진 자신 유닛을 1장 골라, 그 유닛이 가진 [액티브: 어택] 효과를 하나 골라 발동한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WFwxodvH_a08c3bf89131c3551f5768b064b46846696a17b3.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "기본면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[서약] 자신의 덱에 [화염] 카드만 넣을 수 있다.",
+        "headerTokens": [
+          "서약"
+        ],
+        "headerKeywords": [
+          "서약"
+        ],
+        "mentionedKeywords": [
+          "서약"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[각성] 자신의 리더 레벨이 6 이상이라면 이 카드를 뒤집는다.",
+        "headerTokens": [
+          "각성"
+        ],
+        "headerKeywords": [
+          "각성"
+        ],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "각성면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [
+          "각성"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 5,
+        "text": "[액티브: 어택] 필드에 있는 [액티브: 어택]을 가진 자신 유닛을 1장 골라, 그 유닛이 가진 [액티브: 어택] 효과를 하나 골라 발동한다.",
+        "headerTokens": [
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1062",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1062",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-002",
+    "name": "하얀 고양이 루",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "1",
+    "power": "1500",
+    "hit": "1",
+    "traits": "이펙트 / 올슈타인의 은신처",
+    "keywords": "어태커",
+    "text": "[어태커] 이 공격이 끝날 때까지 조우 유닛의 파워-1500.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_P0jYiFuq_0d94b8b1d5a0ccd5ee6006d78154775e8fec52ec.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 이 공격이 끝날 때까지 조우 유닛의 파워-1500.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1058",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1058",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-003",
+    "name": "백뢰 유리",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "2500",
+    "hit": "1",
+    "traits": "이펙트 / 백뢰",
+    "keywords": "엔트리",
+    "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 스킬 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KWZeaTB9_8cae885bdc920ecde336dd857ee451da7bc17218.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 스킬 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1057",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1057",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-004",
+    "name": "깜짝 유령 그란힐트",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "3000",
+    "hit": "1",
+    "traits": "이펙트 / 동화 마을",
+    "keywords": "액티브, 버프",
+    "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-1500.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_9WASI8KT_79e8a551c6b7ef3a13da1afe9eb68819c239b43f.jpg",
+    "keywordList": [
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-1500.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1056",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1056",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-005",
+    "name": "이노센트 바니 티르",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "2500",
+    "hit": "1",
+    "traits": "이펙트 / 눈토끼 마을",
+    "keywords": "엔트리",
+    "text": "[엔트리] 자신의 스킬 존에서 스킬을 1장 고를 수 있다. 그러면 그 스킬은 이 턴이 끝날 때까지 0코스트가 되고, 이 턴이 끝날 때까지 조우 유닛의 파워-3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ZyEUSArn_fe6783bd6b23cf612e14a6ae1f126ab5b890e6c8.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 스킬 존에서 스킬을 1장 고를 수 있다. 그러면 그 스킬은 이 턴이 끝날 때까지 0코스트가 되고, 이 턴이 끝날 때까지 조우 유닛의 파워-3000.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1055",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1055",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-006",
+    "name": "와일드독 루벤시아",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "3000",
+    "hit": "1",
+    "traits": "이펙트 / 판도라 시티",
+    "keywords": "어태커, 체인",
+    "text": "[체인: 3][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 3번 이상이라면 필드에 있는 모든 상대 유닛은 이 턴이 끝날 때까지 파워-5000. 트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_9kyRZFd3_5790aed7f94de7a54af3c83ae759566ad1967e52.jpg",
+    "keywordList": [
+      "어태커",
+      "체인"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[체인: 3][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 3번 이상이라면 필드에 있는 모든 상대 유닛은 이 턴이 끝날 때까지 파워-5000.",
+        "headerTokens": [
+          "체인: 3",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "체인",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "1054",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1054",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-007",
+    "name": "강철엔진 라피나",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "4500",
+    "hit": "1",
+    "traits": "이펙트 / 고대 병기 연구자",
+    "keywords": "어태커",
+    "text": "[어태커] 이 공격이 끝날 때까지 파워+1000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_S9PTR5jl_be934c9a4607b84a5521aff024821ac630463841.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 이 공격이 끝날 때까지 파워+1000.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1052",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1052",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-008",
+    "name": "메이드네임 C 루비아",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "3000",
+    "hit": "1",
+    "traits": "이펙트 / M.A.I.D",
+    "keywords": "어태커, 체인",
+    "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 공격이 끝날 때까지 파워+4000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_DIZuvEij_19fa94702feabc3f30527deb2b9014ba44233edc.jpg",
+    "keywordList": [
+      "어태커",
+      "체인"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 공격이 끝날 때까지 파워+4000.",
+        "headerTokens": [
+          "체인: 2",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "체인",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1051",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1051",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-009",
+    "name": "사랑스러운 아가씨 엘리제",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "4000",
+    "hit": "1",
+    "traits": "이펙트 / 리아실",
+    "keywords": "어태커, 체인",
+    "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 공격이 끝날 때까지 관통[1] 을 얻고 파워+1000. [어태커] 필드에 있는 다른 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_pVK1ZwCc_77c6996ab50111e29380885eea1d0287ea8e096d.jpg",
+    "keywordList": [
+      "어태커",
+      "체인"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 공격이 끝날 때까지 관통[1] 을 얻고 파워+1000.",
+        "headerTokens": [
+          "체인: 2",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "체인",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "관통",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [
+          "관통"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 필드에 있는 다른 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1050",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1050",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-010",
+    "name": "허무의 별 그란힐트",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "6000",
+    "hit": "1",
+    "traits": "이펙트 / 6마성",
+    "keywords": "엔트리, 어태커, 패시브",
+    "text": "[패시브] 이 유닛이 공격하거나 방어한 전투가 끝날 때 이 유닛을 트래시한다. [엔트리] 조우 유닛이 있다면 이 유닛으로 공격한다. [어태커] 듀얼리스트 .",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_jOwQ0Vd8_b20395182d6ce73f92d77c0a0e62d8ac28f9ff88.jpg",
+    "keywordList": [
+      "엔트리",
+      "어태커",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 이 유닛이 공격하거나 방어한 전투가 끝날 때 이 유닛을 트래시한다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엔트리] 조우 유닛이 있다면 이 유닛으로 공격한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[어태커] 듀얼리스트 .",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "듀얼리스트"
+        ],
+        "mentionedKeywordsInBody": [
+          "듀얼리스트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1049",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1049",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-011",
+    "name": "쉐도우 바니 에레니르",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "3500",
+    "hit": "1",
+    "traits": "이펙트 / 영웅 5종 경기 도전자",
+    "keywords": "엔트리",
+    "text": "[엔트리] 자신의 스킬 존에서 스킬을 1장 고를 수 있다. 그러면 그 스킬은 이 턴이 끝날 때까지 0코스트가 되고, 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_QXJG8Io2_b70171b25bf6fb3dea9e1ee7827fc2389af4dc50.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 스킬 존에서 스킬을 1장 고를 수 있다. 그러면 그 스킬은 이 턴이 끝날 때까지 0코스트가 되고, 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1048",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1048",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-012",
+    "name": "밀키 비키니 테레제",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "3500",
+    "hit": "1",
+    "traits": "이펙트 / 비키니 콘테스트",
+    "keywords": "어태커, 체인",
+    "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 필드에 있는 모든 상대 유닛은 이 턴이 끝날 때까지 파워-2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_cx8fIUwr_b572aa40a58262883dee38923b20324444f5c17d.jpg",
+    "keywordList": [
+      "어태커",
+      "체인"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 필드에 있는 모든 상대 유닛은 이 턴이 끝날 때까지 파워-2000.",
+        "headerTokens": [
+          "체인: 2",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "체인",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1047",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1047",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-013",
+    "name": "네온 스토커 리아트리스",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "5000",
+    "hit": "2",
+    "traits": "이펙트 / 아크라이트",
+    "keywords": "어태커, 체인",
+    "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 공격이 끝날 때까지 침투[1] 을 얻고 파워+1000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_U6ldQbSA_69afdf3cfd390ecdc1bb3473a81aa54dae1d4ed9.jpg",
+    "keywordList": [
+      "어태커",
+      "체인"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 공격이 끝날 때까지 침투[1] 을 얻고 파워+1000.",
+        "headerTokens": [
+          "체인: 2",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "체인",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "침투",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [
+          "침투"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1045",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1045",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-014",
+    "name": "되찾은 운명 신성 유스티아",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "5000",
+    "hit": "2",
+    "traits": "이펙트 / 발키리",
+    "keywords": "어태커, 체인",
+    "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 공격이 끝날 때까지 파워+4000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_8Nu9G13o_92e0095a79eb8799d0283b94b4df793f54899329.jpg",
+    "keywordList": [
+      "어태커",
+      "체인"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 공격이 끝날 때까지 파워+4000.",
+        "headerTokens": [
+          "체인: 2",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "체인",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1044",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1044",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-015",
+    "name": "온천 관리인 리베르타",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "4000",
+    "hit": "2",
+    "traits": "이펙트 / 온천 관리인",
+    "keywords": "패시브",
+    "text": "[패시브] 필드에 있는 [체인]을 가진 모든 자신 유닛의 파워+1500.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Btulib9L_36fabaf46fc09378c85537aec977cc9ddb5101c3.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 [체인]을 가진 모든 자신 유닛의 파워+1500.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [
+          "체인"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1043",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1043",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-016",
+    "name": "온천 수행자 벤타나",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "3500",
+    "hit": "2",
+    "traits": "이펙트 / 브라운 제2학원",
+    "keywords": "엔트리, 어태커",
+    "text": "[엔트리] 이 턴이 끝날 때까지 조우 유닛의 파워-2000. [어태커] 필드에 있는 다른 모든 자신 유닛은 이 턴이 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_80oGs3DZ_aee41ca11645b886b2506ec2ac5861bd310c9977.jpg",
+    "keywordList": [
+      "엔트리",
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 이 턴이 끝날 때까지 조우 유닛의 파워-2000.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 필드에 있는 다른 모든 자신 유닛은 이 턴이 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1042",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1042",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-017",
+    "name": "느슨한 라이프 가드 네브리스",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "4500",
+    "hit": "2",
+    "traits": "이펙트 / 풀파티",
+    "keywords": "액티브, 버프",
+    "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2500.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_gzheskE3_5cde6547279630b986e8833c8400221934c3c39a.jpg",
+    "keywordList": [
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2500.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1041",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1041",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-018",
+    "name": "꿰뚫는 마궁 에레니르",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "5",
+    "power": "5000",
+    "hit": "2",
+    "traits": "이펙트 / 아카데미",
+    "keywords": "엔트리",
+    "text": "[엔트리] 필드에 있는 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+4000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_mxu9NYsy_ce95104ed02dc7347e0e32370ead0752e7922809.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 파워+4000.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1040",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1040",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-019",
+    "name": "인감 탈취자 루벤시아",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "5",
+    "power": "6000",
+    "hit": "2",
+    "traits": "이펙트 / 게나르 인더스트리",
+    "keywords": "어태커, 체인",
+    "text": "[체인: 3][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 3번 이상이라면 이 공격이 끝날 때까지 약탈[2] 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_5UXO9Q8Z_d2987509782353ee94ca668149fadbbc8d9b77af.jpg",
+    "keywordList": [
+      "어태커",
+      "체인"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[체인: 3][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 3번 이상이라면 이 공격이 끝날 때까지 약탈[2] 를 얻는다.",
+        "headerTokens": [
+          "체인: 3",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "체인",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "약탈",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [
+          "약탈"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1039",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1039",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-020",
+    "name": "한여름의 꿈 유스티아",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "5",
+    "power": "4500",
+    "hit": "2",
+    "traits": "이펙트 / 미스 애니바이스 대회",
+    "keywords": "어태커, 체인",
+    "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 턴이 끝날 때까지 조우 유닛의 파워-3000. 이 효과로 그 유닛을 트래시했다면 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_nWG6hK8B_33abcc8930039bb1487d3f1eaf1aaf8198721dc6.jpg",
+    "keywordList": [
+      "어태커",
+      "체인"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[체인: 2][어태커] 이 턴 동안 자신 유닛이 공격한 횟수가 2번 이상이라면 이 턴이 끝날 때까지 조우 유닛의 파워-3000. 이 효과로 그 유닛을 트래시했다면 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "체인: 2",
+          "어태커"
+        ],
+        "headerKeywords": [
+          "체인",
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커",
+          "체인"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1038",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1038",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-021",
+    "name": "온천 검객 블레이드",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "5",
+    "power": "4000",
+    "hit": "2",
+    "traits": "이펙트 / 브라운 제2학원",
+    "keywords": "액티브, 버프",
+    "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-4000. 트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_zToAtYHe_2687587f38ab8b185cd19e2808fe896ef2af04a0.jpg",
+    "keywordList": [
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-4000.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-5000.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "1037",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1037",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-022",
+    "name": "비키니 에이전트 실비아",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "6",
+    "power": "6000",
+    "hit": "2",
+    "traits": "이펙트 / 첩보기관 SBI",
+    "keywords": "엔트리, 액티브, 버프",
+    "text": "[엔트리] 필드에 있는 모든 상대 유닛은 이 턴이 끝날 때까지 파워-2000. 이 효과로 트래시된 유닛의 수만큼 카드를 드로우한다. [버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 자신의 트래시 존에서 2코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_8vnjyePW_a4a8838d5bce376e81f396d7dcda59feb49997d9.jpg",
+    "keywordList": [
+      "엔트리",
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 모든 상대 유닛은 이 턴이 끝날 때까지 파워-2000. 이 효과로 트래시된 유닛의 수만큼 카드를 드로우한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 자신의 트래시 존에서 2코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1035",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1035",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-023",
+    "name": "프로즌 퀸 빌헬미나",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "6",
+    "power": "7500",
+    "hit": "2",
+    "traits": "이펙트 / 얼음성",
+    "keywords": "엔트리, 액티브, 버프",
+    "text": "[엔트리] 자신의 패를 모두 트래시할 수 있다. 그러면 패가 3장이 될 때까지 카드를 드로우한다. [버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_791asoAb_d773591a7e6ed7f2c3287707c50978f78f4faf6e.jpg",
+    "keywordList": [
+      "엔트리",
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 패를 모두 트래시할 수 있다. 그러면 패가 3장이 될 때까지 카드를 드로우한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1033",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1033",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-024",
+    "name": "스트레인저 바니 제니스",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "7",
+    "power": "8000",
+    "hit": "3",
+    "traits": "이펙트 / 명예 눈토끼 영웅님",
+    "keywords": "액티브, 버프",
+    "text": "[버프: 2][액티브: 어택] 자신의 스킬 존에 있는 스킬이 2장 이상이라면 필드에 있는 모든 상대 유닛은 이 턴이 끝날 때까지 파워-3000. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_P3pzVlFT_4bbc87ba839da2d5a611de0428c25887ff6e8262.jpg",
+    "keywordList": [
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 2][액티브: 어택] 자신의 스킬 존에 있는 스킬이 2장 이상이라면 필드에 있는 모든 상대 유닛은 이 턴이 끝날 때까지 파워-3000.",
+        "headerTokens": [
+          "버프: 2",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "1031",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1031",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-025",
+    "name": "비터스윗 바니 다리안",
+    "type": "유닛",
+    "attribute": "화염",
+    "cost": "7",
+    "power": "8000",
+    "hit": "3",
+    "traits": "이펙트 / 눈토끼 마을",
+    "keywords": "액티브, 버프",
+    "text": "[버프: 2][액티브: 어택] 자신의 스킬 존에 있는 스킬이 2장 이상이라면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-7000. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_S1JQ8TXv_179ffdb628d7e319add5fb52c163eaf05c51eb36.jpg",
+    "keywordList": [
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 2][액티브: 어택] 자신의 스킬 존에 있는 스킬이 2장 이상이라면 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-7000.",
+        "headerTokens": [
+          "버프: 2",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "1029",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1029",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-026",
+    "name": "푸드 파이터",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "0",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-1000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_VzNCT8us_fefd01e2f31fee5bc3685729bbf31cc8f19acaf0.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-1000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1027",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1027",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-027",
+    "name": "시크릿 서비스",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 덱 맨 위에서 카드를 2장 공개하고, 그중 유닛 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_RqukiG9a_8f297e71ffaf507b6509260442d36ea1a49bc3bd.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 덱 맨 위에서 카드를 2장 공개하고, 그중 유닛 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1026",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1026",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-028",
+    "name": "여신의 수호",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_AdUMBpeq_adce0082ed7b741eeed0517c59fd12436eec5b30.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1025",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1025",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-029",
+    "name": "눈의 꽃",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 패를 2장까지 고르고 나머지는 모두 트래시한다. 패가 3장이 될 때까지 카드를 드로우한다. 트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 코스트가 자신의 리더 레벨 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_PEzIe4nW_3edfecaadaaad67698a3f7d04f2f3513fee99743.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 패를 2장까지 고르고 나머지는 모두 트래시한다. 패가 3장이 될 때까지 카드를 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 코스트가 자신의 리더 레벨 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "1024",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1024",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-030",
+    "name": "도깨비님의 가호랍니다~",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_6Ou5pay3_2dedcd1e5a16bcdc21afb0f3812985429f5d63ad.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 파워+2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1022",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1022",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-031",
+    "name": "온천은 정말 최고야!",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 트래시 존에서 [트리거]를 가지지 않고 파워가 5000 이하인 유닛 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_wpDM9rRe_9c3ba047c30a6b89f79389630344207fcc9ecf74.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 트래시 존에서 [트리거]를 가지지 않고 파워가 5000 이하인 유닛 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1021",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1021",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-032",
+    "name": "데스 엔딩 러브",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 듀얼리스트 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_dUhAPLTC_d38f525376bc107cb712d3666465bc16450eed3b.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 듀얼리스트 를 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "어태커",
+          "듀얼리스트"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "듀얼리스트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1020",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1020",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-033",
+    "name": "비키니 블래스터",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000. 이 효과로 그 유닛을 트래시했다면 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_EhgfN2BQ_f7accb24e291b975087d6fac6abe014a82bd87f0.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000. 이 효과로 그 유닛을 트래시했다면 카드를 1장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1019",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1019",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-034",
+    "name": "신실의 검",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 조우 유닛이 있다면 고른 유닛으로 공격한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_BdRHukYx_24b3823650a4e658cff4889795ad50828d5b9a25.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 조우 유닛이 있다면 고른 유닛으로 공격한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1018",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1018",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-035",
+    "name": "피니쉬 블래스터",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 고른다. 자신과 상대의 패 장수가 다르다면 이 턴이 끝날 때까지 그 차이 1장마다 그 유닛의 파워-2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_LZ8EWq9o_6084d51887d924fcbd5342b75777d3879b724691.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 고른다. 자신과 상대의 패 장수가 다르다면 이 턴이 끝날 때까지 그 차이 1장마다 그 유닛의 파워-2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1017",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1017",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-036",
+    "name": "낙월일섬",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "이 턴이 끝날 때까지 상대는 [엑시트] 효과를 발동할 수 없다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WDzSOgMd_bdbed09c9997533f431ec88fe6473a6e1018f5ca.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "이 턴이 끝날 때까지 상대는 [엑시트] 효과를 발동할 수 없다. 필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1016",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1016",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-037",
+    "name": "얼어붙은 의지",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴의 어택 페이즈 중 1번 더 공격할 수 있다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_4KvR1sGu_066dfcfa66e6bd26840f27e78e6e66628542eba7.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴의 어택 페이즈 중 1번 더 공격할 수 있다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1015",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1015",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-038",
+    "name": "가만두지 않겠어!",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 2장까지 골라, 이 턴이 끝날 때까지 파워-3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Fzh63D1O_b2be845f8ee53741a873395460f8d18e84ef027b.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 2장까지 골라, 이 턴이 끝날 때까지 파워-3000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1014",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1014",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-039",
+    "name": "잿빛 폭풍",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "4",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 고른다. 자신의 패를 원하는 수만큼 골라 트래시한다. 이 턴이 끝날 때까지 트래시한 카드 1장마다 그 유닛의 파워-3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ravmoVMR_37957b9b2f7136312ecc0efad1bee43e3c6572f2.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 고른다. 자신의 패를 원하는 수만큼 골라 트래시한다. 이 턴이 끝날 때까지 트래시한 카드 1장마다 그 유닛의 파워-3000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1013",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1013",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-040",
+    "name": "으, 음매...!",
+    "type": "스킬",
+    "attribute": "화염",
+    "cost": "5",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-6000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_VT2hQsnB_32e8603362d80ae30de248dd909378bbffc19c13.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-6000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1012",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1012",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-041",
+    "name": "천둥의 망치",
+    "type": "아이템",
+    "attribute": "화염",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "어태커",
+    "text": "[장착 조건: 없음] [어태커] 이 공격이 끝날 때까지 조우 유닛의 파워-1000. 이 효과로 그 유닛을 트래시했다면 이 유닛이 장착한 〈천둥의 망치〉를 1장 골라 트래시할 수 있다. 그러면 카드를 2장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ZNTv0bUk_48dc0977ad85f0b67e72a6459860319d0a69f715.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[어태커] 이 공격이 끝날 때까지 조우 유닛의 파워-1000. 이 효과로 그 유닛을 트래시했다면 이 유닛이 장착한 〈천둥의 망치〉를 1장 골라 트래시할 수 있다. 그러면 카드를 2장 드로우한다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1011",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1011",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-042",
+    "name": "반역의 결의",
+    "type": "아이템",
+    "attribute": "화염",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "엑시트",
+    "text": "[장착 조건: 없음] [엑시트] 자신의 트래시 존에서 〈반역의 결의〉 이외의 2코스트 이하인 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_96v4eLkH_72b4ed95dd8199bbe9416f8533d2af012d531831.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엑시트] 자신의 트래시 존에서 〈반역의 결의〉 이외의 2코스트 이하인 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1010",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1010",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-043",
+    "name": "꿈속의 신부 이클립스",
+    "type": "리더",
+    "attribute": "파도",
+    "cost": "",
+    "power": "-",
+    "hit": "-",
+    "traits": "슈타인",
+    "keywords": "액티브",
+    "text": "기본면 [서약] 자신의 덱에 [파도] 카드만 넣을 수 있다. [각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다. 각성면 [액티브: 메인] 자신의 덱 맨 위에서 카드를 1장 트래시한다. 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_1Vfwm4qv_ca14dae2fbbd950c781c25e1c7fef495ccb21dd2.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "기본면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[서약] 자신의 덱에 [파도] 카드만 넣을 수 있다.",
+        "headerTokens": [
+          "서약"
+        ],
+        "headerKeywords": [
+          "서약"
+        ],
+        "mentionedKeywords": [
+          "서약"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[각성] 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다.",
+        "headerTokens": [
+          "각성"
+        ],
+        "headerKeywords": [
+          "각성"
+        ],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "각성면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [
+          "각성"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 5,
+        "text": "[액티브: 메인] 자신의 덱 맨 위에서 카드를 1장 트래시한다. 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1009",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1009",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-044",
+    "name": "물놀이 요정 레피테아",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "1000",
+    "hit": "1",
+    "traits": "이펙트 / 워터파크",
+    "keywords": "액티브, 버프",
+    "text": "[버프: 1][액티브: 메인] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_k5xeOjBW_001b40657b38155d7c62c8488f95ab3a13682dbb.jpg",
+    "keywordList": [
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 1][액티브: 메인] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1005",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1005",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-045",
+    "name": "학교의 여왕 엠마",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "2000",
+    "hit": "1",
+    "traits": "이펙트 / 브라운 제2학원",
+    "keywords": "디펜더, 패시브",
+    "text": "[패시브] 필드에 있는 광전사 를 가진 모든 상대 유닛의 파워-500. [디펜더] 이 방어가 끝날 때까지 파워+1000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_rqJMQv2Z_ed20a361b3cd55597b945dce6ee9d4ef2f715f2a.jpg",
+    "keywordList": [
+      "디펜더",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 광전사 를 가진 모든 상대 유닛의 파워-500.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브",
+          "광전사"
+        ],
+        "mentionedKeywordsInBody": [
+          "광전사"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+1000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1004",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1004",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-046",
+    "name": "미지의 탐구자 디아나",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "1500",
+    "hit": "1",
+    "traits": "이펙트 / 레온하르트",
+    "keywords": "액티브",
+    "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「[디펜더] 이 방어가 끝날 때까지 파워+2000」을 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_qpJyLHUa_f9312646ff00b5b1722518198ec52f8ff14f125e.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「[디펜더] 이 방어가 끝날 때까지 파워+2000」을 얻는다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "디펜더",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "디펜더"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1003",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1003",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-047",
+    "name": "네온 세이비어 안젤리카",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "2",
+    "power": "2500",
+    "hit": "1",
+    "traits": "이펙트 / 아크라이트",
+    "keywords": "엔트리",
+    "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 스킬 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_XEIipsPW_2838c976623f44351cca161cddc8de6959e625ef.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 스킬 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1002",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1002",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-048",
+    "name": "신입 사원 세이르",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "2",
+    "power": "4000",
+    "hit": "1",
+    "traits": "이펙트 / 게나르 인더스트리",
+    "keywords": "디펜더, 패시브",
+    "text": "[패시브] 이 유닛은 공격할 수 없다. [디펜더] 이 방어가 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_zl4fBY8S_8a29a125b207244b50db7259ac767c5048e457a7.jpg",
+    "keywordList": [
+      "디펜더",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 이 유닛은 공격할 수 없다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1001",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1001",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-049",
+    "name": "정화의 무녀 그라나데",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "2",
+    "power": "2500",
+    "hit": "1",
+    "traits": "이펙트 / 선산",
+    "keywords": "엔트리",
+    "text": "[엔트리] 자신의 트래시 존에서 3코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_GBuVbSr2_e76487768682f1d755dc2f7d3b6be6f5d29db290.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 트래시 존에서 3코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "1000",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=1000",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-050",
+    "name": "선도부 글레이시아",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "3500",
+    "hit": "1",
+    "traits": "이펙트 / 브라운 제2학원",
+    "keywords": "디펜더",
+    "text": "[디펜더] 이 방어가 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_pclUiref_a0eae313b71d5b2b1053629ce760959a01e5e975.jpg",
+    "keywordList": [
+      "디펜더"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "999",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=999",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-051",
+    "name": "호박팔이 소녀 소냐",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "2000",
+    "hit": "1",
+    "traits": "이펙트 / 호박 농장",
+    "keywords": "엔트리, 디펜더",
+    "text": "[엔트리] 조우 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다. [디펜더] 이 방어가 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_w2mSgchq_23fc6f923bf1900260976ea86eeed7826991db42.jpg",
+    "keywordList": [
+      "엔트리",
+      "디펜더"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 조우 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "998",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=998",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-052",
+    "name": "B급 아이돌 헬레나",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "2500",
+    "hit": "1",
+    "traits": "이펙트 / A.twist",
+    "keywords": "패시브",
+    "text": "[패시브] 필드에 있는 [버프]를 가진 모든 자신 유닛의 파워+1500.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ZJgfeTYX_7ddf693f39754af8ab06b739bc8b11cb5c26a17b.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 필드에 있는 [버프]를 가진 모든 자신 유닛의 파워+1500.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [
+          "버프"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "997",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=997",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-053",
+    "name": "대마녀의 후예 셀리아",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "3000",
+    "hit": "1",
+    "traits": "이펙트 / 슈타인의 탑",
+    "keywords": "엔트리",
+    "text": "[엔트리] 자신의 스킬 존에서 3코스트 이하인 스킬을 1장 고를 수 있다. 그러면 그 스킬은 이 턴이 끝날 때까지 0코스트가 된다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_mNJfFVdA_200cb4e9ba88c859156bf27b551265da0061e95f.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 스킬 존에서 3코스트 이하인 스킬을 1장 고를 수 있다. 그러면 그 스킬은 이 턴이 끝날 때까지 0코스트가 된다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "996",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=996",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-054",
+    "name": "풀 파티 세헤라자드",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "3000",
+    "hit": "1",
+    "traits": "이펙트 / 미스 애니바이스 대회",
+    "keywords": "엔트리, 패시브",
+    "text": "[패시브] 자신과 상대의 턴마다 1번씩, 상대가 [트리거] 이외의 효과로 카드를 드로우했다면 카드를 1장 드로우한다. [엔트리] 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_DshgPEuI_ee91df2a85133c68f3a1b664b6dae28166116105.jpg",
+    "keywordList": [
+      "엔트리",
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 자신과 상대의 턴마다 1번씩, 상대가 [트리거] 이외의 효과로 카드를 드로우했다면 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "995",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=995",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-055",
+    "name": "DJ 베나카",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "2000",
+    "hit": "1",
+    "traits": "이펙트 / 프리랜서 DJ",
+    "keywords": "엔트리, 디펜더",
+    "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다. [디펜더] 이 방어가 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3BwT8tWf_a7e46d409f584f7b3c100ec243e31ca9c9b2badb.jpg",
+    "keywordList": [
+      "엔트리",
+      "디펜더"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "994",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=994",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-056",
+    "name": "타락한 날개 올리비에",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "4",
+    "power": "4000",
+    "hit": "2",
+    "traits": "이펙트 / 발키리",
+    "keywords": "디펜더, 액티브, 버프",
+    "text": "[버프: 1][액티브: 메인] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 [디펜더]를 가진 자신 유닛을 2장 고른다. 그러면 상대에게 1대미지를 준다. 고른 2장은 이 턴이 끝날 때까지 공격할 수 없다. [디펜더] 이 방어가 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WBJdh6iL_478731cc739858d64c54f19558d2a5888418b30b.jpg",
+    "keywordList": [
+      "디펜더",
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 1][액티브: 메인] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 [디펜더]를 가진 자신 유닛을 2장 고른다. 그러면 상대에게 1대미지를 준다. 고른 2장은 이 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "디펜더",
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [
+          "디펜더"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "993",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=993",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-057",
+    "name": "여름휴가 달비",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "4",
+    "power": "3500",
+    "hit": "2",
+    "traits": "이펙트 / 미스 애니바이스 대회",
+    "keywords": "엔트리, 디펜더",
+    "text": "[엔트리] 상대의 턴이 끝날 때까지 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다. [디펜더] 이 방어가 끝날 때까지 파워+3000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_P9xk4XWU_8d58da8ea2063428a5e035f8652126e822154d21.jpg",
+    "keywordList": [
+      "엔트리",
+      "디펜더"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 상대의 턴이 끝날 때까지 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "패시브",
+          "광전사"
+        ],
+        "mentionedKeywordsInBody": [
+          "패시브",
+          "광전사"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+3000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "992",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=992",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-058",
+    "name": "오버히트 레비아",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "4",
+    "power": "3000",
+    "hit": "2",
+    "traits": "이펙트 / 판도라 시티",
+    "keywords": "액티브, 버프",
+    "text": "[버프: 2][액티브: 어택] 자신의 스킬 존에 있는 스킬이 2장 이상이고 조우 유닛이 4코스트 이상이라면 조우 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다. 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_wxtcSZB4_1975a059f87654cff707315e013ad9f635cdc5c0.jpg",
+    "keywordList": [
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 2][액티브: 어택] 자신의 스킬 존에 있는 스킬이 2장 이상이고 조우 유닛이 4코스트 이상이라면 조우 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다. 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다.",
+        "headerTokens": [
+          "버프: 2",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "990",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=990",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-059",
+    "name": "시기의 밤 레비아",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "5",
+    "power": "6000",
+    "hit": "2",
+    "traits": "이펙트 / 게나르",
+    "keywords": "디펜더",
+    "text": "[디펜더] 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_VjPoNtXZ_a9780021719a486dd486902ebfa7af6888d5a5d6.jpg",
+    "keywordList": [
+      "디펜더"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[디펜더] 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "988",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=988",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-060",
+    "name": "신실의 날개 올리비에",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "5",
+    "power": "4000",
+    "hit": "2",
+    "traits": "이펙트 / 발키리",
+    "keywords": "액티브, 버프",
+    "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 자신의 트래시 존에서 [트리거]를 가지지 않고 3코스트 이상인 스킬 카드를 1장 골라 덱 맨 아래에 놓는다. 그러면 상대에게 1대미지를 준다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_LGPWYj42_fd1007fba49ed3daaf4a2684369e60c57b05bcf2.jpg",
+    "keywordList": [
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 1][액티브: 어택] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 자신의 트래시 존에서 [트리거]를 가지지 않고 3코스트 이상인 스킬 카드를 1장 골라 덱 맨 아래에 놓는다. 그러면 상대에게 1대미지를 준다.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "트리거",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "987",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=987",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-061",
+    "name": "해변의 정의 미카엘라",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "5",
+    "power": "5500",
+    "hit": "2",
+    "traits": "이펙트 / 노출구원교",
+    "keywords": "엔트리, 디펜더, 액티브, 버프",
+    "text": "[엔트리] 상대의 턴이 끝날 때까지 상대는 패에서 4코스트 이상인 유닛을 이 유닛이 있는 레인에 배치할 수 없다. [버프: 1][액티브: 메인] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 상대의 턴이 끝날 때까지 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다. [디펜더] 이 방어가 끝날 때까지 파워+3000. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_laE5OQBA_e84848f28add1bd2847f38c1d3fe5e0a1c1c2d0c.jpg",
+    "keywordList": [
+      "엔트리",
+      "디펜더",
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 상대의 턴이 끝날 때까지 상대는 패에서 4코스트 이상인 유닛을 이 유닛이 있는 레인에 배치할 수 없다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[버프: 1][액티브: 메인] 자신의 스킬 존에 있는 스킬이 1장 이상이라면 상대의 턴이 끝날 때까지 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다.",
+        "headerTokens": [
+          "버프: 1",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "패시브",
+          "광전사",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [
+          "패시브",
+          "광전사"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+3000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "985",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=985",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-062",
+    "name": "데이드림 바니 모르페아",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "6",
+    "power": "5500",
+    "hit": "2",
+    "traits": "이펙트 / 보팔 래빗",
+    "keywords": "엔트리, 액티브, 버프",
+    "text": "[엔트리] 필드에 있는 히트가 1 이하인 상대 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다. [버프: 2][액티브: 메인] 자신의 스킬 존에 있는 스킬이 2장 이상이라면 자신의 트래시 존에서 [트리거]를 가지지 않고 카드명이 다른 스킬 카드를 3장 골라 덱 맨 아래에 원하는 순서대로 놓는다. 그러면 상대에게 2대미지를 준다. 이 유닛은 이 턴이 끝날 때까지 공격할 수 없다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_fVsHdRlG_7d61a2a46896dff04c07ba91bc60712a8c9c8c22.jpg",
+    "keywordList": [
+      "엔트리",
+      "액티브",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 필드에 있는 히트가 1 이하인 상대 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[버프: 2][액티브: 메인] 자신의 스킬 존에 있는 스킬이 2장 이상이라면 자신의 트래시 존에서 [트리거]를 가지지 않고 카드명이 다른 스킬 카드를 3장 골라 덱 맨 아래에 원하는 순서대로 놓는다. 그러면 상대에게 2대미지를 준다. 이 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [
+          "버프: 2",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "트리거",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "983",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=983",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-063",
+    "name": "꿈속의 신부 이클립스",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "7",
+    "power": "5500",
+    "hit": "3",
+    "traits": "이펙트 / 슈타인",
+    "keywords": "엔트리",
+    "text": "[엔트리] 자신의 덱 맨 위에서 카드를 5장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_aEHNxDkn_dc522cad21c7ea4c865a40e76736b33015118ed4.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 덱 맨 위에서 카드를 5장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "981",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=981",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-064",
+    "name": "셀레브리티 바니 로엔",
+    "type": "유닛",
+    "attribute": "파도",
+    "cost": "8",
+    "power": "8000",
+    "hit": "3",
+    "traits": "이펙트 / 보팔 래빗",
+    "keywords": "디펜더, 액티브, 가디언, 버프",
+    "text": "[버프: 2][액티브: 메인] 자신의 스킬 존에 있는 스킬이 2장 이상이라면 상대의 턴이 끝날 때까지 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다. [가디언] 방벽[3] . [디펜더] 이 방어가 끝날 때까지 파워+2000. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_a1IVzhB5_c3304c353985f47db80a1c0bf6b6f3bdf8cfc5ca.jpg",
+    "keywordList": [
+      "디펜더",
+      "액티브",
+      "가디언",
+      "버프"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[버프: 2][액티브: 메인] 자신의 스킬 존에 있는 스킬이 2장 이상이라면 상대의 턴이 끝날 때까지 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다.",
+        "headerTokens": [
+          "버프: 2",
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "버프",
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브",
+          "패시브",
+          "광전사",
+          "버프"
+        ],
+        "mentionedKeywordsInBody": [
+          "패시브",
+          "광전사"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[가디언] 방벽[3] .",
+        "headerTokens": [
+          "가디언"
+        ],
+        "headerKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "979",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=979",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-065",
+    "name": "물총놀이 시간!",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_v1yWHAt7_e139dfc0ff5ab46ba8709e4487240645453b0a44.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "카드를 1장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "977",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=977",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-066",
+    "name": "스탠드 업, 뮤직 온!",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 덱 맨 위에서 카드를 1장 트래시한다. 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_xYsyr1hn_fc8ae932d8631d2ae2b1a425086d8d4c7f0e4b59.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 덱 맨 위에서 카드를 1장 트래시한다. 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "976",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=976",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-067",
+    "name": "엘리멘탈 리버스",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 자신 유닛을 1장 골라, 상대의 턴이 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Te4Zm8Fl_5bbfed2cf01bced73e5d56f10e49458f5ab34937.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 골라, 상대의 턴이 끝날 때까지 파워+2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "975",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=975",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-068",
+    "name": "요르문 리버스 모드",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 패를 1장 골라 트래시할 수 있다. 그러면 카드를 2장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_hbGPzmwk_6fe8e52d67669b9ed60206953f03cd8377ea2bce.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 패를 1장 골라 트래시할 수 있다. 그러면 카드를 2장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "974",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=974",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-069",
+    "name": "타르타로스의 문",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_ncviJtTS_2674b6f81dd78b681fd283b9cd00c7ccb774f0f3.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「[패시브] 조우 유닛은 광전사 를 얻는다」를 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "패시브",
+          "광전사"
+        ],
+        "mentionedKeywordsInBody": [
+          "패시브",
+          "광전사"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "973",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=973",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-070",
+    "name": "비스트 오버드라이브",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 2장까지 고른다. 고른 유닛은 모두 상대의 턴이 끝날 때까지 「[어태커] 상대는 카드를 1장 드로우한다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Mj1xWpEv_ea6bdb146cf96c6382db15a14177fc698fd65b77.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 2장까지 고른다. 고른 유닛은 모두 상대의 턴이 끝날 때까지 「[어태커] 상대는 카드를 1장 드로우한다」를 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "972",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=972",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-071",
+    "name": "응원할게요!",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 트래시 존에서 [트리거]를 가지지 않고 파워가 4000 이상인 유닛 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_zoEhgXsl_8f8f27a0d19ae82a9363901754610ca96570748f.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 트래시 존에서 [트리거]를 가지지 않고 파워가 4000 이상인 유닛 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "971",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=971",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-072",
+    "name": "고대의 저주",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「[패시브] 이 유닛이 있는 레인에 상대 유닛이 배치되면 그 유닛의 히트가 1이 된다」를 얻는다. 그 유닛의 조우 유닛의 히트가 상대의 턴이 끝날 때까지 1이 된다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_YfFSCWi6_461f4c1357ad5cebeafcd5cb8a23ded977271cc2.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「[패시브] 이 유닛이 있는 레인에 상대 유닛이 배치되면 그 유닛의 히트가 1이 된다」를 얻는다. 그 유닛의 조우 유닛의 히트가 상대의 턴이 끝날 때까지 1이 된다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [
+          "패시브"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "970",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=970",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-073",
+    "name": "정화의 축복",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "카드를 3장 드로우한다. 그러면 상대는 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_DaNkF73g_7aa3ee165d4e1616502f50eb0902c261e89d2c4c.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "카드를 3장 드로우한다. 그러면 상대는 카드를 1장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "969",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=969",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-074",
+    "name": "킥킥, 타냐 등장!",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_0eWfKHFM_e30472c362fe002d52f7ace04f6328be8470c5e1.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "968",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=968",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-075",
+    "name": "한여름 난사",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 [엔트리]를 가진 자신 유닛을 1장 고른다. 그 유닛이 가진 [엔트리] 효과를 하나 골라 발동한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_1Lq2dW8S_b65ea299f71010ef5609f4a5b7a011776cec23c7.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 [엔트리]를 가진 자신 유닛을 1장 고른다. 그 유닛이 가진 [엔트리] 효과를 하나 골라 발동한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywordsInBody": [
+          "엔트리"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "967",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=967",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-076",
+    "name": "노출이 곧 정의입니다",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 모든 상대 유닛은 상대의 턴이 끝날 때까지 광전사 를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_7tgaDzUH_75d206140f7c869f2517cbadc050554fac35c71d.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 모든 상대 유닛은 상대의 턴이 끝날 때까지 광전사 를 얻는다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "광전사"
+        ],
+        "mentionedKeywordsInBody": [
+          "광전사"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "966",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=966",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-077",
+    "name": "멸악의 섬광",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "3",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 [디펜더]를 가진 자신 유닛의 수만큼 카드를 드로우한다. 상대의 턴이 끝날 때까지 상대는 [어태커] 효과를 발동할 수 없다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_6NyMACBv_8bf31fc36a145d894f94dd83e106024706734f50.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 [디펜더]를 가진 자신 유닛의 수만큼 카드를 드로우한다. 상대의 턴이 끝날 때까지 상대는 [어태커] 효과를 발동할 수 없다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "어태커",
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [
+          "어태커",
+          "디펜더"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "965",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=965",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-078",
+    "name": "신실의 섬광",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "4",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 패에서 스킬 카드를 1장 골라 트래시한다. 그러면 상대에게 1대미지를 준다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_3CUAN9jl_3e81f397f8ae76c7c84505c1ca7db6ba4775932a.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 패에서 스킬 카드를 1장 골라 트래시한다. 그러면 상대에게 1대미지를 준다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "964",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=964",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-079",
+    "name": "데이드림 콜",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "4",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 트래시 존에서 〈데이드림 콜〉 이외의 [트리거]를 가지지 않고 카드명이 다른 스킬 카드를 3장 골라 덱 맨 아래에 원하는 순서대로 놓는다. 그러면 상대에게 1대미지를 준다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_z4Nj9PKG_87497868c29171c6c480f60aac4c3e4fe1b72cb7.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 트래시 존에서 〈데이드림 콜〉 이외의 [트리거]를 가지지 않고 카드명이 다른 스킬 카드를 3장 골라 덱 맨 아래에 원하는 순서대로 놓는다. 그러면 상대에게 1대미지를 준다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "963",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=963",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-080",
+    "name": "요력 폭풍",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "5",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "자신의 패를 모두 트래시한다. 패가 5장이 될 때까지 카드를 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_XsRTWKGi_cb0eb5594f611fef81764b88d600752745e995ea.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 패를 모두 트래시한다. 패가 5장이 될 때까지 카드를 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "962",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=962",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-081",
+    "name": "허니문 패키지",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "7",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "필드에 있는 모든 상대 유닛은 상대의 턴이 끝날 때까지 파워-5000. 상대는 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_PWyGlwU0_9c10572b69c26d57c8153cb4a695e646d537cba4.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 모든 상대 유닛은 상대의 턴이 끝날 때까지 파워-5000. 상대는 카드를 1장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "961",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=961",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-082",
+    "name": "EMP 플래시",
+    "type": "스킬",
+    "attribute": "파도",
+    "cost": "8",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "-",
+    "text": "상대에게 2대미지를 준다. 트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 코스트가 자신의 리더 레벨 이하인 유닛 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_GOF4EAK0_29ac46eefce98f7267ab4524bbf6fd7668960924.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "상대에게 2대미지를 준다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 코스트가 자신의 리더 레벨 이하인 유닛 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "960",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=960",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-083",
+    "name": "마수의 가호",
+    "type": "아이템",
+    "attribute": "파도",
+    "cost": "1",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "디펜더",
+    "text": "[장착 조건: 없음] [디펜더] 이 방어가 끝날 때까지 파워+2000.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_OGY6XdrB_e2babd43aecb2e96eb7b6e65e045862f29c80d8f.jpg",
+    "keywordList": [
+      "디펜더"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[디펜더] 이 방어가 끝날 때까지 파워+2000.",
+        "headerTokens": [
+          "디펜더"
+        ],
+        "headerKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywords": [
+          "디펜더"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "958",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=958",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  },
+  {
+    "id": "BT06-084",
+    "name": "사신의 수의",
+    "type": "아이템",
+    "attribute": "파도",
+    "cost": "2",
+    "power": "-",
+    "hit": "-",
+    "traits": "-",
+    "keywords": "가디언",
+    "text": "[장착 조건: 6코스트 이하인 유닛] [가디언] 상쇄〈사신의 수의〉 (인접한 레인에 있는 상대 유닛이 공격할 때 이 유닛이 장착한 〈사신의 수의〉를 1장 골라 트래시하면 그 유닛의 공격을 방어한다).",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_b7vDFeKa_3d3a6594df923265c917e1e815088e69f3882b74.jpg",
+    "keywordList": [
+      "가디언"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 6코스트 이하인 유닛]",
+        "headerTokens": [
+          "장착 조건: 6코스트 이하인 유닛"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[가디언] 상쇄〈사신의 수의〉 (인접한 레인에 있는 상대 유닛이 공격할 때 이 유닛이 장착한 〈사신의 수의〉를 1장 골라 트래시하면 그 유닛의 공격을 방어한다).",
+        "headerTokens": [
+          "가디언"
+        ],
+        "headerKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywords": [
+          "가디언"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "957",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=957",
+    "scrapedAt": "2026-02-21T06:38:30.759576+00:00"
+  }
+]

@@ -4,13 +4,88 @@
     "name": "페네",
     "type": "리더",
     "attribute": "폭풍",
-    "cost": "레어도",
+    "cost": "",
     "power": "-",
     "hit": "-",
     "traits": "호문클루스",
     "keywords": "액티브",
-    "text": "기본면 서약 : 자신의 덱에 폭풍 : 카드만 넣을 수 있다. 각성 : 자신의 리더 레벨이 4 이상이라면 이 카드를 뒤집는다. 각성면 액티브: 메인 자신의 패를 1장 골라 트래시한다. 그러면 그 카드의 코스트 이하이고 《호문클루스》를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_tYroARwK_71475a4ef7d4284cab71092e35394bfefc7c9f3d.jpg"
+    "text": "기본면 [서약] 자신의 덱에 [폭풍]카드만 넣을 수 있다. [각성] 자신의 리더 레벨이 4 이상이라면 이 카드를 뒤집는다. 각성면 [액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 그 카드의 코스트 이하이고 《호문클루스》를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_tYroARwK_71475a4ef7d4284cab71092e35394bfefc7c9f3d.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "기본면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "[서약] 자신의 덱에 [폭풍]카드만 넣을 수 있다.",
+        "headerTokens": [
+          "서약"
+        ],
+        "headerKeywords": [
+          "서약"
+        ],
+        "mentionedKeywords": [
+          "서약"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[각성] 자신의 리더 레벨이 4 이상이라면 이 카드를 뒤집는다.",
+        "headerTokens": [
+          "각성"
+        ],
+        "headerKeywords": [
+          "각성"
+        ],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 4,
+        "text": "각성면",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [
+          "각성"
+        ],
+        "mentionedKeywordsInBody": [
+          "각성"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 5,
+        "text": "[액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 그 카드의 코스트 이하이고 《호문클루스》를 가진 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "708",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=708",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-002",
@@ -22,8 +97,34 @@
     "hit": "1",
     "traits": "이펙트 / 호문클루스",
     "keywords": "어태커",
-    "text": "어태커 : 이 턴이 끝날 때까지 「엑시트 : 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 카드를 드로우한다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Ofkdg7tz_12936821fd7f57fcb1f1dcce32c98850e3be4235.jpg"
+    "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 카드를 드로우한다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Ofkdg7tz_12936821fd7f57fcb1f1dcce32c98850e3be4235.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 카드를 드로우한다」를 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "534",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=534",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-003",
@@ -35,8 +136,34 @@
     "hit": "1",
     "traits": "이펙트 / 호문클루스",
     "keywords": "어태커",
-    "text": "어태커 : 이 턴이 끝날 때까지 「엑시트 : 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 자신의 덱 맨 위에서 카드를 공개하고, 그중 1장을 골라 패에 넣는다. 나머지는 모두 트래시한다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_pyEgAHOi_39780313c22e939bd193e80956bb3a16e0db63e7.jpg"
+    "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 자신의 덱 맨 위에서 카드를 공개하고, 그중 1장을 골라 패에 넣는다. 나머지는 모두 트래시한다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_pyEgAHOi_39780313c22e939bd193e80956bb3a16e0db63e7.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 자신의 덱 맨 위에서 카드를 공개하고, 그중 1장을 골라 패에 넣는다. 나머지는 모두 트래시한다」를 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "533",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=533",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-004",
@@ -48,8 +175,34 @@
     "hit": "1",
     "traits": "이펙트 / 호문클루스",
     "keywords": "어태커",
-    "text": "어태커 : 이 턴이 끝날 때까지 「엑시트 : 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수 이하의 코스트인 상대 유닛을 필드에서 1장 골라 트래시한다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_vqk6J02C_89e89e0494d52f294f08d144e8615d7e95ff7a28.jpg"
+    "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수 이하의 코스트인 상대 유닛을 필드에서 1장 골라 트래시한다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_vqk6J02C_89e89e0494d52f294f08d144e8615d7e95ff7a28.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수 이하의 코스트인 상대 유닛을 필드에서 1장 골라 트래시한다」를 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "532",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=532",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-005",
@@ -61,8 +214,31 @@
     "hit": "1",
     "traits": "이펙트 / 런웨이 파이터",
     "keywords": "엑시트",
-    "text": "엑시트 : 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_jyhKL5xH_0209b6c8b0837fd51ac17bfd5923916eef338da3.jpg"
+    "text": "[엑시트] 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_jyhKL5xH_0209b6c8b0837fd51ac17bfd5923916eef338da3.jpg",
+    "keywordList": [
+      "엑시트"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엑시트] 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "엑시트"
+        ],
+        "headerKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywords": [
+          "엑시트"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "531",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=531",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-006",
@@ -74,8 +250,49 @@
     "hit": "1",
     "traits": "이펙트 / 호문클루스",
     "keywords": "어태커",
-    "text": "어태커 : 이 턴이 끝날 때까지 「엑시트 : 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 자신의 덱 맨 위에서 카드를 트래시한다. 이 효과로 트래시된 《호문클루스》를 가진 카드 1장마다 상대에게 1대미지를 준다」를 얻는다. 트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 《호문클루스》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_zZE2m0a4_1898f915305eab9798d2ec777376e4fc28b81442.jpg"
+    "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 자신의 덱 맨 위에서 카드를 트래시한다. 이 효과로 트래시된 《호문클루스》를 가진 카드 1장마다 상대에게 1대미지를 준다」를 얻는다. 트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 《호문클루스》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_zZE2m0a4_1898f915305eab9798d2ec777376e4fc28b81442.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 자신의 덱 맨 위에서 카드를 트래시한다. 이 효과로 트래시된 《호문클루스》를 가진 카드 1장마다 상대에게 1대미지를 준다」를 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 《호문클루스》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "530",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=530",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-007",
@@ -87,8 +304,34 @@
     "hit": "1",
     "traits": "이펙트 / 호문클루스",
     "keywords": "어태커",
-    "text": "어태커 : 이 턴이 끝날 때까지 「엑시트 : 필드에 있는 상대 유닛을 1장 골라, 자신의 턴이 끝날 때까지 파워-3000. 이 효과는 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 발동할 수 있다」를 얻는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_9OHi78Zg_97d6e3d7e1f059834e34f80d30d1ef4f75c82ca4.jpg"
+    "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 필드에 있는 상대 유닛을 1장 골라, 자신의 턴이 끝날 때까지 파워-3000. 이 효과는 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 발동할 수 있다」를 얻는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_9OHi78Zg_97d6e3d7e1f059834e34f80d30d1ef4f75c82ca4.jpg",
+    "keywordList": [
+      "어태커"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[어태커] 이 턴이 끝날 때까지 「[엑시트] 필드에 있는 상대 유닛을 1장 골라, 자신의 턴이 끝날 때까지 파워-3000. 이 효과는 이 턴 동안 《호문클루스》를 가진 자신 유닛이 공격한 수만큼 발동할 수 있다」를 얻는다.",
+        "headerTokens": [
+          "어태커"
+        ],
+        "headerKeywords": [
+          "어태커"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "어태커"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "529",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=529",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-008",
@@ -100,8 +343,31 @@
     "hit": "1",
     "traits": "이펙트 / 다른 우주의 방문자",
     "keywords": "액티브",
-    "text": "액티브: 어택 필드에 있는 자신 유닛을 1장 골라 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_cLJSGNph_10256f3e000a4473d39605b34318f5626994231d.jpg"
+    "text": "[액티브: 어택] 필드에 있는 자신 유닛을 1장 골라 트래시한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_cLJSGNph_10256f3e000a4473d39605b34318f5626994231d.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 어택] 필드에 있는 자신 유닛을 1장 골라 트래시한다.",
+        "headerTokens": [
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "528",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=528",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-009",
@@ -113,8 +379,34 @@
     "hit": "1",
     "traits": "이펙트 / 스쿠기헤임",
     "keywords": "액티브",
-    "text": "액티브: 어택 필드에 있는 《호문클루스》와 엑시트 : 를 가진 자신 유닛을 1장 골라 트래시한다. 그러면 이 턴이 끝날 때까지 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_RGgqxjrU_afc9a54f7692a968d6fee5a2c5111369cbd5b0cb.jpg"
+    "text": "[액티브: 어택] 필드에 있는 《호문클루스》와 [엑시트]를 가진 자신 유닛을 1장 골라 트래시한다. 그러면 이 턴이 끝날 때까지 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_RGgqxjrU_afc9a54f7692a968d6fee5a2c5111369cbd5b0cb.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 어택] 필드에 있는 《호문클루스》와 [엑시트]를 가진 자신 유닛을 1장 골라 트래시한다. 그러면 이 턴이 끝날 때까지 히트+1.",
+        "headerTokens": [
+          "액티브: 어택"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "527",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=527",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-010",
@@ -126,8 +418,49 @@
     "hit": "1",
     "traits": "이펙트 / 대적자",
     "keywords": "액티브",
-    "text": "액티브: 메인 이 턴 동안 필드에서 전투나 효과로 트래시된 자신 유닛이 1장 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 트래시 존에서 엑시트 : 를 가진 3코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_f9hQTk3x_e2cbb81896cef35fce879ec7780cfa0a7b23446a.jpg"
+    "text": "[액티브: 메인] 이 턴 동안 필드에서 전투나 효과로 트래시된 자신 유닛이 1장 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 트래시 존에서 [엑시트]를 가진 3코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치한다. 트리거 / 이 카드를 자신의 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_f9hQTk3x_e2cbb81896cef35fce879ec7780cfa0a7b23446a.jpg",
+    "keywordList": [
+      "액티브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[액티브: 메인] 이 턴 동안 필드에서 전투나 효과로 트래시된 자신 유닛이 1장 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 트래시 존에서 [엑시트]를 가진 3코스트 이하인 유닛 카드를 1장 골라 비어 있는 자신의 유닛 존에 배치한다.",
+        "headerTokens": [
+          "액티브: 메인"
+        ],
+        "headerKeywords": [
+          "액티브"
+        ],
+        "mentionedKeywords": [
+          "엑시트",
+          "액티브"
+        ],
+        "mentionedKeywordsInBody": [
+          "엑시트"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 자신의 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "526",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=526",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-011",
@@ -139,8 +472,49 @@
     "hit": "2",
     "traits": "이펙트 / 대적자",
     "keywords": "엔트리",
-    "text": "엔트리 : 자신의 트래시 존에서 《호문클루스》를 가지고 트리거 : 를 가지지 않은 카드를 조우 유닛의 코스트만큼 골라 덱 맨 아래에 원하는 순서대로 놓을 수 있다. 그러면 조우 유닛을 트래시한다. 트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 《호문클루스》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_TvLNxFyl_e43929d4addce0ed84ef4ece1bab980e79d79a75.jpg"
+    "text": "[엔트리] 자신의 트래시 존에서 《호문클루스》를 가지고 [트리거]를 가지지 않은 카드를 조우 유닛의 코스트만큼 골라 덱 맨 아래에 원하는 순서대로 놓을 수 있다. 그러면 조우 유닛을 트래시한다. 트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 《호문클루스》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_TvLNxFyl_e43929d4addce0ed84ef4ece1bab980e79d79a75.jpg",
+    "keywordList": [
+      "엔트리"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[엔트리] 자신의 트래시 존에서 《호문클루스》를 가지고 [트리거]를 가지지 않은 카드를 조우 유닛의 코스트만큼 골라 덱 맨 아래에 원하는 순서대로 놓을 수 있다. 그러면 조우 유닛을 트래시한다.",
+        "headerTokens": [
+          "엔트리"
+        ],
+        "headerKeywords": [
+          "엔트리"
+        ],
+        "mentionedKeywords": [
+          "엔트리",
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [
+          "트리거"
+        ],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 트래시 존에서 《호문클루스》를 가진 유닛 카드를 1장 골라 패에 넣는다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "525",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=525",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-012",
@@ -152,8 +526,31 @@
     "hit": "2",
     "traits": "이펙트 / 스쿠기헤임",
     "keywords": "패시브",
-    "text": "패시브 : 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 턴이 끝날 때까지 파워+3000, 히트+1.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_lxsZIRLt_42ad7a1d84b237d168955e42acc44878cd7d3c79.jpg"
+    "text": "[패시브] 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 턴이 끝날 때까지 파워+3000, 히트+1.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_lxsZIRLt_42ad7a1d84b237d168955e42acc44878cd7d3c79.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[패시브] 이 턴 동안 필드에서 트래시된 자신 유닛이 1장 이상이라면 이 턴이 끝날 때까지 파워+3000, 히트+1.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "524",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=524",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-013",
@@ -166,7 +563,22 @@
     "traits": "런웨이 파이터",
     "keywords": "-",
     "text": "자신의 덱 맨 위에서 카드를 4장 트래시한다. 자신의 트래시 존에서 카드를 1장 골라 대미지 존에 놓는다. 자신의 대미지 존에 있는 카드가 7장 이상이라면 카드를 1장 드로우할 수 있다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_S6aGrszj_26f27e90b2134c286b6b2bbd6abe502e651678d5.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_S6aGrszj_26f27e90b2134c286b6b2bbd6abe502e651678d5.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 덱 맨 위에서 카드를 4장 트래시한다. 자신의 트래시 존에서 카드를 1장 골라 대미지 존에 놓는다. 자신의 대미지 존에 있는 카드가 7장 이상이라면 카드를 1장 드로우할 수 있다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "523",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=523",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-014",
@@ -179,7 +591,37 @@
     "traits": "-",
     "keywords": "-",
     "text": "자신의 덱 맨 위에서 카드를 4장 트래시한다. 자신의 트래시 존에서 《런웨이 파이터》를 가진 유닛 카드를 1장 골라 패에 넣을 수 있다. 트리거 / 이 카드를 트래시한다. 자신의 덱 맨 위에서 카드를 4장 트래시한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Jd6yFQZq_879a0af8436101a64580638b958cffa3101272ff.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_Jd6yFQZq_879a0af8436101a64580638b958cffa3101272ff.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "자신의 덱 맨 위에서 카드를 4장 트래시한다. 자신의 트래시 존에서 《런웨이 파이터》를 가진 유닛 카드를 1장 골라 패에 넣을 수 있다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "트리거 / 이 카드를 트래시한다. 자신의 덱 맨 위에서 카드를 4장 트래시한다.",
+        "headerTokens": [
+          "트리거"
+        ],
+        "headerKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywords": [
+          "트리거"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": true
+      }
+    ],
+    "sourceWrId": "522",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=522",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-015",
@@ -192,7 +634,22 @@
     "traits": "-",
     "keywords": "-",
     "text": "필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_945MakRO_e64e8b186930a2fd8585167d0fbaa6e81cf1ff3f.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_945MakRO_e64e8b186930a2fd8585167d0fbaa6e81cf1ff3f.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 1장 드로우한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "521",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=521",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-016",
@@ -205,7 +662,22 @@
     "traits": "호문클루스",
     "keywords": "-",
     "text": "필드에 있는 《호문클루스》를 가진 자신 유닛을 1장 고른다. 조우 유닛이 있다면 고른 유닛으로 공격한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WSPwVEbB_73273860374df909326ae98721f09930f5b4b438.jpg"
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_WSPwVEbB_73273860374df909326ae98721f09930f5b4b438.jpg",
+    "keywordList": [],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "필드에 있는 《호문클루스》를 가진 자신 유닛을 1장 고른다. 조우 유닛이 있다면 고른 유닛으로 공격한다.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "520",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=520",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   },
   {
     "id": "ST07-017",
@@ -217,7 +689,50 @@
     "hit": "-",
     "traits": "-",
     "keywords": "패시브",
-    "text": "장착 조건: 없음 파워+2000. 패시브 : 자신의 턴이 끝날 때 이 유닛을 트래시한다. 그러면 카드를 1장 드로우한다.",
-    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KRPeLjHt_17b8b27fbc59695189b081b7175a319d277bfc11.jpg"
+    "text": "[장착 조건: 없음] 파워+2000. [패시브]자신의 턴이 끝날 때 이 유닛을 트래시한다. 그러면 카드를 1장 드로우한다.",
+    "imageUrl": "http://nivelarena.co.kr/data/file/cardlists/cfbf01727a7e461ec5930f5d552f8bff_KRPeLjHt_17b8b27fbc59695189b081b7175a319d277bfc11.jpg",
+    "keywordList": [
+      "패시브"
+    ],
+    "effectSegments": [
+      {
+        "index": 1,
+        "text": "[장착 조건: 없음]",
+        "headerTokens": [
+          "장착 조건: 없음"
+        ],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 2,
+        "text": "파워+2000.",
+        "headerTokens": [],
+        "headerKeywords": [],
+        "mentionedKeywords": [],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      },
+      {
+        "index": 3,
+        "text": "[패시브]자신의 턴이 끝날 때 이 유닛을 트래시한다. 그러면 카드를 1장 드로우한다.",
+        "headerTokens": [
+          "패시브"
+        ],
+        "headerKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywords": [
+          "패시브"
+        ],
+        "mentionedKeywordsInBody": [],
+        "isTriggerSegment": false
+      }
+    ],
+    "sourceWrId": "519",
+    "sourceUrl": "http://nivelarena.co.kr/bbs/board.php?bo_table=cardlists&wr_id=519",
+    "scrapedAt": "2026-02-21T06:33:41.962061+00:00"
   }
 ]
