@@ -102,7 +102,18 @@ export const lockAttackUntilTurnEnd: ActionImplementation = (_ctx, _params, targ
     targets.forEach(target => {
         if (!target || !('unit' in target) || !target.unit) return;
         target.hasAttacked = true;
+        target.attackCountThisTurn = Math.max(1, target.attackCountThisTurn || 0);
+        target.extraAttackAllowance = 0;
         target.isExhausted = true;
+    });
+};
+
+export const grantExtraAttackThisTurn: ActionImplementation = (_ctx, params, targets) => {
+    const value = Math.max(0, params.value ?? 1);
+    if (value <= 0) return;
+    targets.forEach(target => {
+        if (!target || !('unit' in target) || !target.unit) return;
+        target.extraAttackAllowance = (target.extraAttackAllowance || 0) + value;
     });
 };
 

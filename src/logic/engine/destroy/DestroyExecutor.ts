@@ -125,6 +125,9 @@ export function destroyUnit(
         zone.items = [];
         zone.buffs = [];
         zone.temporaryEffects = [];
+        zone.attackCountThisTurn = 0;
+        zone.extraAttackAllowance = 0;
+        zone.hasAttacked = false;
         if (reason === 'EFFECT' || reason === 'RULE') {
             engine.incrementEffectTrashedFriendlyUnitCount(player.id);
         }

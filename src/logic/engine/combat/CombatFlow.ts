@@ -134,6 +134,55 @@ export function stepBattleResolution(engine: any, attackerZone: UnitZoneState) {
 
 export function stepBattleEnd(engine: any) {
     engine.state.combatStep = 'BATTLE_END';
+
+    const attackerZoneIndex = engine.state.pendingAttackerIndex;
+    if (attackerZoneIndex !== null) {
+        const attackerZone = engine.currentPlayer.unitZones[attackerZoneIndex];
+        const blockerZoneIndex = engine.state.pendingBlockerZoneIndex ?? attackerZoneIndex;
+        const blockerZone = engine.opponentPlayer.unitZones[blockerZoneIndex];
+        const batchStep = engine.incrementAndGetGlobalStep();
+
+        if (attackerZone?.unit) {
+            engine.effectManager.processEffects(ActivationCondition.BATTLE_END, {
+                sourceCard: attackerZone.unit,
+                player: engine.currentPlayer,
+                opponent: engine.opponentPlayer,
+                unitZone: attackerZone,
+                machine: engine,
+            }, { enqueueOnly: true, batchStep });
+            attackerZone.items.forEach((item: any) => {
+                engine.effectManager.processEffects(ActivationCondition.BATTLE_END, {
+                    sourceCard: item,
+                    player: engine.currentPlayer,
+                    opponent: engine.opponentPlayer,
+                    unitZone: attackerZone,
+                    machine: engine,
+                }, { enqueueOnly: true, batchStep });
+            });
+        }
+
+        if (blockerZone?.unit) {
+            engine.effectManager.processEffects(ActivationCondition.BATTLE_END, {
+                sourceCard: blockerZone.unit,
+                player: engine.opponentPlayer,
+                opponent: engine.currentPlayer,
+                unitZone: blockerZone,
+                machine: engine,
+            }, { enqueueOnly: true, batchStep });
+            blockerZone.items.forEach((item: any) => {
+                engine.effectManager.processEffects(ActivationCondition.BATTLE_END, {
+                    sourceCard: item,
+                    player: engine.opponentPlayer,
+                    opponent: engine.currentPlayer,
+                    unitZone: blockerZone,
+                    machine: engine,
+                }, { enqueueOnly: true, batchStep });
+            });
+        }
+
+        engine.effectManager.processQueue();
+    }
+
     engine.clearBattleScopedEffects();
 
     if (engine.state.effectQueue.length === 0) {

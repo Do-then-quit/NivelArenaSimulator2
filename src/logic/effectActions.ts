@@ -1,13 +1,16 @@
 import { ActionImplementation, UnitZoneState } from './types';
 import { TargetSelector } from './TargetSelector';
 import {
+    autoAttackIfEncounter,
     damage,
     discard,
     discardAll,
     drawCard,
     drawDynamic,
     drawThenDiscard,
+    destroySelf,
     gainLevel,
+    lockSkillIdUntilTurnEnd,
     moveFromDamageToHand,
     moveFromHandToDamage,
     moveFromTrashToDeckBottom,
@@ -22,6 +25,7 @@ import {
     buffHit,
     buffPower,
     buffPowerAndDrawIfTrashed,
+    grantExtraAttackThisTurn,
     grantEffect,
     lockAttackUntilTurnEnd,
     sacrificeToBuff,
@@ -140,8 +144,12 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'APPLY_DUALIST_MARK': applyDualistMark,
     'APPLY_INFILTRATION_MARK': applyInfiltrationMark,
     'REVEAL_TOP_PICK_TO_HAND_THEN_ORDER_BOTTOM': revealTopPickToHandThenOrderBottom,
+    'GRANT_EXTRA_ATTACK_THIS_TURN': grantExtraAttackThisTurn,
+    'LOCK_SKILL_ID_UNTIL_TURN_END': lockSkillIdUntilTurnEnd,
+    'AUTO_ATTACK_IF_ENCOUNTER': autoAttackIfEncounter,
     'DAMAGE': damage,
     'DRAW_THEN_DISCARD': drawThenDiscard,
+    'DESTROY_SELF': destroySelf,
     'DESTROY_UNIT_AND_DRAW': destroyUnitAndDraw,
     'NONE': noneAction,
 };

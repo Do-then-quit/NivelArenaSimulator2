@@ -1,4 +1,4 @@
-import { ActionImplementation, ActivationCondition, UnitZoneState } from '../types';
+import { ActionImplementation, ActivationCondition, Phase, UnitZoneState } from '../types';
 
 export const gainLevel: ActionImplementation = (ctx, params) => {
     const amount = params.value || 1;
@@ -196,6 +196,39 @@ export const damage: ActionImplementation = (ctx, params, _targets) => {
     if (value > 0) {
         ctx.machine.dealDamage(targetPlayer, value);
         console.log(`Dealt ${value} damage to ${targetPlayer.name} via effect.`);
+    }
+};
+
+export const destroySelf: ActionImplementation = (ctx) => {
+    if (!ctx.unitZone || !ctx.unitZone.unit) return;
+    ctx.machine.destroyUnit(ctx.player, ctx.unitZone, undefined, 'EFFECT');
+};
+
+export const lockSkillIdUntilTurnEnd: ActionImplementation = (ctx, params) => {
+    const targetPlayer = params.target === 'OPPONENT' ? ctx.opponent : ctx.player;
+    const lockId = params.skillId || ctx.sourceCard.id;
+    if (!lockId) return;
+
+    const lockMap = ((targetPlayer as any).lockedSkillIdsUntilTurnEnd || {}) as Record<string, boolean>;
+    lockMap[lockId] = true;
+    (targetPlayer as any).lockedSkillIdsUntilTurnEnd = lockMap;
+};
+
+export const autoAttackIfEncounter: ActionImplementation = (ctx) => {
+    if (!ctx.unitZone || !ctx.unitZone.unit) return;
+    const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
+    if (laneIndex < 0) return;
+    if (!ctx.opponent.unitZones[laneIndex]?.unit) return;
+    if (ctx.machine.currentPlayer?.id !== ctx.player.id) return;
+    if (ctx.machine.state.interactionMode !== 'NORMAL') return;
+    if (ctx.machine.state.combatStep !== 'NONE') return;
+
+    const previousPhase = ctx.machine.state.phase;
+    ctx.machine.state.phase = Phase.ATTACK;
+    ctx.machine.attack(laneIndex);
+
+    if (ctx.machine.state.interactionMode === 'NORMAL' && ctx.machine.state.combatStep === 'NONE') {
+        ctx.machine.state.phase = previousPhase;
     }
 };
 

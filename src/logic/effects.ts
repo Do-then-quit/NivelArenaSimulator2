@@ -65,6 +65,22 @@ export class EffectManager {
         return false;
     }
 
+    private getAttackCountReferenceBonus(context: GameContext): number {
+        if (!context.unitZone || !context.sourceCard) return 0;
+        if (context.unitZone.unit !== context.sourceCard) return 0;
+        if (!Array.isArray(context.unitZone.items)) return 0;
+
+        return context.unitZone.items.reduce((sum, item) => {
+            const bonusFromItem = (item.effects || []).reduce((itemSum: number, effect: any) => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return itemSum;
+                const bonus = effect.action?.params?.attackCountReferenceBonus;
+                if (typeof bonus !== 'number') return itemSum;
+                return itemSum + bonus;
+            }, 0);
+            return sum + bonusFromItem;
+        }, 0);
+    }
+
     public queueEphemeralEffect(effect: Effect, context: GameContext) {
         this.engine.incrementGlobalStep();
         const currentStep = this.engine.state.globalStep;
@@ -256,11 +272,16 @@ export class EffectManager {
             }
 
             let resolvedDuration = effect.duration;
-            if (
-                (effect.activation === ActivationCondition.ATTACKER || effect.activation === ActivationCondition.DEFENDER) &&
-                (resolvedDuration === undefined || resolvedDuration === 'TURN_END')
-            ) {
-                resolvedDuration = 'BATTLE_END';
+            if (effect.activation === ActivationCondition.ATTACKER || effect.activation === ActivationCondition.DEFENDER) {
+                if (resolvedDuration === undefined) {
+                    resolvedDuration = 'BATTLE_END';
+                } else if (resolvedDuration === 'TURN_END') {
+                    const description = effect.description || '';
+                    const explicitlyTurnScoped = /이\s*턴이\s*끝날\s*때까지/.test(description);
+                    if (!explicitlyTurnScoped) {
+                        resolvedDuration = 'BATTLE_END';
+                    }
+                }
             }
 
             const params = { ...action.params, duration: resolvedDuration };
@@ -413,6 +434,9 @@ export class EffectManager {
                     if (value === 'HAND_TRASH_OWNER_IS_SELF') {
                         return context.flags?.isOwnHandTrash === true;
                     }
+                    if (value === 'PHASE_ATTACK') {
+                        return context.machine.state.phase === 'ATTACK';
+                    }
                     if (value === 'TRASHED_IS_OTHER') {
                         return !!context.trashedUnit && context.trashedUnit.id !== context.sourceCard.id;
                     }
@@ -428,6 +452,8 @@ export class EffectManager {
                 let current: any;
                 if (key === 'HAND_TRASH_OWNER_IS_SELF') {
                     current = context.flags?.isOwnHandTrash === true;
+                } else if (key === 'PHASE_ATTACK') {
+                    current = context.machine.state.phase === 'ATTACK';
                 } else if (key === 'TRASHED_IS_OTHER') {
                     current = !!context.trashedUnit && context.trashedUnit.id !== context.sourceCard.id;
                 } else if (key === 'TRASHED_IS_OTHER_BY_EFFECT') {
@@ -440,6 +466,16 @@ export class EffectManager {
                 if (value.equals !== undefined) return current === value.equals;
                 if (value.min !== undefined) return typeof current === 'number' && current >= value.min;
                 return !!current;
+            }
+            case 'SKILL_ZONE_COUNT_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                return context.player.skillZone.length >= min;
+            }
+            case 'ATTACK_COUNT_THIS_TURN_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const baseCount = context.machine.getTurnUnitAttackCount(context.player.id);
+                const bonus = this.getAttackCountReferenceBonus(context);
+                return baseCount + bonus >= min;
             }
             default:
                 return true;

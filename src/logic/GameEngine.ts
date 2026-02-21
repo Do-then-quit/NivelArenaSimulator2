@@ -123,6 +123,7 @@ export class GameEngine {
             turnStats: {
                 effectTrashedFriendlyUnitCountByPlayerId: {},
                 handTrashedByEffectCountByPlayerId: {},
+                unitAttackCountByPlayerId: {},
             },
         };
         this.startGame();
@@ -237,9 +238,9 @@ export class GameEngine {
             levelZone: leaderCopy,
             leaderLevel: 1,
             unitZones: [
-                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {} },
-                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {} },
-                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {} },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {}, attackCountThisTurn: 0, extraAttackAllowance: 0 },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {}, attackCountThisTurn: 0, extraAttackAllowance: 0 },
+                { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {}, attackCountThisTurn: 0, extraAttackAllowance: 0 },
             ],
             skillZone: [],
         };
@@ -343,6 +344,7 @@ export class GameEngine {
             this.state.turnStats = {
                 effectTrashedFriendlyUnitCountByPlayerId: {},
                 handTrashedByEffectCountByPlayerId: {},
+                unitAttackCountByPlayerId: {},
             };
         }
         return this.state.turnStats;
@@ -361,6 +363,12 @@ export class GameEngine {
             (stats.handTrashedByEffectCountByPlayerId[playerId] || 0) + amount;
     }
 
+    public incrementTurnUnitAttackCount(playerId: string) {
+        const stats = this.getTurnStats();
+        stats.unitAttackCountByPlayerId[playerId] =
+            (stats.unitAttackCountByPlayerId[playerId] || 0) + 1;
+    }
+
     public getEffectTrashedFriendlyUnitCount(playerId: string): number {
         return this.getTurnStats().effectTrashedFriendlyUnitCountByPlayerId[playerId] || 0;
     }
@@ -369,10 +377,15 @@ export class GameEngine {
         return this.getTurnStats().handTrashedByEffectCountByPlayerId[playerId] || 0;
     }
 
+    public getTurnUnitAttackCount(playerId: string): number {
+        return this.getTurnStats().unitAttackCountByPlayerId[playerId] || 0;
+    }
+
     private resetTurnStats() {
         this.state.turnStats = {
             effectTrashedFriendlyUnitCountByPlayerId: {},
             handTrashedByEffectCountByPlayerId: {},
+            unitAttackCountByPlayerId: {},
         };
     }
 
@@ -1129,7 +1142,11 @@ export class GameEngine {
             z.hasPlacedUnitThisTurn = false;
             z.hasActivatedEffectThisTurn = false;
             z.activatedEffectKeys = {};
+            z.attackCountThisTurn = 0;
+            z.extraAttackAllowance = 0;
         });
+        (this.currentPlayer as any).leaderActivatedEffectKeys = {};
+        (this.currentPlayer as any).lockedSkillIdsUntilTurnEnd = {};
 
         // Switch
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
@@ -1218,6 +1235,8 @@ export class GameEngine {
         zone.items = [];
         zone.buffs = [];
         zone.temporaryEffects = [];
+        zone.attackCountThisTurn = 0;
+        zone.extraAttackAllowance = 0;
     }
 
     playUnit(cardIndex: number, zoneIndex: number) {
@@ -1245,6 +1264,10 @@ export class GameEngine {
         zone.unit = card;
         zone.hasPlacedUnitThisTurn = true;
         zone.buffs = []; // Ensure clear state for new unit if not upgrade (though empty zone implies empty buffs)
+        zone.temporaryEffects = [];
+        zone.hasAttacked = false;
+        zone.attackCountThisTurn = 0;
+        zone.extraAttackAllowance = 0;
 
         // Trigger Entry Effects
         this.effectManager.processEffects(ActivationCondition.ENTRY, {
@@ -1299,13 +1322,17 @@ export class GameEngine {
     activateEffect(
         zoneIndex: number,
         effectIndex: number,
-        sourceType: 'UNIT' | 'ITEM' = 'UNIT',
+        sourceType: 'UNIT' | 'ITEM' | 'LEADER' = 'UNIT',
         itemIndex?: number
     ) {
-        const zone = this.currentPlayer.unitZones[zoneIndex];
-        const card = sourceType === 'ITEM'
-            ? (itemIndex !== undefined ? zone.items[itemIndex] : null)
-            : zone.unit;
+        const zone = sourceType === 'LEADER'
+            ? null
+            : this.currentPlayer.unitZones[zoneIndex];
+        const card = sourceType === 'LEADER'
+            ? this.currentPlayer.levelZone
+            : sourceType === 'ITEM'
+                ? (zone && itemIndex !== undefined ? zone.items[itemIndex] : null)
+                : zone?.unit;
         if (!card || !card.effects) return;
 
         const effect = card.effects[effectIndex];
@@ -1322,19 +1349,30 @@ export class GameEngine {
         const effectKey = sourceType === 'ITEM'
             ? `${card.id}_${itemIndex}_${effect.id || effectIndex}`
             : `${card.id}_${effect.id || effectIndex}`;
-        if (zone.activatedEffectKeys[effectKey]) return;
+        if (sourceType === 'LEADER') {
+            const fired = ((this.currentPlayer as any).leaderActivatedEffectKeys || {}) as Record<string, boolean>;
+            if (fired[effectKey]) return;
+        } else if (zone?.activatedEffectKeys[effectKey]) {
+            return;
+        }
 
         const context = {
             sourceCard: card,
             player: this.currentPlayer,
             opponent: this.opponentPlayer,
-            unitZone: zone,
+            ...(zone ? { unitZone: zone } : {}),
             machine: this
         };
 
         if (this.effectManager.processEffect(effect, context)) {
-            zone.activatedEffectKeys[effectKey] = true;
-            zone.hasActivatedEffectThisTurn = true;
+            if (sourceType === 'LEADER') {
+                const fired = ((this.currentPlayer as any).leaderActivatedEffectKeys || {}) as Record<string, boolean>;
+                fired[effectKey] = true;
+                (this.currentPlayer as any).leaderActivatedEffectKeys = fired;
+            } else if (zone) {
+                zone.activatedEffectKeys[effectKey] = true;
+                zone.hasActivatedEffectThisTurn = true;
+            }
         }
     }
 
@@ -1614,7 +1652,9 @@ export class GameEngine {
         this.state.combatBlocked = false;
         this.state.pendingBlockerZoneIndex = null;
         (attackerZone as any)._attackCostPaid = false; // Reset for next time
-        attackerZone.hasAttacked = true;
+        attackerZone.attackCountThisTurn = (attackerZone.attackCountThisTurn || 0) + 1;
+        attackerZone.hasAttacked = attackerZone.attackCountThisTurn > 0;
+        this.incrementTurnUnitAttackCount(this.currentPlayer.id);
 
         // COMBAT STEP 1: Attack Declaration
         this.state.combatStep = 'ATTACK_DECLARATION';

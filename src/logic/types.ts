@@ -36,6 +36,7 @@ export enum ActivationCondition {
     DAMAGE_TRIGGER = 'DAMAGE_TRIGGER', // Game keyword "TRIGGER" (when dealt as damage)
     TURN_START = 'TURN_START',
     TURN_END = 'TURN_END',
+    BATTLE_END = 'BATTLE_END',
     AWAKEN = 'AWAKEN',
     UNIT_TRASHED = 'UNIT_TRASHED', // New: Triggered when any unit is moved to trash
     ESCAPE = 'ESCAPE', // New: When unit is returned to deck bottom from field (Entry of Main Phase)
@@ -92,7 +93,10 @@ export type ActionType =
     | 'LOCK_ATTACK_UNTIL_TURN_END'
     | 'APPLY_DUALIST_MARK'
     | 'APPLY_INFILTRATION_MARK'
-    | 'REVEAL_TOP_PICK_TO_HAND_THEN_ORDER_BOTTOM';
+    | 'REVEAL_TOP_PICK_TO_HAND_THEN_ORDER_BOTTOM'
+    | 'GRANT_EXTRA_ATTACK_THIS_TURN'
+    | 'LOCK_SKILL_ID_UNTIL_TURN_END'
+    | 'AUTO_ATTACK_IF_ENCOUNTER';
 
 export interface TargetFilter {
     type:
@@ -109,7 +113,9 @@ export interface TargetFilter {
     | 'COST_EQUAL'
     | 'COST_HIGHER_THAN_ENCOUNTER'
     | 'LOWEST_COST_ONLY'
-    | 'ITEM_COUNT_MIN';
+    | 'ITEM_COUNT_MIN'
+    | 'EXCLUDE_CARD_ID'
+    | 'COST_LIMIT_BY_LEADER_LEVEL';
     value?: any;
 }
 
@@ -148,7 +154,7 @@ export interface TargetSchema {
         state?: 'EXHAUSTED' | 'READY';
     };
     selectMode: 'MANUAL' | 'RANDOM' | 'LOWEST_POWER' | 'HIGHEST_POWER' | 'ALL';
-    totalCostLimit?: number; // New: total cost of all selected targets must not exceed this
+    totalCostLimit?: number | { type: 'MY_HAND_COUNT'; add?: number }; // Total selected cost cap
 }
 
 export interface EffectCondition {
@@ -171,7 +177,9 @@ export interface EffectCondition {
     | 'TRASHED_FRIENDLY_BY_EFFECT_THIS_TURN_MIN'
     | 'TRASH_REASON'
     | 'ITEM_COUNT_GTE_ENCOUNTER_HIT'
-    | 'CONTEXT_FLAG';
+    | 'CONTEXT_FLAG'
+    | 'SKILL_ZONE_COUNT_MIN'
+    | 'ATTACK_COUNT_THIS_TURN_MIN';
     value?: any;
     trashedUnitCostMin?: number; // New: for triggers like Cinderella's UNIT_TRASHED
     friendlyOnly?: boolean; // New: check if trashed unit belongs to player
@@ -223,7 +231,7 @@ export type EngineAction =
     | { type: 'PLAY_UNIT'; actorPlayerId: string; handIndex: number; zoneIndex: number }
     | { type: 'PLAY_SKILL'; actorPlayerId: string; handIndex: number }
     | { type: 'PLAY_ITEM'; actorPlayerId: string; handIndex: number; zoneIndex: number }
-    | { type: 'ACTIVATE_EFFECT'; actorPlayerId: string; zoneIndex: number; effectIndex: number; sourceType?: 'UNIT' | 'ITEM'; itemIndex?: number }
+    | { type: 'ACTIVATE_EFFECT'; actorPlayerId: string; zoneIndex: number; effectIndex: number; sourceType?: 'UNIT' | 'ITEM' | 'LEADER'; itemIndex?: number }
     | { type: 'ATTACK'; actorPlayerId: string; attackerZoneIndex: number }
     | { type: 'RESOLVE_BLOCK'; actorPlayerId: string; shouldBlock: boolean; blockerZoneIndex?: number }
     | { type: 'SELECT_COST_HAND'; actorPlayerId: string; handIndex: number }
@@ -292,6 +300,8 @@ export interface UnitZoneState {
     hasPlacedUnitThisTurn: boolean; // 6.4.1.1.3
     hasActivatedEffectThisTurn: boolean;
     activatedEffectKeys: Record<string, boolean>;
+    attackCountThisTurn: number;
+    extraAttackAllowance: number;
     temporaryEffects: Effect[];
 }
 
@@ -341,6 +351,7 @@ export interface GameState {
     turnStats?: {
         effectTrashedFriendlyUnitCountByPlayerId: Record<string, number>;
         handTrashedByEffectCountByPlayerId: Record<string, number>;
+        unitAttackCountByPlayerId: Record<string, number>;
     };
 }
 

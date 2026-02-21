@@ -9,6 +9,37 @@ import {
 import { RuleValidator } from '../../RuleValidator';
 import { TargetSelector } from '../../TargetSelector';
 
+function getTargetCard(target: any): Card | null {
+    if (!target) return null;
+    if (typeof target === 'object' && 'unit' in target) return target.unit ?? null;
+    if (typeof target === 'object' && 'type' in target) return target as Card;
+    return null;
+}
+
+function getTargetCost(target: any): number {
+    const card = getTargetCard(target);
+    if (!card || typeof card.cost !== 'number') return 0;
+    return Math.max(0, card.cost);
+}
+
+function resolveTotalCostLimit(targetSchema: any, context: GameContext): number | null {
+    const limit = targetSchema?.totalCostLimit;
+    if (typeof limit === 'number') return Math.max(0, limit);
+    if (limit && typeof limit === 'object' && limit.type === 'MY_HAND_COUNT') {
+        const add = typeof limit.add === 'number' ? limit.add : 0;
+        return Math.max(0, context.player.hand.length + add);
+    }
+    return null;
+}
+
+function canAddTargetWithinTotalCost(targetSchema: any, selectedTargets: any[], nextTarget: any, context: GameContext): boolean {
+    const limit = resolveTotalCostLimit(targetSchema, context);
+    if (limit === null) return true;
+    if (selectedTargets.includes(nextTarget)) return true;
+    const currentCost = selectedTargets.reduce((sum, target) => sum + getTargetCost(target), 0);
+    return currentCost + getTargetCost(nextTarget) <= limit;
+}
+
 export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAction[] {
     if (engine.state.winner) return [];
 
@@ -134,6 +165,51 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
                 });
             });
 
+            const leader = actor.levelZone;
+            if (leader?.effects) {
+                const leaderActivatedKeys = ((actor as any).leaderActivatedEffectKeys || {}) as Record<string, boolean>;
+                leader.effects.forEach((effect, effectIndex) => {
+                    const activatableInPhase =
+                        (effect.activation === ActivationCondition.ACTIVE && (engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK)) ||
+                        (effect.activation === ActivationCondition.ACTIVE_MAIN && engine.state.phase === Phase.MAIN);
+                    if (!activatableInPhase) return;
+
+                    const effectKey = `${leader.id}_${effect.id || effectIndex}`;
+                    if (leaderActivatedKeys[effectKey]) return;
+
+                    const context: GameContext = {
+                        sourceCard: leader,
+                        player: actor,
+                        opponent: engine.getOpponentOf(actor),
+                        machine: engine,
+                    };
+
+                    if (!engine.effectManager.checkCondition(effect, context)) return;
+
+                    if (effect.cost && effect.cost.type !== 'NONE') {
+                        if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
+                            const requiredAmount = effect.cost.amount || 1;
+                            const costFilter = effect.cost.cardTypeFilter;
+                            const payableCount = actor.hand.filter((card: Card) => !costFilter || card.type === costFilter).length;
+                            if (payableCount < requiredAmount) return;
+                        }
+                    }
+
+                    if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+                        const candidates = TargetSelector.resolve(engine, effect.targets, context);
+                        if (candidates.length === 0) return;
+                    }
+
+                    actions.push({
+                        type: 'ACTIVATE_EFFECT',
+                        actorPlayerId: id,
+                        zoneIndex: -1,
+                        effectIndex,
+                        sourceType: 'LEADER',
+                    });
+                });
+            }
+
             return;
         }
 
@@ -200,6 +276,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const selectableTrashCards: any[] = [];
             targetPlayer.trash.forEach((card: Card, trashIndex: number) => {
                 if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) return;
+                if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, card, context)) return;
                 selectableTrashCards.push(card);
                 actions.push({ type: 'SELECT_TRASH_TARGET', actorPlayerId: id, targetPlayerId, trashIndex });
             });
@@ -213,6 +290,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const selectableRevealedCards: any[] = [];
             engine.state.revealedCards.forEach((card: Card, revealedIndex: number) => {
                 if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) return;
+                if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, card, context)) return;
                 selectableRevealedCards.push(card);
                 actions.push({ type: 'SELECT_REVEALED_TARGET', actorPlayerId: id, revealedIndex });
             });
@@ -234,6 +312,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const selectableHandCards: any[] = [];
             targetPlayer.hand.forEach((card: Card, handIndex: number) => {
                 if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) return;
+                if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, card, context)) return;
                 selectableHandCards.push(card);
                 actions.push({ type: 'SELECT_HAND_TARGET', actorPlayerId: id, targetPlayerId, handIndex });
             });
@@ -251,6 +330,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const selectableDamageCards: any[] = [];
             targetPlayer.damage.forEach((card: Card, damageIndex: number) => {
                 if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) return;
+                if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, card, context)) return;
                 selectableDamageCards.push(card);
                 actions.push({ type: 'SELECT_DAMAGE_TARGET', actorPlayerId: id, targetPlayerId, damageIndex });
             });
@@ -270,6 +350,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
                 targetPlayer.unitZones.forEach((zone: UnitZoneState, zoneIndex: number) => {
                     zone.items.forEach((item: Card, itemIndex: number) => {
                         if (!TargetSelector.isValidTarget(engine, targetSchema, context, item)) return;
+                        if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, item, context)) return;
                         selectableItems.push(item);
                         actions.push({
                             type: 'SELECT_ITEM_TARGET',
@@ -291,6 +372,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
         engine.state.players.forEach((targetPlayer: any) => {
             targetPlayer.unitZones.forEach((targetZone: UnitZoneState, zoneIndex: number) => {
                 if (TargetSelector.isValidTarget(engine, targetSchema, context, targetZone)) {
+                    if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, targetZone, context)) return;
                     selectableZones.push(targetZone);
                     actions.push({ type: 'SELECT_ZONE_TARGET', actorPlayerId: id, targetPlayerId: targetPlayer.id, zoneIndex });
                 }

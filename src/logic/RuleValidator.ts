@@ -44,6 +44,11 @@ export class RuleValidator {
         const card = player.hand[cardIndex];
         if (!card || card.type !== CardType.SKILL) return { valid: false, reason: "Card is not a skill" };
 
+        const lockedSkillIds = (player as any).lockedSkillIdsUntilTurnEnd as Record<string, boolean> | undefined;
+        if (lockedSkillIds?.[card.id]) {
+            return { valid: false, reason: "Skill is locked until end of turn" };
+        }
+
         // Size Limit Check (Field Cost + Skill Cost must not exceed Size)
         const playerSize = engine.getPlayerSize(player);
         const currentFieldCost = this.calculateFieldCost(player);
@@ -126,8 +131,11 @@ export class RuleValidator {
 
         const zone = player.unitZones[zoneIndex];
         if (!zone.unit) return { valid: false, reason: "No unit in zone" };
-        if (zone.hasAttacked) return { valid: false, reason: "Unit already attacked" };
         if (zone.isExhausted) return { valid: false, reason: "Unit is exhausted" };
+
+        const attackCount = Math.max(zone.attackCountThisTurn || 0, zone.hasAttacked ? 1 : 0);
+        const maxAttackCount = 1 + (zone.extraAttackAllowance || 0);
+        if (attackCount >= maxAttackCount) return { valid: false, reason: "Unit already attacked" };
 
         const attackCostAlreadyPaid = (zone as any)._attackCostPaid === true;
         const attackCostEffect = zone.unit.effects?.find(effect =>

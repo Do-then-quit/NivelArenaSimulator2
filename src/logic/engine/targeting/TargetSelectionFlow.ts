@@ -1,6 +1,37 @@
 import { TargetSelector } from '../../TargetSelector';
 import type { GameContext, GameState } from '../../types';
 
+function getTargetCard(target: any): any | null {
+    if (!target) return null;
+    if (typeof target === 'object' && 'unit' in target) return target.unit ?? null;
+    if (typeof target === 'object' && 'type' in target) return target;
+    return null;
+}
+
+function getTargetCost(target: any): number {
+    const card = getTargetCard(target);
+    if (!card || typeof card.cost !== 'number') return 0;
+    return Math.max(0, card.cost);
+}
+
+function resolveTotalCostLimit(targetSchema: any, context: GameContext): number | null {
+    const limit = targetSchema?.totalCostLimit;
+    if (typeof limit === 'number') return Math.max(0, limit);
+    if (limit && typeof limit === 'object' && limit.type === 'MY_HAND_COUNT') {
+        const add = typeof limit.add === 'number' ? limit.add : 0;
+        return Math.max(0, context.player.hand.length + add);
+    }
+    return null;
+}
+
+function canAddTargetWithinTotalCost(targetSchema: any, context: GameContext, selectedTargets: any[], target: any): boolean {
+    const limit = resolveTotalCostLimit(targetSchema, context);
+    if (limit === null) return true;
+    if (selectedTargets.includes(target)) return true;
+    const currentCost = selectedTargets.reduce((sum, item) => sum + getTargetCost(item), 0);
+    return currentCost + getTargetCost(target) <= limit;
+}
+
 export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targetPlayerId: string) {
     if (engine.state.interactionMode !== 'SELECT_TARGET' || !engine.state.pendingEffect) return;
 
@@ -47,6 +78,10 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
+            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetZone)) {
+                console.log('Cannot select target: total cost limit exceeded.');
+                return;
+            }
             selectedTargets.push(targetZone);
             console.log(`Target added. ${selectedTargets.length}/${maxCount}`);
         } else {
@@ -85,10 +120,14 @@ export function confirmTargets(engine: any) {
                     engine.state.revealedCards.splice(idx, 1);
                 }
             });
-            // Shuffle rest back
+            const remainingDestination = pending.actionValue?.remainingDestination;
             if (engine.state.revealedCards.length > 0) {
-                player.deck.push(...engine.state.revealedCards);
-                engine.shuffle(player.deck);
+                if (remainingDestination === 'TRASH') {
+                    player.trash.push(...engine.state.revealedCards);
+                } else {
+                    player.deck.push(...engine.state.revealedCards);
+                    engine.shuffle(player.deck);
+                }
             }
         }
         engine.state.revealedCards = [];
@@ -214,6 +253,10 @@ export function selectTrashTarget(engine: any, trashIndex: number, targetPlayerI
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
+            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, card)) {
+                console.log('Cannot select target: total cost limit exceeded.');
+                return;
+            }
             selectedTargets.push(card);
         } else {
             pending.selectedTargets = selectedTargets.filter((t: any) => t !== card);
@@ -252,6 +295,10 @@ export function selectDamageTargetByPlayerId(engine: any, damageIndex: number, t
         if (!selectedTargets.includes(targetCard)) {
             if (selectedTargets.length >= maxCount) {
                 console.log(`Cannot select more than ${maxCount} targets.`);
+                return;
+            }
+            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetCard)) {
+                console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
             selectedTargets.push(targetCard);
@@ -293,6 +340,10 @@ export function selectItemTargetByPlayerId(engine: any, zoneIndex: number, itemI
         if (!selectedTargets.includes(targetCard)) {
             if (selectedTargets.length >= maxCount) {
                 console.log(`Cannot select more than ${maxCount} targets.`);
+                return;
+            }
+            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetCard)) {
+                console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
             selectedTargets.push(targetCard);
@@ -337,6 +388,10 @@ export function selectHandTargetByPlayerId(engine: any, handIndex: number, targe
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
+            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetCard)) {
+                console.log('Cannot select target: total cost limit exceeded.');
+                return;
+            }
             selectedTargets.push(targetCard);
         } else {
             pending.selectedTargets = selectedTargets.filter((t: any) => t !== targetCard);
@@ -375,6 +430,10 @@ export function selectRevealedTarget(engine: any, index: number) {
         if (!selectedTargets.includes(card)) {
             if (selectedTargets.length >= maxCount) {
                 console.log(`Cannot select more than ${maxCount} targets.`);
+                return;
+            }
+            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, card)) {
+                console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
             selectedTargets.push(card);
@@ -430,8 +489,13 @@ export function selectRevealedTarget(engine: any, index: number) {
     if (engine.state.revealedCards.length > 0 && pending.actionType !== 'PICK_REVEALED_ORDER_BOTTOM') {
         const player = engine.state.players.find((p: any) => p.id === pending.sourcePlayerId);
         if (player) {
-            player.deck.push(...engine.state.revealedCards);
-            engine.shuffle(player.deck);
+            const remainingDestination = pending.actionValue?.remainingDestination;
+            if (remainingDestination === 'TRASH') {
+                player.trash.push(...engine.state.revealedCards);
+            } else {
+                player.deck.push(...engine.state.revealedCards);
+                engine.shuffle(player.deck);
+            }
             engine.state.revealedCards = [];
         }
     }

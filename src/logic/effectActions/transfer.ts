@@ -42,6 +42,9 @@ export const returnUnitAndItemsToHand: ActionImplementation = (ctx, _params, tar
         targetZone.items = [];
         targetZone.buffs = [];
         targetZone.temporaryEffects = [];
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.hasAttacked = false;
 
         console.log(`Returned ${unitName} and equipped items to owner hand.`);
     });

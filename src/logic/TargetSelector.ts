@@ -130,6 +130,12 @@ export class TargetSelector {
                             return unit && unit.cost >= filter.value;
                         });
                         break;
+                    case 'COST_LIMIT_BY_LEADER_LEVEL':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            return card && card.cost <= context.player.leaderLevel;
+                        });
+                        break;
                     case 'COST_EQUAL':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
@@ -157,6 +163,12 @@ export class TargetSelector {
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
                             return unit && unit.name.includes(filter.value);
+                        });
+                        break;
+                    case 'EXCLUDE_CARD_ID':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            return card && card.id !== filter.value;
                         });
                         break;
                     case 'ITEM_COUNT_MIN':
@@ -316,6 +328,12 @@ export class TargetSelector {
                         break;
                     case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
                     case 'COST_MIN': if (!unit || unit.cost < filter.value) return false; break;
+                    case 'COST_LIMIT_BY_LEADER_LEVEL':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || card.cost > context.player.leaderLevel) return false;
+                        }
+                        break;
                     case 'POWER_LIMIT': if (!unit || engine.getUnitPower(target, this.getOwner(engine, target)) > filter.value) return false; break;
                     case 'COST_LOWER_THAN_COST_PAYMENT':
                         if (!unit || !context.costPaymentCard) return false;
@@ -323,6 +341,12 @@ export class TargetSelector {
                         break;
                     case 'HAS_NAME':
                         if (!unit || !unit.name.includes(filter.value)) return false;
+                        break;
+                    case 'EXCLUDE_CARD_ID':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || card.id === filter.value) return false;
+                        }
                         break;
                     case 'COST_EQUAL':
                         {
