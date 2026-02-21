@@ -26,7 +26,11 @@ export function advanceCombatStep(engine: any) {
             engine.state.combatStep = 'NONE';
             engine.state.pendingAttackerIndex = null;
             engine.state.pendingBlockerZoneIndex = null;
-            engine.state.phase = Phase.ATTACK; // Return to Attack Available
+            const resumePhaseAfterAutoAttack = (engine.state as any).resumePhaseAfterAutoAttack as Phase | undefined;
+            engine.state.phase = resumePhaseAfterAutoAttack ?? Phase.ATTACK; // Return to ATTACK unless an auto-entry attack asked to restore original phase.
+            if (resumePhaseAfterAutoAttack !== undefined) {
+                delete (engine.state as any).resumePhaseAfterAutoAttack;
+            }
             engine.assignInteractionOwner(engine.currentPlayer.id);
             break;
     }

@@ -31,6 +31,15 @@ function findAction(
     return actions.find(action => action.type === type && (!predicate || predicate(action)));
 }
 
+function advanceUntil(engine: GameEngine, predicate: () => boolean, maxSteps = 20) {
+    let guard = 0;
+    while (!predicate() && guard < maxSteps) {
+        engine.nextPhase();
+        guard += 1;
+    }
+    expect(predicate()).toBe(true);
+}
+
 describe('ST10 Effects Regression', () => {
     it('ST10-002 optional entry discard then draw', () => {
         const engine = createEngine(10001);
@@ -80,8 +89,14 @@ describe('ST10 Effects Regression', () => {
 
         engine.playUnit(0, 0);
 
-        expect(p1.unitZones[0].hasAttacked).toBe(true);
-        expect(engine.state.combatStep === 'DEFENSE_DECLARATION' || engine.state.phase === Phase.BLOCK || engine.state.phase === Phase.ATTACK).toBe(true);
+        const forcedBlock = findAction(engine, p2.id, 'RESOLVE_BLOCK', (action: any) => action.shouldBlock && action.blockerZoneIndex === 0);
+        expect(forcedBlock).toBeDefined();
+        if (forcedBlock) expect(engine.step(forcedBlock)).toBe(true);
+
+        expect(p1.trash.some(card => card.id.startsWith('ST10-003'))).toBe(true);
+        expect(p2.unitZones[0].unit).toBeNull();
+        expect(engine.state.combatStep).toBe('NONE');
+        expect(engine.state.phase).toBe(Phase.MAIN);
     });
 
     it('ST10-004 reveals top 3, takes a chain unit, trashes the rest', () => {
@@ -187,6 +202,42 @@ describe('ST10 Effects Regression', () => {
         const after = engine.getUnitPower(encounterZone, p2);
 
         expect(encounterZone.unit === null || after === before - 3000).toBe(true);
+    });
+
+    it('ST10-007 keeps granted attacker keyword until opponent turn end but attack buff expires at battle end', () => {
+        const engine = createEngine(10011);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.unitZones[0].unit = getCard('ST10-007');
+        p1.skillZone = [getCard('ST10-015')];
+        engine.state.phase = Phase.MAIN;
+
+        engine.activateEffect(0, 0);
+
+        const grantedEffect = p1.unitZones[0].temporaryEffects.find(effect => effect.description.includes('파워+2000'));
+        expect(grantedEffect).toBeDefined();
+        expect(grantedEffect?.duration).toBe('OPP_TURN_END');
+
+        engine.state.phase = Phase.ATTACK;
+        engine.attack(0);
+
+        const passBlock = findAction(engine, p2.id, 'RESOLVE_BLOCK', action => action.shouldBlock === false);
+        if (passBlock) expect(engine.step(passBlock)).toBe(true);
+
+        const battleScopedPowerBuff = p1.unitZones[0].buffs.find(buff => buff.type === 'POWER' && buff.value === 2000);
+        expect(battleScopedPowerBuff).toBeUndefined();
+
+        const stillGrantedAfterBattle = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
+        expect(stillGrantedAfterBattle).toBe(true);
+
+        advanceUntil(engine, () => engine.currentPlayer.id === p2.id && engine.state.phase === Phase.LEVEL_UP);
+        const stillGrantedAfterOwnTurnEnd = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
+        expect(stillGrantedAfterOwnTurnEnd).toBe(true);
+
+        advanceUntil(engine, () => engine.currentPlayer.id === p1.id && engine.state.phase === Phase.LEVEL_UP);
+        const removedAfterOppTurnEnd = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
+        expect(removedAfterOppTurnEnd).toBe(false);
     });
 
     it('ST10-013 can optionally trash own unit after enemy debuff', () => {

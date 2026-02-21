@@ -1277,6 +1277,12 @@ export class GameEngine {
             unitZone: zone,
             machine: this
         });
+
+        // ENTRY effects can start combat (e.g., "엔트리: 조우 유닛이 있다면 공격").
+        // If queue drained in the same call, advance combat flow once so it does not stall at ATTACK_DECLARATION.
+        if (this.state.combatStep !== 'NONE' && this.state.effectQueue.length === 0 && this.state.interactionMode === 'NORMAL') {
+            this.onQueueCompleted();
+        }
     }
 
     playSkill(cardIndex: number) {

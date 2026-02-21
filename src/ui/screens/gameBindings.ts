@@ -325,6 +325,22 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         });
     });
 
+    document.querySelectorAll('.leader-active-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!canLocalHumanInput()) return;
+            const actorId = getActionOwnerPlayerId(uiState.game!);
+            const leaderAction = uiState.game!
+                .getLegalActions(actorId)
+                .find((action: any) => action.type === 'ACTIVATE_EFFECT' && action.sourceType === 'LEADER') as any;
+
+            if (leaderAction) {
+                uiState.game!.step(leaderAction);
+                uiState.render?.();
+            }
+        });
+    });
+
     if (uiState.game.state.interactionMode === 'SELECT_COST' && localHumanCanInput) {
         const pending = uiState.game.state.pendingEffect as any;
         const payerPlayer = uiState.game.state.players.find(player => player.id === pending?.sourcePlayerId);

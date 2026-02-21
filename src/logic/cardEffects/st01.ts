@@ -1,4 +1,4 @@
-import { Effect, ActivationCondition } from '../types';
+import { Effect, ActivationCondition, CardType } from '../types';
 
 export const ST01_EFFECTS: Record<string, Effect[]> = {
     "ST01-001": [
@@ -114,7 +114,10 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
                 type: 'CARD',
                 count: 1,
                 selectMode: 'MANUAL',
-                filters: [{ type: 'COST_LIMIT', value: 2 }]
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.UNIT },
+                    { type: 'COST_LIMIT', value: 2 }
+                ]
             },
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }
         },
@@ -131,7 +134,10 @@ export const ST01_EFFECTS: Record<string, Effect[]> = {
                 type: 'CARD',
                 count: 1,
                 selectMode: 'MANUAL',
-                filters: [{ type: 'COST_LIMIT', value: 2 }]
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.UNIT },
+                    { type: 'COST_LIMIT', value: 2 }
+                ]
             },
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} }
         }

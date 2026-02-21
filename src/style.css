@@ -188,6 +188,7 @@ body.phase-theme-end {
     display: flex;
     justify-content: center;
     margin-top: 10px;
+    position: relative;
 }
 
 /* --- Main Central Area --- */
@@ -708,6 +709,21 @@ body.phase-theme-end {
     cursor: pointer;
     font-weight: bold;
     z-index: 10;
+}
+
+.leader-active-btn {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: #0984e3;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 12;
 }
 
 .cost-candidate {

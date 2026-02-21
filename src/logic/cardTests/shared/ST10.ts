@@ -129,9 +129,18 @@ const tests: UnifiedTestCase[] = [
         },
         verify: (engine) => {
             const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
             engine.playUnit(0, 0);
+            const blockAction = engine
+                .getLegalActions(p2.id)
+                .find(action => action.type === 'RESOLVE_BLOCK' && action.shouldBlock && action.blockerZoneIndex === 0) as any;
+            if (blockAction) engine.step(blockAction);
             return [
-                { pass: p1.unitZones[0].hasAttacked, message: '엔트리 즉시 공격 처리' }
+                { pass: !!blockAction, message: '듀얼리스트로 조우 방어 진행' },
+                { pass: p2.unitZones[0].unit === null, message: '조우 유닛 전투 트래시' },
+                { pass: p1.unitZones[0].unit === null && p1.trash.some(card => card.id.startsWith('ST10-003')), message: '전투 종료 패시브로 자기 트래시' },
+                { pass: engine.state.combatStep === 'NONE', message: '전투 단계 정상 종료' },
+                { pass: engine.state.phase === Phase.MAIN, message: `자동 공격 후 원래 페이즈 복귀 (${engine.state.phase})` }
             ];
         }
     },
@@ -212,7 +221,7 @@ const tests: UnifiedTestCase[] = [
     {
         testId: 'ST10-007',
         name: '사막의 가시 루비아 액티브 조건부 부여',
-        description: '스킬존 1장 이상이면 어태커 +2000 효과 부여.',
+        description: '부여 효과는 상대 턴 종료까지 유지, 공격 중 파워 버프는 전투 종료 시 해제.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.unitZones[0].unit = getCard('ST10-007');
@@ -222,10 +231,42 @@ const tests: UnifiedTestCase[] = [
         },
         verify: (engine) => {
             const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
             engine.activateEffect(0, 0);
-            const hasGranted = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
+            const hasGranted = p1.unitZones[0].temporaryEffects.some(
+                effect => effect.description.includes('파워+2000') && effect.duration === 'OPP_TURN_END'
+            );
+
+            engine.state.phase = Phase.ATTACK;
+            engine.attack(0);
+            const passBlock = engine
+                .getLegalActions(p2.id)
+                .find(action => action.type === 'RESOLVE_BLOCK' && action.shouldBlock === false) as any;
+            if (passBlock) engine.step(passBlock);
+
+            const buffAfterBattle = p1.unitZones[0].buffs.find(buff => buff.type === 'POWER' && buff.value === 2000);
+            const grantedAfterBattle = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
+
+            let guard = 0;
+            while (!(engine.currentPlayer.id === p2.id && engine.state.phase === Phase.LEVEL_UP) && guard < 12) {
+                engine.nextPhase();
+                guard += 1;
+            }
+            const grantedAfterOwnTurnEnd = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
+
+            guard = 0;
+            while (!(engine.currentPlayer.id === p1.id && engine.state.phase === Phase.LEVEL_UP) && guard < 12) {
+                engine.nextPhase();
+                guard += 1;
+            }
+            const grantedAfterOppTurnEnd = p1.unitZones[0].temporaryEffects.some(effect => effect.description.includes('파워+2000'));
+
             return [
-                { pass: hasGranted, message: '조건 충족 시 어태커 버프 효과 부여' }
+                { pass: hasGranted, message: '조건 충족 시 OPP_TURN_END 어태커 효과 부여' },
+                { pass: !buffAfterBattle, message: '전투 종료 시 +2000 버프 해제' },
+                { pass: grantedAfterBattle, message: '전투 종료 후에도 부여 효과 유지' },
+                { pass: grantedAfterOwnTurnEnd, message: '자신 턴 종료 후에도 부여 효과 유지' },
+                { pass: !grantedAfterOppTurnEnd, message: '상대 턴 종료 후 부여 효과 해제' }
             ];
         }
     },

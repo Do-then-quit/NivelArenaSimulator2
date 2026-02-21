@@ -336,11 +336,21 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
     );
     const hasBlockPassAction = blockResolveActions.some((action: any) => action.shouldBlock === false);
     const activatableEffectActions = (legalActions || []).filter((action: any) => action.type === 'ACTIVATE_EFFECT');
+    const attackActionZoneSet = new Set<number>(
+        (legalActions || [])
+            .filter((action: any) => action.type === 'ATTACK' && typeof action.attackerZoneIndex === 'number')
+            .map((action: any) => action.attackerZoneIndex),
+    );
+    const leaderHasActivatableEffect =
+        !isOpponent &&
+        player.levelZone?.isAwakened === true &&
+        activatableEffectActions.some((action: any) => action.sourceType === 'LEADER');
     return `
       <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
         <div class="level-zone">
             <div class="leader-slot">
                 ${player.levelZone ? renderCard(player.levelZone, true) : ''}
+                ${!isOpponent && localHumanCanInput && leaderHasActivatableEffect ? '<button class="leader-active-btn">Active</button>' : ''}
             </div>
 
             ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
@@ -358,6 +368,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
         const showPassControl = uiState.game!.state.phase === Phase.BLOCK && isOpponent && hasBlockPassAction && isEncounterLane;
         const isBlockingTarget = isEncounterLane || canBlockWithThisZone;
         const zoneHasActivatableEffect = !isOpponent && activatableEffectActions.some((action: any) => action.zoneIndex === i);
+        const canAttackFromThisZone = !isOpponent && attackActionZoneSet.has(i);
         const isSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(z);
 
         return `
@@ -377,7 +388,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
                             </div>
                         ` : ''}
 
-                        ${z.unit && !isOpponent && localHumanCanInput && uiState.game!.state.phase === Phase.ATTACK && !z.hasAttacked ? '<button class="attack-btn">Attack</button>' : ''}
+                        ${z.unit && !isOpponent && localHumanCanInput && canAttackFromThisZone ? '<button class="attack-btn">Attack</button>' : ''}
                         ${!isOpponent && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">Active</button>' : ''}
                         ${(canBlockWithThisZone || showPassControl) && localHumanCanInput ? `
                             <div class="block-controls">

@@ -259,21 +259,36 @@ const tests: UnifiedTestCase[] = [
     {
         testId: 'ST01-013',
         name: '전력 보강 스킬',
-        description: '트래시에서 2코 이하 유닛 회수.',
+        description: '트래시에서 2코 이하 유닛만 선택 가능(스킬 선택 불가).',
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
             p1.leaderLevel = 5;
             p1.hand = [getCard('ST01-013')];
             const unit = getCard('ST01-002');
             unit.cost = 1;
-            p1.trash = [unit];
+            const skill = getCard('ST01-012');
+            skill.cost = 2;
+            p1.trash = [unit, skill];
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
             const p1 = engine.currentPlayer;
             engine.playSkill(0);
-            engine.selectTrashTarget(0);
+            if (engine.state.interactionMode !== 'SELECT_TARGET') {
+                return [{ pass: false, message: '타겟 선택 상태 진입 실패' }];
+            }
+
+            const legal = engine.getLegalActions(p1.id).filter(action => action.type === 'SELECT_TRASH_TARGET');
+            const canSelectUnit = legal.some(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-002'));
+            const canSelectSkill = legal.some(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-012'));
+            const unitAction = legal.find(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-002'));
+            if (unitAction) {
+                engine.step(unitAction);
+            }
+
             return [
+                { pass: canSelectUnit === true, message: '2코 이하 유닛 타겟 가능' },
+                { pass: canSelectSkill === false, message: '스킬 카드 타겟 불가' },
                 { pass: p1.hand.some(c => c.id.startsWith('ST01-002')), message: '유닛 회수됨' }
             ];
         }
@@ -282,22 +297,37 @@ const tests: UnifiedTestCase[] = [
     {
         testId: 'ST01-013-Trigger',
         name: '전력 보강 트리거',
-        description: '대미지 트리거: 2코 이하 유닛 회수.',
+        description: '대미지 트리거: 2코 이하 유닛만 선택 가능(스킬 선택 불가).',
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
             p1.deck = [getCard('ST01-013')];
             const unit = getCard('ST01-002');
             unit.cost = 1;
-            p1.trash = [unit];
+            const skill = getCard('ST01-012');
+            skill.cost = 2;
+            p1.trash = [unit, skill];
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
             const p1 = engine.currentPlayer;
             engine.dealDamage(p1, 1);
-            if (engine.state.interactionMode === 'SELECT_TARGET') {
-                engine.selectTrashTarget(0);
+            if (engine.state.interactionMode !== 'SELECT_TARGET') {
+                return [{ pass: false, message: '타겟 선택 상태 진입 실패' }];
             }
+
+            const legal = engine.getLegalActions(p1.id).filter(action => action.type === 'SELECT_TRASH_TARGET');
+            const canSelectUnit = legal.some(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-002'));
+            const canSelectSkill012 = legal.some(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-012'));
+            const canSelectSkill013 = legal.some(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-013'));
+            const unitAction = legal.find(action => action.type === 'SELECT_TRASH_TARGET' && p1.trash[action.trashIndex]?.id.startsWith('ST01-002'));
+            if (unitAction) {
+                engine.step(unitAction);
+            }
+
             return [
+                { pass: canSelectUnit === true, message: '2코 이하 유닛 타겟 가능' },
+                { pass: canSelectSkill012 === false, message: '비유닛 스킬 타겟 불가' },
+                { pass: canSelectSkill013 === false, message: '트리거 자기 카드(스킬) 타겟 불가' },
                 { pass: p1.hand.some(c => c.id.startsWith('ST01-002')), message: '트리거 회수' }
             ];
         }

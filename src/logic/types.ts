@@ -262,6 +262,7 @@ export interface Effect {
     targets?: TargetSchema;
     action: EffectAction;
     duration?: 'PERMANENT' | 'TURN_END' | 'OPP_TURN_END' | 'BATTLE_END';
+    actionDurationOverride?: 'PERMANENT' | 'TURN_END' | 'OPP_TURN_END' | 'BATTLE_END';
     description: string;
     optional?: boolean;
 }

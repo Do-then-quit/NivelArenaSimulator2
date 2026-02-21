@@ -44,9 +44,11 @@ export const grantEffect: ActionImplementation = (_ctx, params, targets) => {
         if (target && 'temporaryEffects' in target) {
             const effect = params.effect;
             if (effect) {
+                const actionDurationOverride = effect.actionDurationOverride ?? effect.duration;
                 target.temporaryEffects.push({
                     ...effect,
-                    duration: params.duration || 'TURN_END'
+                    duration: params.duration || 'TURN_END',
+                    actionDurationOverride
                 });
                 console.log(`Granted effect to ${target.unit?.name}: ${effect.description}`);
             }

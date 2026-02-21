@@ -271,7 +271,7 @@ export class EffectManager {
                 fired[effectId] = true;
             }
 
-            let resolvedDuration = effect.duration;
+            let resolvedDuration = effect.actionDurationOverride ?? effect.duration;
             if (effect.activation === ActivationCondition.ATTACKER || effect.activation === ActivationCondition.DEFENDER) {
                 if (resolvedDuration === undefined) {
                     resolvedDuration = 'BATTLE_END';
