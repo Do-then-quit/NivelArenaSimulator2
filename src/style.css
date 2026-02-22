@@ -507,6 +507,188 @@ body.phase-theme-end {
     min-width: 180px;
 }
 
+.game-log-panel {
+    position: fixed;
+    top: 96px;
+    right: 14px;
+    width: 360px;
+    max-height: calc(100vh - 200px);
+    z-index: 2400;
+    background: rgba(20, 22, 35, 0.92);
+    border: 1px solid rgba(127, 197, 255, 0.32);
+    border-radius: 14px;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.game-log-panel.collapsed {
+    max-height: none;
+}
+
+.game-log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.game-log-title {
+    color: #dce9ff;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+.game-log-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.small-btn {
+    padding: 6px 10px;
+    font-size: 0.74rem;
+    letter-spacing: 0.4px;
+}
+
+.game-log-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 10px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.game-log-filter-btn {
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(0, 0, 0, 0.3);
+    color: #d8e4ff;
+    border-radius: 999px;
+    font-size: 0.73rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+
+.game-log-filter-btn.active {
+    border-color: rgba(74, 158, 255, 0.8);
+    background: rgba(74, 158, 255, 0.2);
+    color: #f6faff;
+}
+
+.game-log-body {
+    padding: 8px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.game-log-empty {
+    padding: 12px 10px;
+    text-align: center;
+    color: #8fa3c9;
+    font-size: 0.82rem;
+}
+
+.game-log-entry {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.26);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.game-log-entry.level-warn {
+    border-color: rgba(255, 196, 90, 0.45);
+}
+
+.game-log-entry.level-error {
+    border-color: rgba(255, 107, 107, 0.5);
+}
+
+.game-log-entry-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.game-log-badge {
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.game-log-badge.category-action {
+    background: rgba(74, 158, 255, 0.18);
+    border-color: rgba(74, 158, 255, 0.5);
+}
+
+.game-log-badge.category-phase {
+    background: rgba(122, 201, 255, 0.14);
+    border-color: rgba(122, 201, 255, 0.44);
+}
+
+.game-log-badge.category-combat {
+    background: rgba(255, 107, 107, 0.14);
+    border-color: rgba(255, 107, 107, 0.44);
+}
+
+.game-log-badge.category-effect {
+    background: rgba(255, 196, 90, 0.14);
+    border-color: rgba(255, 196, 90, 0.44);
+}
+
+.game-log-badge.category-target {
+    background: rgba(184, 184, 255, 0.14);
+    border-color: rgba(184, 184, 255, 0.44);
+}
+
+.game-log-badge.category-rule {
+    background: rgba(255, 132, 190, 0.14);
+    border-color: rgba(255, 132, 190, 0.44);
+}
+
+.game-log-badge.category-system {
+    background: rgba(160, 174, 192, 0.14);
+    border-color: rgba(160, 174, 192, 0.44);
+}
+
+.game-log-level,
+.game-log-turn,
+.game-log-phase,
+.game-log-mode {
+    color: #9fb0d2;
+    font-size: 0.68rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 6px;
+    border-radius: 999px;
+}
+
+.game-log-message {
+    color: #f3f6ff;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.game-log-source {
+    color: #7f91b7;
+    font-size: 0.68rem;
+}
+
 .verification-session-panel {
     position: fixed;
     top: 96px;
@@ -1703,6 +1885,27 @@ body.phase-theme-end {
         left: 8px;
         bottom: 8px;
         justify-content: flex-end;
+    }
+
+    .game-log-panel {
+        top: auto;
+        right: 8px;
+        left: 8px;
+        bottom: 80px;
+        width: auto;
+        max-height: 40vh;
+    }
+
+    .game-log-header {
+        padding: 8px 10px;
+    }
+
+    .game-log-title {
+        font-size: 0.9rem;
+    }
+
+    .game-log-body {
+        max-height: 32vh;
     }
 }
 

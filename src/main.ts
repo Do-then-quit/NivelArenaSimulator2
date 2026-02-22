@@ -32,6 +32,7 @@ function startGame(
     viewConfig?: MatchViewConfig,
 ) {
     clearBotStepTimer();
+    uiState.gameLogFeed.clear();
     uiState.replaySession = null;
     uiState.verificationSession = null;
     uiState.activeMatchConfig = controlConfig;
@@ -56,6 +57,7 @@ function startGame(
 
     (window as any).debug = new DebugManager(uiState.game, render);
     uiState.currentScreen = Screen.GAME;
+    uiState.gameLogFeed.pushUiLog(`새 매치 시작: ${controlConfig.label}`, 'SYSTEM');
     render();
 }
 
@@ -75,6 +77,7 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     const currentIndex = resolvedOrderedTestIds.indexOf(testId);
     const { engine, instructions } = uiState.cardTester.setupScenario(testId);
     clearBotStepTimer();
+    uiState.gameLogFeed.clear();
     uiState.botByPlayerId.clear();
     uiState.botLabelByPlayerId.clear();
     uiState.replaySession = null;
@@ -89,6 +92,7 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     };
     (window as any).debug = new DebugManager(uiState.game, render);
     uiState.currentScreen = Screen.GAME;
+    uiState.gameLogFeed.pushUiLog(`검증 시나리오 시작: ${testId}`, 'SYSTEM');
     render();
 }
 
@@ -225,6 +229,14 @@ function renderTestScreen() {
 function render() {
     uiState.hoverPreview.hide();
     uiState.trashHoverOverlay?.hide();
+
+    if (uiState.currentScreen === Screen.GAME && uiState.game) {
+        uiState.gameLogFeed.startConsoleCapture(() => (
+            uiState.currentScreen === Screen.GAME ? uiState.game : null
+        ));
+    } else {
+        uiState.gameLogFeed.stopConsoleCapture();
+    }
 
     if (uiState.currentScreen !== Screen.GAME) {
         clearBotStepTimer();

@@ -1,5 +1,6 @@
 import { Phase, Card, CardType } from '../../logic/types';
 import { PHASE_THEME_CLASSES, Screen, uiState } from '../appState';
+import { GameLogCategory } from '../gameLogFeed';
 import {
     canLocalHumanInput,
     clearAutoPhaseAdvanceTimer,
@@ -39,6 +40,89 @@ function escapeHtml(text: string): string {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+function getLogCategoryLabel(category: GameLogCategory): string {
+    switch (category) {
+        case 'ACTION':
+            return '행동';
+        case 'PHASE':
+            return '페이즈';
+        case 'COMBAT':
+            return '전투';
+        case 'EFFECT':
+            return '효과';
+        case 'TARGET':
+            return '대상';
+        case 'RULE':
+            return '규칙';
+        case 'SYSTEM':
+            return '시스템';
+        default:
+            return category;
+    }
+}
+
+function renderGameLogPanel(): string {
+    const filterDefs: Array<{ value: 'ALL' | GameLogCategory; label: string }> = [
+        { value: 'ALL', label: '전체' },
+        { value: 'ACTION', label: '행동' },
+        { value: 'COMBAT', label: '전투' },
+        { value: 'EFFECT', label: '효과' },
+        { value: 'TARGET', label: '대상' },
+        { value: 'PHASE', label: '페이즈' },
+        { value: 'RULE', label: '규칙' },
+        { value: 'SYSTEM', label: '시스템' },
+    ];
+    const selectedFilter = uiState.gameLogView.filter;
+    const allEntries = uiState.gameLogFeed.getEntries();
+    const filteredEntries = selectedFilter === 'ALL'
+        ? allEntries
+        : allEntries.filter(entry => entry.category === selectedFilter);
+    const maxVisible = Math.max(1, uiState.gameLogView.maxVisibleEntries);
+    const visibleEntries = filteredEntries.slice(-maxVisible).reverse();
+    const isExpanded = uiState.gameLogView.expanded;
+
+    return `
+        <aside class="game-log-panel ${isExpanded ? '' : 'collapsed'}">
+            <div class="game-log-header">
+                <div class="game-log-title">게임 로그</div>
+                <div class="game-log-controls">
+                    <button id="game-log-clear" class="secondary-btn small-btn">지우기</button>
+                    <button id="game-log-toggle" class="secondary-btn small-btn">${isExpanded ? '접기' : '펼치기'}</button>
+                </div>
+            </div>
+            ${isExpanded ? `
+                <div class="game-log-filters">
+                    ${filterDefs.map(filter => `
+                        <button class="game-log-filter-btn ${selectedFilter === filter.value ? 'active' : ''}" data-log-filter="${filter.value}">
+                            ${filter.label}
+                        </button>
+                    `).join('')}
+                </div>
+                <div class="game-log-body">
+                    ${visibleEntries.length === 0 ? '<div class="game-log-empty">아직 로그가 없습니다.</div>' : ''}
+                    ${visibleEntries.map(entry => {
+        const safeMessage = escapeHtml(entry.message).replace(/\n/g, '<br>');
+        const safeSource = escapeHtml(entry.source);
+        return `
+                            <div class="game-log-entry level-${entry.level.toLowerCase()}">
+                                <div class="game-log-entry-meta">
+                                    <span class="game-log-badge category-${entry.category.toLowerCase()}">${getLogCategoryLabel(entry.category)}</span>
+                                    <span class="game-log-level">${entry.level}</span>
+                                    <span class="game-log-turn">T${entry.turnCount ?? '-'}</span>
+                                    <span class="game-log-phase">${entry.phase ?? '-'}</span>
+                                    <span class="game-log-mode">${entry.interactionMode ?? '-'}</span>
+                                </div>
+                                <div class="game-log-message">${safeMessage}</div>
+                                <div class="game-log-source">${safeSource}</div>
+                            </div>
+                        `;
+    }).join('')}
+                </div>
+            ` : ''}
+        </aside>
+    `;
 }
 
 function renderVerificationSessionPanel(): string {
@@ -561,6 +645,7 @@ export function renderGame() {
         </div>
         ${renderGameControlButtons(localHumanCanInput)}
       </div>
+      ${renderGameLogPanel()}
 
       ${renderOptionalEffectModal()}
       ${renderMulliganModal()}

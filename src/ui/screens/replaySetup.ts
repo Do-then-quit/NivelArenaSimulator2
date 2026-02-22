@@ -23,6 +23,10 @@ function parsePositiveInt(value: string, fallback: number): number {
     return parsed;
 }
 
+function formatReplayActionSummary(summary: string): string {
+    return summary.replace(/^Bot P[12]:\s*/, '');
+}
+
 function resolveSavedDeckCards(savedDeck: SavedDeck): Card[] {
     return savedDeck.cardIds
         .map(cardId => DUMMY_CARDS.find(card => card.id === cardId))
@@ -248,6 +252,7 @@ function initializeReplaySession(
         },
     };
 
+    uiState.gameLogFeed.clear();
     clearBotStepTimer();
     uiState.botByPlayerId.clear();
     uiState.botLabelByPlayerId.clear();
@@ -263,6 +268,10 @@ function initializeReplaySession(
 
     (window as any).debug = new DebugManager(playbackEngine, uiState.render!);
     uiState.currentScreen = Screen.GAME;
+    uiState.gameLogFeed.pushUiLog(
+        `[리플레이 준비] ${getBotModelLabel(player1BotId)} vs ${getBotModelLabel(player2BotId)} / ${loadout.description}`,
+        'SYSTEM',
+    );
     uiState.render?.();
 }
 
@@ -337,6 +346,10 @@ export function stepReplayForward() {
     }
 
     uiState.replaySession.currentActionIndex += 1;
+    uiState.gameLogFeed.pushUiLog(
+        `[리플레이] ${entry.actorName}: ${formatReplayActionSummary(entry.summary)}`,
+        'ACTION',
+    );
     uiState.render?.();
 }
 

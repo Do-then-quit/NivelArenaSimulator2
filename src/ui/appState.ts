@@ -13,6 +13,7 @@ import {
     BotReplayDeckLoadout,
     BotReplaySimulationResult,
 } from '../logic/ai/BotVsBotReplay';
+import { createGameLogFeed, GameLogCategory } from './gameLogFeed';
 
 export enum Screen {
     MENU,
@@ -79,6 +80,12 @@ export interface BotReplaySession {
     playerBotLabelById: Record<string, string>;
 }
 
+export interface GameLogViewState {
+    expanded: boolean;
+    filter: 'ALL' | GameLogCategory;
+    maxVisibleEntries: number;
+}
+
 export const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
     label: 'HUMAN vs HUMAN',
     player1Control: 'HUMAN',
@@ -132,6 +139,12 @@ export const uiState = {
         statusText: '',
     } as BotReplaySetupState,
     replaySession: null as BotReplaySession | null,
+    gameLogFeed: createGameLogFeed(500),
+    gameLogView: {
+        expanded: true,
+        filter: 'ALL',
+        maxVisibleEntries: 120,
+    } as GameLogViewState,
     selectedPacks: new Set<string>(),
     draggedCardIndex: null as number | null,
 
