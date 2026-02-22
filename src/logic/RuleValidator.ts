@@ -133,6 +133,37 @@ export class RuleValidator {
         if (!zone.unit) return { valid: false, reason: "No unit in zone" };
         if (zone.isExhausted) return { valid: false, reason: "Unit is exhausted" };
 
+        const opponent = engine.state.players.find(p => p.id !== player.id);
+        if (opponent) {
+            const effectSources: Array<{ effect: any; sourceCard: any }> = [];
+            if (zone.unit.effects) {
+                zone.unit.effects.forEach(effect => effectSources.push({ effect, sourceCard: zone.unit }));
+            }
+            zone.items.forEach(item => {
+                if (item.effects) {
+                    item.effects.forEach(effect => effectSources.push({ effect, sourceCard: item }));
+                }
+            });
+            if (Array.isArray(zone.temporaryEffects)) {
+                zone.temporaryEffects.forEach(effect => effectSources.push({ effect, sourceCard: zone.unit }));
+            }
+
+            const hasCannotAttackFlag = effectSources.some(({ effect, sourceCard }) => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return false;
+                if (effect.action?.type !== 'NONE' || effect.action?.params?.cannotAttack !== true) return false;
+                const context: any = {
+                    player,
+                    opponent,
+                    sourceCard,
+                    unitZone: zone,
+                    machine: engine,
+                };
+                return engine.effectManager.checkCondition(effect, context);
+            });
+
+            if (hasCannotAttackFlag) return { valid: false, reason: "Unit cannot attack" };
+        }
+
         const attackCount = Math.max(zone.attackCountThisTurn || 0, zone.hasAttacked ? 1 : 0);
         const maxAttackCount = 1 + (zone.extraAttackAllowance || 0);
         if (attackCount >= maxAttackCount) return { valid: false, reason: "Unit already attacked" };

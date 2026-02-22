@@ -356,11 +356,16 @@ export function getAvailableBlockerZoneIndexes(engine: any, attackerZoneIndex: n
     if (!attackerZone?.unit) return [];
 
     const defender = engine.opponentPlayer;
+    const defenderOpponent = engine.currentPlayer;
     const candidateSet = new Set<number>();
     const isDualist = engine.hasKeywordInZone(attackerZone, '듀얼리스트') || engine.hasKeywordInZone(attackerZone, 'DUALIST');
 
     const encounterZone = defender.unitZones[attackerZoneIndex];
-    if (encounterZone.unit && !engine.isBlockPreventedByBreakthrough(attackerZone, encounterZone)) {
+    if (
+        encounterZone.unit &&
+        !hasCannotBlockFlag(engine, encounterZone, defender, defenderOpponent) &&
+        !engine.isBlockPreventedByBreakthrough(attackerZone, encounterZone)
+    ) {
         candidateSet.add(attackerZoneIndex);
     }
 
@@ -369,6 +374,7 @@ export function getAvailableBlockerZoneIndexes(engine: any, attackerZoneIndex: n
             if (zoneIndex === attackerZoneIndex) return;
             if (Math.abs(zoneIndex - attackerZoneIndex) !== 1) return;
             if (!zone.unit) return;
+            if (hasCannotBlockFlag(engine, zone, defender, defenderOpponent)) return;
             if (!(engine.hasKeywordInZone(zone, '가디언') || engine.hasKeywordInZone(zone, 'GUARDIAN'))) return;
             if (engine.isBlockPreventedByBreakthrough(attackerZone, zone)) return;
 
@@ -379,6 +385,37 @@ export function getAvailableBlockerZoneIndexes(engine: any, attackerZoneIndex: n
     }
 
     return Array.from(candidateSet).sort((a, b) => a - b);
+}
+
+function hasCannotBlockFlag(engine: any, zone: UnitZoneState, owner: any, opponent: any): boolean {
+    if (!zone.unit) return false;
+
+    const effectSources: Array<{ effect: Effect; sourceCard: Card }> = [];
+    if (zone.unit.effects) {
+        zone.unit.effects.forEach(effect => effectSources.push({ effect, sourceCard: zone.unit! }));
+    }
+    zone.items.forEach(item => {
+        if (item.effects) {
+            item.effects.forEach(effect => effectSources.push({ effect, sourceCard: item }));
+        }
+    });
+    zone.temporaryEffects.forEach(effect => {
+        effectSources.push({ effect, sourceCard: zone.unit! });
+    });
+
+    return effectSources.some(({ effect, sourceCard }) => {
+        if (!effect || effect.activation !== ActivationCondition.PASSIVE) return false;
+        if (effect.action?.type !== 'NONE' || effect.action?.params?.cannotBlock !== true) return false;
+
+        const context: GameContext = {
+            sourceCard,
+            player: owner,
+            opponent,
+            unitZone: zone,
+            machine: engine,
+        };
+        return engine.effectManager.checkCondition(effect, context);
+    });
 }
 
 export function getGuardianBarrierCost(_engine: any, zone: UnitZoneState): number {

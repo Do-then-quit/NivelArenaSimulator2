@@ -24,6 +24,7 @@ import { ST03_EFFECTS } from './cardEffects/st03';
 import { ST04_EFFECTS } from './cardEffects/st04';
 import { ST05_EFFECTS } from './cardEffects/st05';
 import { ST10_EFFECTS } from './cardEffects/st10';
+import { ST11_EFFECTS } from './cardEffects/st11';
 import { BT01_EFFECTS } from './cardEffects/bt01';
 import { BT02_EFFECTS } from './cardEffects/bt02';
 
@@ -34,6 +35,7 @@ const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...ST04_EFFECTS,
     ...ST05_EFFECTS,
     ...ST10_EFFECTS,
+    ...ST11_EFFECTS,
     ...BT01_EFFECTS,
     ...BT02_EFFECTS
 };
@@ -61,6 +63,7 @@ function mapAttribute(rawAttr: string): Attribute {
 }
 
 const RUNTIME_KEYWORD_ALLOWLIST = new Set([
+    '버프',
     '엔트리', '엑시트', '어태커', '디펜더', '이스케이프', '가디언', '공멸', '관통', '약탈',
     '종결', '침투', '듀얼리스트', '액티브', '기동', '패시브', '암드', '전선구축',
     '레벨링크', '믹스', '광전사', '트리거', '돌파', '체인'

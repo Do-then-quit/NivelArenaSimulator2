@@ -7,6 +7,7 @@ import { ST03Module } from './shared/ST03';
 import { ST04Module } from './shared/ST04';
 import { ST05Module } from './shared/ST05';
 import { ST10Module } from './shared/ST10';
+import { ST11Module } from './shared/ST11';
 import { BT01FireModule } from './shared/BT01Fire';
 import { BT01EarthModule } from './shared/BT01Earth';
 import { BT01StormModule } from './shared/BT01Storm';
@@ -24,6 +25,7 @@ const UnifiedST03 = adaptUnifiedModule(ST03Module);
 const UnifiedST04 = adaptUnifiedModule(ST04Module);
 const UnifiedST05 = adaptUnifiedModule(ST05Module);
 const UnifiedST10 = adaptUnifiedModule(ST10Module);
+const UnifiedST11 = adaptUnifiedModule(ST11Module);
 const UnifiedBT01Fire = adaptUnifiedModule(BT01FireModule);
 const UnifiedBT01Earth = adaptUnifiedModule(BT01EarthModule);
 const UnifiedBT01Storm = adaptUnifiedModule(BT01StormModule);
@@ -40,6 +42,7 @@ export const CARD_TEST_REGISTRY: Record<string, CardTestModule> = {
     'ST04': UnifiedST04,
     'ST05': UnifiedST05,
     'ST10': UnifiedST10,
+    'ST11': UnifiedST11,
     'BT01화염': UnifiedBT01Fire,
     'BT01대지': UnifiedBT01Earth,
     'BT01폭풍': UnifiedBT01Storm,

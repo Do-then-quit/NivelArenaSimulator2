@@ -7,24 +7,27 @@ export const gainLevel: ActionImplementation = (ctx, params) => {
 };
 
 export const drawCard: ActionImplementation = (ctx, params) => {
+    const targetPlayer = params.target === 'OPPONENT' ? ctx.opponent : ctx.player;
+    const targetPlayerIndex = ctx.machine.state.players.indexOf(targetPlayer);
+
     if (params.selection === 'LOOK_3_PICK_1') {
-        const player = ctx.player;
-        const deck = player.deck;
+        const deck = targetPlayer.deck;
         if (deck.length === 0) return;
 
         const revealed = deck.splice(-3);
         if (revealed.length === 0) return;
 
         const picked = revealed.pop()!;
-        player.hand.push(picked);
-        console.log(`${player.name} picked ${picked.name} from top ${revealed.length + 1} cards.`);
+        targetPlayer.hand.push(picked);
+        console.log(`${targetPlayer.name} picked ${picked.name} from top ${revealed.length + 1} cards.`);
 
-        player.deck.unshift(...revealed);
+        targetPlayer.deck.unshift(...revealed);
     } else {
         const count = params.count || 1;
-        const pIdx = ctx.machine.state.players.indexOf(ctx.player);
-        const drawn = ctx.machine.drawCard(pIdx, count);
-        (ctx as any).lastDrawnCards = drawn;
+        const drawn = ctx.machine.drawCard(targetPlayerIndex, count);
+        if (targetPlayer === ctx.player) {
+            (ctx as any).lastDrawnCards = drawn;
+        }
     }
 };
 

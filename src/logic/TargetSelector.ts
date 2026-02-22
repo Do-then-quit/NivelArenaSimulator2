@@ -124,10 +124,27 @@ export class TargetSelector {
                             return unit && unit.cost <= filter.value;
                         });
                         break;
+                    case 'HIT_LIMIT':
+                        candidates = candidates.filter(c => {
+                            if (c && typeof c === 'object' && 'unit' in c) {
+                                const zone = c as UnitZoneState;
+                                const owner = this.getOwner(engine, zone);
+                                return engine.getUnitHit(zone, owner) <= filter.value;
+                            }
+                            const unit = this.getUnitFromTarget(c);
+                            return unit && (unit.hit || 0) <= filter.value;
+                        });
+                        break;
                     case 'COST_MIN':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
                             return unit && unit.cost >= filter.value;
+                        });
+                        break;
+                    case 'COST_LOWER_THAN_SKILL_ZONE_COUNT':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            return card && card.cost < context.player.skillZone.length;
                         });
                         break;
                     case 'COST_LIMIT_BY_LEADER_LEVEL':
@@ -327,7 +344,22 @@ export class TargetSelector {
                         }
                         break;
                     case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
+                    case 'HIT_LIMIT':
+                        if (target && typeof target === 'object' && 'unit' in target) {
+                            const zoneTarget = target as UnitZoneState;
+                            const owner = this.getOwner(engine, zoneTarget);
+                            if (engine.getUnitHit(zoneTarget, owner) > filter.value) return false;
+                            break;
+                        }
+                        if (!unit || (unit.hit || 0) > filter.value) return false;
+                        break;
                     case 'COST_MIN': if (!unit || unit.cost < filter.value) return false; break;
+                    case 'COST_LOWER_THAN_SKILL_ZONE_COUNT':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || card.cost >= context.player.skillZone.length) return false;
+                        }
+                        break;
                     case 'COST_LIMIT_BY_LEADER_LEVEL':
                         {
                             const card = this.getCardFromTarget(target);
