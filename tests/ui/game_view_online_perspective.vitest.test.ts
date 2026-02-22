@@ -19,6 +19,7 @@ function createCard(id: string, name: string) {
     return {
         id,
         name,
+        imageUrl: `https://example.com/${id}.png`,
         type: 'UNIT',
         attribute: 'FIRE',
         cost: 1,
@@ -133,8 +134,10 @@ describe('game view online perspective', () => {
 
         renderGame();
 
-        const bottomHand = Array.from(document.querySelectorAll('.hand-zone .card .card-name')).map(node => node.textContent ?? '');
-        const topHand = Array.from(document.querySelectorAll('.opponent-hand-zone .card .card-name')).map(node => node.textContent ?? '');
+        const bottomHand = Array.from(document.querySelectorAll('.hand-zone .card .card-image'))
+            .map(node => (node as HTMLImageElement).alt ?? '');
+        const topHand = Array.from(document.querySelectorAll('.opponent-hand-zone .card .card-image'))
+            .map(node => (node as HTMLImageElement).alt ?? '');
 
         expect(bottomHand).toContain('P2 Hand Card');
         expect(topHand).toContain('P1 Hand Card');

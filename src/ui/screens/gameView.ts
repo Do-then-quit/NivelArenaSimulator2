@@ -1,4 +1,4 @@
-import { Phase, Card, CardType } from '../../logic/types';
+import { Phase, Card } from '../../logic/types';
 import { PHASE_THEME_CLASSES, Screen, uiState } from '../appState';
 import { GameLogCategory } from '../gameLogFeed';
 import {
@@ -666,24 +666,10 @@ function renderPlayer(
     `;
 }
 
-export function renderCard(card: Card, isSmall: boolean = false, calculatedPower?: number, calculatedHit?: number) {
-    const isUnit = card.type === CardType.UNIT;
-    const power = calculatedPower !== undefined ? calculatedPower : card.power;
-    const hit = calculatedHit !== undefined ? calculatedHit : card.hit;
-
+export function renderCard(card: Card, isSmall: boolean = false, _calculatedPower?: number, _calculatedHit?: number) {
     return `
         <div class="card ${card.attribute.toLowerCase()} ${isSmall ? 'small-card' : ''} ${card.isAwakened ? 'awakened' : ''}">
             ${card.imageUrl ? `<img src="${card.imageUrl}" class="card-image" alt="${card.name}">` : ''}
-            <div class="card-overlay">
-                <div class="card-cost">${card.cost}</div>
-                <div class="card-name">${card.name}</div>
-                ${isUnit && !isSmall ? `
-                    <div class="card-stats-row">
-                        <span class="stat-power" ${calculatedPower !== undefined && calculatedPower !== card.power ? 'style="color:#4ecdc4; font-weight:bold;"' : ''}>P:${power}</span>
-                        <span class="stat-hit" ${calculatedHit !== undefined && calculatedHit !== card.hit ? 'style="color:#ff6b6b; font-weight:bold;"' : ''}>H:${hit}</span>
-                    </div>
-                ` : ''}
-            </div>
         </div>
     `;
 }
