@@ -1,9 +1,11 @@
-import { Card, CardType } from '../../logic/types';
+import { Card, CardType, EngineAction } from '../../logic/types';
 import { RuleValidator } from '../../logic/RuleValidator';
 import { uiState, Screen } from '../appState';
 import { canLocalHumanInput, getActionOwnerPlayerId } from '../gameLoop';
 import { restartReplayFromBeginning, stepReplayForward } from './replaySetup';
 import { GameLogCategory } from '../gameLogFeed';
+import { dispatchEngineAction, reportGameOverToServer } from '../online/onlineMatchController';
+import { getBottomPlayer, getTopPlayer, getUiPlayer, getUiPlayerRefForPlayerId, UiPlayerRef } from '../playerPerspective';
 
 export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, calculatedPower?: number, calculatedHit?: number) => string) {
     if (!uiState.game) return;
@@ -15,7 +17,10 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         return uiState.game?.state.players.find(player => player.id === playerId)?.name ?? playerId;
     };
     const getLaneLabel = (laneIndex: number) => `${laneIndex + 1}라인`;
-
+    const getPlayerForUiRef = (ref: UiPlayerRef) => getUiPlayer(uiState.game!, ref);
+    const getPlayerForPlayerAttr = (attr?: string) => getPlayerForUiRef(attr === 'opponent' ? 'opponent' : 'current');
+    const getBottomUiPlayer = () => getBottomPlayer(uiState.game!);
+    const getTopUiPlayer = () => getTopPlayer(uiState.game!);
     document.getElementById('game-log-toggle')?.addEventListener('click', () => {
         uiState.gameLogView.expanded = !uiState.gameLogView.expanded;
         uiState.render?.();
@@ -38,16 +43,27 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     document.getElementById('db-back-to-menu')?.addEventListener('click', () => {
         uiState.replaySession = null;
         uiState.verificationSession = null;
-        uiState.game = null;
-        uiState.currentScreen = Screen.MENU;
+        if (uiState.onlineSession.room?.phase === 'IN_GAME') {
+            reportGameOverToServer('disconnect');
+            uiState.game = null;
+            uiState.currentScreen = Screen.ONLINE_ROOM;
+        } else {
+            uiState.game = null;
+            uiState.currentScreen = Screen.MENU;
+        }
         uiState.render?.();
     });
 
     document.getElementById('game-over-menu-btn')?.addEventListener('click', () => {
         uiState.replaySession = null;
         uiState.verificationSession = null;
-        uiState.game = null;
-        uiState.currentScreen = Screen.MENU;
+        if (uiState.onlineSession.room?.phase === 'IN_GAME') {
+            uiState.game = null;
+            uiState.currentScreen = Screen.ONLINE_ROOM;
+        } else {
+            uiState.game = null;
+            uiState.currentScreen = Screen.MENU;
+        }
         uiState.render?.();
     });
 
@@ -78,9 +94,11 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     document.getElementById('next-phase')?.addEventListener('click', () => {
         if (!canLocalHumanInput()) return;
         const beforePhase = uiState.game!.state.phase;
-        uiState.game!.nextPhase();
+        const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+        const ok = dispatchEngineAction({ type: 'NEXT_PHASE', actorPlayerId });
+        if (!ok) return;
         const afterPhase = uiState.game!.state.phase;
-        logAction(`[수동] NEXT_PHASE: ${beforePhase} -> ${afterPhase}`);
+        logAction(`[?섎룞] NEXT_PHASE: ${beforePhase} -> ${afterPhase}`);
         uiState.render?.();
     });
 
@@ -88,16 +106,16 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         const actorPlayerId = getActionOwnerPlayerId(uiState.game);
         document.getElementById('mulligan-keep-btn')?.addEventListener('click', () => {
             if (!canLocalHumanInput()) return;
-            const ok = uiState.game!.step({ type: 'RESOLVE_MULLIGAN', actorPlayerId, shouldMulligan: false });
+            const ok = dispatchEngineAction({ type: 'RESOLVE_MULLIGAN', actorPlayerId, shouldMulligan: false });
             if (!ok) return;
-            logAction(`[멀리건] ${getPlayerName(actorPlayerId)}: 유지`);
+            logAction(`[硫由ш굔] ${getPlayerName(actorPlayerId)}: ?좎?`);
             uiState.render?.();
         });
         document.getElementById('mulligan-redraw-btn')?.addEventListener('click', () => {
             if (!canLocalHumanInput()) return;
-            const ok = uiState.game!.step({ type: 'RESOLVE_MULLIGAN', actorPlayerId, shouldMulligan: true });
+            const ok = dispatchEngineAction({ type: 'RESOLVE_MULLIGAN', actorPlayerId, shouldMulligan: true });
             if (!ok) return;
-            logAction(`[멀리건] ${getPlayerName(actorPlayerId)}: 전체 교체`);
+            logAction(`[硫由ш굔] ${getPlayerName(actorPlayerId)}: ?꾩껜 援먯껜`);
             uiState.render?.();
         });
     }
@@ -126,7 +144,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             if (!isRevealed) return;
             const index = parseInt((card as HTMLElement).dataset.index!);
             const isOpponent = card.closest('.opponent-hand-zone') !== null;
-            const cardObj = isOpponent ? uiState.game!.opponentPlayer.hand[index] : uiState.game!.currentPlayer.hand[index];
+            const player = isOpponent ? getTopUiPlayer() : getBottomUiPlayer();
+            const cardObj = player.hand[index];
             const mouseEvent = e as MouseEvent;
             uiState.hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
         });
@@ -138,7 +157,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             const mouseEvent = e as MouseEvent;
             const index = parseInt((card as HTMLElement).dataset.index!);
             const isOpponent = card.closest('.opponent-hand-zone') !== null;
-            const cardObj = isOpponent ? uiState.game!.opponentPlayer.hand[index] : uiState.game!.currentPlayer.hand[index];
+            const player = isOpponent ? getTopUiPlayer() : getBottomUiPlayer();
+            const cardObj = player.hand[index];
             uiState.hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
         });
 
@@ -158,13 +178,15 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
             if (uiState.draggedCardIndex !== null) {
                 const zoneIndex = parseInt((zone as HTMLElement).dataset.index!);
-                const card = uiState.game!.currentPlayer.hand[uiState.draggedCardIndex];
+                const localPlayer = getBottomUiPlayer();
+                const card = localPlayer.hand[uiState.draggedCardIndex];
+                if (!card) return;
 
                 let isValid = false;
                 if (card.type === CardType.UNIT) {
-                    isValid = RuleValidator.canPlayUnit(uiState.game!, uiState.game!.currentPlayer, uiState.draggedCardIndex, zoneIndex).valid;
+                    isValid = RuleValidator.canPlayUnit(uiState.game!, localPlayer, uiState.draggedCardIndex, zoneIndex).valid;
                 } else if (card.type === CardType.ITEM) {
-                    isValid = RuleValidator.canPlayItem(uiState.game!, uiState.game!.currentPlayer, uiState.draggedCardIndex, zoneIndex).valid;
+                    isValid = RuleValidator.canPlayItem(uiState.game!, localPlayer, uiState.draggedCardIndex, zoneIndex).valid;
                 }
 
                 zone.classList.add(isValid ? 'valid-target' : 'invalid-target');
@@ -187,13 +209,17 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 const zoneIndex = parseInt((zone as HTMLElement).dataset.index!);
 
                 if (!isNaN(cardIndex) && !isNaN(zoneIndex)) {
-                    const card = uiState.game!.currentPlayer.hand[cardIndex];
+                    const localPlayer = getBottomUiPlayer();
+                    const card = localPlayer.hand[cardIndex];
+                    if (!card) return;
                     if (card.type === CardType.UNIT) {
-                        uiState.game!.playUnit(cardIndex, zoneIndex);
-                        logAction(`[플레이] 유닛 ${card.name} -> ${getLaneLabel(zoneIndex)}`);
+                        const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+                        dispatchEngineAction({ type: 'PLAY_UNIT', actorPlayerId, handIndex: cardIndex, zoneIndex });
+                        logAction(`[?뚮젅?? ?좊떅 ${card.name} -> ${getLaneLabel(zoneIndex)}`);
                     } else if (card.type === CardType.ITEM) {
-                        uiState.game!.playItem(cardIndex, zoneIndex);
-                        logAction(`[플레이] 아이템 ${card.name} -> ${getLaneLabel(zoneIndex)}`);
+                        const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+                        dispatchEngineAction({ type: 'PLAY_ITEM', actorPlayerId, handIndex: cardIndex, zoneIndex });
+                        logAction(`[?뚮젅?? ?꾩씠??${card.name} -> ${getLaneLabel(zoneIndex)}`);
                     }
                     uiState.render?.();
                 }
@@ -209,7 +235,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
 
             if (uiState.draggedCardIndex !== null) {
-                const isValid = RuleValidator.canPlaySkill(uiState.game!, uiState.game!.currentPlayer, uiState.draggedCardIndex).valid;
+                const localPlayer = getBottomUiPlayer();
+                const isValid = RuleValidator.canPlaySkill(uiState.game!, localPlayer, uiState.draggedCardIndex).valid;
                 zone.classList.add(isValid ? 'valid-target' : 'invalid-target');
             }
 
@@ -228,10 +255,12 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             if (event.dataTransfer) {
                 const cardIndex = parseInt(event.dataTransfer.getData('text/plain'));
                 if (!isNaN(cardIndex)) {
-                    const card = uiState.game!.currentPlayer.hand[cardIndex];
-                    uiState.game!.playSkill(cardIndex);
+                    const localPlayer = getBottomUiPlayer();
+                    const card = localPlayer.hand[cardIndex];
+                    const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+                    dispatchEngineAction({ type: 'PLAY_SKILL', actorPlayerId, handIndex: cardIndex });
                     if (card) {
-                        logAction(`[플레이] 스킬 ${card.name}`);
+                        logAction(`[?뚮젅?? ?ㅽ궗 ${card.name}`);
                     }
                     uiState.render?.();
                 }
@@ -240,12 +269,11 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     });
 
     const getMiniItemCardFromElement = (miniItemEl: HTMLElement): Card | null => {
-        const isOpponent = miniItemEl.dataset.player === 'opponent';
         const zoneIndex = parseInt(miniItemEl.dataset.zoneIndex || '-1', 10);
         const itemIndex = parseInt(miniItemEl.dataset.itemIndex || '-1', 10);
         if (Number.isNaN(zoneIndex) || Number.isNaN(itemIndex) || zoneIndex < 0 || itemIndex < 0) return null;
 
-        const player = isOpponent ? uiState.game!.opponentPlayer : uiState.game!.currentPlayer;
+        const player = getPlayerForPlayerAttr(miniItemEl.dataset.player);
         const zone = player.unitZones[zoneIndex];
         if (!zone) return null;
         return zone.items[itemIndex] ?? null;
@@ -255,9 +283,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     unitZones.forEach(zone => {
         zone.addEventListener('mouseenter', (e) => {
             const el = zone as HTMLElement;
-            const isOpponent = el.dataset.player === 'opponent';
             const index = parseInt(el.dataset.index!);
-            const player = isOpponent ? uiState.game!.opponentPlayer : uiState.game!.currentPlayer;
+            const player = getPlayerForPlayerAttr(el.dataset.player);
             const unit = player.unitZones[index].unit;
 
             if (unit) {
@@ -268,9 +295,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
         zone.addEventListener('mousemove', (e) => {
             const el = zone as HTMLElement;
-            const isOpponent = el.dataset.player === 'opponent';
             const index = parseInt(el.dataset.index!);
-            const player = isOpponent ? uiState.game!.opponentPlayer : uiState.game!.currentPlayer;
+            const player = getPlayerForPlayerAttr(el.dataset.player);
             const unit = player.unitZones[index].unit;
 
             const eventTarget = e.target as HTMLElement | null;
@@ -317,11 +343,14 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
-            const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
-            const attacker = uiState.game!.currentPlayer.unitZones[zoneIndex]?.unit;
-            uiState.game!.attack(zoneIndex);
+            const zoneEl = btn.closest('.unit-zone') as HTMLElement;
+            const zoneIndex = parseInt(zoneEl.dataset.index!);
+            const player = getPlayerForPlayerAttr(zoneEl.dataset.player);
+            const attacker = player.unitZones[zoneIndex]?.unit;
+            const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+            dispatchEngineAction({ type: 'ATTACK', actorPlayerId, attackerZoneIndex: zoneIndex });
             if (attacker) {
-                logAction(`[공격] ${attacker.name} (${getLaneLabel(zoneIndex)})`);
+                logAction(`[怨듦꺽] ${attacker.name} (${getLaneLabel(zoneIndex)})`);
             }
             uiState.render?.();
         });
@@ -333,14 +362,22 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             if (!canLocalHumanInput()) return;
             const blockerZoneIndexRaw = (btn as HTMLElement).dataset.blockerZoneIndex;
             const blockerZoneIndex = blockerZoneIndexRaw !== undefined ? parseInt(blockerZoneIndexRaw, 10) : undefined;
+            const zoneEl = btn.closest('.unit-zone') as HTMLElement | null;
+            const blockerPlayer = zoneEl ? getPlayerForPlayerAttr(zoneEl.dataset.player) : getTopUiPlayer();
             const blocker = Number.isFinite(blockerZoneIndex as number)
-                ? uiState.game!.opponentPlayer.unitZones[blockerZoneIndex as number]?.unit
+                ? blockerPlayer.unitZones[blockerZoneIndex as number]?.unit
                 : null;
-            uiState.game!.resolveBlock(true, Number.isNaN(blockerZoneIndex) ? undefined : blockerZoneIndex);
+            const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+            dispatchEngineAction({
+                type: 'RESOLVE_BLOCK',
+                actorPlayerId,
+                shouldBlock: true,
+                blockerZoneIndex: Number.isNaN(blockerZoneIndex) ? undefined : blockerZoneIndex,
+            });
             if (typeof blockerZoneIndex === 'number' && blocker) {
-                logAction(`[방어] ${blocker.name} (${getLaneLabel(blockerZoneIndex)})로 블록`);
+                logAction(`[諛⑹뼱] ${blocker.name} (${getLaneLabel(blockerZoneIndex)})濡?釉붾줉`);
             } else {
-                logAction('[방어] 블록 선언');
+                logAction('[諛⑹뼱] 釉붾줉 ?좎뼵');
             }
             uiState.render?.();
         });
@@ -350,8 +387,9 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
-            uiState.game!.resolveBlock(false);
-            logAction('[방어] 패스');
+            const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+            dispatchEngineAction({ type: 'RESOLVE_BLOCK', actorPlayerId, shouldBlock: false });
+            logAction('[諛⑹뼱] ?⑥뒪');
             uiState.render?.();
         });
     });
@@ -360,7 +398,9 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
-            const zoneIndex = parseInt((btn.closest('.unit-zone') as HTMLElement).dataset.index!);
+            const zoneEl = btn.closest('.unit-zone') as HTMLElement;
+            const zoneIndex = parseInt(zoneEl.dataset.index!);
+            const player = getPlayerForPlayerAttr(zoneEl.dataset.player);
             const actorId = getActionOwnerPlayerId(uiState.game!);
             const activateActions = uiState.game!.getLegalActions(actorId).filter((action: any) =>
                 action.type === 'ACTIVATE_EFFECT' && action.zoneIndex === zoneIndex,
@@ -370,9 +410,9 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 activateActions[0];
 
             if (preferredAction) {
-                uiState.game!.step(preferredAction);
-                const sourceCard = uiState.game!.currentPlayer.unitZones[zoneIndex]?.unit;
-                logAction(`[액티브] ${sourceCard?.name ?? '유닛'} (${getLaneLabel(zoneIndex)}) 효과 발동`);
+                dispatchEngineAction(preferredAction as EngineAction);
+                const sourceCard = player.unitZones[zoneIndex]?.unit;
+                logAction(`[?≫떚釉? ${sourceCard?.name ?? '?좊떅'} (${getLaneLabel(zoneIndex)}) ?④낵 諛쒕룞`);
                 uiState.render?.();
             }
         });
@@ -388,9 +428,11 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 .find((action: any) => action.type === 'ACTIVATE_EFFECT' && action.sourceType === 'LEADER') as any;
 
             if (leaderAction) {
-                const leader = uiState.game!.currentPlayer.levelZone;
-                uiState.game!.step(leaderAction);
-                logAction(`[액티브] 리더 ${leader?.name ?? ''} 효과 발동`);
+                const area = btn.closest('.player-area') as HTMLElement | null;
+                const uiRef: UiPlayerRef = area?.classList.contains('opponent') ? 'opponent' : 'current';
+                const leader = getPlayerForUiRef(uiRef).levelZone;
+                dispatchEngineAction(leaderAction as EngineAction);
+                logAction(`[?≫떚釉? 由щ뜑 ${leader?.name ?? ''} ?④낵 諛쒕룞`);
                 uiState.render?.();
             }
         });
@@ -401,7 +443,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         const payerPlayer = uiState.game.state.players.find(player => player.id === pending?.sourcePlayerId);
         const costFilter = pending?.costCardTypeFilter;
         if (payerPlayer) {
-            const handSelector = payerPlayer.id === uiState.game.currentPlayer.id
+            const handSelector = payerPlayer.id === getBottomUiPlayer().id
                 ? '.hand-zone .card-in-hand'
                 : '.opponent-hand-zone .card-in-hand';
             const handCards = document.querySelectorAll(handSelector);
@@ -420,9 +462,9 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                         if (!canLocalHumanInput()) return;
                         const index = parseInt(el.dataset.index!);
                         const picked = payerPlayer.hand[index];
-                        uiState.game!.selectCostForPlayerId(index, payerPlayer.id);
+                        dispatchEngineAction({ type: 'SELECT_COST_HAND', actorPlayerId: payerPlayer.id, handIndex: index });
                         if (picked) {
-                            logAction(`[코스트] ${getPlayerName(payerPlayer.id)}: ${picked.name}`);
+                            logAction(`[肄붿뒪?? ${getPlayerName(payerPlayer.id)}: ${picked.name}`);
                         }
                         uiState.render?.();
                     });
@@ -447,16 +489,20 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         units.forEach(u => {
             const el = u as HTMLElement;
             const zoneIndex = parseInt(el.dataset.index!);
-            const isOpponent = el.dataset.player === 'opponent';
-            const targetPlayerId = isOpponent ? uiState.game!.opponentPlayer.id : uiState.game!.currentPlayer.id;
+            const targetPlayerId = getPlayerForPlayerAttr(el.dataset.player).id;
             const zoneKey = `${targetPlayerId}:${zoneIndex}`;
             const canSelectZone = zoneTargetActions.length > 0 && validZoneKeySet.has(zoneKey);
             if (!canSelectZone) return;
 
             el.addEventListener('click', () => {
                 if (!canLocalHumanInput()) return;
-                uiState.game!.selectZoneTargetByPlayerId(zoneIndex, targetPlayerId);
-                logAction(`[대상 선택] ${getPlayerName(targetPlayerId)} ${getLaneLabel(zoneIndex)}`);
+                dispatchEngineAction({
+                    type: 'SELECT_ZONE_TARGET',
+                    actorPlayerId: actorId,
+                    targetPlayerId,
+                    zoneIndex,
+                });
+                logAction(`[????좏깮] ${getPlayerName(targetPlayerId)} ${getLaneLabel(zoneIndex)}`);
                 uiState.render?.();
             });
             el.style.cursor = 'crosshair';
@@ -478,8 +524,13 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                     const selectedCard = pending.sourcePlayerId
                         ? uiState.game!.state.players.find(p => p.id === pending.sourcePlayerId)?.trash[index]
                         : null;
-                    uiState.game!.selectTrashTarget(index, pending.sourcePlayerId);
-                    logAction(`[대상 선택] 트래시: ${selectedCard?.name ?? `index ${index}`}`);
+                    dispatchEngineAction({
+                        type: 'SELECT_TRASH_TARGET',
+                        actorPlayerId: actorId,
+                        targetPlayerId: pending.sourcePlayerId,
+                        trashIndex: index,
+                    });
+                    logAction(`[????좏깮] ?몃옒?? ${selectedCard?.name ?? `index ${index}`}`);
                     uiState.render?.();
                 });
 
@@ -505,7 +556,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             });
 
             targetMap.forEach((allowedIndexes, targetPlayerId) => {
-                const handSelector = targetPlayerId === uiState.game!.currentPlayer.id
+                const handSelector = getUiPlayerRefForPlayerId(uiState.game!, targetPlayerId) === 'current'
                     ? '.hand-zone .card-in-hand'
                     : '.opponent-hand-zone .card-in-hand';
                 const handCards = document.querySelectorAll(handSelector);
@@ -523,8 +574,13 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                         if (!canLocalHumanInput()) return;
                         const targetPlayer = uiState.game!.state.players.find(player => player.id === targetPlayerId);
                         const selectedCard = targetPlayer?.hand[index];
-                        uiState.game!.selectHandTargetByPlayerId(index, targetPlayerId);
-                        logAction(`[대상 선택] 패: ${selectedCard?.name ?? `index ${index}`} (${getPlayerName(targetPlayerId)})`);
+                        dispatchEngineAction({
+                            type: 'SELECT_HAND_TARGET',
+                            actorPlayerId: actorId,
+                            targetPlayerId,
+                            handIndex: index,
+                        });
+                        logAction(`[????좏깮] ?? ${selectedCard?.name ?? `index ${index}`} (${getPlayerName(targetPlayerId)})`);
                         uiState.render?.();
                     });
                 });
@@ -542,7 +598,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             });
 
             targetMap.forEach((allowedIndexes, targetPlayerId) => {
-                const selector = targetPlayerId === uiState.game!.currentPlayer.id
+                const selector = getUiPlayerRefForPlayerId(uiState.game!, targetPlayerId) === 'current'
                     ? '.current .damage-zone .damage-card-item'
                     : '.opponent .damage-zone .damage-card-item';
                 document.querySelectorAll(selector).forEach(item => {
@@ -556,8 +612,13 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                         if (!canLocalHumanInput()) return;
                         const targetPlayer = uiState.game!.state.players.find(player => player.id === targetPlayerId);
                         const selectedCard = targetPlayer?.damage[index];
-                        uiState.game!.selectDamageTargetByPlayerId(index, targetPlayerId);
-                        logAction(`[대상 선택] 대미지 존: ${selectedCard?.name ?? `index ${index}`} (${getPlayerName(targetPlayerId)})`);
+                        dispatchEngineAction({
+                            type: 'SELECT_DAMAGE_TARGET',
+                            actorPlayerId: actorId,
+                            targetPlayerId,
+                            damageIndex: index,
+                        });
+                        logAction(`[????좏깮] ?誘몄? 議? ${selectedCard?.name ?? `index ${index}`} (${getPlayerName(targetPlayerId)})`);
                         uiState.render?.();
                     });
                 });
@@ -572,7 +633,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 const el = item as HTMLElement;
                 const zoneIndex = parseInt(el.dataset.zoneIndex || '-1');
                 const itemIndex = parseInt(el.dataset.itemIndex || '-1');
-                const playerRef = el.dataset.player === 'opponent' ? uiState.game!.opponentPlayer.id : uiState.game!.currentPlayer.id;
+                const playerRef = getPlayerForPlayerAttr(el.dataset.player).id;
                 const key = `${playerRef}:${zoneIndex}:${itemIndex}`;
                 if (!validItemKeys.has(key)) return;
 
@@ -585,8 +646,14 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                         .find(player => player.id === playerRef)
                         ?.unitZones[zoneIndex]
                         ?.items[itemIndex];
-                    uiState.game!.selectItemTargetByPlayerId(zoneIndex, itemIndex, playerRef);
-                    logAction(`[대상 선택] 아이템: ${itemCard?.name ?? `index ${itemIndex}`} (${getPlayerName(playerRef)} ${getLaneLabel(zoneIndex)})`);
+                    dispatchEngineAction({
+                        type: 'SELECT_ITEM_TARGET',
+                        actorPlayerId: actorId,
+                        targetPlayerId: playerRef,
+                        zoneIndex,
+                        itemIndex,
+                    });
+                    logAction(`[????좏깮] ?꾩씠?? ${itemCard?.name ?? `index ${itemIndex}`} (${getPlayerName(playerRef)} ${getLaneLabel(zoneIndex)})`);
                     uiState.render?.();
                 });
             });
@@ -598,8 +665,12 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                     if (!canLocalHumanInput()) return;
                     const index = parseInt((item as HTMLElement).dataset.index!);
                     const card = uiState.game!.state.revealedCards[index];
-                    uiState.game!.selectRevealedTarget(index);
-                    logAction(`[대상 선택] 공개 카드: ${card?.name ?? `index ${index}`}`);
+                    dispatchEngineAction({
+                        type: 'SELECT_REVEALED_TARGET',
+                        actorPlayerId: actorId,
+                        revealedIndex: index,
+                    });
+                    logAction(`[????좏깮] 怨듦컻 移대뱶: ${card?.name ?? `index ${index}`}`);
                     uiState.render?.();
                 });
             }
@@ -615,8 +686,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
         document.getElementById('confirm-targets-btn')?.addEventListener('click', () => {
             if (!canLocalHumanInput()) return;
-            uiState.game!.confirmTargets();
-            logAction('[대상 선택] 확인');
+            dispatchEngineAction({ type: 'CONFIRM_TARGETS', actorPlayerId: actorId });
+            logAction('[????좏깮] ?뺤씤');
             uiState.render?.();
         });
     }
@@ -624,14 +695,16 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     if (uiState.game.state.interactionMode === 'SELECT_OPTIONAL' && localHumanCanInput) {
         document.getElementById('opt-confirm')?.addEventListener('click', () => {
             if (!canLocalHumanInput()) return;
-            uiState.game!.resolveOptionalEffect(true);
-            logAction('[선택 효과] 활성화');
+            const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+            dispatchEngineAction({ type: 'RESOLVE_OPTIONAL', actorPlayerId, confirm: true });
+            logAction('[Optional] Confirmed');
             uiState.render?.();
         });
         document.getElementById('opt-skip')?.addEventListener('click', () => {
             if (!canLocalHumanInput()) return;
-            uiState.game!.resolveOptionalEffect(false);
-            logAction('[선택 효과] 스킵');
+            const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+            dispatchEngineAction({ type: 'RESOLVE_OPTIONAL', actorPlayerId, confirm: false });
+            logAction('[Optional] Skipped');
             uiState.render?.();
         });
     }
@@ -639,7 +712,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     document.querySelectorAll('.leader-slot .card').forEach(card => {
         card.addEventListener('mouseenter', (e) => {
             const isOpponent = card.closest('.opponent') !== null;
-            const player = isOpponent ? uiState.game!.opponentPlayer : uiState.game!.currentPlayer;
+            const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
             if (player.levelZone) {
                 const mouseEvent = e as MouseEvent;
                 uiState.hoverPreview.show(player.levelZone, mouseEvent.clientX, mouseEvent.clientY);
@@ -648,7 +721,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         card.addEventListener('mousemove', (e) => {
             const mouseEvent = e as MouseEvent;
             const isOpponent = card.closest('.opponent') !== null;
-            const player = isOpponent ? uiState.game!.opponentPlayer : uiState.game!.currentPlayer;
+            const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
             if (player.levelZone) {
                 uiState.hoverPreview.show(player.levelZone, mouseEvent.clientX, mouseEvent.clientY);
             }
@@ -662,7 +735,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         zone.addEventListener('mouseenter', () => {
             const el = zone as HTMLElement;
             const isOpponent = el.dataset.player === 'opponent';
-            const player = isOpponent ? uiState.game!.opponentPlayer : uiState.game!.currentPlayer;
+            const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
             uiState.trashHoverOverlay!.show(player.trash, el, isOpponent, renderCardFn);
         });
 
@@ -673,7 +746,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
     document.querySelectorAll('.damage-zone').forEach(zone => {
         const isOpponent = zone.closest('.opponent') !== null;
-        const player = isOpponent ? uiState.game!.opponentPlayer : uiState.game!.currentPlayer;
+        const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
 
         zone.querySelectorAll('.damage-card-item').forEach(cardEl => {
             const index = parseInt((cardEl as HTMLElement).dataset.index || '-1');
@@ -698,3 +771,4 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         });
     });
 }
+

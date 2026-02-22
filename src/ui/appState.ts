@@ -14,11 +14,13 @@ import {
     BotReplaySimulationResult,
 } from '../logic/ai/BotVsBotReplay';
 import { createGameLogFeed, GameLogCategory } from './gameLogFeed';
+import { OnlineSessionState } from '../shared/onlineProtocol';
 
 export enum Screen {
     MENU,
     DECK_BUILDER,
     SETUP,
+    ONLINE_ROOM,
     BOT_REPLAY_SETUP,
     GAME,
     TEST,
@@ -145,6 +147,16 @@ export const uiState = {
         filter: 'ALL',
         maxVisibleEntries: 120,
     } as GameLogViewState,
+    onlineSession: {
+        connected: false,
+        room: null,
+        role: null,
+        localClientId: null,
+        localSlot: null,
+        localEnginePlayerId: null,
+        pendingRequestId: null,
+    } as OnlineSessionState,
+    deckBuilderReturnScreen: Screen.MENU as Screen,
     selectedPacks: new Set<string>(),
     draggedCardIndex: null as number | null,
 

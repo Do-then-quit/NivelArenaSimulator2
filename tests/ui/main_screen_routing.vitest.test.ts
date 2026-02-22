@@ -35,5 +35,9 @@ describe('main screen routing', () => {
         uiState.currentScreen = Screen.MENU;
         (document.getElementById('card-test-btn') as HTMLButtonElement).click();
         expect(uiState.currentScreen).toBe(Screen.TEST);
+
+        uiState.currentScreen = Screen.MENU;
+        (document.getElementById('online-room-btn') as HTMLButtonElement).click();
+        expect(uiState.currentScreen).toBe(Screen.ONLINE_ROOM);
     });
 });

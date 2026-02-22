@@ -11,6 +11,7 @@ import {
     scheduleBotStep,
     shouldRevealHandForPlayer,
 } from '../gameLoop';
+import { getBottomPlayer, getTopPlayer } from '../playerPerspective';
 import { attachListeners } from './gameBindings';
 
 function isVerificationGame(): boolean {
@@ -334,6 +335,7 @@ function renderMulliganModal() {
 function renderGameOverModal() {
     const engine = uiState.game;
     if (!engine || !engine.state.winner) return '';
+    const onlineMatch = uiState.onlineSession.room?.phase === 'IN_GAME';
 
     const [player1, player2] = engine.state.players;
     const winner = engine.state.players.find(player => player.id === engine.state.winner) ?? player1;
@@ -402,16 +404,23 @@ function renderGameOverModal() {
                 </div>
 
                 <div class="modal-actions">
-                    <button id="game-over-menu-btn" class="primary-btn">Back to Main Menu</button>
+                    <button id="game-over-menu-btn" class="primary-btn">${onlineMatch ? 'Back to Online Room' : 'Back to Main Menu'}</button>
                 </div>
             </div>
         </div>
     `;
 }
 
-function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, legalActions: any[]) {
+function renderPlayer(
+    player: any,
+    isOpponent: boolean,
+    isMainPhase: boolean,
+    legalActions: any[],
+    inputOwnerId: string,
+) {
     if (!uiState.game) return '';
     const localHumanCanInput = canLocalHumanInput();
+    const isInputOwnerPlayer = player.id === inputOwnerId;
     const blockResolveActions = (legalActions || []).filter((action: any) => action.type === 'RESOLVE_BLOCK');
     const blockableZoneSet = new Set<number>(
         blockResolveActions
@@ -426,7 +435,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
             .map((action: any) => action.attackerZoneIndex),
     );
     const leaderHasActivatableEffect =
-        !isOpponent &&
+        isInputOwnerPlayer &&
         player.levelZone?.isAwakened === true &&
         activatableEffectActions.some((action: any) => action.sourceType === 'LEADER');
     return `
@@ -434,7 +443,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
         <div class="level-zone">
             <div class="leader-slot">
                 ${player.levelZone ? renderCard(player.levelZone, true) : ''}
-                ${!isOpponent && localHumanCanInput && leaderHasActivatableEffect ? '<button class="leader-active-btn">Active</button>' : ''}
+                ${isInputOwnerPlayer && localHumanCanInput && leaderHasActivatableEffect ? '<button class="leader-active-btn">Active</button>' : ''}
             </div>
 
             ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
@@ -447,16 +456,16 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
             <div class="units-container">
                 ${player.unitZones.map((z: any, i: number) => {
         const pendingAttackerLaneIndex = uiState.game!.state.pendingAttackerIndex ?? -1;
-        const isEncounterLane = uiState.game!.state.phase === Phase.BLOCK && isOpponent && pendingAttackerLaneIndex === i;
-        const canBlockWithThisZone = uiState.game!.state.phase === Phase.BLOCK && isOpponent && blockableZoneSet.has(i);
-        const showPassControl = uiState.game!.state.phase === Phase.BLOCK && isOpponent && hasBlockPassAction && isEncounterLane;
+        const isEncounterLane = uiState.game!.state.phase === Phase.BLOCK && isInputOwnerPlayer && pendingAttackerLaneIndex === i;
+        const canBlockWithThisZone = uiState.game!.state.phase === Phase.BLOCK && isInputOwnerPlayer && blockableZoneSet.has(i);
+        const showPassControl = uiState.game!.state.phase === Phase.BLOCK && isInputOwnerPlayer && hasBlockPassAction && isEncounterLane;
         const isBlockingTarget = isEncounterLane || canBlockWithThisZone;
-        const zoneHasActivatableEffect = !isOpponent && activatableEffectActions.some((action: any) => action.zoneIndex === i);
-        const canAttackFromThisZone = !isOpponent && attackActionZoneSet.has(i);
+        const zoneHasActivatableEffect = isInputOwnerPlayer && activatableEffectActions.some((action: any) => action.zoneIndex === i);
+        const canAttackFromThisZone = isInputOwnerPlayer && attackActionZoneSet.has(i);
         const isSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(z);
 
         return `
-                    <div class="zone unit-zone ${!isOpponent && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
+                    <div class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
                         ${z.unit ? renderCard(z.unit, false, uiState.game!.getUnitPower(z, player), uiState.game!.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
 
                         ${z.items.length > 0 ? `
@@ -472,8 +481,8 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
                             </div>
                         ` : ''}
 
-                        ${z.unit && !isOpponent && localHumanCanInput && canAttackFromThisZone ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${!isOpponent && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">Active</button>' : ''}
+                        ${z.unit && isInputOwnerPlayer && localHumanCanInput && canAttackFromThisZone ? '<button class="attack-btn">Attack</button>' : ''}
+                        ${isInputOwnerPlayer && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">Active</button>' : ''}
                         ${(canBlockWithThisZone || showPassControl) && localHumanCanInput ? `
                             <div class="block-controls">
                                 ${canBlockWithThisZone ? `<button class="block-btn" data-blocker-zone-index="${i}">Block</button>` : ''}
@@ -494,7 +503,7 @@ function renderPlayer(player: any, isOpponent: boolean, isMainPhase: boolean, le
     }).join('')}
                     ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
                 </div>
-                <div class="skill-zone ${!isOpponent && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
+                <div class="skill-zone ${isInputOwnerPlayer && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
                     ${player.skillZone.map((c: any) => renderCard(c, true)).join('')}
                     ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
                 </div>
@@ -550,10 +559,10 @@ export function renderGame() {
     clearAutoPhaseAdvanceTimer();
     applyPhaseThemeClass(uiState.game.state.phase);
 
-    const currentPlayer = uiState.game.currentPlayer;
-    const opponent = uiState.game.opponentPlayer;
-    const revealCurrentPlayerHand = shouldRevealHandForPlayer(currentPlayer.id);
-    const revealOpponentHand = shouldRevealHandForPlayer(opponent.id);
+    const bottomPlayer = getBottomPlayer(uiState.game);
+    const topPlayer = getTopPlayer(uiState.game);
+    const revealBottomPlayerHand = shouldRevealHandForPlayer(bottomPlayer.id);
+    const revealTopPlayerHand = shouldRevealHandForPlayer(topPlayer.id);
     const inputOwnerId = getActionOwnerPlayerId(uiState.game);
     const inputOwner = uiState.game.state.players.find(player => player.id === inputOwnerId) ?? null;
     const localHumanCanInput = canLocalHumanInput();
@@ -562,6 +571,7 @@ export function renderGame() {
         ? (isBotControlledPlayer(inputOwner.id) ? getBotLabelForPlayerId(inputOwner.id) : 'Human')
         : 'N/A';
     const verificationGame = isVerificationGame();
+    const inOnlineMatch = uiState.onlineSession.room?.phase === 'IN_GAME';
 
     const isMainPhase = uiState.game.state.phase === Phase.MAIN;
 
@@ -596,31 +606,31 @@ export function renderGame() {
                 SELECT CARD TO TRASH (COST)
             </div>
         ` : ''}
-        <button id="db-back-to-menu" class="secondary-btn" style="position: absolute; top: 10px; left: 10px;">Menu</button>
+        <button id="db-back-to-menu" class="secondary-btn" style="position: absolute; top: 10px; left: 10px;">${inOnlineMatch ? 'Room' : 'Menu'}</button>
       </div>
       ${verificationGame ? renderVerificationSessionPanel() : ''}
 
       <div class="opponent-hand-zone">
-          ${opponent.hand.map((c, i) => {
+          ${topPlayer.hand.map((c, i) => {
             const pending = uiState.game!.state.pendingEffect as any;
             const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
                 pending &&
                 uiState.game!.isPendingCardTarget(c);
             return `
-              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealOpponentHand ? '' : 'concealed-hand'}" data-index="${i}" data-hand-revealed="${revealOpponentHand ? '1' : '0'}">
-                  ${revealOpponentHand ? renderCard(c) : renderHiddenHandCard(false)}
+              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealTopPlayerHand ? '' : 'concealed-hand'}" data-index="${i}" data-hand-revealed="${revealTopPlayerHand ? '1' : '0'}">
+                  ${revealTopPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
               </div>
           `}).join('')}
       </div>
 
-      ${renderPlayer(opponent, true, isMainPhase, inputOwnerLegalActions)}
+      ${renderPlayer(topPlayer, true, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
 
       <div class="game-divider"></div>
 
-      ${renderPlayer(currentPlayer, false, isMainPhase, inputOwnerLegalActions)}
+      ${renderPlayer(bottomPlayer, false, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
 
       <div class="hand-zone">
-          ${currentPlayer.hand.map((c, i) => {
+          ${bottomPlayer.hand.map((c, i) => {
                 const isCostCandidate = uiState.game!.state.interactionMode === 'SELECT_COST';
                 const pending = uiState.game!.state.pendingEffect as any;
                 const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
@@ -628,8 +638,8 @@ export function renderGame() {
                     uiState.game!.isPendingCardTarget(c);
 
                 return `
-              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealCurrentPlayerHand ? '' : 'concealed-hand'}" draggable="${isMainPhase && uiState.game!.state.interactionMode === 'NORMAL' && localHumanCanInput}" data-index="${i}" data-hand-revealed="${revealCurrentPlayerHand ? '1' : '0'}">
-                  ${revealCurrentPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
+              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealBottomPlayerHand ? '' : 'concealed-hand'}" draggable="${isMainPhase && uiState.game!.state.interactionMode === 'NORMAL' && localHumanCanInput}" data-index="${i}" data-hand-revealed="${revealBottomPlayerHand ? '1' : '0'}">
+                  ${revealBottomPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
               </div>
           `}).join('')}
       </div>

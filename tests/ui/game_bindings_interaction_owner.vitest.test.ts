@@ -46,4 +46,44 @@ describe('game bindings interaction owner', () => {
             shouldMulligan: false,
         });
     });
+
+    it('blocks local input when online actor is remote player', async () => {
+        const { uiState } = await import('../../src/ui/appState');
+        const { attachListeners } = await import('../../src/ui/screens/gameBindings');
+
+        const p1 = { id: 'P1', hand: [], unitZones: [], damage: [], trash: [], skillZone: [], levelZone: null } as any;
+        const p2 = { id: 'P2', hand: [], unitZones: [], damage: [], trash: [], skillZone: [], levelZone: null } as any;
+        const dispatchSpy = vi.fn(() => true);
+        const controller = await import('../../src/ui/online/onlineMatchController');
+        const dispatchMock = vi.spyOn(controller, 'dispatchEngineAction').mockImplementation(dispatchSpy);
+
+        uiState.game = {
+            state: {
+                winner: null,
+                interactionMode: 'SELECT_MULLIGAN',
+                interactionOwnerPlayerId: 'P2',
+                players: [p1, p2],
+                pendingEffect: null,
+                revealedCards: [],
+            },
+            currentPlayer: p1,
+            opponentPlayer: p2,
+        } as any;
+        uiState.replaySession = null;
+        uiState.onlineSession.room = {
+            roomCode: '123456',
+            phase: 'IN_GAME',
+            hostClientId: 'client-host',
+            matchSessionId: 'session-1',
+            players: [],
+        };
+        uiState.onlineSession.localEnginePlayerId = 'P1';
+        uiState.render = vi.fn();
+
+        attachListeners(() => '');
+        (document.getElementById('mulligan-keep-btn') as HTMLButtonElement).click();
+
+        expect(dispatchSpy).not.toHaveBeenCalled();
+        dispatchMock.mockRestore();
+    });
 });

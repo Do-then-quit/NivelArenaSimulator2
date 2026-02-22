@@ -21,6 +21,7 @@ import {
 import { handleGameHotkeys, handleVerificationHotkeys } from './ui/hotkeys';
 import { applyPhaseThemeClass, renderGame } from './ui/screens/gameView';
 import { renderMenu, renderDeckBuilder, renderSetup } from './ui/screens/menu';
+import { renderOnlineRoom } from './ui/screens/onlineRoom';
 import { renderBotReplaySetup } from './ui/screens/replaySetup';
 
 function startGame(
@@ -250,6 +251,8 @@ function render() {
         renderDeckBuilder();
     } else if (uiState.currentScreen === Screen.SETUP) {
         renderSetup();
+    } else if (uiState.currentScreen === Screen.ONLINE_ROOM) {
+        renderOnlineRoom();
     } else if (uiState.currentScreen === Screen.BOT_REPLAY_SETUP) {
         renderBotReplaySetup();
     } else if (uiState.currentScreen === Screen.GAME && uiState.game) {

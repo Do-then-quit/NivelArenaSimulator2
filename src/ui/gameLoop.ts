@@ -76,18 +76,30 @@ export function getDefaultViewConfig(controlConfig: MatchControlConfig): MatchVi
 }
 
 export function shouldRevealHandForPlayer(playerId: string): boolean {
+    if (isOnlineRoomInGame()) {
+        const localPlayerId = uiState.onlineSession.localEnginePlayerId;
+        return !!localPlayerId && playerId === localPlayerId;
+    }
     if (uiState.activeMatchViewConfig.revealBotHand) return true;
     return !isBotControlledPlayer(playerId);
+}
+
+function isOnlineRoomInGame(): boolean {
+    return uiState.onlineSession.room?.phase === 'IN_GAME';
 }
 
 export function canLocalHumanInput(): boolean {
     if (!uiState.game || uiState.game.state.winner) return false;
     if (uiState.replaySession) return false;
     const actorId = getActionOwnerPlayerId(uiState.game);
+    if (isOnlineRoomInGame()) {
+        return actorId === uiState.onlineSession.localEnginePlayerId;
+    }
     return !isBotControlledPlayer(actorId);
 }
 
 export function shouldAutoAdvancePhase(engine: GameEngine): boolean {
+    if (isOnlineRoomInGame()) return false;
     const actorId = getActionOwnerPlayerId(engine);
     const hasNextPhaseAction = engine.getLegalActions(actorId).some(action => action.type === 'NEXT_PHASE');
 
@@ -107,6 +119,7 @@ export function getBotLabelForPlayerId(playerId: string): string {
 }
 
 export function runBotStep() {
+    if (isOnlineRoomInGame()) return;
     if (!uiState.game || uiState.currentScreen !== Screen.GAME || uiState.game.state.winner || uiState.replaySession) return;
 
     const actorId = getActionOwnerPlayerId(uiState.game);
@@ -142,6 +155,7 @@ export function runBotStep() {
 export function scheduleBotStep(delayMs: number = 220) {
     clearBotStepTimer();
 
+    if (isOnlineRoomInGame()) return;
     if (!uiState.game || uiState.currentScreen !== Screen.GAME || uiState.game.state.winner || uiState.replaySession) return;
     const actorId = getActionOwnerPlayerId(uiState.game);
     if (!isBotControlledPlayer(actorId)) return;
@@ -155,6 +169,7 @@ export function scheduleBotStep(delayMs: number = 220) {
 export function scheduleAutoPhaseAdvance(delayMs: number = 80) {
     clearAutoPhaseAdvanceTimer();
 
+    if (isOnlineRoomInGame()) return;
     if (!uiState.game || uiState.currentScreen !== Screen.GAME || uiState.game.state.winner || uiState.replaySession) return;
     if (!shouldAutoAdvancePhase(uiState.game)) return;
 

@@ -22,6 +22,7 @@ export function renderMenu() {
                 <button id="start-vs-bot-btn" class="primary-btn">Quick Play vs Baseline Bot</button>
                 <button id="custom-sim-btn" class="primary-btn">Custom Simulation (PvP)</button>
                 <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Baseline Bot</button>
+                <button id="online-room-btn" class="primary-btn">Online Match (Room Code)</button>
                 <button id="bot-replay-btn" class="primary-btn">Simulate Bot vs Bot (Replay)</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
                 <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Logic Verification</button>
@@ -56,6 +57,11 @@ export function renderMenu() {
         uiState.render?.();
     });
 
+    document.getElementById('online-room-btn')?.addEventListener('click', () => {
+        uiState.currentScreen = Screen.ONLINE_ROOM;
+        uiState.render?.();
+    });
+
     document.getElementById('bot-replay-btn')?.addEventListener('click', () => {
         const savedDecks = DeckPersistence.getAllDecks();
         uiState.botReplaySetupState = {
@@ -72,6 +78,7 @@ export function renderMenu() {
     });
 
     document.getElementById('deck-builder-btn')?.addEventListener('click', () => {
+        uiState.deckBuilderReturnScreen = Screen.MENU;
         uiState.currentScreen = Screen.DECK_BUILDER;
         uiState.render?.();
     });
@@ -88,7 +95,7 @@ export function renderDeckBuilder() {
         uiState.app,
         uiState.hoverPreview,
         () => {
-            uiState.currentScreen = Screen.MENU;
+            uiState.currentScreen = uiState.deckBuilderReturnScreen;
             uiState.render?.();
         },
     );
