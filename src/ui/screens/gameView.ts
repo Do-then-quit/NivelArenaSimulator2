@@ -17,6 +17,11 @@ import { attachListeners } from './gameBindings';
 const MIN_BATTLE_SCALE = 0.58;
 const AUTO_LOG_COLLAPSE_HEIGHT_THRESHOLD = 980;
 const AUTO_LOG_COLLAPSE_WIDTH_THRESHOLD = 1680;
+const BATTLE_BOARD_WIDTH_PX = 760;
+const HAND_ZONE_HORIZONTAL_PADDING_PX = 28;
+const HAND_CARD_WIDTH_PX = 130;
+const HAND_CARD_MAX_GAP_PX = 8;
+const HAND_CARD_MIN_STEP_PX = 24;
 
 let gameResizeRafId: number | null = null;
 let gameResizeListenerBound = false;
@@ -558,6 +563,12 @@ function renderPlayer(
             .filter((action: any) => action.type === 'ATTACK' && typeof action.attackerZoneIndex === 'number')
             .map((action: any) => action.attackerZoneIndex),
     );
+    const damageTargetActionsForPlayer = (legalActions || []).filter(
+        (action: any) => action.type === 'SELECT_DAMAGE_TARGET' && action.targetPlayerId === player.id,
+    );
+    const showDamageCardSelection =
+        uiState.game.state.interactionMode === 'SELECT_TARGET' &&
+        damageTargetActionsForPlayer.length > 0;
     const leaderHasActivatableEffect =
         isInputOwnerPlayer &&
         player.levelZone?.isAwakened === true &&
@@ -620,15 +631,23 @@ function renderPlayer(
             </div>
 
             <div class="bottom-center">
-                <div class="damage-zone">
-                    ${player.damage.map((c: any, damageIndex: number) => {
+                <div class="damage-zone ${showDamageCardSelection ? 'selection-mode' : 'summary-mode'}" data-player="${isOpponent ? 'opponent' : 'current'}">
+                    ${showDamageCardSelection ? player.damage.map((c: any, damageIndex: number) => {
         const isDamageSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(c);
         return `<div class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${damageIndex}">${renderCard(c, true)}</div>`;
-    }).join('')}
-                    ${player.damage.length === 0 ? '<span style="color: rgba(255,255,255,0.1); align-self: center; width: 100%; text-align: center; font-weight: bold;">DAMAGE ZONE</span>' : ''}
+    }).join('') : `
+                        <div class="damage-summary ${player.damage.length === 0 ? 'empty' : ''}">
+                            <div class="damage-count">${player.damage.length}</div>
+                            <div class="damage-label">DAMAGE</div>
+                        </div>
+                    `}
                 </div>
                 <div class="skill-zone ${isInputOwnerPlayer && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
-                    ${player.skillZone.map((c: any) => renderCard(c, true)).join('')}
+                    ${player.skillZone.map((c: any, skillIndex: number) => `
+                        <div class="skill-card-item" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${skillIndex}">
+                            ${renderCard(c, true)}
+                        </div>
+                    `).join('')}
                     ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
                 </div>
             </div>
@@ -699,12 +718,22 @@ export function renderGame() {
     const inOnlineMatch = uiState.onlineSession.room?.phase === 'IN_GAME';
 
     const isMainPhase = uiState.game.state.phase === Phase.MAIN;
+    const computeHandStepPx = (cardCount: number): number => {
+        const maxStep = HAND_CARD_WIDTH_PX + HAND_CARD_MAX_GAP_PX;
+        if (cardCount <= 1) return maxStep;
+
+        const innerWidth = BATTLE_BOARD_WIDTH_PX - HAND_ZONE_HORIZONTAL_PADDING_PX;
+        const idealStep = Math.floor((innerWidth - HAND_CARD_WIDTH_PX) / Math.max(1, cardCount - 1));
+        return Math.max(HAND_CARD_MIN_STEP_PX, Math.min(maxStep, idealStep));
+    };
+    const topHandStepPx = computeHandStepPx(topPlayer.hand.length);
+    const bottomHandStepPx = computeHandStepPx(bottomPlayer.hand.length);
     let interactionBannerHtml = '';
 
     if (uiState.game.state.interactionMode === 'SELECT_TARGET') {
         const pending = uiState.game.state.pendingEffect as any;
         const maxCount = pending?.targetSchema?.count || 0;
-        const currentCount = pending.selectedTargets?.length || 0;
+        const currentCount = pending?.selectedTargets?.length || 0;
         const actorId = getActionOwnerPlayerId(uiState.game);
         const canConfirm = uiState.game.getLegalActions(actorId).some(action => action.type === 'CONFIRM_TARGETS');
         const sacrificeHint = pending?.actionType === 'SACRIFICE_TO_BUFF'
@@ -736,7 +765,7 @@ export function renderGame() {
       <div class="game-layout-root">
         <div class="battle-fit-viewport">
           <div class="battle-fit-content" style="--battle-scale: 1;">
-            <div class="opponent-hand-zone">
+            <div class="opponent-hand-zone fan-layout" style="--hand-step:${topHandStepPx}px;">
                 ${topPlayer.hand.map((c, i) => {
         const pending = uiState.game!.state.pendingEffect as any;
         const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
@@ -756,7 +785,7 @@ export function renderGame() {
 
             ${renderPlayer(bottomPlayer, false, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
 
-            <div class="hand-zone">
+            <div class="hand-zone fan-layout" style="--hand-step:${bottomHandStepPx}px;">
                 ${bottomPlayer.hand.map((c, i) => {
         const isCostCandidate = uiState.game!.state.interactionMode === 'SELECT_COST';
         const pending = uiState.game!.state.pendingEffect as any;
@@ -811,10 +840,6 @@ export function renderGame() {
         if (uiState.currentScreen !== Screen.GAME || !uiState.game) return;
         applyBattleLayoutScale();
     });
-    window.setTimeout(() => {
-        if (uiState.currentScreen !== Screen.GAME || !uiState.game) return;
-        handleGameResize();
-    }, 80);
     scheduleAutoPhaseAdvance();
     scheduleBotStep();
 }

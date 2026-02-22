@@ -35,11 +35,17 @@ export class TrashHoverOverlay {
         });
     }
 
-    show(cards: Card[], anchorElement: HTMLElement, isOpponent: boolean, renderCardFn: (c: Card, small: boolean, p?: number, h?: number) => string) {
+    show(
+        cards: Card[],
+        anchorElement: HTMLElement,
+        isOpponent: boolean,
+        renderCardFn: (c: Card, small: boolean, p?: number, h?: number) => string,
+        zoneLabel: string = 'Trash',
+    ) {
         this.cancelHide();
 
 
-        this.titleElement.textContent = `${isOpponent ? "Opponent" : "Your"} Trash (${cards.length})`;
+        this.titleElement.textContent = `${isOpponent ? 'Opponent' : 'Your'} ${zoneLabel} (${cards.length})`;
 
         if (cards.length === 0) {
             this.gridElement.innerHTML = '<div style="color: #666; font-style: italic; padding: 20px; grid-column: 1/-1; text-align: center;">Empty</div>';

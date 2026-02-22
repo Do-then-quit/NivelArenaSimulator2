@@ -738,7 +738,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             const el = zone as HTMLElement;
             const isOpponent = el.dataset.player === 'opponent';
             const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
-            uiState.trashHoverOverlay!.show(player.trash, el, isOpponent, renderCardFn);
+            uiState.trashHoverOverlay!.show(player.trash, el, isOpponent, renderCardFn, 'Trash');
         });
 
         zone.addEventListener('mouseleave', () => {
@@ -747,8 +747,20 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     });
 
     document.querySelectorAll('.damage-zone').forEach(zone => {
-        const isOpponent = zone.closest('.opponent') !== null;
+        const zoneEl = zone as HTMLElement;
+        const isOpponent = zoneEl.dataset.player === 'opponent' || zone.closest('.opponent') !== null;
         const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
+
+        if (zoneEl.classList.contains('summary-mode')) {
+            zoneEl.addEventListener('mouseenter', () => {
+                uiState.trashHoverOverlay!.show(player.damage, zoneEl, isOpponent, renderCardFn, 'Damage');
+            });
+
+            zoneEl.addEventListener('mouseleave', () => {
+                uiState.trashHoverOverlay!.scheduleHide();
+            });
+            return;
+        }
 
         zone.querySelectorAll('.damage-card-item').forEach(cardEl => {
             const index = parseInt((cardEl as HTMLElement).dataset.index || '-1');
@@ -770,6 +782,30 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             cardEl.addEventListener('mouseleave', () => {
                 uiState.hoverPreview.hide();
             });
+        });
+    });
+
+    document.querySelectorAll('.skill-card-item').forEach((itemEl) => {
+        const el = itemEl as HTMLElement;
+        const index = parseInt(el.dataset.index || '-1', 10);
+        if (index < 0) return;
+
+        const player = getPlayerForPlayerAttr(el.dataset.player);
+        const card = player.skillZone[index];
+        if (!card) return;
+
+        el.addEventListener('mouseenter', (e) => {
+            const mouseEvent = e as MouseEvent;
+            uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+        });
+
+        el.addEventListener('mousemove', (e) => {
+            const mouseEvent = e as MouseEvent;
+            uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+        });
+
+        el.addEventListener('mouseleave', () => {
+            uiState.hoverPreview.hide();
         });
     });
 }
