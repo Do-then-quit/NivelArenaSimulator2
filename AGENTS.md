@@ -88,3 +88,73 @@
 ## 8) UI 운영 메모
 - `HUMAN vs BASELINE BOT`에서 시작 시 봇 핸드 공개/비공개 선택 가능
 - 입력 권한은 UI 표시와 동일하게 `interactionOwnerPlayerId` 기준으로 처리
+
+## 9) 최근 변경 컨텍스트 스냅샷 (2026-02-22 기준)
+- 아래 커밋군의 핵심 맥락을 유지한다:
+  - ST10 구현: `bd6cc5b`, `470794a`, `f2121a1`
+  - ST11 구현: `06b9dc5`
+  - 멀티플레이(Room Code): `d281ebd`
+  - UI 레이아웃/버그 수정: `2ba830b`, `d6a9930`, `d286f89`, `97626fd`
+
+### 9.1 ST10/ST11 카드 구현 위치
+- 효과 정의:
+  - `src/logic/cardEffects/st10.ts`
+  - `src/logic/cardEffects/st11.ts`
+- 카드 DB 연결/타입 및 규칙 연동 주요 지점:
+  - `src/logic/CardDatabase.ts`
+  - `src/logic/types.ts`
+  - `src/logic/RuleValidator.ts`
+  - `src/logic/TargetSelector.ts`
+  - `src/logic/effectActions/core.ts`
+  - `src/logic/engine/combat/CombatFlow.ts`
+- 통합 카드 테스트 모듈/레지스트리:
+  - `src/logic/cardTests/shared/ST10.ts`
+  - `src/logic/cardTests/shared/ST11.ts`
+  - `src/logic/cardTests/registry.ts`
+- 회귀 테스트:
+  - `tests/cards/st10/st10_unified.test.ts`
+  - `tests/cards/st10/st10_effects_regression.test.ts`
+  - `tests/cards/st11/st11_unified.test.ts`
+  - `tests/cards/st11/st11_effects_regression.test.ts`
+- 카드 이미지:
+  - `public/assets/cards/ST10-001.jpg` ~ `ST10-017.jpg`
+  - `public/assets/cards/ST11-001.jpg` ~ `ST11-017.jpg`
+
+### 9.2 온라인 멀티플레이(Room Code) 구현 위치
+- 프로토콜/타입 단일 소스:
+  - `src/shared/onlineProtocol.ts`
+- 릴레이 서버(MVP, host-authoritative):
+  - `server/index.ts`
+- 클라이언트 온라인 제어:
+  - `src/ui/online/OnlineClient.ts`
+  - `src/ui/online/onlineMatchController.ts`
+  - `src/ui/online/hash.ts`
+- 화면/상태/라우팅:
+  - `src/ui/screens/onlineRoom.ts`
+  - `src/ui/screens/menu.ts`
+  - `src/main.ts`
+  - `src/ui/appState.ts` (`Screen.ONLINE_ROOM`, `onlineSession`)
+  - `src/ui/playerPerspective.ts`
+- 문서:
+  - `docs/online-multiplayer.md`
+- 관련 테스트 묶음:
+  - `tests/network/`
+  - `tests/ui/game_loop_online_visibility.vitest.test.ts`
+  - `tests/ui/game_view_online_perspective.vitest.test.ts`
+  - `tests/ui/player_perspective_online.vitest.test.ts`
+  - `tests/ui/online_room_state_transitions.vitest.test.ts`
+
+### 9.3 최근 UI 변경 포인트
+- 게임 화면/입력 바인딩 중심:
+  - `src/ui/screens/gameView.ts`
+  - `src/ui/screens/gameBindings.ts`
+- 레이아웃/스타일:
+  - `src/style.css`
+- 상태/루프:
+  - `src/ui/appState.ts`
+  - `src/ui/gameLoop.ts`
+  - `src/main.ts`
+- 관련 회귀:
+  - `tests/ui/game_view_fit_layout.vitest.test.ts`
+  - `tests/ui/game_log_panel_render.vitest.test.ts`
+  - `tests/ui/game_view_damage_summary.vitest.test.ts`

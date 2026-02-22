@@ -10,6 +10,11 @@
   - 룰 시스템: `tests/rules_v2_regression/`
   - 카드 효과: `tests/cards/<pack>/`
   - 재발 방지: `tests/legacy/engine/` 또는 신규 회귀
+- 카드팩 구현 시 필수:
+  - `src/logic/cardTests/shared/<PACK>.ts`에 카드별 테스트를 먼저 추가한다.
+  - 각 카드의 **효과 단위** 테스트를 분리한다. (예: `ST10-001`, `ST10-001-Active`처럼 `testId`를 카드/효과 기준으로 분할)
+  - 참고 패턴: `src/logic/cardTests/shared/ST10.ts`, `src/logic/cardTests/shared/ST11.ts`
+  - Vitest 러너 파일(`tests/cards/<pack>/<pack>_unified.test.ts`)과 효과 회귀(`tests/cards/<pack>/<pack>_effects_regression.test.ts`)를 함께 유지한다.
 
 ## 3. 카드 팩 구현 배치 전략
 - 대규모 카드 팩(예: 80장+)은 한 번에 구현하지 않는다.
@@ -19,7 +24,10 @@
 - 배치 루프:
   1) 배치 카드 목록 확정 (예: `BT01-001`~`BT01-005`)
   2) 카드 텍스트와 룰북 조항 매핑
-  3) 실패 테스트 먼저 작성 (`tests/cards/<pack>/` + 필요한 회귀)
+  3) 실패 테스트 먼저 작성
+     - `src/logic/cardTests/shared/<PACK>.ts`: 카드별 + 효과별 테스트 케이스 작성
+     - `tests/cards/<pack>/`: unified 러너/효과 회귀 파일 반영
+     - 필요한 `tests/rules_v2_regression/` 회귀 추가
   4) 효과 구현 (`src/logic/cardEffects/`, 필요 시 엔진 수정)
   5) 변경 지점 테스트 실행
   6) 관련 `tests/rules_v2_regression/` 실행
