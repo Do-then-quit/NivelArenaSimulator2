@@ -34,6 +34,9 @@ function startGame(
 ) {
     clearBotStepTimer();
     uiState.gameLogFeed.clear();
+    uiState.gameLogView.manualOverride = false;
+    uiState.gameLogView.autoCollapsed = false;
+    uiState.gameLogView.expanded = true;
     uiState.replaySession = null;
     uiState.verificationSession = null;
     uiState.activeMatchConfig = controlConfig;
@@ -79,6 +82,9 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     const { engine, instructions } = uiState.cardTester.setupScenario(testId);
     clearBotStepTimer();
     uiState.gameLogFeed.clear();
+    uiState.gameLogView.manualOverride = false;
+    uiState.gameLogView.autoCollapsed = false;
+    uiState.gameLogView.expanded = true;
     uiState.botByPlayerId.clear();
     uiState.botLabelByPlayerId.clear();
     uiState.replaySession = null;
@@ -230,6 +236,7 @@ function renderTestScreen() {
 function render() {
     uiState.hoverPreview.hide();
     uiState.trashHoverOverlay?.hide();
+    document.body.classList.toggle('game-screen', uiState.currentScreen === Screen.GAME);
 
     if (uiState.currentScreen === Screen.GAME && uiState.game) {
         uiState.gameLogFeed.startConsoleCapture(() => (

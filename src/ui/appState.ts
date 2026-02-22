@@ -86,6 +86,8 @@ export interface GameLogViewState {
     expanded: boolean;
     filter: 'ALL' | GameLogCategory;
     maxVisibleEntries: number;
+    manualOverride: boolean;
+    autoCollapsed: boolean;
 }
 
 export const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
@@ -146,6 +148,8 @@ export const uiState = {
         expanded: true,
         filter: 'ALL',
         maxVisibleEntries: 120,
+        manualOverride: false,
+        autoCollapsed: false,
     } as GameLogViewState,
     onlineSession: {
         connected: false,

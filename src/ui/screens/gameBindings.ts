@@ -23,6 +23,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     const getTopUiPlayer = () => getTopPlayer(uiState.game!);
     document.getElementById('game-log-toggle')?.addEventListener('click', () => {
         uiState.gameLogView.expanded = !uiState.gameLogView.expanded;
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.autoCollapsed = false;
         uiState.render?.();
     });
 
@@ -771,4 +773,3 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         });
     });
 }
-

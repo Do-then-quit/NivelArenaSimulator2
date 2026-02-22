@@ -105,15 +105,75 @@ function createMockGame() {
     } as any;
 }
 
-describe('game view online perspective', () => {
+function setViewport(width: number, height: number) {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: width });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: height });
+}
+
+async function waitForFrame() {
+    await new Promise<void>(resolve => window.requestAnimationFrame(() => resolve()));
+}
+
+describe('game view fit layout', () => {
     beforeEach(() => {
         vi.resetModules();
         document.body.innerHTML = '<div id="app"></div>';
-        Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1920 });
-        Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 1080 });
+        setViewport(1920, 1080);
     });
 
-    it('keeps local online player hand on bottom regardless of turn owner', async () => {
+    it('returns scale 1 on sufficiently large viewport', async () => {
+        const { computeBattleScale } = await import('../../src/ui/screens/gameView');
+        const scale = computeBattleScale({
+            naturalWidth: 1000,
+            naturalHeight: 700,
+            availableWidth: 1200,
+            availableHeight: 900,
+        });
+        expect(scale).toBe(1);
+    });
+
+    it('clamps scale to minimum when viewport is very small', async () => {
+        const { computeBattleScale } = await import('../../src/ui/screens/gameView');
+        const scale = computeBattleScale({
+            naturalWidth: 1800,
+            naturalHeight: 1400,
+            availableWidth: 300,
+            availableHeight: 220,
+        });
+        expect(scale).toBeGreaterThanOrEqual(0.58);
+        expect(scale).toBe(0.58);
+    });
+
+    it('applies expected auto-collapse threshold policy', async () => {
+        const { shouldAutoCollapseLog } = await import('../../src/ui/screens/gameView');
+        expect(shouldAutoCollapseLog({ viewportWidth: 1920, viewportHeight: 1080 })).toBe(false);
+        expect(shouldAutoCollapseLog({ viewportWidth: 1536, viewportHeight: 860 })).toBe(true);
+    });
+
+    it('auto-collapses log on small viewport and sets battle scale style', async () => {
+        setViewport(1536, 860);
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = createMockGame();
+        uiState.gameLogView.manualOverride = false;
+        uiState.gameLogView.expanded = true;
+        uiState.gameLogView.autoCollapsed = false;
+
+        renderGame();
+        await waitForFrame();
+
+        const panel = document.querySelector('.game-log-panel');
+        const battleFitContent = document.querySelector('.battle-fit-content') as HTMLElement | null;
+
+        expect(panel?.classList.contains('collapsed')).toBe(true);
+        expect(uiState.gameLogView.autoCollapsed).toBe(true);
+        expect(battleFitContent?.style.getPropertyValue('--battle-scale')).not.toBe('');
+    });
+
+    it('keeps user-selected log state when manual override is enabled', async () => {
+        setViewport(1536, 860);
         const { uiState, Screen } = await import('../../src/ui/appState');
         const { renderGame } = await import('../../src/ui/screens/gameView');
 
@@ -122,21 +182,12 @@ describe('game view online perspective', () => {
         uiState.gameLogView.manualOverride = true;
         uiState.gameLogView.expanded = true;
         uiState.gameLogView.autoCollapsed = false;
-        uiState.onlineSession.room = {
-            roomCode: '123456',
-            phase: 'IN_GAME',
-            hostClientId: 'host-client',
-            players: [],
-            matchSessionId: 'session-1',
-        };
-        uiState.onlineSession.localEnginePlayerId = 'P2';
 
         renderGame();
 
-        const bottomHand = Array.from(document.querySelectorAll('.hand-zone .card .card-name')).map(node => node.textContent ?? '');
-        const topHand = Array.from(document.querySelectorAll('.opponent-hand-zone .card .card-name')).map(node => node.textContent ?? '');
-
-        expect(bottomHand).toContain('P2 Hand Card');
-        expect(topHand).toContain('P1 Hand Card');
+        const panel = document.querySelector('.game-log-panel');
+        expect(panel?.classList.contains('collapsed')).toBe(false);
+        expect(uiState.gameLogView.expanded).toBe(true);
+        expect(uiState.gameLogView.autoCollapsed).toBe(true);
     });
 });

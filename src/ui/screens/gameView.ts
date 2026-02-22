@@ -14,6 +14,130 @@ import {
 import { getBottomPlayer, getTopPlayer } from '../playerPerspective';
 import { attachListeners } from './gameBindings';
 
+const MIN_BATTLE_SCALE = 0.58;
+const AUTO_LOG_COLLAPSE_HEIGHT_THRESHOLD = 980;
+const AUTO_LOG_COLLAPSE_WIDTH_THRESHOLD = 1680;
+
+let gameResizeRafId: number | null = null;
+let gameResizeListenerBound = false;
+
+export interface BattleScaleInput {
+    naturalWidth: number;
+    naturalHeight: number;
+    availableWidth: number;
+    availableHeight: number;
+    minScale?: number;
+}
+
+export function computeBattleScale(input: BattleScaleInput): number {
+    const minScale = input.minScale ?? MIN_BATTLE_SCALE;
+    if (input.naturalWidth <= 0 || input.naturalHeight <= 0) return 1;
+    if (input.availableWidth <= 0 || input.availableHeight <= 0) return minScale;
+
+    const scaleX = input.availableWidth / input.naturalWidth;
+    const scaleY = input.availableHeight / input.naturalHeight;
+    const unclamped = Math.min(scaleX, scaleY, 1);
+
+    if (!Number.isFinite(unclamped) || unclamped <= 0) return minScale;
+    return Math.max(minScale, unclamped);
+}
+
+export interface AutoCollapseLogInput {
+    viewportWidth: number;
+    viewportHeight: number;
+    widthThreshold?: number;
+    heightThreshold?: number;
+}
+
+export function shouldAutoCollapseLog(input: AutoCollapseLogInput): boolean {
+    const widthThreshold = input.widthThreshold ?? AUTO_LOG_COLLAPSE_WIDTH_THRESHOLD;
+    const heightThreshold = input.heightThreshold ?? AUTO_LOG_COLLAPSE_HEIGHT_THRESHOLD;
+    return input.viewportWidth < widthThreshold || input.viewportHeight < heightThreshold;
+}
+
+function applyAutoLogCollapsePolicy(): boolean {
+    const autoCollapsed = shouldAutoCollapseLog({
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+    });
+    const previousExpanded = uiState.gameLogView.expanded;
+
+    uiState.gameLogView.autoCollapsed = autoCollapsed;
+    if (uiState.gameLogView.manualOverride) return false;
+
+    uiState.gameLogView.expanded = !autoCollapsed;
+    return previousExpanded !== uiState.gameLogView.expanded;
+}
+
+function applyBattleLayoutScale() {
+    const viewport = uiState.app.querySelector<HTMLElement>('.battle-fit-viewport');
+    const content = uiState.app.querySelector<HTMLElement>('.battle-fit-content');
+    if (!viewport || !content) return;
+
+    content.style.setProperty('--battle-scale', '1');
+
+    const naturalWidth = content.offsetWidth;
+    const naturalHeight = content.offsetHeight;
+    const availableWidth = viewport.clientWidth;
+    const availableHeight = viewport.clientHeight;
+
+    let scale = computeBattleScale({
+        naturalWidth,
+        naturalHeight,
+        availableWidth,
+        availableHeight,
+    });
+
+    // If clamp-based scale still clips content, force fit to keep lower hand visible.
+    if (
+        naturalWidth > 0 &&
+        naturalHeight > 0 &&
+        (naturalWidth * scale > availableWidth + 1 || naturalHeight * scale > availableHeight + 1)
+    ) {
+        const hardFitScale = Math.min(availableWidth / naturalWidth, availableHeight / naturalHeight, 1);
+        if (Number.isFinite(hardFitScale) && hardFitScale > 0) {
+            scale = Math.max(0.45, hardFitScale);
+        }
+    }
+
+    content.style.setProperty('--battle-scale', scale.toFixed(4));
+}
+
+function bindBattleAssetLoadReflow() {
+    const content = uiState.app.querySelector<HTMLElement>('.battle-fit-content');
+    if (!content) return;
+
+    content.querySelectorAll('img').forEach((img) => {
+        if (img.complete) return;
+        img.addEventListener('load', handleGameResize, { once: true });
+        img.addEventListener('error', handleGameResize, { once: true });
+    });
+}
+
+function handleGameResize() {
+    if (uiState.currentScreen !== Screen.GAME || !uiState.game) return;
+
+    if (gameResizeRafId !== null) {
+        window.cancelAnimationFrame(gameResizeRafId);
+    }
+
+    gameResizeRafId = window.requestAnimationFrame(() => {
+        gameResizeRafId = null;
+        const logStateChanged = applyAutoLogCollapsePolicy();
+        if (logStateChanged) {
+            uiState.render?.();
+            return;
+        }
+        applyBattleLayoutScale();
+    });
+}
+
+function ensureGameResizeListener() {
+    if (gameResizeListenerBound) return;
+    window.addEventListener('resize', handleGameResize);
+    gameResizeListenerBound = true;
+}
+
 function isVerificationGame(): boolean {
     return !!uiState.verificationSession && uiState.currentScreen === Screen.GAME && !!uiState.game;
 }
@@ -558,6 +682,7 @@ export function renderGame() {
     if (!uiState.game) return;
     clearAutoPhaseAdvanceTimer();
     applyPhaseThemeClass(uiState.game.state.phase);
+    applyAutoLogCollapsePolicy();
 
     const bottomPlayer = getBottomPlayer(uiState.game);
     const topPlayer = getTopPlayer(uiState.game);
@@ -574,88 +699,101 @@ export function renderGame() {
     const inOnlineMatch = uiState.onlineSession.room?.phase === 'IN_GAME';
 
     const isMainPhase = uiState.game.state.phase === Phase.MAIN;
+    let interactionBannerHtml = '';
+
+    if (uiState.game.state.interactionMode === 'SELECT_TARGET') {
+        const pending = uiState.game.state.pendingEffect as any;
+        const maxCount = pending?.targetSchema?.count || 0;
+        const currentCount = pending.selectedTargets?.length || 0;
+        const actorId = getActionOwnerPlayerId(uiState.game);
+        const canConfirm = uiState.game.getLegalActions(actorId).some(action => action.type === 'CONFIRM_TARGETS');
+        const sacrificeHint = pending?.actionType === 'SACRIFICE_TO_BUFF'
+            ? (currentCount === 0
+                ? 'Step 1/2: Select the unit to trash.'
+                : currentCount === 1
+                    ? 'Step 2/2: Select the unit to receive +2000 power.'
+                    : 'Selection complete. Confirm to resolve.')
+            : '';
+
+        interactionBannerHtml = `
+            <div class="game-interaction-banner target-mode">
+                <span>SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
+                ${sacrificeHint ? `<span class="game-interaction-sub">${sacrificeHint}</span>` : ''}
+                <button id="confirm-targets-btn" class="primary-btn small-btn-inline" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+            </div>
+        `;
+    } else if (uiState.game.state.interactionMode === 'SELECT_COST') {
+        interactionBannerHtml = `
+            <div class="game-interaction-banner cost-mode">
+                <span>SELECT CARD TO TRASH (COST)</span>
+            </div>
+        `;
+    }
 
     uiState.app.innerHTML = `
     <div class="game-container">
-      <div class="header">
-        <h1>NivelArena</h1>
-        ${uiState.game.state.interactionMode === 'SELECT_TARGET' ? (() => {
-            const pending = uiState.game!.state.pendingEffect as any;
-            const maxCount = pending?.targetSchema?.count || 0;
-            const currentCount = pending.selectedTargets?.length || 0;
-            const actorId = getActionOwnerPlayerId(uiState.game!);
-            const canConfirm = uiState.game!.getLegalActions(actorId).some(action => action.type === 'CONFIRM_TARGETS');
-            const sacrificeHint = pending?.actionType === 'SACRIFICE_TO_BUFF'
-                ? (currentCount === 0
-                    ? 'Step 1/2: Select the unit to trash.'
-                    : currentCount === 1
-                        ? 'Step 2/2: Select the unit to receive +2000 power.'
-                        : 'Selection complete. Confirm to resolve.')
-                : '';
-
-            return `
-            <div style="background: #e17055; color: white; padding: 10px; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
-                <span style="animation: pulse 1s infinite;">SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
-                ${sacrificeHint ? `<span style="font-size: 0.85rem; opacity: 0.9;">${sacrificeHint}</span>` : ''}
-                <button id="confirm-targets-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'} style="background: ${canConfirm ? '#2ecc71' : '#636e72'}; border: none; padding: 5px 15px;">Confirm</button>
-            </div>
-            `;
-        })() : ''}
-        ${uiState.game.state.interactionMode === 'SELECT_COST' ? `
-            <div style="background: #0984e3; color: white; padding: 10px; border-radius: 4px; animation: pulse 1s infinite;">
-                SELECT CARD TO TRASH (COST)
-            </div>
-        ` : ''}
-        <button id="db-back-to-menu" class="secondary-btn" style="position: absolute; top: 10px; left: 10px;">${inOnlineMatch ? 'Room' : 'Menu'}</button>
-      </div>
       ${verificationGame ? renderVerificationSessionPanel() : ''}
+      <div class="game-layout-root">
+        <div class="battle-fit-viewport">
+          <div class="battle-fit-content" style="--battle-scale: 1;">
+            <div class="opponent-hand-zone">
+                ${topPlayer.hand.map((c, i) => {
+        const pending = uiState.game!.state.pendingEffect as any;
+        const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
+            pending &&
+            uiState.game!.isPendingCardTarget(c);
+        return `
+                  <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealTopPlayerHand ? '' : 'concealed-hand'}" data-index="${i}" data-hand-revealed="${revealTopPlayerHand ? '1' : '0'}">
+                      ${revealTopPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
+                  </div>
+              `;
+    }).join('')}
+            </div>
 
-      <div class="opponent-hand-zone">
-          ${topPlayer.hand.map((c, i) => {
-            const pending = uiState.game!.state.pendingEffect as any;
-            const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
-                pending &&
-                uiState.game!.isPendingCardTarget(c);
-            return `
-              <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealTopPlayerHand ? '' : 'concealed-hand'}" data-index="${i}" data-hand-revealed="${revealTopPlayerHand ? '1' : '0'}">
-                  ${revealTopPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
-              </div>
-          `}).join('')}
-      </div>
+            ${renderPlayer(topPlayer, true, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
 
-      ${renderPlayer(topPlayer, true, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
+            <div class="game-divider"></div>
 
-      <div class="game-divider"></div>
+            ${renderPlayer(bottomPlayer, false, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
 
-      ${renderPlayer(bottomPlayer, false, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
+            <div class="hand-zone">
+                ${bottomPlayer.hand.map((c, i) => {
+        const isCostCandidate = uiState.game!.state.interactionMode === 'SELECT_COST';
+        const pending = uiState.game!.state.pendingEffect as any;
+        const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
+            pending &&
+            uiState.game!.isPendingCardTarget(c);
 
-      <div class="hand-zone">
-          ${bottomPlayer.hand.map((c, i) => {
-                const isCostCandidate = uiState.game!.state.interactionMode === 'SELECT_COST';
-                const pending = uiState.game!.state.pendingEffect as any;
-                const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
-                    pending &&
-                    uiState.game!.isPendingCardTarget(c);
-
-                return `
-              <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealBottomPlayerHand ? '' : 'concealed-hand'}" draggable="${isMainPhase && uiState.game!.state.interactionMode === 'NORMAL' && localHumanCanInput}" data-index="${i}" data-hand-revealed="${revealBottomPlayerHand ? '1' : '0'}">
-                  ${revealBottomPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
-              </div>
-          `}).join('')}
-      </div>
-
-      <div class="game-controls">
-        <div class="status-bar">
-          <div class="status-item"><span>Turn</span> <strong>${uiState.game.state.turnCount}</strong></div>
-          <div class="status-item"><span>Phase</span> <strong>${uiState.game.state.phase}</strong></div>
-          <div class="status-item"><span>Active</span> <strong>${uiState.game.currentPlayer.name}</strong></div>
-          <div class="status-item"><span>Mode</span> <strong>${uiState.activeMatchConfig.label}</strong></div>
-          <div class="status-item"><span>Bot Hand</span> <strong>${uiState.activeMatchViewConfig.revealBotHand ? 'Shown' : 'Hidden'}</strong></div>
-          <div class="status-item"><span>Input</span> <strong>${inputOwner?.name ?? 'N/A'} (${inputOwnerControl})</strong></div>
+        return `
+                  <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealBottomPlayerHand ? '' : 'concealed-hand'}" draggable="${isMainPhase && uiState.game!.state.interactionMode === 'NORMAL' && localHumanCanInput}" data-index="${i}" data-hand-revealed="${revealBottomPlayerHand ? '1' : '0'}">
+                      ${revealBottomPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
+                  </div>
+              `;
+    }).join('')}
+            </div>
+          </div>
         </div>
-        ${renderGameControlButtons(localHumanCanInput)}
+
+        <aside class="game-side-rail">
+          <div class="game-top-bar">
+            <button id="db-back-to-menu" class="secondary-btn game-menu-btn">${inOnlineMatch ? 'Room' : 'Menu'}</button>
+            <div class="game-top-title">NivelArena</div>
+            ${interactionBannerHtml}
+          </div>
+          ${renderGameLogPanel()}
+          <div class="game-controls">
+            <div class="status-bar">
+              <div class="status-item"><span>Turn</span> <strong>${uiState.game.state.turnCount}</strong></div>
+              <div class="status-item"><span>Phase</span> <strong>${uiState.game.state.phase}</strong></div>
+              <div class="status-item"><span>Active</span> <strong>${uiState.game.currentPlayer.name}</strong></div>
+              <div class="status-item"><span>Mode</span> <strong>${uiState.activeMatchConfig.label}</strong></div>
+              <div class="status-item"><span>Bot Hand</span> <strong>${uiState.activeMatchViewConfig.revealBotHand ? 'Shown' : 'Hidden'}</strong></div>
+              <div class="status-item"><span>Input</span> <strong>${inputOwner?.name ?? 'N/A'} (${inputOwnerControl})</strong></div>
+            </div>
+            ${renderGameControlButtons(localHumanCanInput)}
+          </div>
+        </aside>
       </div>
-      ${renderGameLogPanel()}
 
       ${renderOptionalEffectModal()}
       ${renderMulliganModal()}
@@ -666,7 +804,17 @@ export function renderGame() {
     </div>
   `;
 
+    ensureGameResizeListener();
     attachListeners(renderCard);
+    bindBattleAssetLoadReflow();
+    window.requestAnimationFrame(() => {
+        if (uiState.currentScreen !== Screen.GAME || !uiState.game) return;
+        applyBattleLayoutScale();
+    });
+    window.setTimeout(() => {
+        if (uiState.currentScreen !== Screen.GAME || !uiState.game) return;
+        handleGameResize();
+    }, 80);
     scheduleAutoPhaseAdvance();
     scheduleBotStep();
 }

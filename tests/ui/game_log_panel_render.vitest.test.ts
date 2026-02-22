@@ -115,6 +115,8 @@ describe('game log panel render', () => {
     beforeEach(() => {
         vi.resetModules();
         document.body.innerHTML = '<div id="app"></div>';
+        Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1920 });
+        Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 1080 });
     });
 
     it('renders panel and Korean category labels', async () => {
@@ -126,6 +128,8 @@ describe('game log panel render', () => {
         uiState.gameLogFeed.clear();
         uiState.gameLogView.expanded = true;
         uiState.gameLogView.filter = 'ALL';
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.autoCollapsed = false;
         uiState.gameLogFeed.pushUiLog('[panel-action] action', 'ACTION');
         uiState.gameLogFeed.pushUiLog('[panel-combat] combat', 'COMBAT');
 
@@ -146,6 +150,8 @@ describe('game log panel render', () => {
         uiState.gameLogFeed.clear();
         uiState.gameLogView.expanded = true;
         uiState.gameLogView.filter = 'EFFECT';
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.autoCollapsed = false;
         uiState.gameLogFeed.pushUiLog('[panel-action-only] action', 'ACTION');
         uiState.gameLogFeed.pushUiLog('[panel-effect-only] effect', 'EFFECT');
 
@@ -166,6 +172,8 @@ describe('game log panel render', () => {
         uiState.gameLogFeed.clear();
         uiState.gameLogView.expanded = false;
         uiState.gameLogView.filter = 'ALL';
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.autoCollapsed = false;
         uiState.gameLogFeed.pushUiLog('[collapsed-check] entry', 'SYSTEM');
 
         renderGame();

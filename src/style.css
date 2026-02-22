@@ -25,20 +25,134 @@ body {
     transition: background-color 320ms ease, background-image 480ms ease;
 }
 
+body.game-screen {
+    padding: 0;
+    overflow: hidden;
+}
+
 #app {
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
 }
 
+body.game-screen #app {
+    max-width: none;
+    height: 100dvh;
+}
+
 /* --- Game Container --- */
 .game-container {
+    --game-top-offset: 0px;
+    --game-bottom-gap: 14px;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    height: 100dvh;
+    box-sizing: border-box;
+    padding: calc(var(--game-top-offset) + 8px) 14px var(--game-bottom-gap);
+    overflow: hidden;
+}
+
+.game-layout-root {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    gap: 12px;
+    align-items: stretch;
+}
+
+.battle-fit-viewport {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 18px;
+    border: 1px solid rgba(127, 197, 255, 0.18);
+    background: rgba(20, 22, 35, 0.18);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 8px;
+}
+
+.battle-fit-content {
+    --battle-scale: 1;
+    width: fit-content;
+    transform: scale(var(--battle-scale));
+    transform-origin: top center;
+    will-change: transform;
+}
+
+.game-side-rail {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.game-top-bar {
+    display: grid;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    gap: 20px;
-    padding: 80px 20px 40px 20px;
-    min-height: 100vh;
+    gap: 8px;
+    background: rgba(20, 22, 35, 0.86);
+    border: 1px solid rgba(127, 197, 255, 0.24);
+    border-radius: 12px;
+    padding: 8px 10px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.36);
+}
+
+.game-menu-btn {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    letter-spacing: 0.2px;
+}
+
+.game-top-title {
+    justify-self: end;
+    color: #7fc5ff;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+.game-interaction-banner {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border-radius: 9px;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.game-interaction-banner.target-mode {
+    background: rgba(225, 112, 85, 0.92);
+    color: #fff;
+}
+
+.game-interaction-banner.cost-mode {
+    background: rgba(9, 132, 227, 0.9);
+    color: #fff;
+}
+
+.game-interaction-sub {
+    opacity: 0.92;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.small-btn-inline {
+    margin-left: auto;
+    padding: 5px 10px;
+    font-size: 0.72rem;
+    letter-spacing: 0.3px;
 }
 
 body.phase-theme-level-up {
@@ -489,35 +603,33 @@ body.phase-theme-end {
     transform: translateY(-22px) scale(1.06);
 }
 
-/* --- Game Controls (Fixed Bottom Right) --- */
+/* --- Game Side Rail --- */
 .game-controls {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    z-index: 2000;
+    position: relative;
+    z-index: 1;
     background: rgba(25, 27, 40, 0.85);
     backdrop-filter: blur(12px);
-    padding: 15px;
-    border-radius: 20px;
+    padding: 14px;
+    border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
     display: flex;
     flex-direction: column;
     gap: 10px;
-    min-width: 180px;
+    min-width: 0;
 }
 
 .game-log-panel {
-    position: fixed;
-    top: 96px;
-    right: 14px;
-    width: 360px;
-    max-height: calc(100vh - 200px);
-    z-index: 2400;
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 240px;
+    max-height: none;
+    z-index: 2;
     background: rgba(20, 22, 35, 0.92);
     border: 1px solid rgba(127, 197, 255, 0.32);
     border-radius: 14px;
-    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
@@ -525,7 +637,8 @@ body.phase-theme-end {
 }
 
 .game-log-panel.collapsed {
-    max-height: none;
+    flex: 0 0 auto;
+    min-height: auto;
 }
 
 .game-log-header {
@@ -583,6 +696,8 @@ body.phase-theme-end {
 .game-log-body {
     padding: 8px;
     overflow-y: auto;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -691,7 +806,7 @@ body.phase-theme-end {
 
 .verification-session-panel {
     position: fixed;
-    top: 96px;
+    top: 12px;
     left: 14px;
     transform: none;
     z-index: 7500;
@@ -1848,8 +1963,44 @@ body.phase-theme-end {
 }
 
 @media (max-width: 980px) {
+    body.game-screen {
+        overflow: auto;
+    }
+
+    body.game-screen #app {
+        height: auto;
+    }
+
+    .game-container {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+        padding: 72px 8px 100px;
+    }
+
+    .game-layout-root {
+        display: block;
+    }
+
+    .battle-fit-viewport {
+        overflow: visible;
+        border: none;
+        background: transparent;
+        border-radius: 0;
+        padding: 0;
+    }
+
+    .battle-fit-content {
+        transform: none;
+        width: auto;
+    }
+
+    .game-side-rail {
+        display: block;
+    }
+
     .verification-session-panel {
-        top: 66px;
+        top: 8px;
         width: calc(100vw - 16px);
         max-height: none;
         left: 8px;
@@ -1888,12 +2039,24 @@ body.phase-theme-end {
     }
 
     .game-log-panel {
+        position: fixed;
+        flex: none;
+        min-height: 0;
         top: auto;
         right: 8px;
         left: 8px;
         bottom: 80px;
         width: auto;
         max-height: 40vh;
+    }
+
+    .game-controls {
+        position: fixed;
+        right: 8px;
+        bottom: 8px;
+        z-index: 2200;
+        min-width: 180px;
+        max-width: min(280px, calc(100vw - 16px));
     }
 
     .game-log-header {
