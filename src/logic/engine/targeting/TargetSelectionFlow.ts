@@ -32,6 +32,29 @@ function canAddTargetWithinTotalCost(targetSchema: any, context: GameContext, se
     return currentCost + getTargetCost(target) <= limit;
 }
 
+function executeBt06FollowUpSubActions(engine: any, context: GameContext, subActions: any[]) {
+    if (!Array.isArray(subActions)) return;
+    for (const sub of subActions) {
+        if (!sub || !sub.type) continue;
+        const followUpEffect = {
+            activation: 'ACTIVE' as any,
+            description: sub.description || 'BT06 follow-up',
+            action: { type: sub.type, params: sub.params || {} },
+            ...(sub.targets ? { targets: sub.targets } : {}),
+            ...(sub.duration ? { duration: sub.duration } : {}),
+        } as any;
+
+        let followUpTargets: any[] = [];
+        if (sub.targets) {
+            followUpTargets = TargetSelector.resolve(engine, sub.targets, context);
+        } else if (context.unitZone) {
+            followUpTargets = [context.unitZone];
+        }
+
+        engine.effectManager.executeEffect(followUpEffect, context, followUpTargets);
+    }
+}
+
 export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targetPlayerId: string) {
     if (engine.state.interactionMode !== 'SELECT_TARGET' || !engine.state.pendingEffect) return;
 
@@ -413,7 +436,7 @@ export function selectRevealedTarget(engine: any, index: number) {
     const effect = runtime?.effect;
     const context = runtime?.context;
     const targetSchema = pending.targetSchema;
-    if (!effect || !context || !targetSchema) return;
+    if (!context || !targetSchema) return;
     if (pending.validTargets !== 'REVEALED') return;
 
     const card = engine.state.revealedCards[index];
@@ -423,6 +446,44 @@ export function selectRevealedTarget(engine: any, index: number) {
         console.log("Invalid Revealed Target Selected.");
         return;
     }
+
+    if (pending.actionType === 'BT06_SELECT_ATTACK_ACTIVE_EFFECT') {
+        const option = pending.actionValue?.options?.[index];
+        const sourceZoneIndex = pending.actionValue?.sourceZoneIndex;
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || typeof sourceZoneIndex !== 'number' || !option) return;
+
+        engine.state.revealedCards = [];
+        engine.activateEffect(sourceZoneIndex, option.effectIndex, 'UNIT');
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT06_SELECT_SKILL_ZONE_CARD') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || !option) return;
+
+        const selectedSkill = sourcePlayer.skillZone[option.skillZoneIndex];
+        if (!selectedSkill) return;
+
+        (selectedSkill as any).turnCostOverride = {
+            cost: 0,
+            turnCount: engine.state.turnCount,
+        };
+
+        context.flags = context.flags || {};
+        const contextFlagKey = pending.actionValue?.contextFlagKey || 'BT06_SKILL_ZERO_COST_SELECTED';
+        context.flags[contextFlagKey] = true;
+
+        executeBt06FollowUpSubActions(engine, context, pending.actionValue?.followUpSubActions || []);
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (!effect) return;
 
     const maxCount = targetSchema.count || 1;
     const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);

@@ -53,7 +53,7 @@ export const penetration: ActionImplementation = (ctx, params, _targets) => {
             sourceCard: ctx.sourceCard,
             type: 'PENETRATION',
             value: params.value || 0,
-            duration: 'TURN_END'
+            duration: params.duration || 'TURN_END'
         });
         console.log(`Granted PENETRATION[${params.value}] to ${ctx.unitZone.unit?.name}`);
     }
@@ -66,7 +66,7 @@ export const plunder: ActionImplementation = (ctx, params, _targets) => {
             sourceCard: ctx.sourceCard,
             type: 'PLUNDER',
             value: params.value || 0,
-            duration: 'TURN_END'
+            duration: params.duration || 'TURN_END'
         });
         console.log(`Granted PLUNDER[${params.value}] to ${ctx.unitZone.unit?.name}`);
     }

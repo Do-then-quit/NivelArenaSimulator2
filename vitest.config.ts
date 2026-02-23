@@ -7,5 +7,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./tests/setup.ts'],
     exclude: [...configDefaults.exclude, 'tests/legacy/**'],
+    silent: true,
+    maxWorkers: 4,
   },
 })

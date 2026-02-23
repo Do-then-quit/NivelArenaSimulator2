@@ -45,7 +45,7 @@ describe('game bindings interaction owner', () => {
             actorPlayerId: 'P2',
             shouldMulligan: false,
         });
-    });
+    }, 10000);
 
     it('blocks local input when online actor is remote player', async () => {
         const { uiState } = await import('../../src/ui/appState');

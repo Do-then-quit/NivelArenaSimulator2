@@ -1,4 +1,4 @@
-import { ActionImplementation, UnitZoneState } from './types';
+import { ActionImplementation, Attribute, CardType, UnitZoneState } from './types';
 import { TargetSelector } from './TargetSelector';
 import {
     autoAttackIfEncounter,
@@ -60,6 +60,37 @@ import {
 } from './effectActions/transfer';
 import { getOwnerOfZone, zoneHasKeyword } from './effectActions/helpers';
 
+function effectHasPhaseAttackCondition(condition: any): boolean {
+    if (!condition || typeof condition !== 'object') return false;
+
+    if (condition.type === 'CONTEXT_FLAG') {
+        const value = condition.value;
+        if (value === 'PHASE_ATTACK') return true;
+        if (value?.key === 'PHASE_ATTACK') {
+            if (value.equals === undefined) return true;
+            return value.equals === true;
+        }
+        return false;
+    }
+
+    if (condition.type === 'ALL' && Array.isArray(condition.value)) {
+        return condition.value.some((nested: any) => effectHasPhaseAttackCondition(nested));
+    }
+
+    return false;
+}
+
+function createPromptOptionCard(id: string, name: string, text: string) {
+    return {
+        id,
+        name,
+        type: CardType.SKILL,
+        attribute: Attribute.NONE,
+        cost: 0,
+        text,
+    };
+}
+
 const complexAction: ActionImplementation = (ctx, params, _targets) => {
     if ((params as any).mode === 'GUARDIAN_TRANSFER_POWER') {
         if (!_targets || _targets.length < 2) return;
@@ -84,6 +115,125 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             value: transferredPower,
             duration: params.duration || 'TURN_END',
         });
+        return;
+    }
+
+    if ((params as any).mode === 'PROMPT_SELECT_ATTACK_ACTIVE_EFFECT') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+
+        const owner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+
+        const effectOptions = (targetZone.unit.effects || [])
+            .map((effect, effectIndex) => ({ effect, effectIndex }))
+            .filter(({ effect, effectIndex }) => {
+                if (!effect || effect.activation !== 'ACTIVE') return false;
+                if (!effectHasPhaseAttackCondition(effect.condition)) return false;
+                const effectKey = `${targetZone.unit?.id}_${effect.id || effectIndex}`;
+                if (targetZone.activatedEffectKeys?.[effectKey]) return false;
+
+                const effectContext = {
+                    sourceCard: targetZone.unit!,
+                    player: ctx.player,
+                    opponent: ctx.opponent,
+                    unitZone: targetZone,
+                    machine: ctx.machine,
+                };
+
+                if (!ctx.machine.effectManager.checkCondition(effect, effectContext)) return false;
+
+                if (effect.cost && effect.cost.type !== 'NONE') {
+                    if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
+                        const requiredAmount = effect.cost.amount || 1;
+                        const costFilter = effect.cost.cardTypeFilter;
+                        const payableCount = ctx.player.hand.filter(card => !costFilter || card.type === costFilter).length;
+                        if (payableCount < requiredAmount) return false;
+                    }
+                }
+
+                if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+                    const candidates = TargetSelector.resolve(ctx.machine, effect.targets, effectContext);
+                    if (candidates.length === 0) return false;
+                }
+
+                return true;
+            });
+
+        if (effectOptions.length === 0) return;
+
+        const sourceZoneIndex = owner.unitZones.indexOf(targetZone);
+        if (sourceZoneIndex < 0) return;
+
+        ctx.machine.state.revealedCards = effectOptions.map(({ effect, effectIndex }) =>
+            createPromptOptionCard(
+                `BT06_EFFECT_OPTION_${sourceZoneIndex}_${effectIndex}`,
+                `효과 ${effectIndex + 1}`,
+                effect.description || '선택한 [액티브: 어택] 효과를 발동한다.'
+            )
+        ) as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT06_SELECT_ATTACK_ACTIVE_EFFECT',
+            actionValue: {
+                sourceZoneIndex,
+                options: effectOptions.map(({ effectIndex }) => ({ effectIndex })),
+            },
+            effectDescription: '발동할 [액티브: 어택] 효과를 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'PROMPT_SELECT_SKILL_ZONE_CARD_FOR_ZERO_COST') {
+        const skills = ctx.player.skillZone
+            .map((card, skillZoneIndex) => ({ card, skillZoneIndex }))
+            .filter(({ card }) => card?.type === CardType.SKILL);
+
+        if (skills.length === 0) return;
+
+        ctx.machine.state.revealedCards = skills.map(({ card, skillZoneIndex }) =>
+            createPromptOptionCard(
+                `BT06_SKILL_OPTION_${skillZoneIndex}_${card.id}`,
+                card.name,
+                card.text || `${card.name}를 0코스트로 설정`
+            )
+        ) as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT06_SELECT_SKILL_ZONE_CARD',
+            actionValue: {
+                options: skills.map(({ skillZoneIndex }) => ({ skillZoneIndex })),
+                followUpSubActions: Array.isArray((params as any).followUpSubActions) ? (params as any).followUpSubActions : [],
+                contextFlagKey: (params as any).contextFlagKey || 'BT06_SKILL_ZERO_COST_SELECTED',
+            },
+            effectDescription: '0코스트로 만들 스킬을 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
         return;
     }
 

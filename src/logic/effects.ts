@@ -307,6 +307,20 @@ export class EffectManager {
         }
 
         switch (type) {
+            case 'ALL': {
+                const conditions = Array.isArray(value) ? value : [];
+                if (conditions.length === 0) return false;
+                return conditions.every((condition: any) => {
+                    if (!condition || typeof condition !== 'object' || !condition.type) return false;
+                    return this.checkCondition(
+                        {
+                            ...effect,
+                            condition: condition as any,
+                        },
+                        context
+                    );
+                });
+            }
             case 'ALWAYS':
                 return true;
             case 'LEADER_LEVEL':

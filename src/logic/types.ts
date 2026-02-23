@@ -104,6 +104,7 @@ export interface TargetFilter {
     | 'UNIT_TYPE'
     | 'HAS_TRAIT'
     | 'HAS_KEYWORD'
+    | 'HAS_ACTIVE_ATTACK_EFFECT'
     | 'NOT_HAS_KEYWORD'
     | 'HAS_NAME'
     | 'COST_LIMIT'
@@ -161,6 +162,7 @@ export interface TargetSchema {
 
 export interface EffectCondition {
     type:
+    | 'ALL'
     | 'ALWAYS'
     | 'LEADER_LEVEL'
     | 'HAS_ITEM'

@@ -30,7 +30,7 @@ export class RuleValidator {
         }
 
         const currentSize = engine.getPlayerSize(player);
-        const currentFieldCost = this.calculateFieldCost(player);
+        const currentFieldCost = this.calculateFieldCost(engine, player);
 
         if (currentFieldCost - costToSubtract + card.cost > currentSize) {
             return { valid: false, reason: "Cost exceeds Size limit" };
@@ -51,7 +51,7 @@ export class RuleValidator {
 
         // Size Limit Check (Field Cost + Skill Cost must not exceed Size)
         const playerSize = engine.getPlayerSize(player);
-        const currentFieldCost = this.calculateFieldCost(player);
+        const currentFieldCost = this.calculateFieldCost(engine, player);
         if (currentFieldCost + card.cost > playerSize) {
             return { valid: false, reason: `Cost exceeds Size limit (Field: ${currentFieldCost}, Skill: ${card.cost}, Size: ${playerSize})` };
         }
@@ -84,7 +84,7 @@ export class RuleValidator {
 
         // Size Limit Check
         const currentSize = engine.getPlayerSize(player);
-        const currentFieldCost = this.calculateFieldCost(player);
+        const currentFieldCost = this.calculateFieldCost(engine, player);
 
         if (currentFieldCost + card.cost > currentSize) {
             return { valid: false, reason: "Cost exceeds Size limit" };
@@ -203,14 +203,27 @@ export class RuleValidator {
         return { valid: true };
     }
 
-    private static calculateFieldCost(player: PlayerState): number {
+    private static calculateFieldCost(engine: GameEngine, player: PlayerState): number {
         let cost = 0;
         player.unitZones.forEach(z => {
             if (z.unit) cost += z.unit.cost;
             z.items.forEach(i => cost += i.cost);
         });
-        player.skillZone.forEach(s => cost += s.cost);
+        player.skillZone.forEach(s => cost += this.getEffectiveSkillCost(engine, s));
         return cost;
+    }
+
+    private static getEffectiveSkillCost(engine: GameEngine, skillCard: any): number {
+        const override = skillCard?.turnCostOverride;
+        if (
+            override &&
+            typeof override === 'object' &&
+            override.turnCount === engine.state.turnCount &&
+            typeof override.cost === 'number'
+        ) {
+            return Math.max(0, override.cost);
+        }
+        return skillCard?.cost || 0;
     }
 
     private static cardHasKeyword(card: any, keyword: string): boolean {

@@ -614,8 +614,10 @@ const tests: UnifiedTestCase[] = [
         description: '공격 횟수 참조 효과가 1회 더 공격한 것으로 계산된다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
             p1.unitZones[0].unit = getCard('ST10-006');
             p1.unitZones[0].items = [getCard('ST10-017')];
+            p2.unitZones[0].unit = getCard('ST10-005');
             engine.state.turnPlayerIndex = 0;
             engine.state.phase = Phase.ATTACK;
         },

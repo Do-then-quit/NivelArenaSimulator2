@@ -110,6 +110,12 @@ export class TargetSelector {
                             return unit && this.hasDynamicKeyword(unit, filter.value, zone);
                         });
                         break;
+                    case 'HAS_ACTIVE_ATTACK_EFFECT':
+                        candidates = candidates.filter(c => {
+                            if (!c || typeof c !== 'object' || !('unit' in c)) return false;
+                            return this.hasActivatableAttackActiveEffect(engine, c as UnitZoneState);
+                        });
+                        break;
                     case 'NOT_HAS_KEYWORD':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
@@ -334,6 +340,10 @@ export class TargetSelector {
                             if (!this.hasDynamicKeyword(unit, filter.value, zone)) return false;
                         }
                         break;
+                    case 'HAS_ACTIVE_ATTACK_EFFECT':
+                        if (!target || typeof target !== 'object' || !('unit' in target)) return false;
+                        if (!this.hasActivatableAttackActiveEffect(engine, target as UnitZoneState)) return false;
+                        break;
                     case 'NOT_HAS_KEYWORD':
                         if (!unit) return false;
                         {
@@ -510,6 +520,79 @@ export class TargetSelector {
             for (const effect of temporaryEffects) {
                 if (effectHasKeyword(effect)) return true;
             }
+        }
+
+        return false;
+    }
+
+    private static hasActivatableAttackActiveEffect(engine: GameEngine, zone: UnitZoneState): boolean {
+        if (!zone.unit || !Array.isArray(zone.unit.effects)) return false;
+
+        const owner = this.getOwner(engine, zone);
+        const opponent = engine.state.players.find(player => player.id !== owner.id);
+        if (!opponent) return false;
+
+        return zone.unit.effects.some((effect: any, effectIndex: number) =>
+            this.isActivatableAttackActiveEffect(engine, zone, owner, opponent, effect, effectIndex)
+        );
+    }
+
+    private static isActivatableAttackActiveEffect(
+        engine: GameEngine,
+        zone: UnitZoneState,
+        owner: PlayerState,
+        opponent: PlayerState,
+        effect: any,
+        effectIndex: number
+    ): boolean {
+        if (!effect || effect.activation !== 'ACTIVE') return false;
+        if (!this.effectHasPhaseAttackCondition(effect.condition)) return false;
+
+        const effectKey = `${zone.unit?.id}_${effect.id || effectIndex}`;
+        if (zone.activatedEffectKeys?.[effectKey]) return false;
+
+        const context: GameContext = {
+            sourceCard: zone.unit!,
+            player: owner,
+            opponent,
+            unitZone: zone,
+            machine: engine,
+        };
+
+        if (!engine.effectManager.checkCondition(effect, context)) return false;
+
+        if (effect.cost && effect.cost.type !== 'NONE') {
+            if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
+                const requiredAmount = effect.cost.amount || 1;
+                const costFilter = effect.cost.cardTypeFilter;
+                const payableCount = owner.hand.filter(card => !costFilter || card.type === costFilter).length;
+                if (payableCount < requiredAmount) return false;
+            }
+        }
+
+        if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+            const candidates = this.resolve(engine, effect.targets, context);
+            if (candidates.length === 0) return false;
+        }
+
+        return true;
+    }
+
+    private static effectHasPhaseAttackCondition(condition: any): boolean {
+        if (!condition || typeof condition !== 'object') return false;
+
+        if (condition.type === 'CONTEXT_FLAG') {
+            const value = condition.value;
+            if (value === 'PHASE_ATTACK') return true;
+            if (value?.key === 'PHASE_ATTACK') {
+                if (value.equals === undefined) return true;
+                return value.equals === true;
+            }
+            return false;
+        }
+
+        if (condition.type === 'ALL' && Array.isArray(condition.value)) {
+            return condition.value.some((nested: any) => this.effectHasPhaseAttackCondition(nested));
         }
 
         return false;

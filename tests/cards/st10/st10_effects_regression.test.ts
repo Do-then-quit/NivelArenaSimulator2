@@ -173,9 +173,11 @@ describe('ST10 Effects Regression', () => {
     it('ST10-006 chain condition reads +1 from ST10-017 reference bonus', () => {
         const engine = createEngine(10005);
         const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
 
         p1.unitZones[0].unit = getCard('ST10-006');
         p1.unitZones[0].items = [getCard('ST10-017')];
+        p2.unitZones[0].unit = getCard('ST10-005');
         engine.state.phase = Phase.ATTACK;
 
         engine.attack(0);
