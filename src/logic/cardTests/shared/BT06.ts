@@ -508,6 +508,7 @@ const tests: UnifiedTestCase[] = [
             p1.unitZones[1].unit = getCard('ST10-005');
             p1.leaderLevel = 10;
             p2.unitZones[0].unit = getCard('ST10-004');
+            p2.unitZones[1].unit = getCard('ST10-004');
             engine.state.turnPlayerIndex = 0;
             engine.state.phase = Phase.MAIN;
         },

@@ -273,11 +273,12 @@ export class EffectManager {
                 fired[effectId] = true;
             }
 
+            const hasActionDurationOverride = effect.actionDurationOverride !== undefined;
             let resolvedDuration = effect.actionDurationOverride ?? effect.duration;
             if (effect.activation === ActivationCondition.ATTACKER || effect.activation === ActivationCondition.DEFENDER) {
                 if (resolvedDuration === undefined) {
                     resolvedDuration = 'BATTLE_END';
-                } else if (resolvedDuration === 'TURN_END') {
+                } else if (!hasActionDurationOverride && resolvedDuration === 'TURN_END') {
                     const description = effect.description || '';
                     const explicitlyTurnScoped = /이\s*턴이\s*끝날\s*때까지/.test(description);
                     if (!explicitlyTurnScoped) {

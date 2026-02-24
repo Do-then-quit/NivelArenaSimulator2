@@ -273,6 +273,7 @@ export const BT06_EFFECTS: Record<string, Effect[]> = {
                 selectMode: 'ALL',
             },
             action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            actionDurationOverride: 'TURN_END',
             duration: 'TURN_END',
         },
     ],
