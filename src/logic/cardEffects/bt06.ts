@@ -384,7 +384,7 @@ export const BT06_EFFECTS: Record<string, Effect[]> = {
     "BT06-023": [
         {
             activation: ActivationCondition.ENTRY,
-            description: "??? : ??? ?? ?? ???? ? ??. ??? ??? 3? ?????.",
+            description: "엔트리 : 자신의 패를 모두 트래시할 수 있다. 그러면 카드를 3장 드로우한다.",
             optional: true,
             action: {
                 type: 'COMPLEX_ACTION',
