@@ -238,4 +238,255 @@ export const BT06_EFFECTS: Record<string, Effect[]> = {
             duration: 'BATTLE_END',
         },
     ],
+
+    "BT06-015": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "??? : ??? ?? [??]? ?? ?? ?? ??? ??+1500.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 0,
+                filters: [{ type: 'HAS_KEYWORD', value: '체인' }],
+                selectMode: 'ALL',
+            },
+            action: { type: 'BUFF_POWER', params: { value: 1500 } },
+        },
+    ],
+    "BT06-016": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "??? : ? ?? ?? ??? ?? ??? ??-2000.",
+            targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: -2000 } },
+            duration: 'TURN_END',
+        },
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "??? : ??? ?? ?? ?? ?? ??? ? ?? ?? ??? ??+2000.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 0,
+                filters: [{ type: 'EXCLUDE_SELF' }],
+                selectMode: 'ALL',
+            },
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-017": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "?? 1 ??? ?? : ??? ?? ?? ?? ??? 1? ????? ?? ?? 1?? ??-2500.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'CONTEXT_FLAG', value: 'PHASE_ATTACK' },
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 1 },
+                ],
+            },
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -2500 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-018": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "??? : ??? ?? ?? ??? 1? ??, ? ?? ?? ??? ??+4000.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: 4000 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-019": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "?? 3 ??? : ? ? ?? ?? ??? ??? ??? 3? ????? ? ??? ?? ??? ??[2]? ???.",
+            condition: { type: 'ATTACK_COUNT_THIS_TURN_MIN', value: 3 },
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'PLUNDER', params: { value: 2 } },
+            duration: 'BATTLE_END',
+        },
+    ],
+    "BT06-020": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "?? 2 ??? : ? ? ?? ?? ??? ??? ??? 2? ????? ?? ??? ??-3000. ? ??? ?????? ??? 1? ?????.",
+            condition: { type: 'ATTACK_COUNT_THIS_TURN_MIN', value: 2 },
+            targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER_AND_DRAW_IF_TRASHED', params: { value: -3000, drawCount: 1 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-021": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "?? 1 ??? ?? : ??? ?? ?? ??? 1? ????? ?? ?? 1?? ??-4000.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'CONTEXT_FLAG', value: 'PHASE_ATTACK' },
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 1 },
+                ],
+            },
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -4000 } },
+            duration: 'TURN_END',
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "??? / ? ??? ?????.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "??? ?? ?? ??? 1? ?? ? ?? ?? ??? ??-5000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -5000 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-022": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "??? : ??? ?? ?? ?? ??? ? ?? ?? ??? ??-2000. ? ??? ???? ?? ??? ?????.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 0, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER_AND_DRAW_IF_TRASHED', params: { value: -2000, drawCount: 1 } },
+            duration: 'TURN_END',
+        },
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "?? 1 ??? ?? : ??? ?? ?? ??? 1? ????? ??? ????? 2??? ?? ?? 1?? ?? ???.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'CONTEXT_FLAG', value: 'PHASE_ATTACK' },
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 1 },
+                ],
+            },
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.SKILL },
+                    { type: 'COST_LIMIT', value: 2 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-023": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "??? : ??? ?? ?? ???? ? ??. ??? ??? 3? ?????.",
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'DISCARD_ALL', params: {} },
+                        { type: 'DRAW', params: { count: 3 } },
+                    ],
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "?? 1 ??? ?? : ??? ?? ?? ??? 1? ????? ??? 3??? ?? ?? ?? 1?? ?????.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'CONTEXT_FLAG', value: 'PHASE_ATTACK' },
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 1 },
+                ],
+            },
+            targets: {
+                scope: 'OPP_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_LIMIT', value: 3 }],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'DESTROY_UNIT', params: {} },
+        },
+    ],
+    "BT06-024": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "?? 2 ??? ?? : ??? ?? ?? ??? 2? ????? ??? ?? ?? ?? ??-3000.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'CONTEXT_FLAG', value: 'PHASE_ATTACK' },
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 2 },
+                ],
+            },
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 0, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: -3000 } },
+            duration: 'TURN_END',
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "??? / ? ??? ??? ?? ???.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-025": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "?? 2 ??? ?? : ??? ?? ?? ??? 2? ????? ??? ?? ?? 1?? ??-7000.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'CONTEXT_FLAG', value: 'PHASE_ATTACK' },
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 2 },
+                ],
+            },
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -7000 } },
+            duration: 'TURN_END',
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "??? / ? ??? ??? ?? ???.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-026": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "??? ?? ?? ??? 1? ??, ? ?? ?? ??? ??-1000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -1000 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-027": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "? ? ??? 2?? ????, ?? ?? ?? 1?? ?? ?? ???. ???? ?????.",
+            action: {
+                type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND',
+                params: {
+                    count: 2,
+                    remainingDestination: 'TRASH',
+                    filters: [{ type: 'UNIT_TYPE', value: CardType.UNIT }],
+                },
+            },
+        },
+    ],
+    "BT06-028": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "??? ?? ?? ??? 1? ??, ? ?? ?? ??? ??-2000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -2000 } },
+            duration: 'TURN_END',
+        },
+    ],
+
 };

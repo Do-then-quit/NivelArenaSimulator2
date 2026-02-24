@@ -75,8 +75,12 @@ export const setPower: ActionImplementation = (ctx, params, targets) => {
 export const buffPowerAndDrawIfTrashed: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(target => {
         if (target && target.unit) {
-            const oldValue = ctx.machine.getUnitPower(target, getOwnerOfZone(ctx.machine, target));
+            const owner = getOwnerOfZone(ctx.machine, target);
+            if (!owner) return;
+
+            const oldValue = ctx.machine.getUnitPower(target, owner);
             const buffValue = params.value || 0;
+            const unitBeforeDestroy = target.unit;
 
             target.buffs.push({
                 id: ctx.machine.createRuntimeId('BUFF'),
@@ -88,13 +92,18 @@ export const buffPowerAndDrawIfTrashed: ActionImplementation = (ctx, params, tar
 
             console.log(`Buffed ${target.unit.name} by ${buffValue} Power.`);
 
-            const newValue = ctx.machine.getUnitPower(target, getOwnerOfZone(ctx.machine, target));
+            const newValue = ctx.machine.getUnitPower(target, owner);
             if (oldValue > 0 && newValue <= 0) {
-                console.log(`Effect caused ${target.unit.name} to have 0 or less power. Trashing and drawing.`);
-                const owner = getOwnerOfZone(ctx.machine, target);
+                console.log(`Effect caused ${target.unit.name} to have 0 or less power. Attempting destruction.`);
                 ctx.machine.destroyUnit(owner, target, undefined, 'EFFECT');
-                const pIdx = ctx.machine.state.players.indexOf(ctx.player);
-                ctx.machine.drawCard(pIdx, params.drawCount || 1);
+
+                const removedFromZone = target.unit !== unitBeforeDestroy;
+                const movedToTrash = owner.trash.includes(unitBeforeDestroy);
+
+                if (removedFromZone && movedToTrash) {
+                    const pIdx = ctx.machine.state.players.indexOf(ctx.player);
+                    ctx.machine.drawCard(pIdx, params.drawCount || 1);
+                }
             }
         }
     });

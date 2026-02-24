@@ -472,6 +472,428 @@ const tests: UnifiedTestCase[] = [
             ];
         },
     },
+
+    {
+        testId: 'BT06-015',
+        name: '?? ?? +1500',
+        description: '??? ?? ?? ???? ??? +1500? ????.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT06-015');
+            p1.unitZones[1].unit = getCard('BT06-014');
+            p1.unitZones[2].unit = getCard('ST10-005');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const chainBase = p1.unitZones[1].unit?.power || 0;
+            const nonChainBase = p1.unitZones[2].unit?.power || 0;
+            const chainPower = getZonePower(engine, p1, 1);
+            const nonChainPower = getZonePower(engine, p1, 2);
+            return [
+                { pass: chainPower === chainBase + 1500, message: '?? ?? +1500' },
+                { pass: nonChainPower === nonChainBase, message: '??? ?? ?? ??' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-016',
+        name: '??? -2000 + ??? ?? ?? +2000',
+        description: '??? ?? -2000 ? ??? ? ?? ?? ?? +2000? ????.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.hand = [getCard('BT06-016')];
+            p1.unitZones[1].unit = getCard('ST10-005');
+            p1.leaderLevel = 10;
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const beforeEncounter = getZonePower(engine, p2, 0);
+            const beforeAlly = getZonePower(engine, p1, 1);
+
+            engine.playUnit(0, 0);
+            const afterEntry = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
+
+            engine.state.phase = Phase.ATTACK;
+            engine.attack(0);
+            const afterAttacker = p1.unitZones[1].unit ? getZonePower(engine, p1, 1) : 0;
+
+            return [
+                { pass: p2.unitZones[0].unit === null || afterEntry === beforeEncounter - 2000, message: '??? ?? -2000' },
+                { pass: p1.unitZones[1].unit === null || afterAttacker === beforeAlly + 2000, message: '??? ? ?? ?? +2000' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-017',
+        name: '??? ?? -2500',
+        description: '?? ???+??? ???? ?? ?? 1? -2500.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-017');
+            p1.skillZone = [getCard('ST10-015')];
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before = getZonePower(engine, p2, 0);
+            engine.activateEffect(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p2.id && a.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
+            return [
+                { pass: !!pick, message: '?? ?? ??' },
+                { pass: p2.unitZones[0].unit === null || after === before - 2500, message: '?? -2500 ??' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-018',
+        name: '??? ?? +4000',
+        description: '???? ?? ?? 1?? +4000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT06-018')];
+            p1.unitZones[1].unit = getCard('ST10-005');
+            p1.leaderLevel = 10;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const before = getZonePower(engine, p1, 1);
+            engine.playUnit(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p1.id && a.zoneIndex === 1);
+            if (pick) engine.step(pick);
+            const after = p1.unitZones[1].unit ? getZonePower(engine, p1, 1) : 0;
+            return [
+                { pass: !!pick, message: '?? ?? ?? ??' },
+                { pass: p1.unitZones[1].unit === null || after === before + 4000, message: '?? +4000 ??' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-019',
+        name: '??3 ??[2]',
+        description: '??3 ???? ??[2]? 2???.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-019');
+            p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            p1.hand = [];
+            p2.unitZones[0].unit = getCard('ST10-005');
+            engine.incrementTurnUnitAttackCount(p1.id);
+            engine.incrementTurnUnitAttackCount(p1.id);
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const handBefore = p1.hand.length;
+            engine.attack(0);
+            const forceBlock = findAction(engine, p2.id, 'RESOLVE_BLOCK', (a: any) => a.shouldBlock && a.blockerZoneIndex === 0);
+            if (forceBlock) engine.step(forceBlock);
+            return [
+                { pass: !!forceBlock, message: '?? ?? ?? ??' },
+                { pass: p1.hand.length === handBefore + 2, message: '??[2] ???' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-020',
+        name: '??2 ?? -3000 ? ??? ? 1???',
+        description: '??2 ???? ?? -3000, ??? ? 1???.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-020');
+            p1.deck = [getCard('ST01-002')];
+            p1.hand = [];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.incrementTurnUnitAttackCount(p1.id);
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const handBefore = p1.hand.length;
+            engine.attack(0);
+            return [
+                { pass: p1.hand.length === handBefore + 1, message: '??? ? 1???' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-021',
+        name: '??? ?? -4000',
+        description: '?? ???+??? ???? ?? ?? 1? -4000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-021');
+            p1.skillZone = [getCard('ST10-015')];
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before = getZonePower(engine, p2, 0);
+            engine.activateEffect(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p2.id && a.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
+            return [
+                { pass: !!pick, message: '?? ?? ??' },
+                { pass: p2.unitZones[0].unit === null || after === before - 4000, message: '?? -4000 ??' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-022',
+        name: '??? ?? -2000 ? ??? ??? ???',
+        description: '???? ?? ?? -2000 ? ???? ??? ???.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.hand = [getCard('BT06-022')];
+            p1.deck = [getCard('ST01-002'), getCard('ST01-002')];
+            p1.leaderLevel = 10;
+            p2.unitZones[0].unit = getCard('ST01-002');
+            p2.unitZones[1].unit = getCard('ST01-002');
+            if (p2.unitZones[0].unit) p2.unitZones[0].unit.power = 2000;
+            if (p2.unitZones[1].unit) p2.unitZones[1].unit.power = 2000;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const handBefore = p1.hand.length;
+            engine.playUnit(0, 0);
+            return [
+                { pass: p1.hand.length === handBefore + 1, message: '2? ???? ?? +1 (?? 1, ??? 2)' },
+                { pass: p1.deck.length === 0, message: '2? ???? ? ?? ??' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-022-Active',
+        name: '??? ?? ???? 2??? ?? ?? ??',
+        description: '??? 1? ???? ???? 2??? ?? ?? 1?? ??.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT06-022');
+            p1.skillZone = [getCard('BT06-026')];
+            p1.trash = [getCard('BT06-028')];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.activateEffect(0, 1);
+            const pick = findAction(engine, p1.id, 'SELECT_TRASH_TARGET', (a: any) => p1.trash[a.trashIndex]?.id.startsWith('BT06-028'));
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '??? ?? ?? ??' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT06-028')), message: '?? ? ??' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-023',
+        name: '??? ?? ? ? ?? ??? ? 3???',
+        description: '?? ?? ? ? ?? ???, 3? ???.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT06-023'), getCard('ST01-002'), getCard('ST01-002')];
+            p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            p1.leaderLevel = 10;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.playUnit(0, 0);
+            const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (a: any) => a.confirm === true);
+            if (confirm) engine.step(confirm);
+            return [
+                { pass: !!confirm, message: '?? ?? ??' },
+                { pass: p1.hand.length === 3, message: '? 3? ??(?? ??? ? 3???)' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-023-Active',
+        name: '??? ?? 3??? ?? ?? ???',
+        description: '??? ???? 3??? ?? ?? ?? 1? ???.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-023');
+            p1.skillZone = [getCard('ST10-015')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.activateEffect(0, 1);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p2.id && a.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '?? ?? ??' },
+                { pass: p2.unitZones[0].unit === null, message: '3??? ?? ?? ???' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-024',
+        name: '??? ?? ?? ?? -3000',
+        description: '??? 2? ???? ?? ?? -3000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-024');
+            p1.skillZone = [getCard('ST10-015'), getCard('ST10-016')];
+            p2.unitZones[0].unit = getCard('ST10-005');
+            p2.unitZones[1].unit = getCard('ST10-005');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p2 = engine.state.players[1];
+            const before0 = getZonePower(engine, p2, 0);
+            const before1 = getZonePower(engine, p2, 1);
+            engine.activateEffect(0, 0);
+            const after0 = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
+            const after1 = p2.unitZones[1].unit ? getZonePower(engine, p2, 1) : 0;
+            return [
+                { pass: p2.unitZones[0].unit === null || after0 === before0 - 3000, message: '0? ?? -3000' },
+                { pass: p2.unitZones[1].unit === null || after1 === before1 - 3000, message: '1? ?? -3000' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-025',
+        name: '??? ?? ?? -7000',
+        description: '??? 2? ???? ?? ?? 1? -7000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-025');
+            p1.skillZone = [getCard('ST10-015'), getCard('ST10-016')];
+            p2.unitZones[0].unit = getCard('ST10-005');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before = getZonePower(engine, p2, 0);
+            engine.activateEffect(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p2.id && a.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
+            return [
+                { pass: !!pick, message: '?? ?? ??' },
+                { pass: p2.unitZones[0].unit === null || after === before - 7000, message: '?? -7000 ??' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-026',
+        name: '?? ?? -1000',
+        description: '?? ?? ? ?? ?? 1? -1000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.hand = [getCard('BT06-026')];
+            p1.leaderLevel = 10;
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before = getZonePower(engine, p2, 0);
+            engine.playSkill(0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p2.id && a.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
+            return [
+                { pass: !!pick, message: '?? ?? ??' },
+                { pass: p2.unitZones[0].unit === null || after === before - 1000, message: '?? -1000 ??' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-027',
+        name: '??2 ?? ? ?? 1? ?, ??? ???',
+        description: '?? ?? ? ?? 2? ?? ? ?? 1? ?? ????.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT06-027')];
+            p1.deck = [getCard('ST10-015'), getCard('ST01-002')];
+            p1.leaderLevel = 10;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.playSkill(0);
+            const pick = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET', (action: any) =>
+                (engine.state.revealedCards[action.revealedIndex]?.id || '').startsWith('ST01-002')
+            );
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '?? ?? ?? ??' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '?? ?? ? ??' },
+                { pass: p1.trash.length >= 1, message: '??? ?? ???' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-028',
+        name: '?? ?? -2000',
+        description: '?? ?? ? ?? ?? 1? -2000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.hand = [getCard('BT06-028')];
+            p1.leaderLevel = 10;
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before = getZonePower(engine, p2, 0);
+            engine.playSkill(0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p2.id && a.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
+            return [
+                { pass: !!pick, message: '?? ?? ??' },
+                { pass: p2.unitZones[0].unit === null || after === before - 2000, message: '?? -2000 ??' },
+            ];
+        },
+    },
 ];
 
 export const BT06Module: UnifiedTestModule = {

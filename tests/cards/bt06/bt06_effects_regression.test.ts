@@ -373,4 +373,241 @@ describe('BT06 Effects Regression', () => {
         expect(p1b.hand.length).toBe(handBeforePlunder + 1);
         expect(p1b.unitZones[0].buffs.some((buff: any) => buff.type === 'PLUNDER')).toBe(false);
     });
+
+    it('BT06-015 passive buffs only friendly [CHAIN] units', () => {
+        const engine = createEngine(60010);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('BT06-015');
+        p1.unitZones[1].unit = getCard('BT06-014');
+        p1.unitZones[2].unit = getCard('ST10-005');
+
+        const chainBase = p1.unitZones[1].unit?.power || 0;
+        const nonChainBase = p1.unitZones[2].unit?.power || 0;
+
+        expect(zonePower(engine, p1, 1)).toBe(chainBase + 1500);
+        expect(zonePower(engine, p1, 2)).toBe(nonChainBase);
+    });
+
+    it('BT06-016 entry debuffs encounter and attacker buffs other friendly units', () => {
+        const engine = createEngine(60011);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.hand = [getCard('BT06-016')];
+        p1.unitZones[1].unit = getCard('ST10-005');
+        p2.unitZones[0].unit = getCard('ST01-011');
+
+        const encounterBefore = zonePower(engine, p2, 0);
+        const allyBefore = zonePower(engine, p1, 1);
+
+        engine.playUnit(0, 0);
+        expect(zonePower(engine, p2, 0)).toBe(encounterBefore - 2000);
+
+        engine.state.phase = Phase.ATTACK;
+        engine.attack(0);
+        expect(zonePower(engine, p1, 1)).toBe(allyBefore + 2000);
+    });
+
+    it('BT06-019 chain3 grants plunder[2] and draws 2 on combat trash', () => {
+        const engine = createEngine(60012);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.unitZones[0].unit = getCard('BT06-019');
+        p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+        p1.hand = [];
+        p2.unitZones[0].unit = getCard('ST10-005');
+
+        engine.incrementTurnUnitAttackCount(p1.id);
+        engine.incrementTurnUnitAttackCount(p1.id);
+        engine.state.phase = Phase.ATTACK;
+
+        const handBefore = p1.hand.length;
+        engine.attack(0);
+
+        const block = findAction(
+            engine,
+            p2.id,
+            'RESOLVE_BLOCK',
+            action => action.shouldBlock === true && action.blockerZoneIndex === 0
+        );
+        expect(block).toBeDefined();
+        if (block) expect(engine.step(block)).toBe(true);
+
+        expect(p1.hand.length).toBe(handBefore + 2);
+    });
+
+    it('BT06-020 draws 1 only when encounter is actually trashed', () => {
+        const engine = createEngine(60013);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.unitZones[0].unit = getCard('BT06-020');
+        p1.deck = [getCard('ST01-002')];
+        p1.hand = [];
+        p2.unitZones[0].unit = getCard('ST01-002');
+
+        engine.incrementTurnUnitAttackCount(p1.id);
+        engine.state.phase = Phase.ATTACK;
+
+        const handBefore = p1.hand.length;
+        engine.attack(0);
+
+        expect(p2.unitZones[0].unit).toBeNull();
+        expect(p1.hand.length).toBe(handBefore + 1);
+    });
+
+    it('BT06-020 does not draw when destruction replacement keeps encounter alive', () => {
+        const engine = createEngine(60014);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.unitZones[0].unit = getCard('BT06-020');
+        p1.deck = [getCard('ST01-002')];
+        p1.hand = [];
+
+        p2.unitZones[0].unit = getCard('BT02-069');
+        p2.unitZones[0].items = [getCard('ST11-017')];
+        if (p2.unitZones[0].unit) p2.unitZones[0].unit.power = 3000;
+
+        engine.incrementTurnUnitAttackCount(p1.id);
+        engine.state.phase = Phase.ATTACK;
+
+        const handBefore = p1.hand.length;
+        engine.attack(0);
+
+        const replace = findAction(
+            engine,
+            p2.id,
+            'RESOLVE_OPTIONAL',
+            action => action.confirm === true
+        );
+        expect(replace).toBeDefined();
+        if (replace) expect(engine.step(replace)).toBe(true);
+
+        // Replacement can still be followed by RULE trash if power remains <= 0.
+        // The assertion here focuses on "no draw unless actually trashed by this effect resolution".
+        expect(p1.hand.length).toBe(handBefore);
+    });
+
+    it('BT06-022 entry draws by actual trashed count only (replacement survivor not counted)', () => {
+        const engine = createEngine(60015);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.hand = [getCard('BT06-022')];
+        p1.deck = [getCard('ST01-002'), getCard('ST01-002')];
+
+        p2.unitZones[0].unit = getCard('BT02-069');
+        p2.unitZones[0].items = [getCard('ST11-017')];
+        if (p2.unitZones[0].unit) p2.unitZones[0].unit.power = 2000;
+
+        p2.unitZones[1].unit = getCard('ST01-002');
+        if (p2.unitZones[1].unit) p2.unitZones[1].unit.power = 2000;
+
+        const handBefore = p1.hand.length;
+        engine.playUnit(0, 0);
+
+        const replace = findAction(
+            engine,
+            p2.id,
+            'RESOLVE_OPTIONAL',
+            action => action.confirm === true
+        );
+        expect(replace).toBeDefined();
+        if (replace) expect(engine.step(replace)).toBe(true);
+
+        expect(p2.unitZones[1].unit).toBeNull();
+        expect(p1.hand.length).toBe(handBefore);
+    });
+
+    it('BT06-022 entry draws by number of multiple trashed units', () => {
+        const engine = createEngine(60016);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.hand = [getCard('BT06-022')];
+        p1.deck = [getCard('ST01-002'), getCard('ST01-002')];
+
+        p2.unitZones[0].unit = getCard('ST01-002');
+        p2.unitZones[1].unit = getCard('ST01-002');
+        if (p2.unitZones[0].unit) p2.unitZones[0].unit.power = 2000;
+        if (p2.unitZones[1].unit) p2.unitZones[1].unit.power = 2000;
+
+        const handBefore = p1.hand.length;
+        engine.playUnit(0, 0);
+
+        expect(p2.unitZones[0].unit).toBeNull();
+        expect(p2.unitZones[1].unit).toBeNull();
+        expect(p1.hand.length).toBe(handBefore + 1);
+    });
+
+    it('BT06-023 optional path: confirm draws 3 after discarding hand, skip leaves hand consumed only by play', () => {
+        const confirmEngine = createEngine(60017);
+        const p1a = confirmEngine.state.players[0];
+
+        p1a.hand = [getCard('BT06-023'), getCard('ST01-002'), getCard('ST01-002')];
+        p1a.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+
+        confirmEngine.playUnit(0, 0);
+        const confirm = findAction(confirmEngine, p1a.id, 'RESOLVE_OPTIONAL', action => action.confirm === true);
+        expect(confirm).toBeDefined();
+        if (confirm) expect(confirmEngine.step(confirm)).toBe(true);
+
+        expect(p1a.hand.length).toBe(3);
+
+        const skipEngine = createEngine(60018);
+        const p1b = skipEngine.state.players[0];
+
+        p1b.hand = [getCard('BT06-023'), getCard('ST01-002'), getCard('ST01-002')];
+        p1b.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+
+        skipEngine.playUnit(0, 0);
+        const skip = findAction(skipEngine, p1b.id, 'RESOLVE_OPTIONAL', action => action.confirm === false);
+        expect(skip).toBeDefined();
+        if (skip) expect(skipEngine.step(skip)).toBe(true);
+
+        expect(p1b.hand.length).toBe(2);
+        expect(p1b.deck.length).toBe(3);
+    });
+
+    it('BT06-024/025 triggers return the card from damage to hand', () => {
+        const e24 = createEngine(60019);
+        const p124 = e24.state.players[0];
+        p124.deck = [getCard('BT06-024')];
+        e24.dealDamage(p124, 1);
+        expect(p124.hand.some(card => card.id.startsWith('BT06-024'))).toBe(true);
+        expect(p124.damage.some(card => card.id.startsWith('BT06-024'))).toBe(false);
+
+        const e25 = createEngine(60020);
+        const p125 = e25.state.players[0];
+        p125.deck = [getCard('BT06-025')];
+        e25.dealDamage(p125, 1);
+        expect(p125.hand.some(card => card.id.startsWith('BT06-025'))).toBe(true);
+        expect(p125.damage.some(card => card.id.startsWith('BT06-025'))).toBe(false);
+    });
+
+    it('BT06-027 reveals top 2, takes exactly one UNIT to hand, trashes the rest', () => {
+        const engine = createEngine(60021);
+        const p1 = engine.state.players[0];
+
+        p1.hand = [getCard('BT06-027')];
+        p1.deck = [getCard('ST10-015'), getCard('ST01-002')];
+
+        engine.playSkill(0);
+
+        const pickUnit = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => (engine.state.revealedCards[action.revealedIndex]?.id || '').startsWith('ST01-002')
+        );
+        expect(pickUnit).toBeDefined();
+        if (pickUnit) expect(engine.step(pickUnit)).toBe(true);
+
+        expect(p1.hand.some(card => card.id.startsWith('ST01-002'))).toBe(true);
+        expect(p1.trash.some(card => card.id.startsWith('ST10-015'))).toBe(true);
+    });
+
 });
