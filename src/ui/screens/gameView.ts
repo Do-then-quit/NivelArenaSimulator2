@@ -667,9 +667,22 @@ function renderPlayer(
 }
 
 export function renderCard(card: Card, isSmall: boolean = false, _calculatedPower?: number, _calculatedHit?: number) {
+    const attributeClass = (card.attribute || 'NONE').toString().toLowerCase();
+    const safeName = escapeHtml(card.name || card.id || 'Unknown');
+    const safeId = escapeHtml(card.id || '');
+    const safeText = escapeHtml(card.text || '');
+
     return `
-        <div class="card ${card.attribute.toLowerCase()} ${isSmall ? 'small-card' : ''} ${card.isAwakened ? 'awakened' : ''}">
-            ${card.imageUrl ? `<img src="${card.imageUrl}" class="card-image" alt="${card.name}">` : ''}
+        <div class="card ${attributeClass} ${isSmall ? 'small-card' : ''} ${card.isAwakened ? 'awakened' : ''} ${card.imageUrl ? '' : 'card-text-fallback'}">
+            ${card.imageUrl
+            ? `<img src="${card.imageUrl}" class="card-image" alt="${safeName}">`
+            : `
+                <div class="card-fallback">
+                    <div class="card-fallback-id">${safeId}</div>
+                    <div class="card-fallback-name">${safeName}</div>
+                    ${safeText ? `<div class="card-fallback-text">${safeText}</div>` : ''}
+                </div>
+            `}
         </div>
     `;
 }

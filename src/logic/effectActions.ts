@@ -80,7 +80,7 @@ function effectHasPhaseAttackCondition(condition: any): boolean {
     return false;
 }
 
-function createPromptOptionCard(id: string, name: string, text: string) {
+function createPromptOptionCard(id: string, name: string, text: string, imageUrl?: string) {
     return {
         id,
         name,
@@ -88,6 +88,7 @@ function createPromptOptionCard(id: string, name: string, text: string) {
         attribute: Attribute.NONE,
         cost: 0,
         text,
+        imageUrl,
     };
 }
 
@@ -210,7 +211,8 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             createPromptOptionCard(
                 `BT06_SKILL_OPTION_${skillZoneIndex}_${card.id}`,
                 card.name,
-                card.text || `${card.name}를 0코스트로 설정`
+                card.text || `${card.name}를 0코스트로 설정`,
+                card.imageUrl
             )
         ) as any;
         ctx.machine.state.interactionMode = 'SELECT_TARGET';

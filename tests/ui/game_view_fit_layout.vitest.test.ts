@@ -190,4 +190,39 @@ describe('game view fit layout', () => {
         expect(uiState.gameLogView.expanded).toBe(true);
         expect(uiState.gameLogView.autoCollapsed).toBe(true);
     });
+
+    it('renders text fallback for revealed prompt cards without imageUrl', async () => {
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        const game = createMockGame();
+        game.state.revealedCards = [{
+            id: 'BT06_EFFECT_OPTION_0_0',
+            name: 'Option 1',
+            type: 'SKILL',
+            attribute: 'NONE',
+            cost: 0,
+            text: 'Activate selected [ACTIVE:ATTACK] effect.',
+        }];
+        game.state.interactionMode = 'SELECT_TARGET';
+        game.state.pendingEffect = {
+            validTargets: 'REVEALED',
+            selectedTargets: [],
+            targetSchema: { count: 1, selectMode: 'MANUAL' },
+        };
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = game;
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.expanded = true;
+        uiState.gameLogView.autoCollapsed = false;
+
+        renderGame();
+
+        const fallbackName = document.querySelector('.revealed-card-item .card-fallback-name');
+        const fallbackText = document.querySelector('.revealed-card-item .card-fallback-text');
+
+        expect(fallbackName?.textContent).toContain('Option 1');
+        expect(fallbackText?.textContent).toContain('Activate selected [ACTIVE:ATTACK] effect.');
+    });
 });
