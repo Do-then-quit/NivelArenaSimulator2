@@ -166,6 +166,202 @@ describe('BT06 Effects Regression', () => {
         expect(powerBuffSum).toBe(2000);
     });
 
+    it('BT06-001 borrowed [ACTIVE:ATTACK] does not consume the unit activation chance (leader first)', () => {
+        const engine = createEngine(60022);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.levelZone = getCard('BT06-001');
+        if (p1.levelZone) p1.levelZone.isAwakened = true;
+        p1.leaderLevel = 6;
+        p1.unitZones[0].unit = getCard('BT06-004');
+        p1.skillZone = [getCard('ST10-015')];
+        p2.unitZones[0].unit = getCard('ST01-011');
+        engine.state.phase = Phase.ATTACK;
+
+        const beforeOppPower = zonePower(engine, p2, 0);
+
+        engine.activateEffect(0, 1, 'LEADER');
+
+        const selectUnit = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p1.id && action.zoneIndex === 0
+        );
+        expect(selectUnit).toBeDefined();
+        if (selectUnit) expect(engine.step(selectUnit)).toBe(true);
+
+        const selectBorrowedEffect = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => action.revealedIndex === 0
+        );
+        expect(selectBorrowedEffect).toBeDefined();
+        if (selectBorrowedEffect) expect(engine.step(selectBorrowedEffect)).toBe(true);
+
+        const selectOppForBorrowed = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p2.id && action.zoneIndex === 0
+        );
+        expect(selectOppForBorrowed).toBeDefined();
+        if (selectOppForBorrowed) expect(engine.step(selectOppForBorrowed)).toBe(true);
+
+        const unitActiveAction = findAction(
+            engine,
+            p1.id,
+            'ACTIVATE_EFFECT',
+            action => action.sourceType === 'UNIT' && action.zoneIndex === 0 && action.effectIndex === 0
+        );
+        expect(unitActiveAction).toBeDefined();
+        if (unitActiveAction) expect(engine.step(unitActiveAction)).toBe(true);
+
+        const selectOppForUnit = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p2.id && action.zoneIndex === 0
+        );
+        expect(selectOppForUnit).toBeDefined();
+        if (selectOppForUnit) expect(engine.step(selectOppForUnit)).toBe(true);
+
+        expect(zonePower(engine, p2, 0)).toBe(beforeOppPower - 3000);
+    });
+
+    it('BT06-001 can borrow an [ACTIVE:ATTACK] already used by that unit (unit first)', () => {
+        const engine = createEngine(60023);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.levelZone = getCard('BT06-001');
+        if (p1.levelZone) p1.levelZone.isAwakened = true;
+        p1.leaderLevel = 6;
+        p1.unitZones[0].unit = getCard('BT06-004');
+        p1.skillZone = [getCard('ST10-015')];
+        p2.unitZones[0].unit = getCard('ST01-011');
+        engine.state.phase = Phase.ATTACK;
+
+        const beforeOppPower = zonePower(engine, p2, 0);
+
+        const firstUnitActivation = findAction(
+            engine,
+            p1.id,
+            'ACTIVATE_EFFECT',
+            action => action.sourceType === 'UNIT' && action.zoneIndex === 0 && action.effectIndex === 0
+        );
+        expect(firstUnitActivation).toBeDefined();
+        if (firstUnitActivation) expect(engine.step(firstUnitActivation)).toBe(true);
+
+        const selectOppForUnit = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p2.id && action.zoneIndex === 0
+        );
+        expect(selectOppForUnit).toBeDefined();
+        if (selectOppForUnit) expect(engine.step(selectOppForUnit)).toBe(true);
+
+        const secondUnitActivation = findAction(
+            engine,
+            p1.id,
+            'ACTIVATE_EFFECT',
+            action => action.sourceType === 'UNIT' && action.zoneIndex === 0 && action.effectIndex === 0
+        );
+        expect(secondUnitActivation).toBeUndefined();
+
+        engine.activateEffect(0, 1, 'LEADER');
+
+        const selectUnit = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p1.id && action.zoneIndex === 0
+        );
+        expect(selectUnit).toBeDefined();
+        if (selectUnit) expect(engine.step(selectUnit)).toBe(true);
+
+        const selectBorrowedEffect = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => action.revealedIndex === 0
+        );
+        expect(selectBorrowedEffect).toBeDefined();
+        if (selectBorrowedEffect) expect(engine.step(selectBorrowedEffect)).toBe(true);
+
+        const selectOppForBorrowed = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p2.id && action.zoneIndex === 0
+        );
+        expect(selectOppForBorrowed).toBeDefined();
+        if (selectOppForBorrowed) expect(engine.step(selectOppForBorrowed)).toBe(true);
+
+        expect(zonePower(engine, p2, 0)).toBe(beforeOppPower - 3000);
+    });
+
+    it('BT06-001 leader [ACTIVE:ATTACK] remains once per turn', () => {
+        const engine = createEngine(60024);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.levelZone = getCard('BT06-001');
+        if (p1.levelZone) p1.levelZone.isAwakened = true;
+        p1.leaderLevel = 6;
+        p1.unitZones[0].unit = getCard('BT06-004');
+        p1.skillZone = [getCard('ST10-015')];
+        p2.unitZones[0].unit = getCard('ST01-011');
+        engine.state.phase = Phase.ATTACK;
+
+        const firstLeaderActivation = findAction(
+            engine,
+            p1.id,
+            'ACTIVATE_EFFECT',
+            action => action.sourceType === 'LEADER' && action.effectIndex === 1
+        );
+        expect(firstLeaderActivation).toBeDefined();
+        if (firstLeaderActivation) expect(engine.step(firstLeaderActivation)).toBe(true);
+
+        const selectUnit = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p1.id && action.zoneIndex === 0
+        );
+        expect(selectUnit).toBeDefined();
+        if (selectUnit) expect(engine.step(selectUnit)).toBe(true);
+
+        const selectBorrowedEffect = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => action.revealedIndex === 0
+        );
+        expect(selectBorrowedEffect).toBeDefined();
+        if (selectBorrowedEffect) expect(engine.step(selectBorrowedEffect)).toBe(true);
+
+        const selectOppForBorrowed = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p2.id && action.zoneIndex === 0
+        );
+        expect(selectOppForBorrowed).toBeDefined();
+        if (selectOppForBorrowed) expect(engine.step(selectOppForBorrowed)).toBe(true);
+
+        const secondLeaderActivation = findAction(
+            engine,
+            p1.id,
+            'ACTIVATE_EFFECT',
+            action => action.sourceType === 'LEADER' && action.effectIndex === 1
+        );
+        expect(secondLeaderActivation).toBeUndefined();
+    });
+
     it('BT06-005 executes follow-up only when skill selection is confirmed and keeps non-selected skill-zone cards in place', () => {
         const engine = createEngine(60003);
         const p1 = engine.state.players[0];

@@ -16,13 +16,14 @@ export const BT06_EFFECTS: Record<string, Effect[]> = {
                 scope: 'MY_FIELD',
                 type: 'UNIT',
                 count: 1,
-                filters: [{ type: 'HAS_ACTIVE_ATTACK_EFFECT' }],
+                filters: [{ type: 'HAS_ACTIVE_ATTACK_EFFECT', value: { includeActivatedThisTurn: true } }],
                 selectMode: 'MANUAL',
             },
             action: {
                 type: 'COMPLEX_ACTION',
                 params: {
                     mode: 'PROMPT_SELECT_ATTACK_ACTIVE_EFFECT',
+                    includeActivatedThisTurn: true,
                 },
             },
         },

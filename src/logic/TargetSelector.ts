@@ -113,7 +113,7 @@ export class TargetSelector {
                     case 'HAS_ACTIVE_ATTACK_EFFECT':
                         candidates = candidates.filter(c => {
                             if (!c || typeof c !== 'object' || !('unit' in c)) return false;
-                            return this.hasActivatableAttackActiveEffect(engine, c as UnitZoneState);
+                            return this.hasActivatableAttackActiveEffect(engine, c as UnitZoneState, filter.value);
                         });
                         break;
                     case 'NOT_HAS_KEYWORD':
@@ -342,7 +342,7 @@ export class TargetSelector {
                         break;
                     case 'HAS_ACTIVE_ATTACK_EFFECT':
                         if (!target || typeof target !== 'object' || !('unit' in target)) return false;
-                        if (!this.hasActivatableAttackActiveEffect(engine, target as UnitZoneState)) return false;
+                        if (!this.hasActivatableAttackActiveEffect(engine, target as UnitZoneState, filter.value)) return false;
                         break;
                     case 'NOT_HAS_KEYWORD':
                         if (!unit) return false;
@@ -525,15 +525,16 @@ export class TargetSelector {
         return false;
     }
 
-    private static hasActivatableAttackActiveEffect(engine: GameEngine, zone: UnitZoneState): boolean {
+    private static hasActivatableAttackActiveEffect(engine: GameEngine, zone: UnitZoneState, filterValue?: any): boolean {
         if (!zone.unit || !Array.isArray(zone.unit.effects)) return false;
 
         const owner = this.getOwner(engine, zone);
         const opponent = engine.state.players.find(player => player.id !== owner.id);
         if (!opponent) return false;
 
+        const options = this.resolveActiveAttackFilterOptions(filterValue);
         return zone.unit.effects.some((effect: any, effectIndex: number) =>
-            this.isActivatableAttackActiveEffect(engine, zone, owner, opponent, effect, effectIndex)
+            this.isActivatableAttackActiveEffect(engine, zone, owner, opponent, effect, effectIndex, options)
         );
     }
 
@@ -543,13 +544,14 @@ export class TargetSelector {
         owner: PlayerState,
         opponent: PlayerState,
         effect: any,
-        effectIndex: number
+        effectIndex: number,
+        options: { includeActivatedThisTurn: boolean }
     ): boolean {
         if (!effect || effect.activation !== 'ACTIVE') return false;
         if (!this.effectHasPhaseAttackCondition(effect.condition)) return false;
 
         const effectKey = `${zone.unit?.id}_${effect.id || effectIndex}`;
-        if (zone.activatedEffectKeys?.[effectKey]) return false;
+        if (!options.includeActivatedThisTurn && zone.activatedEffectKeys?.[effectKey]) return false;
 
         const context: GameContext = {
             sourceCard: zone.unit!,
@@ -576,6 +578,15 @@ export class TargetSelector {
         }
 
         return true;
+    }
+
+    private static resolveActiveAttackFilterOptions(filterValue: any): { includeActivatedThisTurn: boolean } {
+        if (!filterValue || typeof filterValue !== 'object') {
+            return { includeActivatedThisTurn: false };
+        }
+        return {
+            includeActivatedThisTurn: filterValue.includeActivatedThisTurn === true,
+        };
     }
 
     private static effectHasPhaseAttackCondition(condition: any): boolean {

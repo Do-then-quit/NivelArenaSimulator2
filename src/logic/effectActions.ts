@@ -121,6 +121,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
     if ((params as any).mode === 'PROMPT_SELECT_ATTACK_ACTIVE_EFFECT') {
         const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
         if (!targetZone?.unit) return;
+        const includeActivatedThisTurn = (params as any).includeActivatedThisTurn === true;
 
         const owner = getOwnerOfZone(ctx.machine, targetZone);
         if (!owner || owner.id !== ctx.player.id) return;
@@ -131,7 +132,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 if (!effect || effect.activation !== 'ACTIVE') return false;
                 if (!effectHasPhaseAttackCondition(effect.condition)) return false;
                 const effectKey = `${targetZone.unit?.id}_${effect.id || effectIndex}`;
-                if (targetZone.activatedEffectKeys?.[effectKey]) return false;
+                if (!includeActivatedThisTurn && targetZone.activatedEffectKeys?.[effectKey]) return false;
 
                 const effectContext = {
                     sourceCard: targetZone.unit!,
@@ -181,6 +182,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             actionValue: {
                 sourceZoneIndex,
                 options: effectOptions.map(({ effectIndex }) => ({ effectIndex })),
+                includeActivatedThisTurn,
             },
             effectDescription: '발동할 [액티브: 어택] 효과를 선택한다.',
             validTargets: 'REVEALED',

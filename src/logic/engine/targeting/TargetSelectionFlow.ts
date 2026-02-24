@@ -452,9 +452,24 @@ export function selectRevealedTarget(engine: any, index: number) {
         const sourceZoneIndex = pending.actionValue?.sourceZoneIndex;
         const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
         if (!sourcePlayer || typeof sourceZoneIndex !== 'number' || !option) return;
+        const sourceZone = sourcePlayer.unitZones[sourceZoneIndex];
+        const sourceUnit = sourceZone?.unit;
+        if (!sourceZone || !sourceUnit) return;
+        const selectedEffect = sourceUnit.effects?.[option.effectIndex];
+        if (!selectedEffect) return;
+        const opponent = engine.state.players.find((player: any) => player.id !== sourcePlayer.id);
+        if (!opponent) return;
+
+        const selectedEffectContext: GameContext = {
+            sourceCard: sourceUnit,
+            player: sourcePlayer,
+            opponent,
+            unitZone: sourceZone,
+            machine: engine,
+        };
 
         engine.state.revealedCards = [];
-        engine.activateEffect(sourceZoneIndex, option.effectIndex, 'UNIT');
+        engine.effectManager.processEffect(selectedEffect, selectedEffectContext);
         engine.handleEffectCompletion(context, pending);
         return;
     }
