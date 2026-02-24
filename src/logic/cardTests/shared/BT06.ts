@@ -432,7 +432,7 @@ const tests: UnifiedTestCase[] = [
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
             p1.unitZones[0].unit = getCard('BT06-013');
-            p2.unitZones[0].unit = getCard('ST01-011');
+            p2.unitZones[0].unit = getCard('BT06-013');
             engine.incrementTurnUnitAttackCount(p1.id);
             engine.state.turnPlayerIndex = 0;
             engine.state.phase = Phase.ATTACK;
@@ -475,8 +475,8 @@ const tests: UnifiedTestCase[] = [
 
     {
         testId: 'BT06-015',
-        name: '?? ?? +1500',
-        description: '??? ?? ?? ???? ??? +1500? ????.',
+        name: '체인 유닛 패시브 +1500',
+        description: '자신 필드의 체인 유닛에게 파워 +1500을 부여한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.unitZones[0].unit = getCard('BT06-015');
@@ -492,15 +492,15 @@ const tests: UnifiedTestCase[] = [
             const chainPower = getZonePower(engine, p1, 1);
             const nonChainPower = getZonePower(engine, p1, 2);
             return [
-                { pass: chainPower === chainBase + 1500, message: '?? ?? +1500' },
-                { pass: nonChainPower === nonChainBase, message: '??? ?? ?? ??' },
+                { pass: chainPower === chainBase + 1500, message: '체인 유닛 +1500 적용' },
+                { pass: nonChainPower === nonChainBase, message: '비체인 유닛은 변화 없음' },
             ];
         },
     },
     {
         testId: 'BT06-016',
-        name: '??? -2000 + ??? ?? ?? +2000',
-        description: '??? ?? -2000 ? ??? ? ?? ?? ?? +2000? ????.',
+        name: '엔트리 -2000 + 공격 시 아군 +2000',
+        description: '엔트리 시 상대 유닛 -2000, 공격 시 아군 유닛 +2000을 부여한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -525,15 +525,15 @@ const tests: UnifiedTestCase[] = [
             const afterAttacker = p1.unitZones[1].unit ? getZonePower(engine, p1, 1) : 0;
 
             return [
-                { pass: p2.unitZones[0].unit === null || afterEntry === beforeEncounter - 2000, message: '??? ?? -2000' },
-                { pass: p1.unitZones[1].unit === null || afterAttacker === beforeAlly + 2000, message: '??? ? ?? ?? +2000' },
+                { pass: p2.unitZones[0].unit === null || afterEntry === beforeEncounter - 2000, message: '엔트리 상대 -2000 적용' },
+                { pass: p1.unitZones[1].unit === null || afterAttacker === beforeAlly + 2000, message: '공격 시 아군 +2000 적용' },
             ];
         },
     },
     {
         testId: 'BT06-017',
-        name: '??? ?? -2500',
-        description: '?? ???+??? ???? ?? ?? 1? -2500.',
+        name: '액티브:어택 상대 유닛 -2500',
+        description: '액티브:어택으로 상대 유닛 1장을 선택해 -2500을 적용한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -552,15 +552,15 @@ const tests: UnifiedTestCase[] = [
             if (pick) engine.step(pick);
             const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
             return [
-                { pass: !!pick, message: '?? ?? ??' },
-                { pass: p2.unitZones[0].unit === null || after === before - 2500, message: '?? -2500 ??' },
+                { pass: !!pick, message: '상대 대상 선택 가능' },
+                { pass: p2.unitZones[0].unit === null || after === before - 2500, message: '상대 -2500 적용' },
             ];
         },
     },
     {
         testId: 'BT06-018',
-        name: '??? ?? +4000',
-        description: '???? ?? ?? 1?? +4000.',
+        name: '엔트리 아군 유닛 +4000',
+        description: '엔트리 시 아군 유닛 1장을 선택해 +4000을 부여한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.hand = [getCard('BT06-018')];
@@ -577,15 +577,15 @@ const tests: UnifiedTestCase[] = [
             if (pick) engine.step(pick);
             const after = p1.unitZones[1].unit ? getZonePower(engine, p1, 1) : 0;
             return [
-                { pass: !!pick, message: '?? ?? ?? ??' },
-                { pass: p1.unitZones[1].unit === null || after === before + 4000, message: '?? +4000 ??' },
+                { pass: !!pick, message: '아군 대상 선택 가능' },
+                { pass: p1.unitZones[1].unit === null || after === before + 4000, message: '아군 +4000 적용' },
             ];
         },
     },
     {
         testId: 'BT06-019',
-        name: '??3 ??[2]',
-        description: '??3 ???? ??[2]? 2???.',
+        name: '체인3 약탈[2]',
+        description: '체인3 조건에서 약탈[2]로 카드 2장을 획득한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -606,15 +606,15 @@ const tests: UnifiedTestCase[] = [
             const forceBlock = findAction(engine, p2.id, 'RESOLVE_BLOCK', (a: any) => a.shouldBlock && a.blockerZoneIndex === 0);
             if (forceBlock) engine.step(forceBlock);
             return [
-                { pass: !!forceBlock, message: '?? ?? ?? ??' },
-                { pass: p1.hand.length === handBefore + 2, message: '??[2] ???' },
+                { pass: !!forceBlock, message: '강제 방어 진입' },
+                { pass: p1.hand.length === handBefore + 2, message: '약탈[2] 2장 획득' },
             ];
         },
     },
     {
         testId: 'BT06-020',
-        name: '??2 ?? -3000 ? ??? ? 1???',
-        description: '??2 ???? ?? -3000, ??? ? 1???.',
+        name: '체인2 상대 -3000 + 1드로우',
+        description: '체인2 조건에서 상대 유닛 약화 후 카드 1장을 드로우한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -631,14 +631,14 @@ const tests: UnifiedTestCase[] = [
             const handBefore = p1.hand.length;
             engine.attack(0);
             return [
-                { pass: p1.hand.length === handBefore + 1, message: '??? ? 1???' },
+                { pass: p1.hand.length === handBefore + 1, message: '카드 1장 드로우' },
             ];
         },
     },
     {
         testId: 'BT06-021',
-        name: '??? ?? -4000',
-        description: '?? ???+??? ???? ?? ?? 1? -4000.',
+        name: '액티브:어택 상대 유닛 -4000',
+        description: '액티브:어택으로 상대 유닛 1장을 선택해 -4000을 적용한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -657,15 +657,15 @@ const tests: UnifiedTestCase[] = [
             if (pick) engine.step(pick);
             const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
             return [
-                { pass: !!pick, message: '?? ?? ??' },
-                { pass: p2.unitZones[0].unit === null || after === before - 4000, message: '?? -4000 ??' },
+                { pass: !!pick, message: '상대 대상 선택 가능' },
+                { pass: p2.unitZones[0].unit === null || after === before - 4000, message: '상대 -4000 적용' },
             ];
         },
     },
     {
         testId: 'BT06-022',
-        name: '??? ?? -2000 ? ??? ??? ???',
-        description: '???? ?? ?? -2000 ? ???? ??? ???.',
+        name: '엔트리 상대 -2000 + 추가 드로우',
+        description: '엔트리 시 상대 전유닛 -2000을 적용하고 효과 처리 후 카드를 추가로 드로우한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -684,15 +684,15 @@ const tests: UnifiedTestCase[] = [
             const handBefore = p1.hand.length;
             engine.playUnit(0, 0);
             return [
-                { pass: p1.hand.length === handBefore + 1, message: '2? ???? ?? +1 (?? 1, ??? 2)' },
-                { pass: p1.deck.length === 0, message: '2? ???? ? ?? ??' },
+                { pass: p1.hand.length === handBefore + 1, message: '2장 드로우로 손패 +1 (사용 1, 드로우 2)' },
+                { pass: p1.deck.length === 0, message: '2장 드로우 후 덱 소진' },
             ];
         },
     },
     {
         testId: 'BT06-022-Active',
-        name: '??? ?? ???? 2??? ?? ?? ??',
-        description: '??? 1? ???? ???? 2??? ?? ?? 1?? ??.',
+        name: '액티브:어택 코스트 2 이하 스킬 회수',
+        description: '조건 충족 시 트래시의 코스트 2 이하 스킬 1장을 패로 회수한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.unitZones[0].unit = getCard('BT06-022');
@@ -707,15 +707,15 @@ const tests: UnifiedTestCase[] = [
             const pick = findAction(engine, p1.id, 'SELECT_TRASH_TARGET', (a: any) => p1.trash[a.trashIndex]?.id.startsWith('BT06-028'));
             if (pick) engine.step(pick);
             return [
-                { pass: !!pick, message: '??? ?? ?? ??' },
-                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT06-028')), message: '?? ? ??' },
+                { pass: !!pick, message: '트래시 대상 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT06-028')), message: '선택 스킬 패 회수' },
             ];
         },
     },
     {
         testId: 'BT06-023',
-        name: '??? ?? ? ? ?? ??? ? 3???',
-        description: '?? ?? ? ? ?? ???, 3? ???.',
+        name: '엔트리 손패 전부 트래시 후 3드로우',
+        description: '선택 시 손패를 모두 트래시하고 카드 3장을 드로우한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.hand = [getCard('BT06-023'), getCard('ST01-002'), getCard('ST01-002')];
@@ -730,15 +730,15 @@ const tests: UnifiedTestCase[] = [
             const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (a: any) => a.confirm === true);
             if (confirm) engine.step(confirm);
             return [
-                { pass: !!confirm, message: '?? ?? ??' },
-                { pass: p1.hand.length === 3, message: '? 3? ??(?? ??? ? 3???)' },
+                { pass: !!confirm, message: '옵션 확인 선택 가능' },
+                { pass: p1.hand.length === 3, message: '손패 3장 유지(사용 1 + 3드로우)' },
             ];
         },
     },
     {
         testId: 'BT06-023-Active',
-        name: '??? ?? 3??? ?? ?? ???',
-        description: '??? ???? 3??? ?? ?? ?? 1? ???.',
+        name: '액티브:어택 코스트 3 이하 상대 트래시',
+        description: '조건 충족 시 코스트 3 이하 상대 유닛 1장을 트래시한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -755,15 +755,15 @@ const tests: UnifiedTestCase[] = [
             const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p2.id && a.zoneIndex === 0);
             if (pick) engine.step(pick);
             return [
-                { pass: !!pick, message: '?? ?? ??' },
-                { pass: p2.unitZones[0].unit === null, message: '3??? ?? ?? ???' },
+                { pass: !!pick, message: '상대 대상 선택 가능' },
+                { pass: p2.unitZones[0].unit === null, message: '코스트 3 이하 상대 트래시' },
             ];
         },
     },
     {
         testId: 'BT06-024',
-        name: '??? ?? ?? ?? -3000',
-        description: '??? 2? ???? ?? ?? -3000.',
+        name: '액티브:어택 상대 전유닛 -3000',
+        description: '스킬존 2장 조건에서 상대 전유닛 -3000을 적용한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -782,15 +782,15 @@ const tests: UnifiedTestCase[] = [
             const after0 = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
             const after1 = p2.unitZones[1].unit ? getZonePower(engine, p2, 1) : 0;
             return [
-                { pass: p2.unitZones[0].unit === null || after0 === before0 - 3000, message: '0? ?? -3000' },
-                { pass: p2.unitZones[1].unit === null || after1 === before1 - 3000, message: '1? ?? -3000' },
+                { pass: p2.unitZones[0].unit === null || after0 === before0 - 3000, message: '0번 유닛 -3000 적용' },
+                { pass: p2.unitZones[1].unit === null || after1 === before1 - 3000, message: '1번 유닛 -3000 적용' },
             ];
         },
     },
     {
         testId: 'BT06-025',
-        name: '??? ?? ?? -7000',
-        description: '??? 2? ???? ?? ?? 1? -7000.',
+        name: '액티브:어택 상대 유닛 -7000',
+        description: '스킬존 2장 조건에서 상대 유닛 1장에 -7000을 적용한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -809,15 +809,15 @@ const tests: UnifiedTestCase[] = [
             if (pick) engine.step(pick);
             const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
             return [
-                { pass: !!pick, message: '?? ?? ??' },
-                { pass: p2.unitZones[0].unit === null || after === before - 7000, message: '?? -7000 ??' },
+                { pass: !!pick, message: '상대 대상 선택 가능' },
+                { pass: p2.unitZones[0].unit === null || after === before - 7000, message: '상대 -7000 적용' },
             ];
         },
     },
     {
         testId: 'BT06-026',
-        name: '?? ?? -1000',
-        description: '?? ?? ? ?? ?? 1? -1000.',
+        name: '스킬 상대 유닛 -1000',
+        description: '상대 유닛 1장을 선택해 -1000을 적용한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -836,15 +836,15 @@ const tests: UnifiedTestCase[] = [
             if (pick) engine.step(pick);
             const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
             return [
-                { pass: !!pick, message: '?? ?? ??' },
-                { pass: p2.unitZones[0].unit === null || after === before - 1000, message: '?? -1000 ??' },
+                { pass: !!pick, message: '상대 대상 선택 가능' },
+                { pass: p2.unitZones[0].unit === null || after === before - 1000, message: '상대 -1000 적용' },
             ];
         },
     },
     {
         testId: 'BT06-027',
-        name: '??2 ?? ? ?? 1? ?, ??? ???',
-        description: '?? ?? ? ?? 2? ?? ? ?? 1? ?? ????.',
+        name: '스킬 상단 2장 공개 후 유닛 1장 획득',
+        description: '덱 상단 2장을 공개해 유닛 1장을 패로 가져오고 나머지는 트래시한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.hand = [getCard('BT06-027')];
@@ -861,16 +861,16 @@ const tests: UnifiedTestCase[] = [
             );
             if (pick) engine.step(pick);
             return [
-                { pass: !!pick, message: '?? ?? ?? ??' },
-                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '?? ?? ? ??' },
-                { pass: p1.trash.length >= 1, message: '??? ?? ???' },
+                { pass: !!pick, message: '공개 카드 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '유닛 카드 패 획득' },
+                { pass: p1.trash.length >= 1, message: '비선택 카드 트래시' },
             ];
         },
     },
     {
         testId: 'BT06-028',
-        name: '?? ?? -2000',
-        description: '?? ?? ? ?? ?? 1? -2000.',
+        name: '스킬 상대 유닛 -2000',
+        description: '상대 유닛 1장을 선택해 -2000을 적용한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
@@ -889,8 +889,8 @@ const tests: UnifiedTestCase[] = [
             if (pick) engine.step(pick);
             const after = p2.unitZones[0].unit ? getZonePower(engine, p2, 0) : 0;
             return [
-                { pass: !!pick, message: '?? ?? ??' },
-                { pass: p2.unitZones[0].unit === null || after === before - 2000, message: '?? -2000 ??' },
+                { pass: !!pick, message: '상대 대상 선택 가능' },
+                { pass: p2.unitZones[0].unit === null || after === before - 2000, message: '상대 -2000 적용' },
             ];
         },
     },
