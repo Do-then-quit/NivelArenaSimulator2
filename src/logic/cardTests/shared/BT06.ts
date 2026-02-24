@@ -313,7 +313,7 @@ const tests: UnifiedTestCase[] = [
             const p2 = engine.state.players[1];
             p1.unitZones[0].unit = getCard('BT06-009');
             p1.unitZones[1].unit = getCard('ST10-005');
-            p2.unitZones[0].unit = getCard('ST01-011');
+            p2.unitZones[0].unit = getCard('ST10-004');
             engine.incrementTurnUnitAttackCount(p1.id);
             engine.state.turnPlayerIndex = 0;
             engine.state.phase = Phase.ATTACK;
@@ -507,7 +507,7 @@ const tests: UnifiedTestCase[] = [
             p1.hand = [getCard('BT06-016')];
             p1.unitZones[1].unit = getCard('ST10-005');
             p1.leaderLevel = 10;
-            p2.unitZones[0].unit = getCard('ST01-011');
+            p2.unitZones[0].unit = getCard('ST10-004');
             engine.state.turnPlayerIndex = 0;
             engine.state.phase = Phase.MAIN;
         },
