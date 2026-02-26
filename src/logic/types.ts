@@ -118,6 +118,7 @@ export interface TargetFilter {
     | 'LOWEST_COST_ONLY'
     | 'ITEM_COUNT_MIN'
     | 'EXCLUDE_CARD_ID'
+    | 'EQUIPPED_ON_SOURCE_UNIT'
     | 'COST_LIMIT_BY_LEADER_LEVEL';
     value?: any;
 }
@@ -330,6 +331,7 @@ export interface PlayerState {
     leaderLevel: number;
     unitZones: [UnitZoneState, UnitZoneState, UnitZoneState]; // 3 zones
     skillZone: Card[];
+    lockedActivationsUntilTurnEnd: Partial<Record<ActivationCondition, boolean>>;
 }
 
 export interface GameState {

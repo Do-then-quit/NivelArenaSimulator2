@@ -1,4 +1,4 @@
-import { ActionImplementation, Attribute, CardType, UnitZoneState } from './types';
+import { ActionImplementation, Attribute, CardType, Phase, UnitZoneState } from './types';
 import { TargetSelector } from './TargetSelector';
 import {
     autoAttackIfEncounter,
@@ -238,6 +238,171 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         };
         ctx.machine.setPendingRuntime(ctx, null);
         ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_029_KEEP_AND_REFILL') {
+        const keepSet = new Set((_targets || []).filter(card => ctx.player.hand.includes(card)));
+        const cardsToTrash = ctx.player.hand.filter(card => !keepSet.has(card));
+        const cardsToKeep = ctx.player.hand.filter(card => keepSet.has(card));
+
+        if (cardsToTrash.length > 0) {
+            ctx.player.hand = cardsToKeep;
+            ctx.player.trash.push(...cardsToTrash);
+            (ctx as any).discardedCount = cardsToTrash.length;
+            ctx.machine.notifyHandTrashed(ctx.player, cardsToTrash, {
+                flags: {
+                    handTrashByEffect: true,
+                },
+            });
+        } else {
+            (ctx as any).discardedCount = 0;
+        }
+
+        const targetHandSize = Math.max(0, (params as any).targetHandSize ?? 3);
+        const drawCount = Math.max(0, targetHandSize - ctx.player.hand.length);
+        if (drawCount > 0) {
+            const playerIndex = ctx.machine.state.players.indexOf(ctx.player);
+            ctx.machine.drawCard(playerIndex, drawCount);
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_034_FORCE_SELECTED_ATTACK_IF_ENCOUNTER') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+
+        const zoneIndex = owner.unitZones.indexOf(targetZone);
+        if (zoneIndex < 0) return;
+        if (!ctx.opponent.unitZones[zoneIndex]?.unit) return;
+        if (ctx.machine.currentPlayer?.id !== ctx.player.id) return;
+        if (ctx.machine.state.combatStep !== 'NONE') return;
+
+        const previousPhase = ctx.machine.state.phase;
+        (ctx.machine.state as any).resumePhaseAfterAutoAttack = previousPhase;
+        ctx.machine.state.phase = Phase.ATTACK;
+        ctx.machine.attack(zoneIndex);
+
+        if (ctx.machine.state.interactionMode === 'NORMAL' && ctx.machine.state.combatStep === 'NONE') {
+            ctx.machine.state.phase = previousPhase;
+            delete (ctx.machine.state as any).resumePhaseAfterAutoAttack;
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_035_APPLY_HAND_DIFF_DEBUFF') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const diff = Math.abs(ctx.player.hand.length - ctx.opponent.hand.length);
+        if (diff <= 0) return;
+
+        targetZone.buffs.push({
+            id: ctx.machine.createRuntimeId('BUFF'),
+            sourceCard: ctx.sourceCard,
+            type: 'POWER',
+            value: -2000 * diff,
+            duration: (params as any).duration || 'TURN_END',
+        });
+        return;
+    }
+
+    if ((params as any).mode === 'LOCK_ACTIVATION_UNTIL_TURN_END') {
+        const targetPlayer = (params as any).target === 'OPPONENT' ? ctx.opponent : ctx.player;
+        const activation = (params as any).activation;
+        if (!targetPlayer || !activation) return;
+
+        const lockMap = (targetPlayer.lockedActivationsUntilTurnEnd || {}) as Record<string, boolean>;
+        lockMap[String(activation)] = true;
+        targetPlayer.lockedActivationsUntilTurnEnd = lockMap as any;
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_039_PROMPT_DISCARD_FOR_SCALING_DEBUFF') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!owner) return;
+        const zoneIndex = owner.unitZones.indexOf(targetZone);
+        if (zoneIndex < 0) return;
+
+        ctx.flags = ctx.flags || {};
+        ctx.flags.BT06_039_TARGET_PLAYER_ID = owner.id;
+        ctx.flags.BT06_039_TARGET_ZONE_INDEX = zoneIndex;
+
+        const handCount = ctx.player.hand.length;
+        const handSelectionSchema = {
+            scope: 'MY_HAND',
+            type: 'CARD',
+            count: handCount,
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT06_SELECT_HAND_TO_TRASH_FOR_SCALING_DEBUFF',
+            actionValue: { allowPartialSelection: true },
+            effectDescription: '트래시할 패를 원하는 수만큼 고른다.',
+            validTargets: 'MY_HAND',
+            targetSchema: handSelectionSchema,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: 'ACTIVE' as any,
+            description: 'BT06-039 discard and scale debuff',
+            targets: handSelectionSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_039_RESOLVE_DISCARD_AND_APPLY',
+                    duration: (params as any).duration || 'TURN_END',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_039_RESOLVE_DISCARD_AND_APPLY') {
+        const selectedCards = (_targets || []).filter(card => ctx.player.hand.includes(card));
+        const trashedCards: any[] = [];
+        selectedCards.forEach((card: any) => {
+            const handIndex = ctx.player.hand.indexOf(card);
+            if (handIndex === -1) return;
+            const [removed] = ctx.player.hand.splice(handIndex, 1);
+            if (!removed) return;
+            ctx.player.trash.push(removed);
+            trashedCards.push(removed);
+        });
+
+        if (trashedCards.length > 0) {
+            ctx.machine.notifyHandTrashed(ctx.player, trashedCards, {
+                flags: {
+                    handTrashByEffect: true,
+                },
+            });
+        }
+        (ctx as any).discardedCount = trashedCards.length;
+
+        const targetPlayerId = ctx.flags?.BT06_039_TARGET_PLAYER_ID;
+        const targetZoneIndex = ctx.flags?.BT06_039_TARGET_ZONE_INDEX;
+        const debuffValue = trashedCards.length * 3000;
+        if (!targetPlayerId || typeof targetZoneIndex !== 'number' || debuffValue <= 0) return;
+
+        const targetPlayer = ctx.machine.state.players.find((player: any) => player.id === targetPlayerId);
+        const targetZone = targetPlayer?.unitZones?.[targetZoneIndex];
+        if (!targetZone?.unit) return;
+
+        targetZone.buffs.push({
+            id: ctx.machine.createRuntimeId('BUFF'),
+            sourceCard: ctx.sourceCard,
+            type: 'POWER',
+            value: -debuffValue,
+            duration: (params as any).duration || 'TURN_END',
+        });
         return;
     }
 

@@ -130,6 +130,18 @@ export class TargetSelector {
                             return unit && unit.cost <= filter.value;
                         });
                         break;
+                    case 'POWER_LIMIT':
+                        candidates = candidates.filter(c => {
+                            if (c && typeof c === 'object' && 'unit' in c) {
+                                const zone = c as UnitZoneState;
+                                const owner = this.getOwner(engine, zone);
+                                return engine.getUnitPower(zone, owner) <= filter.value;
+                            }
+                            const card = this.getCardFromTarget(c);
+                            if (!card) return false;
+                            return (card.power || 0) <= filter.value;
+                        });
+                        break;
                     case 'HIT_LIMIT':
                         candidates = candidates.filter(c => {
                             if (c && typeof c === 'object' && 'unit' in c) {
@@ -192,6 +204,12 @@ export class TargetSelector {
                         candidates = candidates.filter(c => {
                             const card = this.getCardFromTarget(c);
                             return card && card.id !== filter.value;
+                        });
+                        break;
+                    case 'EQUIPPED_ON_SOURCE_UNIT':
+                        candidates = candidates.filter(c => {
+                            if (!context.unitZone || !Array.isArray(context.unitZone.items)) return false;
+                            return context.unitZone.items.includes(c);
                         });
                         break;
                     case 'ITEM_COUNT_MIN':
@@ -376,7 +394,18 @@ export class TargetSelector {
                             if (!card || card.cost > context.player.leaderLevel) return false;
                         }
                         break;
-                    case 'POWER_LIMIT': if (!unit || engine.getUnitPower(target, this.getOwner(engine, target)) > filter.value) return false; break;
+                    case 'POWER_LIMIT':
+                        if (target && typeof target === 'object' && 'unit' in target) {
+                            const zoneTarget = target as UnitZoneState;
+                            const owner = this.getOwner(engine, zoneTarget);
+                            if (engine.getUnitPower(zoneTarget, owner) > filter.value) return false;
+                            break;
+                        }
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || (card.power || 0) > filter.value) return false;
+                        }
+                        break;
                     case 'COST_LOWER_THAN_COST_PAYMENT':
                         if (!unit || !context.costPaymentCard) return false;
                         if (unit.cost >= context.costPaymentCard.cost) return false;
@@ -389,6 +418,10 @@ export class TargetSelector {
                             const card = this.getCardFromTarget(target);
                             if (!card || card.id === filter.value) return false;
                         }
+                        break;
+                    case 'EQUIPPED_ON_SOURCE_UNIT':
+                        if (!context.unitZone || !Array.isArray(context.unitZone.items)) return false;
+                        if (!context.unitZone.items.includes(target)) return false;
                         break;
                     case 'COST_EQUAL':
                         {

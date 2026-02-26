@@ -243,6 +243,7 @@ export class GameEngine {
                 { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {}, attackCountThisTurn: 0, extraAttackAllowance: 0 },
             ],
             skillZone: [],
+            lockedActivationsUntilTurnEnd: {},
         };
     }
 
@@ -1136,6 +1137,10 @@ export class GameEngine {
         this.resetTurnStats();
 
         // Reset per-turn flags
+        this.state.players.forEach(player => {
+            player.lockedActivationsUntilTurnEnd = {};
+        });
+
         this.currentPlayer.unitZones.forEach(z => {
             z.hasAttacked = false;
             z.isExhausted = false;

@@ -81,6 +81,13 @@ export class EffectManager {
         }, 0);
     }
 
+    private isActivationLocked(player: any, activation: ActivationCondition | string | undefined): boolean {
+        if (!player || !activation) return false;
+        const lockMap = (player as any).lockedActivationsUntilTurnEnd as Record<string, boolean> | undefined;
+        if (!lockMap) return false;
+        return lockMap[String(activation)] === true;
+    }
+
     public queueEphemeralEffect(effect: Effect, context: GameContext) {
         this.engine.incrementGlobalStep();
         const currentStep = this.engine.state.globalStep;
@@ -110,6 +117,11 @@ export class EffectManager {
 
     processEffects(activation: ActivationCondition, context: any, options: ProcessOptions = {}): boolean {
         const { sourceCard } = context;
+
+        if (this.isActivationLocked(context.player, activation)) {
+            console.log(`[EffectManager] Skipped locked activation ${activation} for ${sourceCard.name}`);
+            return false;
+        }
 
         console.log(`[EffectManager] Processing ${activation} effects for ${sourceCard.name}`);
 
@@ -205,6 +217,10 @@ export class EffectManager {
     }
 
     public processEffect(effect: Effect, context: GameContext): boolean {
+        if (this.isActivationLocked(context.player, effect.activation)) {
+            return false;
+        }
+
         if (
             context.sourceCard.type === CardType.LEADER &&
             !context.sourceCard.isAwakened &&
@@ -260,6 +276,10 @@ export class EffectManager {
 
 
     public executeEffect(effect: Effect, context: GameContext, targets: any[] = []) {
+        if (this.isActivationLocked(context.player, effect.activation)) {
+            return;
+        }
+
         const { action } = effect;
         const actionImpl = ActionRegistry[action.type];
 

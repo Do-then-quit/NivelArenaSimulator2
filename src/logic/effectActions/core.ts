@@ -87,6 +87,7 @@ export const discard: ActionImplementation = (ctx, params, targets) => {
     }
 
     if (trashedCards.length > 0) {
+        (ctx as any).discardedCount = ((ctx as any).discardedCount || 0) + trashedCards.length;
         ctx.machine.notifyHandTrashed(targetPlayer, trashedCards, {
             flags: {
                 handTrashByEffect: !params.isRule,

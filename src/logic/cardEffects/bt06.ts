@@ -490,5 +490,235 @@ export const BT06_EFFECTS: Record<string, Effect[]> = {
             duration: 'TURN_END',
         },
     ],
+    "BT06-029": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 패를 2장까지 고르고 나머지는 모두 트래시한다. 패가 3장이 될 때까지 카드를 드로우한다.",
+            targets: { scope: 'MY_HAND', type: 'CARD', count: 2, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_029_KEEP_AND_REFILL',
+                    targetHandSize: 3,
+                    allowPartialSelection: true,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "자신의 트래시 존에서 코스트가 자신의 리더 레벨 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.SKILL },
+                    { type: 'COST_LIMIT_BY_LEADER_LEVEL' },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-030": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 파워+2000.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 0, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-031": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 트래시 존에서 [트리거]를 가지지 않고 파워가 5000 이하인 유닛 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.UNIT },
+                    { type: 'NOT_HAS_KEYWORD', value: '트리거' },
+                    { type: 'POWER_LIMIT', value: 5000 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-032": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 [어태커] 듀얼리스트를 얻는다.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'APPLY_DUALIST_MARK', params: {} },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-033": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000. 이 효과로 그 유닛을 트래시했다면 카드를 1장 드로우한다.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER_AND_DRAW_IF_TRASHED', params: { value: -2000, drawCount: 1 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-034": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 조우 유닛이 있다면 고른 유닛으로 공격한다.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_LIMIT', value: 3 }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_034_FORCE_SELECTED_ATTACK_IF_ENCOUNTER' },
+            },
+        },
+    ],
+    "BT06-035": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 1장 고른다. 자신과 상대의 패 장수가 다르다면 이 턴이 끝날 때까지 그 차이 1장마다 그 유닛의 파워-2000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_035_APPLY_HAND_DIFF_DEBUFF', duration: 'TURN_END' },
+            },
+        },
+    ],
+    "BT06-036": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "이 턴이 끝날 때까지 상대는 [엑시트] 효과를 발동할 수 없다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'LOCK_ACTIVATION_UNTIL_TURN_END',
+                    target: 'OPPONENT',
+                    activation: ActivationCondition.EXIT,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-2000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -2000 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-037": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛은 이 턴의 어택 페이즈 중 1번 더 공격할 수 있다.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_LIMIT', value: 3 }],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'GRANT_EXTRA_ATTACK_THIS_TURN', params: { value: 1 } },
+        },
+    ],
+    "BT06-038": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 2장까지 골라, 이 턴이 끝날 때까지 파워-3000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 2, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -3000, allowPartialSelection: true } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-039": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 1장 고른다. 자신의 패를 원하는 수만큼 골라 트래시한다. 이 턴이 끝날 때까지 트래시한 카드 1장마다 그 유닛의 파워-3000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_039_PROMPT_DISCARD_FOR_SCALING_DEBUFF', duration: 'TURN_END' },
+            },
+        },
+    ],
+    "BT06-040": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 1장 골라, 이 턴이 끝날 때까지 파워-6000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: -6000 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT06-041": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 이 공격이 끝날 때까지 조우 유닛의 파워-1000. 이 효과로 그 유닛을 트래시했다면 추가 효과를 처리한다.",
+            targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: {
+                type: 'BUFF_POWER_AND_DRAW_IF_TRASHED',
+                params: {
+                    value: -1000,
+                    drawCount: 0,
+                    setContextFlagOnTrashed: 'BT06_041_ENCOUNTER_TRASHED',
+                },
+            },
+            duration: 'BATTLE_END',
+        },
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 이 효과로 조우 유닛을 트래시했다면, 장착된 〈천둥의 망치〉 1장을 트래시할 수 있다. 그러면 카드를 2장 드로우한다.",
+            optional: true,
+            condition: { type: 'CONTEXT_FLAG', value: { key: 'BT06_041_ENCOUNTER_TRASHED', equals: true } },
+            targets: {
+                scope: 'MY_FIELD_ITEMS',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'HAS_NAME', value: '천둥의 망치' },
+                    { type: 'EQUIPPED_ON_SOURCE_UNIT' },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'DESTROY_ITEM', params: {} },
+                        { type: 'DRAW', params: { count: 2 } },
+                    ],
+                },
+            },
+        },
+    ],
+    "BT06-042": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 자신의 트래시 존에서 〈반역의 결의〉 이외의 2코스트 이하인 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'EXCLUDE_CARD_ID', value: 'BT06-042' },
+                    { type: 'COST_LIMIT', value: 2 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
 
 };

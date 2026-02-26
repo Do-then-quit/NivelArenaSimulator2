@@ -44,7 +44,10 @@ export const grantEffect: ActionImplementation = (_ctx, params, targets) => {
         if (target && 'temporaryEffects' in target) {
             const effect = params.effect;
             if (effect) {
-                const actionDurationOverride = effect.actionDurationOverride ?? effect.duration;
+                const actionDurationOverride =
+                    effect.actionDurationOverride !== undefined
+                        ? effect.actionDurationOverride
+                        : (effect.duration && effect.duration !== 'TURN_END' ? effect.duration : undefined);
                 target.temporaryEffects.push({
                     ...effect,
                     duration: params.duration || 'TURN_END',
@@ -101,8 +104,15 @@ export const buffPowerAndDrawIfTrashed: ActionImplementation = (ctx, params, tar
                 const movedToTrash = owner.trash.includes(unitBeforeDestroy);
 
                 if (removedFromZone && movedToTrash) {
+                    if (params.setContextFlagOnTrashed) {
+                        ctx.flags = ctx.flags || {};
+                        ctx.flags[params.setContextFlagOnTrashed] = true;
+                    }
                     const pIdx = ctx.machine.state.players.indexOf(ctx.player);
-                    ctx.machine.drawCard(pIdx, params.drawCount || 1);
+                    const drawCount = params.drawCount ?? 1;
+                    if (drawCount > 0) {
+                        ctx.machine.drawCard(pIdx, drawCount);
+                    }
                 }
             }
         }
