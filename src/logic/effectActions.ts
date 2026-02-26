@@ -283,7 +283,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         const previousPhase = ctx.machine.state.phase;
         (ctx.machine.state as any).resumePhaseAfterAutoAttack = previousPhase;
         ctx.machine.state.phase = Phase.ATTACK;
-        ctx.machine.attack(zoneIndex);
+        ctx.machine.attack(zoneIndex, { byCardEffect: true });
 
         if (ctx.machine.state.interactionMode === 'NORMAL' && ctx.machine.state.combatStep === 'NONE') {
             ctx.machine.state.phase = previousPhase;

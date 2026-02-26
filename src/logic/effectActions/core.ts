@@ -230,7 +230,7 @@ export const autoAttackIfEncounter: ActionImplementation = (ctx) => {
     const previousPhase = ctx.machine.state.phase;
     (ctx.machine.state as any).resumePhaseAfterAutoAttack = previousPhase;
     ctx.machine.state.phase = Phase.ATTACK;
-    ctx.machine.attack(laneIndex);
+    ctx.machine.attack(laneIndex, { byCardEffect: true });
 
     if (ctx.machine.state.interactionMode === 'NORMAL' && ctx.machine.state.combatStep === 'NONE') {
         ctx.machine.state.phase = previousPhase;

@@ -1600,12 +1600,13 @@ export class GameEngine {
             this.state.pendingEffect === pending
         ) {
             const zoneIndex = pending.actionValue.attackerZoneIndex;
+            const byCardEffect = pending.actionValue?.byCardEffect === true;
             const owner = this.getPlayerById(pending.sourcePlayerId) ?? this.currentPlayer;
             const zone = owner.unitZones[zoneIndex];
             (zone as any)._attackCostPaid = true;
             this.resetInteractionMode();
             if (owner.id === this.currentPlayer.id) {
-                this.attack(zoneIndex); // Resume attack
+                this.attack(zoneIndex, { byCardEffect }); // Resume attack
             }
             return;
         }
@@ -1636,7 +1637,8 @@ export class GameEngine {
         console.log("Entered Selection Mode for " + context.sourceCard.name);
     }
 
-    attack(attackerZoneIndex: number) {
+    attack(attackerZoneIndex: number, options?: { byCardEffect?: boolean }) {
+        const byCardEffect = options?.byCardEffect === true;
         const validation = RuleValidator.canAttack(this, this.currentPlayer, attackerZoneIndex);
         if (!validation.valid) {
             console.log(`Cannot attack: ${validation.reason}`);
@@ -1653,7 +1655,7 @@ export class GameEngine {
                 opponent: this.opponentPlayer,
                 unitZone: attackerZone,
                 machine: this
-            }, attackerZoneIndex);
+            }, attackerZoneIndex, { byCardEffect });
             if (started) return;
             return;
         }
@@ -1663,8 +1665,11 @@ export class GameEngine {
         this.state.combatBlocked = false;
         this.state.pendingBlockerZoneIndex = null;
         (attackerZone as any)._attackCostPaid = false; // Reset for next time
-        attackerZone.attackCountThisTurn = (attackerZone.attackCountThisTurn || 0) + 1;
-        attackerZone.hasAttacked = attackerZone.attackCountThisTurn > 0;
+        // Rule 7.2.1.1: a unit that attacked only by card effects is still treated as not having attacked this turn.
+        if (!byCardEffect) {
+            attackerZone.attackCountThisTurn = (attackerZone.attackCountThisTurn || 0) + 1;
+            attackerZone.hasAttacked = attackerZone.attackCountThisTurn > 0;
+        }
         this.incrementTurnUnitAttackCount(this.currentPlayer.id);
 
         // COMBAT STEP 1: Attack Declaration
@@ -1899,7 +1904,12 @@ export class GameEngine {
         return `${player.id}|${zoneIndex}|${unit.id}`;
     }
 
-    public initiateAttackCostSelection(effect: Effect, context: GameContext, attackerZoneIndex: number): boolean {
+    public initiateAttackCostSelection(
+        effect: Effect,
+        context: GameContext,
+        attackerZoneIndex: number,
+        options?: { byCardEffect?: boolean }
+    ): boolean {
         const requiredAmount = effect.cost?.amount || 1;
         const payableHandIndexes = this.getPayableHandIndexesForCost(context.player, effect.cost);
         if (payableHandIndexes.length < requiredAmount) {
@@ -1917,7 +1927,7 @@ export class GameEngine {
             sourcePlayerId: context.player.id,
             controllerPlayerId,
             actionType: 'ATTACK_COST',
-            actionValue: { attackerZoneIndex },
+            actionValue: { attackerZoneIndex, byCardEffect: options?.byCardEffect === true },
             effectDescription: effect.description,
             costToPay: effect.cost || { type: 'TRASH_HAND', amount: 1 },
             costCardTypeFilter: effect.cost?.cardTypeFilter,

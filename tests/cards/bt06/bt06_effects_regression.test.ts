@@ -852,7 +852,7 @@ describe('BT06 Effects Regression', () => {
         expect(selectableIds.some(id => id?.startsWith('BT06-010'))).toBe(false);
     });
 
-    it('BT06-034 auto-attacks with the selected <=3 cost friendly unit if encounter exists', () => {
+    it('BT06-034 auto-attacks by effect and still allows the unit to attack in ATTACK phase', () => {
         const engine = createEngine(60027);
         const p1 = engine.state.players[0];
         const p2 = engine.state.players[1];
@@ -873,8 +873,30 @@ describe('BT06 Effects Regression', () => {
         expect(pick).toBeDefined();
         if (pick) expect(engine.step(pick)).toBe(true);
 
-        expect(p1.unitZones[0].attackCountThisTurn).toBe(1);
-        expect(engine.state.pendingAttackerIndex).toBe(0);
+        const noBlock = findAction(
+            engine,
+            p2.id,
+            'RESOLVE_BLOCK',
+            action => action.shouldBlock === false
+        );
+        const resolveBlock = noBlock ?? findAction(engine, p2.id, 'RESOLVE_BLOCK');
+        expect(resolveBlock).toBeDefined();
+        if (resolveBlock) expect(engine.step(resolveBlock)).toBe(true);
+
+        expect(engine.state.combatStep).toBe('NONE');
+        expect(engine.state.phase).toBe(Phase.MAIN);
+        expect(p1.unitZones[0].attackCountThisTurn).toBe(0);
+        expect(p1.unitZones[0].hasAttacked).toBe(false);
+
+        engine.nextPhase();
+        expect(engine.state.phase).toBe(Phase.ATTACK);
+        const attackAgain = findAction(
+            engine,
+            p1.id,
+            'ATTACK',
+            action => action.attackerZoneIndex === 0
+        );
+        expect(attackAgain).toBeDefined();
     });
 
     it('BT06-036 locks opponent EXIT activations until end of turn and unlocks after turn passes', () => {

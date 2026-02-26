@@ -1083,12 +1083,20 @@ const tests: UnifiedTestCase[] = [
         },
         verify: (engine) => {
             const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
             engine.playSkill(0);
             const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p1.id && a.zoneIndex === 1);
             if (pick) engine.step(pick);
+            const noBlock = findAction(engine, p2.id, 'RESOLVE_BLOCK', (a: any) => a.shouldBlock === false);
+            const resolveBlock = noBlock || findAction(engine, p2.id, 'RESOLVE_BLOCK');
+            if (resolveBlock) engine.step(resolveBlock);
+            engine.state.phase = Phase.ATTACK;
+            const attackAgain = findAction(engine, p1.id, 'ATTACK', (a: any) => a.attackerZoneIndex === 1);
             return [
                 { pass: !!pick, message: '3코 이하 아군 선택 가능' },
-                { pass: p1.unitZones[1].attackCountThisTurn === 1, message: '선택 유닛 자동 공격 시작' },
+                { pass: !!resolveBlock, message: '자동 공격 전투 종료 진행' },
+                { pass: p1.unitZones[1].attackCountThisTurn === 0 && !p1.unitZones[1].hasAttacked, message: '효과 공격은 일반 공격권 미소모' },
+                { pass: !!attackAgain, message: '어택 페이즈에서 다시 공격 가능' },
             ];
         },
     },
