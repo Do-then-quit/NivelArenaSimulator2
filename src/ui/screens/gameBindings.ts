@@ -9,6 +9,7 @@ import { getBottomPlayer, getTopPlayer, getUiPlayer, getUiPlayerRefForPlayerId, 
 
 export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, calculatedPower?: number, calculatedHit?: number) => string) {
     if (!uiState.game) return;
+    const hasOnlineRoomSession = () => !!uiState.onlineSession.room && !!uiState.onlineSession.role;
     const localHumanCanInput = canLocalHumanInput();
     const logAction = (message: string, category: GameLogCategory = 'ACTION') => {
         uiState.gameLogFeed.pushUiLog(message, category);
@@ -47,6 +48,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         uiState.verificationSession = null;
         if (uiState.onlineSession.room?.phase === 'IN_GAME') {
             reportGameOverToServer('disconnect');
+        }
+        if (hasOnlineRoomSession()) {
             uiState.game = null;
             uiState.currentScreen = Screen.ONLINE_ROOM;
         } else {
@@ -59,7 +62,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     document.getElementById('game-over-menu-btn')?.addEventListener('click', () => {
         uiState.replaySession = null;
         uiState.verificationSession = null;
-        if (uiState.onlineSession.room?.phase === 'IN_GAME') {
+        if (hasOnlineRoomSession()) {
             uiState.game = null;
             uiState.currentScreen = Screen.ONLINE_ROOM;
         } else {

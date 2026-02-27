@@ -482,7 +482,7 @@ function renderMulliganModal() {
 function renderGameOverModal() {
     const engine = uiState.game;
     if (!engine || !engine.state.winner) return '';
-    const onlineMatch = uiState.onlineSession.room?.phase === 'IN_GAME';
+    const onlineMatch = !!uiState.onlineSession.room && !!uiState.onlineSession.role;
 
     const [player1, player2] = engine.state.players;
     const winner = engine.state.players.find(player => player.id === engine.state.winner) ?? player1;

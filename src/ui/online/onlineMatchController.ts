@@ -500,6 +500,13 @@ function handleServerMessage(message: ServerToClientMessage): void {
             applyCommitBroadcast(message.sessionId, message.seq, message.action, message.stateHash);
             return;
         case 'MATCH_ENDED':
+            // Keep the game-over modal on screen for winner results.
+            // Players should explicitly click the result modal button to return to the lobby.
+            if (message.reason === 'winner' && uiState.currentScreen === Screen.GAME && uiState.game?.state.winner) {
+                uiState.gameLogFeed.pushUiLog('[Online] Match ended. Click "Back to Online Room" to continue.', 'SYSTEM');
+                uiState.render?.();
+                return;
+            }
             routeToOnlineLobby(`Match ended (${message.reason}).`);
             return;
     }
