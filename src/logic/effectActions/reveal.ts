@@ -34,6 +34,9 @@ export const revealTopAndChooseToHand: ActionImplementation = (ctx, params) => {
         actionType: 'PICK_REVEALED',
         actionValue: params,
         effectDescription: selectionEffect.description,
+        sourceActivation: params?.__sourceActivation,
+        triggerReason: '덱 상단 공개 효과 처리',
+        selectionPurpose: '공개된 카드 중 패에 넣을 카드 선택',
         validTargets: 'REVEALED',
         targetSchema: selectionEffect.targets,
         selectedTargets: []
@@ -78,6 +81,9 @@ export const revealTopAndTakeAllByFilter: ActionImplementation = (ctx, params) =
         actionType: 'TAKE_ALL_REVEALED',
         actionValue: params,
         effectDescription: selectionEffect.description,
+        sourceActivation: params?.__sourceActivation,
+        triggerReason: '덱 상단 공개 효과 처리',
+        selectionPurpose: '필터 조건을 만족하는 공개 카드 확인/확정',
         validTargets: 'REVEALED',
         targetSchema: selectionEffect.targets,
         selectedTargets: []
@@ -125,6 +131,9 @@ export const revealTopPickToHandThenOrderBottom: ActionImplementation = (ctx, pa
             allowPartialSelection: !!params.allowPartialSelection,
         },
         effectDescription: selectionEffect.description,
+        sourceActivation: params?.__sourceActivation,
+        triggerReason: '덱 상단 공개 효과 처리',
+        selectionPurpose: '패로 가져갈 카드 선택 후 나머지 순서 지정',
         validTargets: 'REVEALED',
         targetSchema: selectionEffect.targets,
         selectedTargets: []

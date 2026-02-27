@@ -15,7 +15,7 @@ vi.mock('../../src/ui/gameLoop', () => ({
     shouldRevealHandForPlayer: vi.fn(() => true),
 }));
 
-function createMockGame() {
+function createModalDelayMockGame() {
     const createZone = () => ({
         unit: null,
         items: [],
@@ -30,18 +30,9 @@ function createMockGame() {
         extraAttackAllowance: 0,
     });
 
-    const leader1 = {
+    const leader = {
         id: 'L1',
-        name: 'Leader 1',
-        type: 'LEADER',
-        attribute: 'NONE',
-        cost: 0,
-        text: '',
-        effects: [],
-    };
-    const leader2 = {
-        id: 'L2',
-        name: 'Leader 2',
+        name: 'Leader',
         type: 'LEADER',
         attribute: 'NONE',
         cost: 0,
@@ -56,7 +47,7 @@ function createMockGame() {
         hand: [],
         trash: [],
         damage: [],
-        levelZone: leader1,
+        levelZone: leader,
         leaderLevel: 1,
         unitZones: [createZone(), createZone(), createZone()],
         skillZone: [],
@@ -69,7 +60,7 @@ function createMockGame() {
         hand: [],
         trash: [],
         damage: [],
-        levelZone: leader2,
+        levelZone: leader,
         leaderLevel: 1,
         unitZones: [createZone(), createZone(), createZone()],
         skillZone: [],
@@ -80,13 +71,19 @@ function createMockGame() {
             players: [p1, p2],
             turnPlayerIndex: 0,
             phase: 'MAIN',
-            turnCount: 3,
+            turnCount: 1,
             winner: null,
             pendingAttackerIndex: null,
             pendingBlockerZoneIndex: null,
-            interactionMode: 'NORMAL',
+            interactionMode: 'SELECT_OPTIONAL',
             interactionOwnerPlayerId: 'P1',
-            pendingEffect: null,
+            pendingEffect: {
+                sourceCard: leader,
+                sourcePlayerId: 'P1',
+                actionType: 'DRAW',
+                actionValue: {},
+                effectDescription: 'Optional draw',
+            },
             mulliganState: null,
             mulliganResultByPlayerId: {},
             revealedCards: [],
@@ -105,13 +102,13 @@ function createMockGame() {
         currentPlayer: p1,
         opponentPlayer: p2,
         getLegalActions: () => [],
-        getUnitPower: (zone: any) => zone.unit?.power ?? 0,
-        getUnitHit: (zone: any) => zone.unit?.hit ?? 0,
+        getUnitPower: () => 0,
+        getUnitHit: () => 0,
         isPendingCardTarget: () => false,
     } as any;
 }
 
-describe('game log panel render', () => {
+describe('game view modal delay during playback', () => {
     beforeEach(() => {
         vi.resetModules();
         document.body.innerHTML = '<div id="app"></div>';
@@ -119,63 +116,29 @@ describe('game log panel render', () => {
         Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 1080 });
     });
 
-    it('renders playback effect logs in side panel', async () => {
+    it('hides optional modal until modal gate elapses', async () => {
         const { uiState, Screen } = await import('../../src/ui/appState');
         const { renderGame } = await import('../../src/ui/screens/gameView');
 
         uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
+        uiState.game = createModalDelayMockGame();
+        uiState.gameLogView.manualOverride = true;
         uiState.gameLogView.expanded = true;
-        uiState.gameLogView.manualOverride = true;
         uiState.gameLogView.autoCollapsed = false;
-        uiState.playback.logEntries = [
-            { id: 'plog-1', message: 'Player 1가 1장 드로우', createdAtMs: Date.now() - 1000 },
-            { id: 'plog-2', message: 'Player 2 데미지 공개: Fire Bolt', createdAtMs: Date.now() },
-        ];
+        uiState.playback.enabled = true;
+        uiState.playback.queueBusy = true;
+        uiState.playback.modalGateUntilMs = Date.now() + 1000;
 
         renderGame();
 
-        expect(document.querySelector('.game-log-panel')).toBeTruthy();
-        expect(document.body.textContent).toContain('효과 로그');
-        expect(document.body.textContent).toContain('Player 1가 1장 드로우');
-        expect(document.body.textContent).toContain('Player 2 데미지 공개: Fire Bolt');
-        expect(document.querySelectorAll('.fx-log-entry')).toHaveLength(2);
-    });
+        expect(document.querySelector('#opt-confirm')).toBeNull();
+        expect(document.body.textContent).toContain('효과 처리 중');
 
-    it('shows empty message when playback log history is empty', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
-        uiState.gameLogView.expanded = true;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.autoCollapsed = false;
-        uiState.playback.logEntries = [];
-
+        uiState.playback.queueBusy = false;
+        uiState.playback.modalGateUntilMs = Date.now() - 1;
         renderGame();
 
-        expect(document.body.textContent).toContain('아직 효과 로그가 없습니다.');
-    });
-
-    it('renders collapsed preview without scroll body', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
-        uiState.gameLogView.expanded = false;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.autoCollapsed = false;
-        uiState.playback.logEntries = [
-            { id: 'plog-preview', message: '미리보기 로그', createdAtMs: Date.now() },
-        ];
-
-        renderGame();
-
-        const panel = document.querySelector('.game-log-panel');
-        expect(panel?.classList.contains('collapsed')).toBe(true);
-        expect(document.querySelector('.game-log-body')).toBeNull();
-        expect(document.querySelector('.fx-log-collapsed-preview')?.textContent).toContain('미리보기 로그');
+        expect(document.querySelector('#opt-confirm')).toBeTruthy();
+        expect(document.querySelector('#opt-skip')).toBeTruthy();
     });
 });

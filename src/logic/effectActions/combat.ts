@@ -130,6 +130,8 @@ export const destroyEncounter: ActionImplementation = (ctx, params, targets) => 
                 actionType: 'DESTROY_ENCOUNTER_WITH_HIT_COST',
                 actionValue: { zoneIndex: laneIndex, requiredCount },
                 effectDescription: 'Pay item hand cost to destroy encounter',
+                triggerReason: '인카운터 파괴 코스트 처리',
+                selectionPurpose: '아이템 패 코스트 지불',
                 costToPay: { type: 'TRASH_HAND', amount: requiredCount, cardTypeFilter: CardType.ITEM },
                 costCardTypeFilter: CardType.ITEM,
                 costPaidCount: 0,
@@ -197,7 +199,7 @@ export const destroyUnitAndDrawByHit: ActionImplementation = (ctx, params, targe
     }
 };
 
-export const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targets) => {
+export const destroyUnitWithHitCost: ActionImplementation = (ctx, params, targets) => {
     if (!targets[0]) return;
     const targetZone = targets[0] as UnitZoneState;
     const unit = targetZone.unit;
@@ -230,6 +232,9 @@ export const destroyUnitWithHitCost: ActionImplementation = (ctx, _params, targe
         actionType: 'DESTROY_UNIT_WITH_HIT_COST',
         actionValue: { hitCost: hit },
         effectDescription: 'Destroy selected unit after paying hit cost',
+        sourceActivation: params?.__sourceActivation,
+        triggerReason: '유닛 파괴 코스트 처리',
+        selectionPurpose: '히트만큼 패 코스트 지불',
         costToPay: { type: 'TRASH_HAND', amount: hit },
         costPaidCount: 0,
         selectedTargets: [targetZone]

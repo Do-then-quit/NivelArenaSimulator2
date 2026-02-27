@@ -1,4 +1,4 @@
-﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, Attribute, GameContext, Effect, TargetSchema, PendingEffect } from './types';
+﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, Attribute, GameContext, Effect, TargetSchema, PendingEffect, UiTraceEvent, UiTraceEventType } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
@@ -51,6 +51,7 @@ interface GameEngineOptions {
     seed?: number;
     randomProvider?: RandomProvider;
     enableMulligan?: boolean;
+    enableUiTrace?: boolean;
 }
 
 interface PendingRuntimeState {
@@ -84,6 +85,7 @@ export class GameEngine {
     effectManager: EffectManager;
     private readonly random: RandomProvider;
     private readonly enableMulligan: boolean;
+    private readonly enableUiTrace: boolean;
     private readonly endPhaseHandAdjustActionType = 'END_PHASE_HAND_LIMIT_DISCARD';
     private runtimeIdCounter = 0;
     private pendingRuntime: PendingRuntimeState | null = null;
@@ -91,6 +93,7 @@ export class GameEngine {
     private readonly destroyInProgressKeys = new Set<string>();
     private isRuleProcessing = false;
     private pendingRuleProcessing = false;
+    private readonly uiTraceEvents: UiTraceEvent[] = [];
 
     constructor(
         player1Name: string,
@@ -103,6 +106,7 @@ export class GameEngine {
     ) {
         this.random = createRandomProvider(options.seed, options.randomProvider);
         this.enableMulligan = options.enableMulligan ?? false;
+        this.enableUiTrace = options.enableUiTrace ?? false;
         this.effectManager = new EffectManager(this);
         this.state = {
             players: [
@@ -136,6 +140,33 @@ export class GameEngine {
         this.startGame();
         this.assignInteractionOwner(this.currentPlayer.id);
         this.keepDelegateMembersReferencedForTypeChecks();
+    }
+
+    private pushUiTraceEvent(type: UiTraceEventType, payload: Partial<UiTraceEvent> = {}) {
+        if (!this.enableUiTrace) return;
+        const event: UiTraceEvent = {
+            id: this.createRuntimeId('UITRACE'),
+            type,
+            createdAtMs: Date.now(),
+            turnCount: this.state.turnCount,
+            phase: this.state.phase,
+            ...payload,
+        };
+        this.uiTraceEvents.push(event);
+        if (this.uiTraceEvents.length > 1024) {
+            this.uiTraceEvents.splice(0, this.uiTraceEvents.length - 1024);
+        }
+    }
+
+    public traceUiEvent(type: UiTraceEventType, payload: Partial<UiTraceEvent> = {}) {
+        this.pushUiTraceEvent(type, payload);
+    }
+
+    public drainUiTraceEvents(): UiTraceEvent[] {
+        if (!this.enableUiTrace || this.uiTraceEvents.length === 0) return [];
+        const drained = [...this.uiTraceEvents];
+        this.uiTraceEvents.length = 0;
+        return drained;
     }
 
     // Delegate-heavy refactors keep some members invoked indirectly from extracted modules.
@@ -588,12 +619,36 @@ export class GameEngine {
             return;
         }
 
+        const pending = this.state.pendingEffect;
         this.pendingRuntime = { context, effect };
 
+        if (context.sourceActivation && !pending.sourceActivation) {
+            pending.sourceActivation = context.sourceActivation;
+        }
+        if (context.sourceEffectDescription && !pending.sourceEffectDescription) {
+            pending.sourceEffectDescription = context.sourceEffectDescription;
+        }
+
         if (effect) {
-            this.state.pendingEffect.effectDescription = effect.description;
-            this.state.pendingEffect.targetSchema = effect.targets;
-            this.state.pendingEffect.costCardTypeFilter = effect.cost?.cardTypeFilter;
+            pending.effectDescription = effect.description;
+            pending.targetSchema = effect.targets;
+            pending.costCardTypeFilter = effect.cost?.cardTypeFilter;
+            if (!pending.sourceActivation) {
+                pending.sourceActivation = effect.activation;
+            }
+            if (!pending.sourceEffectDescription) {
+                pending.sourceEffectDescription = effect.description;
+            }
+        }
+
+        if (!pending.selectionPurpose) {
+            if (this.state.interactionMode === 'SELECT_TARGET') {
+                pending.selectionPurpose = '효과 대상 지정';
+            } else if (this.state.interactionMode === 'SELECT_COST') {
+                pending.selectionPurpose = '효과 비용 지불';
+            } else if (this.state.interactionMode === 'SELECT_OPTIONAL') {
+                pending.selectionPurpose = '선택형 효과 발동 여부 결정';
+            }
         }
     }
 
@@ -1003,6 +1058,15 @@ export class GameEngine {
             drawn.push(card);
         }
         this.notifyCardsDrawn(player, drawn, meta);
+        if (drawn.length > 0) {
+            this.pushUiTraceEvent('CARDS_DRAWN', {
+                sourcePlayerId: player.id,
+                sourceCardId: meta.sourceCardId,
+                cardIds: drawn.map(card => card.id),
+                cardNames: drawn.map(card => card.name),
+                count: drawn.length,
+            });
+        }
         return drawn;
     }
 
@@ -1080,6 +1144,7 @@ export class GameEngine {
                 });
             });
         }
+        this.pushUiTraceEvent('PHASE_CHANGED');
     }
 
     private resolveEndPhase() {
@@ -1195,6 +1260,8 @@ export class GameEngine {
             actionType: this.endPhaseHandAdjustActionType,
             actionValue: { requiredDiscardCount },
             effectDescription: handAdjustEffect.description,
+            triggerReason: '턴 종료 규칙 처리',
+            selectionPurpose: '핸드 제한(7장)까지 버릴 카드 지정',
             validTargets: 'MY_HAND',
             targetSchema: handAdjustEffect.targets,
             selectedTargets: [],
@@ -1501,12 +1568,21 @@ export class GameEngine {
             actionType: effect.action.type,
             actionValue: effect.action.params,
             effectDescription: effect.description,
+            selectionPurpose: '효과 비용 지불',
             costToPay: effect.cost,
             costCardTypeFilter: effect.cost?.cardTypeFilter,
             costPaidCount: 0
         };
         this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
+        this.pushUiTraceEvent('INTERACTION_OPENED', {
+            sourcePlayerId: context.player.id,
+            sourceCardId: context.sourceCard.id,
+            sourceCardName: context.sourceCard.name,
+            interactionMode: 'SELECT_COST',
+            effectDescription: effect.description,
+            actionType: effect.action.type,
+        });
 
         console.log("Entered Cost Selection Mode for " + context.sourceCard.name);
         return true;
@@ -1521,10 +1597,19 @@ export class GameEngine {
             controllerPlayerId,
             actionType: effect.action.type,
             actionValue: effect.action.params,
-            effectDescription: effect.description
+            effectDescription: effect.description,
+            selectionPurpose: '선택형 효과 발동 여부 결정'
         };
         this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
+        this.pushUiTraceEvent('INTERACTION_OPENED', {
+            sourcePlayerId: context.player.id,
+            sourceCardId: context.sourceCard.id,
+            sourceCardName: context.sourceCard.name,
+            interactionMode: 'SELECT_OPTIONAL',
+            effectDescription: effect.description,
+            actionType: effect.action.type,
+        });
         console.log("Entered Optional Selection Mode for " + context.sourceCard.name);
     }
 
@@ -1719,12 +1804,21 @@ export class GameEngine {
             actionType: effect.action.type, // redundant but useful for UI
             actionValue: effect.action.params,
             effectDescription: effect.description,
+            selectionPurpose: '효과 대상 지정',
             validTargets: this.mapScopeToValidTargets(targetSchema.scope),
             targetSchema,
             selectedTargets: []
         };
         this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
+        this.pushUiTraceEvent('INTERACTION_OPENED', {
+            sourcePlayerId: context.player.id,
+            sourceCardId: context.sourceCard.id,
+            sourceCardName: context.sourceCard.name,
+            interactionMode: 'SELECT_TARGET',
+            effectDescription: effect.description,
+            actionType: effect.action.type,
+        });
 
         console.log("Entered Selection Mode for " + context.sourceCard.name);
     }
@@ -2021,12 +2115,22 @@ export class GameEngine {
             actionType: 'ATTACK_COST',
             actionValue: { attackerZoneIndex, byCardEffect: options?.byCardEffect === true },
             effectDescription: effect.description,
+            triggerReason: '공격 선언 비용 처리',
+            selectionPurpose: '공격을 위한 코스트 지불',
             costToPay: effect.cost || { type: 'TRASH_HAND', amount: 1 },
             costCardTypeFilter: effect.cost?.cardTypeFilter,
             selectedTargets: []
         };
         this.setPendingRuntime(context, effect);
         this.assignInteractionOwner(controllerPlayerId);
+        this.pushUiTraceEvent('INTERACTION_OPENED', {
+            sourcePlayerId: context.player.id,
+            sourceCardId: context.sourceCard.id,
+            sourceCardName: context.sourceCard.name,
+            interactionMode: 'SELECT_COST',
+            effectDescription: effect.description,
+            actionType: 'ATTACK_COST',
+        });
         console.log("Entered Attack Cost Selection Mode for " + context.sourceCard.name);
         return true;
     }
@@ -2052,6 +2156,14 @@ export class GameEngine {
                 // 4.5.4.2. Reveal card and move to damage zone
                 const card = player.deck.pop()!;
                 player.damage.push(card);
+                this.pushUiTraceEvent('DAMAGE_CARD_REVEALED', {
+                    targetPlayerId: player.id,
+                    sourceCardId: card.id,
+                    sourceCardName: card.name,
+                    cardIds: [card.id],
+                    cardNames: [card.name],
+                    count: 1,
+                });
 
                 // 4.5.4.3. Check for Damage Triggers
                 const wasTriggered = this.effectManager.processEffects(ActivationCondition.DAMAGE_TRIGGER, {
@@ -2062,6 +2174,12 @@ export class GameEngine {
                 });
 
                 if (wasTriggered) {
+                    this.pushUiTraceEvent('DAMAGE_TRIGGER_ACTIVATED', {
+                        targetPlayerId: player.id,
+                        sourceCardId: card.id,
+                        sourceCardName: card.name,
+                        effectDescription: card.text,
+                    });
                     console.log("TRIGGER ACTIVATED! Remaining damage cancelled.");
                     damageRemaining = 0; // 4.5.4.3.1. Set remaining damage to 0
                 }

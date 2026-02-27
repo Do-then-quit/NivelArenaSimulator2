@@ -289,6 +289,13 @@ export class EffectManager {
 
         if (actionImpl) {
             console.log(`Executing Effect: ${effect.description} [Action: ${action.type}]`);
+            this.engine.traceUiEvent('EFFECT_EXECUTED', {
+                sourcePlayerId: context.player.id,
+                sourceCardId: context.sourceCard.id,
+                sourceCardName: context.sourceCard.name,
+                effectDescription: effect.description,
+                actionType: action.type,
+            });
 
             // Mark as fired if it's a ONCE_PER_TURN effect
             if (effect.condition?.type === 'ONCE_PER_TURN') {
@@ -296,6 +303,11 @@ export class EffectManager {
                 const effectId = effect.id || effect.description;
                 fired[effectId] = true;
             }
+
+            // Preserve the currently resolving effect metadata so nested UI prompts
+            // can explain why the selection window opened.
+            context.sourceActivation = effect.activation;
+            context.sourceEffectDescription = effect.description;
 
             const hasActionDurationOverride = effect.actionDurationOverride !== undefined;
             let resolvedDuration = effect.actionDurationOverride ?? effect.duration;

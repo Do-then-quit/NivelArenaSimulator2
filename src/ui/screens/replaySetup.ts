@@ -16,6 +16,7 @@ import { materializeDeckForMatch } from '../../../scripts/ai/deck_pool';
 import { DebugManager } from '../../logic/DebugManager';
 import { uiState, Screen } from '../appState';
 import { clearBotStepTimer } from '../gameLoop';
+import { clearPlaybackLogHistory, clearPlaybackRuntimeState } from '../playbackOrchestrator';
 
 function parsePositiveInt(value: string, fallback: number): number {
     const parsed = Number.parseInt(value, 10);
@@ -254,6 +255,8 @@ function initializeReplaySession(
 
     uiState.gameLogFeed.clear();
     clearBotStepTimer();
+    clearPlaybackRuntimeState();
+    clearPlaybackLogHistory();
     uiState.botByPlayerId.clear();
     uiState.botLabelByPlayerId.clear();
     uiState.activeMatchConfig = {
@@ -264,6 +267,12 @@ function initializeReplaySession(
         player2BotId,
     };
     uiState.activeMatchViewConfig = { revealBotHand: true };
+    uiState.playback.enabled = false;
+    uiState.playback.queueBusy = false;
+    uiState.playback.modalGateUntilMs = 0;
+    uiState.playback.toasts = [];
+    uiState.playback.logEntries = [];
+    uiState.playback.activePulseTargets = [];
     uiState.game = playbackEngine;
 
     (window as any).debug = new DebugManager(playbackEngine, uiState.render!);

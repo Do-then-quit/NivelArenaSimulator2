@@ -99,6 +99,14 @@ export type ActionType =
     | 'LOCK_SKILL_ID_UNTIL_TURN_END'
     | 'AUTO_ATTACK_IF_ENCOUNTER';
 
+export type UiTraceEventType =
+    | 'CARDS_DRAWN'
+    | 'DAMAGE_CARD_REVEALED'
+    | 'DAMAGE_TRIGGER_ACTIVATED'
+    | 'INTERACTION_OPENED'
+    | 'PHASE_CHANGED'
+    | 'EFFECT_EXECUTED';
+
 export interface TargetFilter {
     type:
     | 'EXCLUDE_SELF'
@@ -222,6 +230,8 @@ export interface GameContext {
     lastDrawnCards?: Card[];
     discardedCount?: number;
     trashReason?: 'BATTLE' | 'EFFECT' | 'RULE';
+    sourceActivation?: ActivationCondition | string;
+    sourceEffectDescription?: string;
     flags?: Record<string, boolean | number>;
 }
 
@@ -366,6 +376,24 @@ export interface GameState {
     };
 }
 
+export interface UiTraceEvent {
+    id: string;
+    type: UiTraceEventType;
+    createdAtMs: number;
+    turnCount: number;
+    phase: Phase;
+    sourcePlayerId?: string;
+    targetPlayerId?: string;
+    sourceCardId?: string;
+    sourceCardName?: string;
+    cardIds?: string[];
+    cardNames?: string[];
+    count?: number;
+    interactionMode?: GameState['interactionMode'];
+    effectDescription?: string;
+    actionType?: ActionType | string;
+}
+
 export interface PendingEffect {
     sourceCard: Card;
     sourcePlayerId: string;
@@ -373,6 +401,10 @@ export interface PendingEffect {
     actionType: string;
     actionValue: any;
     effectDescription?: string;
+    sourceEffectDescription?: string;
+    sourceActivation?: ActivationCondition | string;
+    triggerReason?: string;
+    selectionPurpose?: string;
     validTargets?:
     | 'ALL_UNITS'
     | 'MY_UNITS'

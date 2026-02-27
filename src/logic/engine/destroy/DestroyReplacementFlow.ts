@@ -110,6 +110,8 @@ export function beginDestroyReplacementPrompt(
             index,
         },
         effectDescription: replacement.description,
+        triggerReason: '파괴 대체 효과 처리',
+        selectionPurpose: '파괴 대체 효과 사용 여부 선택',
     };
     engine.clearPendingRuntime();
     engine.assignInteractionOwner(destroyPayload.targetPlayerId);
@@ -206,6 +208,8 @@ export function resolveDestructionReplacementChoice(engine: any, confirm: boolea
                             replacement,
                         },
                         effectDescription: replacement.description,
+                        triggerReason: '파괴 대체 비용 지불',
+                        selectionPurpose: '파괴 대체를 위한 패 코스트 지불',
                         costToPay: { type: 'TRASH_HAND', amount: requiredHandCount },
                         costPaidCount: 0,
                         selectedTargets: [],

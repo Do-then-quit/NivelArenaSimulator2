@@ -90,6 +90,39 @@ export interface GameLogViewState {
     autoCollapsed: boolean;
 }
 
+export type PlaybackSpeed = 'SLOW' | 'NORMAL' | 'FAST';
+
+export interface PlaybackToast {
+    id: string;
+    message: string;
+    createdAtMs: number;
+    expiresAtMs: number;
+}
+
+export interface PlaybackLogEntry {
+    id: string;
+    message: string;
+    createdAtMs: number;
+}
+
+export type PlaybackPulseZone = 'HAND' | 'DECK' | 'DAMAGE';
+
+export interface PlaybackPulseTarget {
+    playerId: string;
+    zone: PlaybackPulseZone;
+}
+
+export interface PlaybackState {
+    enabled: boolean;
+    speed: PlaybackSpeed;
+    queueBusy: boolean;
+    modalGateUntilMs: number;
+    toasts: PlaybackToast[];
+    logEntries: PlaybackLogEntry[];
+    maxLogEntries: number;
+    activePulseTargets: PlaybackPulseTarget[];
+}
+
 export const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
     label: 'HUMAN vs HUMAN',
     player1Control: 'HUMAN',
@@ -151,6 +184,16 @@ export const uiState = {
         manualOverride: false,
         autoCollapsed: false,
     } as GameLogViewState,
+    playback: {
+        enabled: false,
+        speed: 'NORMAL',
+        queueBusy: false,
+        modalGateUntilMs: 0,
+        toasts: [],
+        logEntries: [],
+        maxLogEntries: 500,
+        activePulseTargets: [],
+    } as PlaybackState,
     onlineSession: {
         connected: false,
         room: null,

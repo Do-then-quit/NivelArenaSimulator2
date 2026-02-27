@@ -1,11 +1,12 @@
 import { Card, CardType, EngineAction } from '../../logic/types';
 import { RuleValidator } from '../../logic/RuleValidator';
-import { uiState, Screen } from '../appState';
+import { PlaybackSpeed, uiState, Screen } from '../appState';
 import { canLocalHumanInput, getActionOwnerPlayerId } from '../gameLoop';
 import { restartReplayFromBeginning, stepReplayForward } from './replaySetup';
 import { GameLogCategory } from '../gameLogFeed';
 import { dispatchEngineAction, reportGameOverToServer } from '../online/onlineMatchController';
 import { getBottomPlayer, getTopPlayer, getUiPlayer, getUiPlayerRefForPlayerId, UiPlayerRef } from '../playerPerspective';
+import { setPlaybackSpeed, skipPlaybackQueue } from '../playbackOrchestrator';
 
 export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, calculatedPower?: number, calculatedHit?: number) => string) {
     if (!uiState.game) return;
@@ -22,25 +23,24 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     const getPlayerForPlayerAttr = (attr?: string) => getPlayerForUiRef(attr === 'opponent' ? 'opponent' : 'current');
     const getBottomUiPlayer = () => getBottomPlayer(uiState.game!);
     const getTopUiPlayer = () => getTopPlayer(uiState.game!);
-    document.getElementById('game-log-toggle')?.addEventListener('click', () => {
+    document.getElementById('fx-log-toggle')?.addEventListener('click', () => {
         uiState.gameLogView.expanded = !uiState.gameLogView.expanded;
         uiState.gameLogView.manualOverride = true;
         uiState.gameLogView.autoCollapsed = false;
         uiState.render?.();
     });
 
-    document.getElementById('game-log-clear')?.addEventListener('click', () => {
-        uiState.gameLogFeed.clear();
-        uiState.render?.();
-    });
-
-    document.querySelectorAll('.game-log-filter-btn').forEach(button => {
+    document.querySelectorAll('[data-playback-speed]').forEach(button => {
         button.addEventListener('click', () => {
-            const filterValue = (button as HTMLElement).dataset.logFilter as ('ALL' | GameLogCategory | undefined);
-            if (!filterValue) return;
-            uiState.gameLogView.filter = filterValue;
+            const speed = (button as HTMLElement).dataset.playbackSpeed as PlaybackSpeed | undefined;
+            if (!speed) return;
+            setPlaybackSpeed(speed);
             uiState.render?.();
         });
+    });
+
+    document.getElementById('playback-skip-btn')?.addEventListener('click', () => {
+        skipPlaybackQueue();
     });
 
     document.getElementById('db-back-to-menu')?.addEventListener('click', () => {

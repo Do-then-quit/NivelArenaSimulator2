@@ -1,6 +1,5 @@
-import { Phase, Card } from '../../logic/types';
+import { Phase, Card, GameState, PendingEffect } from '../../logic/types';
 import { PHASE_THEME_CLASSES, Screen, uiState } from '../appState';
-import { GameLogCategory } from '../gameLogFeed';
 import {
     canLocalHumanInput,
     clearAutoPhaseAdvanceTimer,
@@ -11,6 +10,7 @@ import {
     scheduleBotStep,
     shouldRevealHandForPlayer,
 } from '../gameLoop';
+import { shouldDelayInteractionModal } from '../playbackOrchestrator';
 import { getBottomPlayer, getTopPlayer } from '../playerPerspective';
 import { attachListeners } from './gameBindings';
 
@@ -172,85 +172,44 @@ function escapeHtml(text: string): string {
         .replace(/'/g, '&#39;');
 }
 
-function getLogCategoryLabel(category: GameLogCategory): string {
-    switch (category) {
-        case 'ACTION':
-            return '행동';
-        case 'PHASE':
-            return '페이즈';
-        case 'COMBAT':
-            return '전투';
-        case 'EFFECT':
-            return '효과';
-        case 'TARGET':
-            return '대상';
-        case 'RULE':
-            return '규칙';
-        case 'SYSTEM':
-            return '시스템';
-        default:
-            return category;
-    }
+function formatPlaybackLogTime(createdAtMs: number): string {
+    const d = new Date(createdAtMs);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+    return `${hh}:${mm}:${ss}`;
 }
 
-function renderGameLogPanel(): string {
-    const filterDefs: Array<{ value: 'ALL' | GameLogCategory; label: string }> = [
-        { value: 'ALL', label: '전체' },
-        { value: 'ACTION', label: '행동' },
-        { value: 'COMBAT', label: '전투' },
-        { value: 'EFFECT', label: '효과' },
-        { value: 'TARGET', label: '대상' },
-        { value: 'PHASE', label: '페이즈' },
-        { value: 'RULE', label: '규칙' },
-        { value: 'SYSTEM', label: '시스템' },
-    ];
-    const selectedFilter = uiState.gameLogView.filter;
-    const allEntries = uiState.gameLogFeed.getEntries();
-    const filteredEntries = selectedFilter === 'ALL'
-        ? allEntries
-        : allEntries.filter(entry => entry.category === selectedFilter);
-    const maxVisible = Math.max(1, uiState.gameLogView.maxVisibleEntries);
-    const visibleEntries = filteredEntries.slice(-maxVisible).reverse();
+function renderPlaybackLogPanel(): string {
     const isExpanded = uiState.gameLogView.expanded;
+    const maxVisible = Math.max(1, uiState.gameLogView.maxVisibleEntries);
+    const visibleEntries = uiState.playback.logEntries.slice(-maxVisible);
+    const latestMessage = visibleEntries.length > 0
+        ? escapeHtml(visibleEntries[visibleEntries.length - 1].message)
+        : '아직 효과 로그가 없습니다.';
 
     return `
-        <aside class="game-log-panel ${isExpanded ? '' : 'collapsed'}">
-            <div class="game-log-header">
-                <div class="game-log-title">게임 로그</div>
-                <div class="game-log-controls">
-                    <button id="game-log-clear" class="secondary-btn small-btn">지우기</button>
-                    <button id="game-log-toggle" class="secondary-btn small-btn">${isExpanded ? '접기' : '펼치기'}</button>
+        <aside class="game-log-panel fx-log-panel ${isExpanded ? '' : 'collapsed'}">
+            <div class="game-log-header fx-log-header">
+                <div class="game-log-title fx-log-title">효과 로그</div>
+                <div class="fx-log-header-actions">
+                    <div class="fx-log-count">${uiState.playback.logEntries.length}</div>
+                    <button id="fx-log-toggle" class="secondary-btn small-btn">${isExpanded ? '접기' : '펼치기'}</button>
                 </div>
             </div>
             ${isExpanded ? `
-                <div class="game-log-filters">
-                    ${filterDefs.map(filter => `
-                        <button class="game-log-filter-btn ${selectedFilter === filter.value ? 'active' : ''}" data-log-filter="${filter.value}">
-                            ${filter.label}
-                        </button>
+                <div class="game-log-body fx-log-body">
+                    ${visibleEntries.length === 0 ? '<div class="game-log-empty">아직 효과 로그가 없습니다.</div>' : ''}
+                    ${visibleEntries.map(entry => `
+                        <div class="fx-log-entry">
+                            <div class="fx-log-time">${formatPlaybackLogTime(entry.createdAtMs)}</div>
+                            <div class="fx-log-message">${escapeHtml(entry.message).replace(/\n/g, '<br>')}</div>
+                        </div>
                     `).join('')}
                 </div>
-                <div class="game-log-body">
-                    ${visibleEntries.length === 0 ? '<div class="game-log-empty">아직 로그가 없습니다.</div>' : ''}
-                    ${visibleEntries.map(entry => {
-        const safeMessage = escapeHtml(entry.message).replace(/\n/g, '<br>');
-        const safeSource = escapeHtml(entry.source);
-        return `
-                            <div class="game-log-entry level-${entry.level.toLowerCase()}">
-                                <div class="game-log-entry-meta">
-                                    <span class="game-log-badge category-${entry.category.toLowerCase()}">${getLogCategoryLabel(entry.category)}</span>
-                                    <span class="game-log-level">${entry.level}</span>
-                                    <span class="game-log-turn">T${entry.turnCount ?? '-'}</span>
-                                    <span class="game-log-phase">${entry.phase ?? '-'}</span>
-                                    <span class="game-log-mode">${entry.interactionMode ?? '-'}</span>
-                                </div>
-                                <div class="game-log-message">${safeMessage}</div>
-                                <div class="game-log-source">${safeSource}</div>
-                            </div>
-                        `;
-    }).join('')}
-                </div>
-            ` : ''}
+            ` : `
+                <div class="fx-log-collapsed-preview">${latestMessage}</div>
+            `}
         </aside>
     `;
 }
@@ -338,19 +297,221 @@ function renderReplayOverlayControls(): string {
     `;
 }
 
+function isInteractionModalDelayed(): boolean {
+    if (!uiState.game) return false;
+    return shouldDelayInteractionModal(uiState.game.state.interactionMode);
+}
+
+function renderPlaybackToasts(): string {
+    const now = Date.now();
+    const toasts = uiState.playback.toasts.filter(toast => toast.expiresAtMs > now).slice(-3);
+    if (toasts.length === 0) return '';
+    return `
+        <div class="fx-toast-stack">
+            ${toasts.map(toast => `<div class="fx-toast-item">${escapeHtml(toast.message)}</div>`).join('')}
+        </div>
+    `;
+}
+
+function renderPlaybackControls(): string {
+    if (!uiState.playback.enabled) return '';
+    const options: Array<{ value: 'SLOW' | 'NORMAL' | 'FAST'; label: string }> = [
+        { value: 'SLOW', label: '느림' },
+        { value: 'NORMAL', label: '보통' },
+        { value: 'FAST', label: '빠름' },
+    ];
+    return `
+        <div class="playback-speed-controls">
+            ${options.map(option => `
+                <button
+                    class="secondary-btn small-btn ${uiState.playback.speed === option.value ? 'active' : ''}"
+                    data-playback-speed="${option.value}"
+                >
+                    ${option.label}
+                </button>
+            `).join('')}
+            <button id="playback-skip-btn" class="secondary-btn small-btn">Skip (Space)</button>
+        </div>
+    `;
+}
+
+const ACTIVATION_REASON_LABELS: Record<string, string> = {
+    ENTRY: '엔트리 효과',
+    PASSIVE: '패시브 유발',
+    ACTIVE: '액티브 효과',
+    ACTIVE_MAIN: '메인 액티브 효과',
+    ATTACKER: '어태커 트리거',
+    DEFENDER: '디펜더 트리거',
+    EXIT: '엑시트 트리거',
+    ON_KILL: '격파 트리거',
+    DAMAGE_TRIGGER: '데미지 트리거',
+    TURN_START: '턴 시작 트리거',
+    TURN_END: '턴 종료 트리거',
+    BATTLE_END: '배틀 종료 트리거',
+    AWAKEN: '각성 트리거',
+    UNIT_TRASHED: '유닛 트래시 트리거',
+    ESCAPE: '이스케이프 트리거',
+    HAND_TRASHED: '패 트래시 트리거',
+    DRAWN: '드로우 트리거',
+};
+
+const MASKED_SOURCE_ACTIVATIONS = new Set<string>([
+    'DAMAGE_TRIGGER',
+    'DRAWN',
+    'HAND_TRASHED',
+]);
+
+function getPlayerName(playerId: string | undefined): string {
+    if (!playerId) return '플레이어';
+    return uiState.game?.state.players.find(player => player.id === playerId)?.name ?? playerId;
+}
+
+function shouldMaskPendingSourceName(pending: PendingEffect): boolean {
+    if (!pending.sourcePlayerId) return false;
+    if (!uiState.onlineSession.room || uiState.onlineSession.room.phase !== 'IN_GAME') return false;
+    if (shouldRevealHandForPlayer(pending.sourcePlayerId)) return false;
+    const activation = pending.sourceActivation;
+    if (!activation) return false;
+    return MASKED_SOURCE_ACTIVATIONS.has(String(activation));
+}
+
+function describeTargetScope(scope: string | undefined): string {
+    switch (scope) {
+        case 'SELF':
+            return '자신';
+        case 'MY_FIELD':
+            return '내 필드';
+        case 'OPP_FIELD':
+            return '상대 필드';
+        case 'BOTH_FIELDS':
+        case 'FIELD':
+            return '양쪽 필드';
+        case 'SHARED_LANE':
+            return '같은 라인';
+        case 'MY_TRASH':
+            return '내 트래시';
+        case 'MY_HAND':
+            return '내 패';
+        case 'OPP_HAND':
+            return '상대 패';
+        case 'MY_DAMAGE':
+            return '내 데미지존';
+        case 'MY_FIELD_ITEMS':
+            return '내 필드 아이템';
+        case 'OPP_FIELD_ITEMS':
+            return '상대 필드 아이템';
+        case 'FIELD_ITEMS':
+            return '양쪽 필드 아이템';
+        case 'REVEALED':
+            return '공개 카드';
+        case 'LAST_DRAWN':
+            return '방금 드로우한 카드';
+        case 'ENCOUNTER':
+        case 'ENCOUNTER_UNIT':
+            return '인카운터 라인';
+        default:
+            return '대상';
+    }
+}
+
+function describeTargetSelectionPurpose(pending: PendingEffect): string {
+    const scope = pending.targetSchema?.scope ?? pending.validTargets;
+    const scopeLabel = describeTargetScope(scope);
+    const count = pending.targetSchema?.count;
+
+    if (typeof count === 'number') {
+        if (count === 0) return `${scopeLabel} 전체 지정`;
+        if (count === 1) return `${scopeLabel}에서 1개 지정`;
+        return `${scopeLabel}에서 ${count}개 지정`;
+    }
+    return `${scopeLabel} 대상 지정`;
+}
+
+function describeCostSelectionPurpose(pending: PendingEffect): string {
+    const amount = Math.max(1, pending.costToPay?.amount || 1);
+    const type = pending.costToPay?.type;
+
+    if (type === 'TRASH_HAND') return `패에서 ${amount}장 버려 코스트 지불`;
+    if (type === 'SHUFFLE_HAND_TO_DECK') return `패에서 ${amount}장을 덱으로 되돌려 코스트 지불`;
+    if (type === 'RETIRE_UNIT') return `유닛 ${amount}장을 퇴각시켜 코스트 지불`;
+    return '효과 코스트 지불';
+}
+
+function resolveSelectionPurpose(pending: PendingEffect, mode: GameState['interactionMode']): string {
+    if (pending.selectionPurpose && pending.selectionPurpose.trim()) {
+        return pending.selectionPurpose;
+    }
+    if (mode === 'SELECT_TARGET') return describeTargetSelectionPurpose(pending);
+    if (mode === 'SELECT_COST') return describeCostSelectionPurpose(pending);
+    if (mode === 'SELECT_OPTIONAL') return '선택형 효과 발동 여부 결정';
+    return '효과 처리';
+}
+
+function resolveTriggerReason(pending: PendingEffect): string {
+    if (pending.triggerReason && pending.triggerReason.trim()) {
+        return pending.triggerReason;
+    }
+    if (pending.sourceActivation) {
+        const key = String(pending.sourceActivation);
+        return ACTIVATION_REASON_LABELS[key] ?? key;
+    }
+    return '효과 처리 중 선택';
+}
+
+function renderPendingEffectContext(
+    pending: PendingEffect | null,
+    mode: GameState['interactionMode'],
+): string {
+    if (!pending) return '';
+
+    const maskedSource = shouldMaskPendingSourceName(pending);
+    const sourceCardLabel = maskedSource
+        ? `${getPlayerName(pending.sourcePlayerId)}의 비공개 카드`
+        : (pending.sourceCard?.name || '알 수 없는 카드');
+    const triggerReason = resolveTriggerReason(pending);
+    const selectionPurpose = resolveSelectionPurpose(pending, mode);
+    const effectSummary = pending.sourceEffectDescription || pending.effectDescription;
+    const selectionHint = pending.sourceEffectDescription && pending.effectDescription
+        && pending.sourceEffectDescription !== pending.effectDescription
+        ? pending.effectDescription
+        : '';
+
+    return `
+        <div class="game-interaction-context">
+            <span class="game-interaction-context-label">출처 카드</span>
+            <span class="game-interaction-context-value">${escapeHtml(sourceCardLabel)}</span>
+            <span class="game-interaction-context-label">발동 이유</span>
+            <span class="game-interaction-context-value">${escapeHtml(triggerReason)}</span>
+            <span class="game-interaction-context-label">현재 선택</span>
+            <span class="game-interaction-context-value">${escapeHtml(selectionPurpose)}</span>
+            ${effectSummary ? `
+                <span class="game-interaction-context-label">예정 효과</span>
+                <span class="game-interaction-context-value">${escapeHtml(effectSummary)}</span>
+            ` : ''}
+            ${selectionHint ? `
+                <span class="game-interaction-context-label">선택 안내</span>
+                <span class="game-interaction-context-value">${escapeHtml(selectionHint)}</span>
+            ` : ''}
+        </div>
+    `;
+}
+
 function renderOptionalEffectModal() {
     if (!uiState.game) return '';
     if (uiState.game.state.interactionMode !== 'SELECT_OPTIONAL') return '';
+    if (isInteractionModalDelayed()) return '';
     const pending = uiState.game.state.pendingEffect as any;
     if (!pending) return '';
 
     const description = pending.effectDescription ?? 'Activate optional effect?';
+    const contextHtml = renderPendingEffectContext(pending as PendingEffect, 'SELECT_OPTIONAL');
 
     return `
         <div class="modal-overlay">
             <div class="modal-content">
                 <h3>Optional Effect</h3>
                 <p>${description}</p>
+                ${contextHtml}
                 <div class="modal-actions">
                     <button id="opt-confirm" class="primary-btn">Activate</button>
                     <button id="opt-skip" class="secondary-btn">Skip</button>
@@ -363,6 +524,7 @@ function renderOptionalEffectModal() {
 function renderTrashModal() {
     if (!uiState.game) return '';
     if (uiState.game.state.interactionMode !== 'SELECT_TARGET') return '';
+    if (isInteractionModalDelayed()) return '';
     const pending = uiState.game.state.pendingEffect as any;
     if (!pending || pending.validTargets !== 'MY_TRASH') return '';
 
@@ -392,6 +554,7 @@ function renderTrashModal() {
 function renderRevealedCardsModal() {
     if (!uiState.game) return '';
     if (uiState.game.state.revealedCards.length === 0) return '';
+    if (isInteractionModalDelayed()) return '';
 
     const pending = uiState.game.state.pendingEffect as any;
     const isSelecting = uiState.game.state.interactionMode === 'SELECT_TARGET' && pending?.validTargets === 'REVEALED';
@@ -567,6 +730,10 @@ function renderPlayer(
 ) {
     if (!uiState.game) return '';
     const localHumanCanInput = canLocalHumanInput();
+    const hasPulseForZone = (zone: 'DECK' | 'DAMAGE') => uiState.playback.activePulseTargets
+        .some(target => target.playerId === player.id && target.zone === zone);
+    const deckPulseClass = hasPulseForZone('DECK') ? 'fx-pulse-zone fx-pulse-deck' : '';
+    const damagePulseClass = hasPulseForZone('DAMAGE') ? 'fx-pulse-zone fx-pulse-damage' : '';
     const isInputOwnerPlayer = player.id === inputOwnerId;
     const blockResolveActions = (legalActions || []).filter((action: any) => action.type === 'RESOLVE_BLOCK');
     const blockableZoneSet = new Set<number>(
@@ -649,7 +816,7 @@ function renderPlayer(
             </div>
 
             <div class="bottom-center">
-                <div class="damage-zone ${showDamageCardSelection ? 'selection-mode' : 'summary-mode'}" data-player="${isOpponent ? 'opponent' : 'current'}">
+                <div class="damage-zone ${showDamageCardSelection ? 'selection-mode' : 'summary-mode'} ${damagePulseClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
                     ${showDamageCardSelection ? player.damage.map((c: any, damageIndex: number) => {
         const isDamageSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(c);
         return `<div class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${damageIndex}">${renderCard(c, true)}</div>`;
@@ -672,7 +839,7 @@ function renderPlayer(
         </div>
 
         <div class="field-right">
-            <div class="deck-zone">
+            <div class="deck-zone ${deckPulseClass}">
                 <div class="deck-count">${player.deck.length}</div>
                 <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
             </div>
@@ -745,10 +912,21 @@ export function renderGame() {
     };
     const topHandStepPx = computeHandStepPx(topPlayer.hand.length);
     const bottomHandStepPx = computeHandStepPx(bottomPlayer.hand.length);
+    const speedVarsByPreset = {
+        SLOW: { beatMs: 520, pulseMs: 620 },
+        NORMAL: { beatMs: 320, pulseMs: 420 },
+        FAST: { beatMs: 180, pulseMs: 260 },
+    } as const;
+    const speedVars = speedVarsByPreset[uiState.playback.speed];
+    const hasPulseForHand = (playerId: string) => uiState.playback.activePulseTargets
+        .some(target => target.playerId === playerId && target.zone === 'HAND');
+    const topHandPulseClass = hasPulseForHand(topPlayer.id) ? 'fx-pulse-zone fx-pulse-hand' : '';
+    const bottomHandPulseClass = hasPulseForHand(bottomPlayer.id) ? 'fx-pulse-zone fx-pulse-hand' : '';
+    const interactionDeferred = isInteractionModalDelayed();
     let interactionBannerHtml = '';
 
     if (uiState.game.state.interactionMode === 'SELECT_TARGET') {
-        const pending = uiState.game.state.pendingEffect as any;
+        const pending = uiState.game.state.pendingEffect as PendingEffect | null;
         const maxCount = pending?.targetSchema?.count || 0;
         const currentCount = pending?.selectedTargets?.length || 0;
         const actorId = getActionOwnerPlayerId(uiState.game);
@@ -760,29 +938,46 @@ export function renderGame() {
                     ? 'Step 2/2: Select the unit to receive +2000 power.'
                     : 'Selection complete. Confirm to resolve.')
             : '';
+        const contextHtml = renderPendingEffectContext(pending, 'SELECT_TARGET');
 
         interactionBannerHtml = `
             <div class="game-interaction-banner target-mode">
-                <span>SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
+                <div class="game-interaction-main-row">
+                    <span>SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
+                    <button id="confirm-targets-btn" class="primary-btn small-btn-inline" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                </div>
                 ${sacrificeHint ? `<span class="game-interaction-sub">${sacrificeHint}</span>` : ''}
-                <button id="confirm-targets-btn" class="primary-btn small-btn-inline" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                ${contextHtml}
             </div>
         `;
     } else if (uiState.game.state.interactionMode === 'SELECT_COST') {
+        const pending = uiState.game.state.pendingEffect as PendingEffect | null;
+        const contextHtml = renderPendingEffectContext(pending, 'SELECT_COST');
         interactionBannerHtml = `
             <div class="game-interaction-banner cost-mode">
-                <span>SELECT CARD TO TRASH (COST)</span>
+                <div class="game-interaction-main-row">
+                    <span>SELECT CARD TO TRASH (COST)</span>
+                </div>
+                ${contextHtml}
+            </div>
+        `;
+    }
+    if (interactionDeferred && uiState.game.state.interactionMode !== 'NORMAL') {
+        interactionBannerHtml += `
+            <div class="game-interaction-banner fx-processing-banner">
+                <span>효과 처리 중... 잠시 후 선택 창이 표시됩니다.</span>
+                <span class="game-interaction-sub">Space: 즉시 스킵</span>
             </div>
         `;
     }
 
     uiState.app.innerHTML = `
-    <div class="game-container">
+    <div class="game-container" style="--fx-beat-ms:${speedVars.beatMs}ms; --fx-pulse-ms:${speedVars.pulseMs}ms;">
       ${verificationGame ? renderVerificationSessionPanel() : ''}
       <div class="game-layout-root">
         <div class="battle-fit-viewport">
           <div class="battle-fit-content" style="--battle-scale: 1;">
-            <div class="opponent-hand-zone fan-layout" style="--hand-step:${topHandStepPx}px;">
+            <div class="opponent-hand-zone fan-layout ${topHandPulseClass}" style="--hand-step:${topHandStepPx}px;">
                 ${topPlayer.hand.map((c, i) => {
         const pending = uiState.game!.state.pendingEffect as any;
         const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
@@ -802,7 +997,7 @@ export function renderGame() {
 
             ${renderPlayer(bottomPlayer, false, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
 
-            <div class="hand-zone fan-layout" style="--hand-step:${bottomHandStepPx}px;">
+            <div class="hand-zone fan-layout ${bottomHandPulseClass}" style="--hand-step:${bottomHandStepPx}px;">
                 ${bottomPlayer.hand.map((c, i) => {
         const isCostCandidate = uiState.game!.state.interactionMode === 'SELECT_COST';
         const pending = uiState.game!.state.pendingEffect as any;
@@ -826,7 +1021,8 @@ export function renderGame() {
             <div class="game-top-title">NivelArena</div>
             ${interactionBannerHtml}
           </div>
-          ${renderGameLogPanel()}
+          ${renderPlaybackToasts()}
+          ${renderPlaybackLogPanel()}
           <div class="game-controls">
             <div class="status-bar">
               <div class="status-item"><span>Turn</span> <strong>${uiState.game.state.turnCount}</strong></div>
@@ -836,6 +1032,7 @@ export function renderGame() {
               <div class="status-item"><span>Bot Hand</span> <strong>${uiState.activeMatchViewConfig.revealBotHand ? 'Shown' : 'Hidden'}</strong></div>
               <div class="status-item"><span>Input</span> <strong>${inputOwner?.name ?? 'N/A'} (${inputOwnerControl})</strong></div>
             </div>
+            ${renderPlaybackControls()}
             ${renderGameControlButtons(localHumanCanInput)}
           </div>
         </aside>

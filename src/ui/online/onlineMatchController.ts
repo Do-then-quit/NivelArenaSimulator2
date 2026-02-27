@@ -9,6 +9,7 @@ import {
     uiState,
 } from '../appState';
 import { clearAutoPhaseAdvanceTimer, clearBotStepTimer } from '../gameLoop';
+import { clearPlaybackLogHistory, clearPlaybackRuntimeState, stepEngineActionWithPlayback } from '../playbackOrchestrator';
 import { OnlineClient } from './OnlineClient';
 import { computeStateHash } from './hash';
 import {
@@ -244,6 +245,8 @@ function setupLocalOnlineGame(
 
     clearBotStepTimer();
     clearAutoPhaseAdvanceTimer();
+    clearPlaybackRuntimeState();
+    clearPlaybackLogHistory();
     uiState.gameLogFeed.clear();
     uiState.replaySession = null;
     uiState.verificationSession = null;
@@ -251,6 +254,12 @@ function setupLocalOnlineGame(
     uiState.botLabelByPlayerId.clear();
     uiState.activeMatchConfig = toMatchControlLabel();
     uiState.activeMatchViewConfig = { revealBotHand: false };
+    uiState.playback.enabled = true;
+    uiState.playback.queueBusy = false;
+    uiState.playback.modalGateUntilMs = 0;
+    uiState.playback.toasts = [];
+    uiState.playback.logEntries = [];
+    uiState.playback.activePulseTargets = [];
 
     const engine = new GameEngine(
         'Player 1',
@@ -262,10 +271,12 @@ function setupLocalOnlineGame(
         {
             seed,
             enableMulligan: true,
+            enableUiTrace: true,
         },
     );
 
     normalizeEnginePlayerIds(engine, playerIdBySlot);
+    engine.drainUiTraceEvents();
     uiState.game = engine;
     (window as any).debug = new DebugManager(engine, uiState.render ?? (() => {}));
 
@@ -341,7 +352,7 @@ function applyCommitBroadcast(
         return;
     }
 
-    const ok = uiState.game.step(action);
+    const ok = stepEngineActionWithPlayback(uiState.game, action);
     if (!ok) {
         uiState.gameLogFeed.pushUiLog('[Online] Failed to apply commit action. Declaring desync.', 'SYSTEM', 'WARN');
         sendMatchEnd('desync');
@@ -370,7 +381,7 @@ function commitHostAction(action: EngineAction): boolean {
     if (!uiState.game || !activeSessionId) return false;
     if (!validateActionWithLegalList(action)) return false;
 
-    const ok = uiState.game.step(action);
+    const ok = stepEngineActionWithPlayback(uiState.game, action);
     if (!ok) return false;
 
     nextCommitSeq += 1;
@@ -408,6 +419,8 @@ function handleRoomState(room: RoomView): void {
 function routeToOnlineLobby(message: string): void {
     clearBotStepTimer();
     clearAutoPhaseAdvanceTimer();
+    clearPlaybackRuntimeState();
+    clearPlaybackLogHistory();
     if (uiState.onlineSession.room) {
         uiState.onlineSession.room.phase = 'LOBBY';
         uiState.onlineSession.room.matchSessionId = null;
@@ -421,6 +434,7 @@ function routeToOnlineLobby(message: string): void {
     uiState.verificationSession = null;
     resetMatchRuntimeState();
     uiState.currentScreen = Screen.ONLINE_ROOM;
+    uiState.playback.enabled = false;
     uiState.gameLogFeed.pushUiLog(`[Online] ${message}`, 'SYSTEM');
     uiState.render?.();
 }
@@ -457,6 +471,7 @@ function handleServerMessage(message: ServerToClientMessage): void {
             const engine = new GameEngine('Player 1', 'Player 2', p1.deckCards, p2.deckCards, p1.leader, p2.leader, {
                 seed,
                 enableMulligan: true,
+                enableUiTrace: false,
             });
 
             const playerIdBySlot: Record<PlayerSlot, string> = {
@@ -593,7 +608,7 @@ export function isOnlineInGame(): boolean {
 export function dispatchEngineAction(action: EngineAction): boolean {
     if (!uiState.game) return false;
     if (!isOnlineInGame()) {
-        const ok = uiState.game.step(action);
+        const ok = stepEngineActionWithPlayback(uiState.game, action);
         if (ok && uiState.game.state.winner && uiState.currentScreen === Screen.GAME && uiState.onlineSession.room) {
             routeToOnlineLobby('Match ended.');
         }

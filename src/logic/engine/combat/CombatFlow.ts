@@ -377,6 +377,9 @@ export function resolveBlock(engine: any, shouldBlock: boolean, blockerZoneIndex
                 requiredCount: guardianBlockItemCost.count,
             },
             effectDescription: 'Guardian block item cost',
+            sourceActivation: ActivationCondition.DEFENDER,
+            triggerReason: '가디언 블록 선언 비용',
+            selectionPurpose: '가디언 블록에 사용할 아이템 선택',
             validTargets: 'MY_FIELD_ITEMS',
             targetSchema: {
                 scope: 'MY_FIELD_ITEMS',
@@ -417,6 +420,9 @@ export function resolveBlock(engine: any, shouldBlock: boolean, blockerZoneIndex
             actionType: 'GUARDIAN_BLOCK_COST',
             actionValue: { blockerZoneIndex: selectedBlockerZoneIndex, barrierCost },
             effectDescription: `Guardian barrier cost (${barrierCost})`,
+            sourceActivation: ActivationCondition.DEFENDER,
+            triggerReason: '가디언 블록 선언 비용',
+            selectionPurpose: '가디언 배리어 코스트 지불',
             costToPay: { type: 'TRASH_HAND', amount: barrierCost },
             selectedTargets: []
         };

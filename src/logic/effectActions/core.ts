@@ -277,6 +277,9 @@ export const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => 
         actionType: 'DISCARD_FROM_DRAWN',
         actionValue: { discardCount },
         effectDescription: selectionEffect.description,
+        sourceActivation: params?.__sourceActivation,
+        triggerReason: '드로우 후 디스카드 처리',
+        selectionPurpose: `드로우한 카드 중 ${discardCount}장 선택하여 버리기`,
         validTargets: 'REVEALED',
         targetSchema: selectionEffect.targets,
         selectedTargets: []

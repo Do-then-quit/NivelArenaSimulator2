@@ -15,6 +15,20 @@ vi.mock('../../src/ui/gameLoop', () => ({
     shouldRevealHandForPlayer: vi.fn(() => true),
 }));
 
+function createCard(id: string, name: string) {
+    return {
+        id,
+        name,
+        imageUrl: `https://example.com/${id}.png`,
+        type: 'UNIT',
+        attribute: 'FIRE',
+        cost: 1,
+        power: 1000,
+        hit: 1000,
+        text: '',
+    } as any;
+}
+
 function createMockGame() {
     const createZone = () => ({
         unit: null,
@@ -30,24 +44,8 @@ function createMockGame() {
         extraAttackAllowance: 0,
     });
 
-    const leader1 = {
-        id: 'L1',
-        name: 'Leader 1',
-        type: 'LEADER',
-        attribute: 'NONE',
-        cost: 0,
-        text: '',
-        effects: [],
-    };
-    const leader2 = {
-        id: 'L2',
-        name: 'Leader 2',
-        type: 'LEADER',
-        attribute: 'NONE',
-        cost: 0,
-        text: '',
-        effects: [],
-    };
+    const leader = createCard('leader', 'Leader');
+    const sourceCard = createCard('src-1', 'Blaze Knight');
 
     const p1 = {
         id: 'P1',
@@ -56,7 +54,7 @@ function createMockGame() {
         hand: [],
         trash: [],
         damage: [],
-        levelZone: leader1,
+        levelZone: leader,
         leaderLevel: 1,
         unitZones: [createZone(), createZone(), createZone()],
         skillZone: [],
@@ -69,7 +67,7 @@ function createMockGame() {
         hand: [],
         trash: [],
         damage: [],
-        levelZone: leader2,
+        levelZone: leader,
         leaderLevel: 1,
         unitZones: [createZone(), createZone(), createZone()],
         skillZone: [],
@@ -80,13 +78,30 @@ function createMockGame() {
             players: [p1, p2],
             turnPlayerIndex: 0,
             phase: 'MAIN',
-            turnCount: 3,
+            turnCount: 1,
             winner: null,
             pendingAttackerIndex: null,
             pendingBlockerZoneIndex: null,
-            interactionMode: 'NORMAL',
+            interactionMode: 'SELECT_TARGET',
             interactionOwnerPlayerId: 'P1',
-            pendingEffect: null,
+            pendingEffect: {
+                sourceCard,
+                sourcePlayerId: 'P1',
+                controllerPlayerId: 'P1',
+                actionType: 'DESTROY_UNIT',
+                actionValue: {},
+                effectDescription: '대상 유닛을 파괴한다.',
+                sourceEffectDescription: '어태커 : 전투 중 상대 유닛 1장을 파괴한다.',
+                sourceActivation: 'ATTACKER',
+                validTargets: 'OPP_FIELD',
+                targetSchema: {
+                    scope: 'OPP_FIELD',
+                    type: 'UNIT',
+                    count: 1,
+                    selectMode: 'MANUAL',
+                },
+                selectedTargets: [],
+            },
             mulliganState: null,
             mulliganResultByPlayerId: {},
             revealedCards: [],
@@ -104,14 +119,14 @@ function createMockGame() {
         },
         currentPlayer: p1,
         opponentPlayer: p2,
-        getLegalActions: () => [],
-        getUnitPower: (zone: any) => zone.unit?.power ?? 0,
-        getUnitHit: (zone: any) => zone.unit?.hit ?? 0,
+        getLegalActions: () => [{ type: 'CONFIRM_TARGETS' }],
+        getUnitPower: () => 0,
+        getUnitHit: () => 0,
         isPendingCardTarget: () => false,
     } as any;
 }
 
-describe('game log panel render', () => {
+describe('game view select interaction context', () => {
     beforeEach(() => {
         vi.resetModules();
         document.body.innerHTML = '<div id="app"></div>';
@@ -119,63 +134,27 @@ describe('game log panel render', () => {
         Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 1080 });
     });
 
-    it('renders playback effect logs in side panel', async () => {
+    it('renders source/effect/reason context in select target banner', async () => {
         const { uiState, Screen } = await import('../../src/ui/appState');
         const { renderGame } = await import('../../src/ui/screens/gameView');
 
         uiState.currentScreen = Screen.GAME;
         uiState.game = createMockGame();
+        uiState.gameLogView.manualOverride = true;
         uiState.gameLogView.expanded = true;
-        uiState.gameLogView.manualOverride = true;
         uiState.gameLogView.autoCollapsed = false;
-        uiState.playback.logEntries = [
-            { id: 'plog-1', message: 'Player 1가 1장 드로우', createdAtMs: Date.now() - 1000 },
-            { id: 'plog-2', message: 'Player 2 데미지 공개: Fire Bolt', createdAtMs: Date.now() },
-        ];
 
         renderGame();
 
-        expect(document.querySelector('.game-log-panel')).toBeTruthy();
-        expect(document.body.textContent).toContain('효과 로그');
-        expect(document.body.textContent).toContain('Player 1가 1장 드로우');
-        expect(document.body.textContent).toContain('Player 2 데미지 공개: Fire Bolt');
-        expect(document.querySelectorAll('.fx-log-entry')).toHaveLength(2);
-    });
-
-    it('shows empty message when playback log history is empty', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
-        uiState.gameLogView.expanded = true;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.autoCollapsed = false;
-        uiState.playback.logEntries = [];
-
-        renderGame();
-
-        expect(document.body.textContent).toContain('아직 효과 로그가 없습니다.');
-    });
-
-    it('renders collapsed preview without scroll body', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
-        uiState.gameLogView.expanded = false;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.autoCollapsed = false;
-        uiState.playback.logEntries = [
-            { id: 'plog-preview', message: '미리보기 로그', createdAtMs: Date.now() },
-        ];
-
-        renderGame();
-
-        const panel = document.querySelector('.game-log-panel');
-        expect(panel?.classList.contains('collapsed')).toBe(true);
-        expect(document.querySelector('.game-log-body')).toBeNull();
-        expect(document.querySelector('.fx-log-collapsed-preview')?.textContent).toContain('미리보기 로그');
+        const text = document.body.textContent || '';
+        expect(text).toContain('출처 카드');
+        expect(text).toContain('Blaze Knight');
+        expect(text).toContain('발동 이유');
+        expect(text).toContain('어태커 트리거');
+        expect(text).toContain('현재 선택');
+        expect(text).toContain('상대 필드에서 1개 지정');
+        expect(text).toContain('예정 효과');
+        expect(text).toContain('어태커 : 전투 중 상대 유닛 1장을 파괴한다.');
+        expect(document.querySelector('#confirm-targets-btn')).toBeTruthy();
     });
 });

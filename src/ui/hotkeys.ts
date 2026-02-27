@@ -1,4 +1,5 @@
 import { Screen, uiState } from './appState';
+import { skipPlaybackQueue } from './playbackOrchestrator';
 
 function isTypingElement(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
@@ -26,6 +27,11 @@ export function handleGameHotkeys(event: KeyboardEvent) {
     if (uiState.currentScreen !== Screen.GAME) return;
     if (isTypingElement(event.target)) return;
     if (event.code !== 'Space') return;
+
+    if (skipPlaybackQueue()) {
+        event.preventDefault();
+        return;
+    }
 
     const nextPhaseButton = document.getElementById('next-phase') as HTMLButtonElement | null;
     if (!nextPhaseButton || nextPhaseButton.disabled) return;

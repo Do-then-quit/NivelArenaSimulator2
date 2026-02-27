@@ -2,6 +2,7 @@ import { GameEngine } from '../logic/GameEngine';
 import { canAutoAdvancePhase } from '../logic/AutoPhaseAdvance';
 import { uiState, MatchControlConfig, MatchViewConfig, Screen } from './appState';
 import { EngineAction } from '../logic/types';
+import { consumeEngineUiTraceEvents, isPlaybackQueueBusy, stepEngineActionWithPlayback } from './playbackOrchestrator';
 
 function formatActionForLog(action: EngineAction): string {
     switch (action.type) {
@@ -91,6 +92,10 @@ function isOnlineRoomInGame(): boolean {
 export function canLocalHumanInput(): boolean {
     if (!uiState.game || uiState.game.state.winner) return false;
     if (uiState.replaySession) return false;
+    if (uiState.playback.queueBusy) {
+        if (uiState.game.state.interactionMode === 'NORMAL') return false;
+        if (Date.now() < uiState.playback.modalGateUntilMs) return false;
+    }
     const actorId = getActionOwnerPlayerId(uiState.game);
     if (isOnlineRoomInGame()) {
         return actorId === uiState.onlineSession.localEnginePlayerId;
@@ -100,6 +105,7 @@ export function canLocalHumanInput(): boolean {
 
 export function shouldAutoAdvancePhase(engine: GameEngine): boolean {
     if (isOnlineRoomInGame()) return false;
+    if (isPlaybackQueueBusy()) return false;
     const actorId = getActionOwnerPlayerId(engine);
     const hasNextPhaseAction = engine.getLegalActions(actorId).some(action => action.type === 'NEXT_PHASE');
 
@@ -134,7 +140,7 @@ export function runBotStep() {
     }
 
     const actor = uiState.game.state.players.find(player => player.id === actorId);
-    const ok = uiState.game.step(action);
+    const ok = stepEngineActionWithPlayback(uiState.game, action);
     if (!ok) {
         console.warn(`[Bot] Invalid action from actor ${actorId}: ${JSON.stringify(action)}`);
         uiState.gameLogFeed.pushUiLog(
@@ -157,6 +163,7 @@ export function scheduleBotStep(delayMs: number = 220) {
 
     if (isOnlineRoomInGame()) return;
     if (!uiState.game || uiState.currentScreen !== Screen.GAME || uiState.game.state.winner || uiState.replaySession) return;
+    if (isPlaybackQueueBusy()) return;
     const actorId = getActionOwnerPlayerId(uiState.game);
     if (!isBotControlledPlayer(actorId)) return;
 
@@ -179,6 +186,7 @@ export function scheduleAutoPhaseAdvance(delayMs: number = 80) {
         if (!shouldAutoAdvancePhase(uiState.game)) return;
         const beforePhase = uiState.game.state.phase;
         uiState.game.nextPhase();
+        consumeEngineUiTraceEvents(uiState.game);
         const afterPhase = uiState.game.state.phase;
         uiState.gameLogFeed.pushUiLog(
             `[Auto] NEXT_PHASE: ${beforePhase} -> ${afterPhase}`,

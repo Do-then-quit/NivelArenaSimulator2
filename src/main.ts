@@ -23,6 +23,7 @@ import { applyPhaseThemeClass, renderGame } from './ui/screens/gameView';
 import { renderMenu, renderDeckBuilder, renderSetup } from './ui/screens/menu';
 import { renderOnlineRoom } from './ui/screens/onlineRoom';
 import { renderBotReplaySetup } from './ui/screens/replaySetup';
+import { clearPlaybackLogHistory, clearPlaybackRuntimeState } from './ui/playbackOrchestrator';
 
 function startGame(
     deck1: Card[],
@@ -33,6 +34,8 @@ function startGame(
     viewConfig?: MatchViewConfig,
 ) {
     clearBotStepTimer();
+    clearPlaybackRuntimeState();
+    clearPlaybackLogHistory();
     uiState.gameLogFeed.clear();
     uiState.gameLogView.manualOverride = false;
     uiState.gameLogView.autoCollapsed = false;
@@ -44,7 +47,17 @@ function startGame(
         ...getDefaultViewConfig(controlConfig),
         ...viewConfig,
     };
-    uiState.game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2, { enableMulligan: true });
+    uiState.playback.enabled = controlConfig.player1Control === 'HUMAN' || controlConfig.player2Control === 'HUMAN';
+    uiState.playback.queueBusy = false;
+    uiState.playback.modalGateUntilMs = 0;
+    uiState.playback.toasts = [];
+    uiState.playback.logEntries = [];
+    uiState.playback.activePulseTargets = [];
+    uiState.game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2, {
+        enableMulligan: true,
+        enableUiTrace: uiState.playback.enabled,
+    });
+    uiState.game.drainUiTraceEvents();
     uiState.botByPlayerId.clear();
     uiState.botLabelByPlayerId.clear();
     const [player1, player2] = uiState.game.state.players;
@@ -81,6 +94,8 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     const currentIndex = resolvedOrderedTestIds.indexOf(testId);
     const { engine, instructions } = uiState.cardTester.setupScenario(testId);
     clearBotStepTimer();
+    clearPlaybackRuntimeState();
+    clearPlaybackLogHistory();
     uiState.gameLogFeed.clear();
     uiState.gameLogView.manualOverride = false;
     uiState.gameLogView.autoCollapsed = false;
@@ -90,6 +105,12 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     uiState.replaySession = null;
     uiState.activeMatchConfig = HUMAN_VS_HUMAN_CONFIG;
     uiState.activeMatchViewConfig = getDefaultViewConfig(HUMAN_VS_HUMAN_CONFIG);
+    uiState.playback.enabled = false;
+    uiState.playback.queueBusy = false;
+    uiState.playback.modalGateUntilMs = 0;
+    uiState.playback.toasts = [];
+    uiState.playback.logEntries = [];
+    uiState.playback.activePulseTargets = [];
     uiState.game = engine;
     uiState.verificationSession = {
         orderedTestIds: resolvedOrderedTestIds,
@@ -249,6 +270,7 @@ function render() {
     if (uiState.currentScreen !== Screen.GAME) {
         clearBotStepTimer();
         clearAutoPhaseAdvanceTimer();
+        clearPlaybackRuntimeState();
         applyPhaseThemeClass(null);
     }
 
