@@ -59,6 +59,43 @@ PORT=8787 npm run relay:start
    - match session id
    - action seq
 
+## Recommended Setup: Vercel + Render Free
+
+This repository is ready for the split deployment below:
+
+- Frontend: Vercel
+- Relay server: Render Free (`npm start` -> `server/index.ts`)
+
+### Render relay deploy
+
+1. Create a new **Web Service** on Render from this repository.
+2. Use these commands:
+   - Build Command: `npm ci`
+   - Start Command: `npm start`
+3. Keep instance count at 1 (room state is in-memory).
+4. After deploy, copy the public URL and convert to `wss://...`.
+
+Example:
+
+- Render URL: `https://nivelarena-relay.onrender.com`
+- WebSocket URL to use in frontend: `wss://nivelarena-relay.onrender.com`
+
+### Vercel frontend env
+
+Set `VITE_ONLINE_WS_URL` in Vercel project settings, then redeploy:
+
+```text
+VITE_ONLINE_WS_URL=wss://<your-render-domain>
+```
+
+### Post-deploy smoke test
+
+1. Open frontend in two browsers/devices.
+2. Host creates room and shares 6-digit code.
+3. Guest joins.
+4. Both submit valid deck and press Ready.
+5. Verify match start and action sync on both clients.
+
 ## MVP Limitations
 
 - No account/authentication (anonymous player names only).

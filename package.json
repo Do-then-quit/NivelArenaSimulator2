@@ -6,6 +6,9 @@
     "scripts": {
         "dev": "vite",
         "build": "tsc && vite build",
+        "start": "tsx server/index.ts",
+        "relay:dev": "tsx watch server/index.ts",
+        "relay:start": "tsx server/index.ts",
         "preview": "vite preview",
         "test": "vitest run",
         "test:bot-soak": "vitest run tests/rules_v2_regression/rules_v2_ai_bot_selfplay_soak_regression.test.ts",
@@ -16,6 +19,10 @@
         "ai:phase4:matrix": "tsx scripts/ai/run_phase4_stress_matrix.ts",
         "ai:phase4.1:promote": "tsx scripts/ai/run_phase41_promotion_gate.ts"
     },
+    "dependencies": {
+        "tsx": "^4.21.0",
+        "ws": "^8.18.3"
+    },
     "devDependencies": {
         "@types/jsdom": "^27.0.0",
         "@types/node": "^25.0.3",
@@ -24,7 +31,6 @@
         "axios": "^1.13.2",
         "jsdom": "^27.4.0",
         "ts-node": "^10.9.2",
-        "tsx": "^4.21.0",
         "typescript": "^5.2.2",
         "vite": "^5.0.0",
         "vitest": "^4.0.16"
