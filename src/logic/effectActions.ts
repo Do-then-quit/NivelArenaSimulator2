@@ -1,4 +1,4 @@
-import { ActionImplementation, Attribute, CardType, Phase, UnitZoneState } from './types';
+import { ActionImplementation, ActivationCondition, Attribute, CardType, Phase, UnitZoneState } from './types';
 import { TargetSelector } from './TargetSelector';
 import {
     autoAttackIfEncounter,
@@ -201,9 +201,14 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
     }
 
     if ((params as any).mode === 'PROMPT_SELECT_SKILL_ZONE_CARD_FOR_ZERO_COST') {
+        const costMax = typeof (params as any).costMax === 'number' ? Math.max(0, (params as any).costMax) : null;
         const skills = ctx.player.skillZone
             .map((card, skillZoneIndex) => ({ card, skillZoneIndex }))
-            .filter(({ card }) => card?.type === CardType.SKILL);
+            .filter(({ card }) => {
+                if (card?.type !== CardType.SKILL) return false;
+                if (costMax === null) return true;
+                return (card.cost || 0) <= costMax;
+            });
 
         if (skills.length === 0) return;
 
@@ -225,8 +230,55 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 options: skills.map(({ skillZoneIndex }) => ({ skillZoneIndex })),
                 followUpSubActions: Array.isArray((params as any).followUpSubActions) ? (params as any).followUpSubActions : [],
                 contextFlagKey: (params as any).contextFlagKey || 'BT06_SKILL_ZERO_COST_SELECTED',
+                allowPartialSelection: (params as any).allowSkip === true,
             },
             effectDescription: '0코스트로 만들 스킬을 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_TRASH_TOP_AND_PROMPT_TRASHED_SKILL_CAST') {
+        const trashCount = Math.max(0, (params as any).count ?? 1);
+        const costMax = typeof (params as any).costMax === 'number' ? Math.max(0, (params as any).costMax) : null;
+        const trashedCards: any[] = [];
+
+        for (let i = 0; i < trashCount; i++) {
+            if (ctx.player.deck.length <= 0) break;
+            const card = ctx.player.deck.pop();
+            if (!card) break;
+            ctx.player.trash.push(card);
+            trashedCards.push(card);
+        }
+
+        const skillOptions = trashedCards.filter(card => {
+            if (!card || card.type !== CardType.SKILL) return false;
+            if (costMax === null) return true;
+            return (card.cost || 0) <= costMax;
+        });
+
+        if (skillOptions.length === 0) return;
+
+        ctx.machine.state.revealedCards = skillOptions as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT06_SELECT_TRASHED_SKILL_TO_CAST',
+            actionValue: {
+                allowPartialSelection: (params as any).allowSkip === true,
+            },
+            effectDescription: '트래시한 카드 중 발동할 스킬을 선택한다.',
             validTargets: 'REVEALED',
             targetSchema: {
                 scope: 'REVEALED',
@@ -263,8 +315,25 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         const drawCount = Math.max(0, targetHandSize - ctx.player.hand.length);
         if (drawCount > 0) {
             const playerIndex = ctx.machine.state.players.indexOf(ctx.player);
-            ctx.machine.drawCard(playerIndex, drawCount);
+            ctx.machine.drawCard(playerIndex, drawCount, {
+                reason: 'EFFECT',
+                sourceActivation: (params as any).__sourceActivation,
+            });
         }
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_051_LOCK_ENCOUNTER_UNTIL_OPP_TURN_END') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const untilTurnCount = ctx.machine.state.turnCount + 1;
+
+        targetZone.temporaryEffects.push({
+            activation: ActivationCondition.PASSIVE,
+            description: '패시브 : 이 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.',
+            action: { type: 'NONE', params: { cannotAttackUntilTurnCount: untilTurnCount } },
+            duration: 'PERMANENT',
+        } as any);
         return;
     }
 
@@ -416,7 +485,10 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             if (sub.targets) {
                 subTargets = TargetSelector.resolve(ctx.machine, sub.targets, ctx);
             }
-            impl(ctx, sub.params || {}, subTargets);
+            impl(ctx, {
+                ...(sub.params || {}),
+                __sourceActivation: (params as any).__sourceActivation,
+            }, subTargets);
         }
     }
 };

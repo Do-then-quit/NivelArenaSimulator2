@@ -150,7 +150,11 @@ export class RuleValidator {
 
             const hasCannotAttackFlag = effectSources.some(({ effect, sourceCard }) => {
                 if (!effect || effect.activation !== ActivationCondition.PASSIVE) return false;
-                if (effect.action?.type !== 'NONE' || effect.action?.params?.cannotAttack !== true) return false;
+                if (effect.action?.type !== 'NONE') return false;
+                const params = effect.action?.params || {};
+                const hasStaticLock = params.cannotAttack === true;
+                const hasTurnCountLock = typeof params.cannotAttackUntilTurnCount === 'number';
+                if (!hasStaticLock && !hasTurnCountLock) return false;
                 const context: any = {
                     player,
                     opponent,
@@ -158,7 +162,9 @@ export class RuleValidator {
                     unitZone: zone,
                     machine: engine,
                 };
-                return engine.effectManager.checkCondition(effect, context);
+                if (!engine.effectManager.checkCondition(effect, context)) return false;
+                if (hasTurnCountLock && engine.state.turnCount > params.cannotAttackUntilTurnCount) return false;
+                return true;
             });
 
             if (hasCannotAttackFlag) return { valid: false, reason: "Unit cannot attack" };

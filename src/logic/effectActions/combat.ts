@@ -175,7 +175,7 @@ export const destroyEncounter: ActionImplementation = (ctx, params, targets) => 
     });
 };
 
-export const destroyUnitAndDrawByHit: ActionImplementation = (ctx, _params, targets) => {
+export const destroyUnitAndDrawByHit: ActionImplementation = (ctx, params, targets) => {
     if (!targets[0]) return;
     const targetZone = targets[0] as UnitZoneState;
     const unit = targetZone.unit;
@@ -189,7 +189,10 @@ export const destroyUnitAndDrawByHit: ActionImplementation = (ctx, _params, targ
 
     ctx.machine.destroyUnit(owner, targetZone, undefined, 'EFFECT');
     if (hit > 0 && controllerIdx !== -1) {
-        ctx.machine.drawCard(controllerIdx, hit);
+        ctx.machine.drawCard(controllerIdx, hit, {
+            reason: 'EFFECT',
+            sourceActivation: params?.__sourceActivation,
+        });
         console.log(`Destroyed ${unit.name} and drew ${hit} cards.`);
     }
 };
@@ -256,7 +259,10 @@ export const drawByTargetHit: ActionImplementation = (ctx, params, targets) => {
 
     if (totalDraw <= 0) return;
     const pIdx = ctx.machine.state.players.indexOf(ctx.player);
-    ctx.machine.drawCard(pIdx, totalDraw);
+    ctx.machine.drawCard(pIdx, totalDraw, {
+        reason: 'EFFECT',
+        sourceActivation: params?.__sourceActivation,
+    });
 };
 
 export const breakthrough: ActionImplementation = (_ctx, _params, _targets) => {
@@ -276,6 +282,9 @@ export const destroyUnitAndDraw: ActionImplementation = (ctx, params, targets) =
     console.log(`Destroyed ${unit.name} for DESTROY_UNIT_AND_DRAW effect.`);
 
     const pIdx = ctx.machine.state.players.indexOf(ctx.player);
-    ctx.machine.drawCard(pIdx, drawCount);
+    ctx.machine.drawCard(pIdx, drawCount, {
+        reason: 'EFFECT',
+        sourceActivation: params?.__sourceActivation,
+    });
     console.log(`Drew ${drawCount} card(s) after destroying unit.`);
 };

@@ -1,4 +1,4 @@
-import { Card } from '../../types';
+import { ActivationCondition, Card } from '../../types';
 import { UnifiedTestCase, UnifiedTestModule, Phase } from './types';
 
 function findAction(
@@ -1361,6 +1361,443 @@ const tests: UnifiedTestCase[] = [
                 { pass: hasLow, message: '2코 이하 카드 선택 가능' },
                 { pass: !hasSelf, message: '자기 자신 제외 필터 적용' },
                 { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '카드 회수 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-043',
+        name: '꿈속의 신부 이클립스 각성',
+        description: '리더 레벨 5 이상에서 각성한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('BT06-043');
+            p1.levelZone.isAwakened = false;
+            p1.leaderLevel = 4;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.LEVEL_UP;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.nextPhase();
+            return [
+                { pass: p1.leaderLevel >= 5, message: '리더 레벨 5 달성' },
+                { pass: p1.levelZone?.isAwakened === true, message: 'BT06-043 각성 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-043-Active',
+        name: '꿈속의 신부 이클립스 트래시 스킬 발동',
+        description: '덱 탑을 트래시하고 그중 스킬을 선택해 효과를 발동한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('BT06-043');
+            if (p1.levelZone) p1.levelZone.isAwakened = true;
+            p1.leaderLevel = 5;
+            p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST11-014')];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const before = p1.hand.length;
+            engine.activateEffect(0, 1, 'LEADER');
+            const pick = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET', (a: any) => (engine.state.revealedCards[a.revealedIndex]?.id || '').startsWith('ST11-014'));
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '트래시 스킬 선택 가능' },
+                { pass: p1.hand.length === before + 2, message: '선택 스킬 효과(2드로우) 발동' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-044',
+        name: '물놀이 요정 레피테아 드로우',
+        description: '스킬 존에 스킬이 1장 이상이면 액티브 메인으로 1드로우한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT06-044');
+            p1.skillZone = [getCard('ST10-015')];
+            p1.deck = [getCard('ST01-002')];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const before = p1.hand.length;
+            engine.activateEffect(0, 0);
+            return [
+                { pass: p1.hand.length === before + 1, message: '조건 충족 시 1드로우' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-045',
+        name: '학교의 여왕 엠마 광전사 디버프',
+        description: '상대 광전사 유닛의 파워를 -500 한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const berserk = getCard('ST01-002');
+            berserk.id = 'BT06-TST-BERSERK';
+            berserk.keywords = [...(berserk.keywords || []), '광전사'];
+            p1.unitZones[0].unit = getCard('BT06-045');
+            p2.unitZones[0].unit = berserk;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p2 = engine.state.players[1];
+            const power = getZonePower(engine, p2, 0);
+            return [
+                { pass: power === (p2.unitZones[0].unit?.power || 0) - 500, message: '광전사 상대 유닛 -500 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-046',
+        name: '미지의 탐구자 디아나 디펜더 부여',
+        description: '아군 유닛 1장에 상대 턴 종료까지 디펜더(+2000)를 부여한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT06-046');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.activateEffect(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p1.id && a.zoneIndex === 1);
+            if (pick) engine.step(pick);
+            const granted = p1.unitZones[1].temporaryEffects.some((effect: any) => effect.activation === 'DEFENDER' && effect.duration === 'OPP_TURN_END');
+            return [
+                { pass: !!pick, message: '아군 대상 선택 가능' },
+                { pass: granted, message: '상대 턴 종료까지 디펜더 효과 부여' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-047',
+        name: '네온 세이비어 안젤리카 스킬 탐색',
+        description: '덱 탑 3 공개 후 스킬 1장 패 획득, 나머지 트래시.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT06-047')];
+            p1.deck = [getCard('ST01-002'), getCard('ST10-015'), getCard('ST01-002')];
+            p1.leaderLevel = 10;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.playUnit(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET', (a: any) => (engine.state.revealedCards[a.revealedIndex]?.type) === 'SKILL');
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '공개 스킬 선택 가능' },
+                { pass: p1.trash.length >= 2, message: '비선택 카드 트래시' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-048',
+        name: '신입 사원 세이르 공격 불가',
+        description: '패시브로 공격 액션이 노출되지 않는다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT06-048');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const canAttack = engine.getLegalActions(p1.id).some((a: any) => a.type === 'ATTACK' && a.attackerZoneIndex === 0);
+            return [
+                { pass: !canAttack, message: '공격 불가 패시브 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-049',
+        name: '정화의 무녀 그라나데 트래시 회수',
+        description: '트래시의 3코 이하 스킬 1장을 패로 회수한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT06-049')];
+            p1.trash = [getCard('ST11-014')];
+            p1.leaderLevel = 10;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.playUnit(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_TRASH_TARGET', (a: any) => p1.trash[a.trashIndex]?.id.startsWith('ST11-014'));
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '3코 이하 스킬 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST11-014')), message: '스킬 회수 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-050',
+        name: '선도부 글레이시아 디펜더',
+        description: '디펜더로 방어 시 +2000을 받는다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p2.unitZones[0].unit = getCard('BT06-050');
+            if (p2.unitZones[0].unit) p2.unitZones[0].unit.power = 2500;
+            p1.unitZones[0].unit = getCard('ST01-002');
+            if (p1.unitZones[0].unit) p1.unitZones[0].unit.power = 4000;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p2 = engine.state.players[1];
+            engine.attack(0);
+            const block = findAction(engine, p2.id, 'RESOLVE_BLOCK', (a: any) => a.shouldBlock === true && a.blockerZoneIndex === 0);
+            if (block) engine.step(block);
+            return [
+                { pass: !!block, message: '조우 방어 선언 가능' },
+                { pass: p2.unitZones[0].unit !== null, message: '디펜더 +2000으로 방어 유닛 생존' },
+                { pass: engine.state.players[0].unitZones[0].unit === null, message: '공격 유닛 트래시' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-051',
+        name: '호박팔이 소녀 소냐 상대 턴 종료까지 공격 봉인',
+        description: '엔트리로 조우 유닛을 상대 턴 종료까지 공격 불가로 만든다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.hand = [getCard('BT06-051')];
+            p1.leaderLevel = 10;
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.playUnit(0, 0);
+            const lockUntil = p2.unitZones[0].temporaryEffects.find((effect: any) => effect.action?.params?.cannotAttackUntilTurnCount !== undefined)?.action?.params?.cannotAttackUntilTurnCount;
+            while (!(engine.currentPlayer.id === p2.id && engine.state.phase === Phase.ATTACK)) {
+                engine.nextPhase();
+                if (engine.state.winner) break;
+            }
+            const canAttackWhileLocked = engine.getLegalActions(p2.id).some((a: any) => a.type === 'ATTACK' && a.attackerZoneIndex === 0);
+            return [
+                { pass: typeof lockUntil === 'number', message: '턴 경계 공격 봉인 마커 부여' },
+                { pass: !canAttackWhileLocked, message: '상대 턴 동안 공격 불가 유지' },
+                { pass: p1.unitZones[0].unit?.id.startsWith('BT06-051') === true, message: '유닛 배치 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-052',
+        name: 'B급 아이돌 헬레나 버프 유닛 강화',
+        description: '버프 키워드 아군 유닛 전체에 +1500을 준다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT06-052');
+            p1.unitZones[1].unit = getCard('BT06-044'); // 키워드: 버프
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const base = p1.unitZones[1].unit?.power || 0;
+            const current = getZonePower(engine, p1, 1);
+            return [
+                { pass: current === base + 1500, message: '버프 키워드 아군 +1500 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-053',
+        name: '대마녀의 후예 셀리아 3코 이하 0코스트화',
+        description: '엔트리 선택으로 스킬 존의 3코 이하 스킬을 턴 한정 0코스트로 만든다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT06-053')];
+            p1.skillZone = [getCard('ST11-014'), getCard('ST10-015')];
+            p1.leaderLevel = 10;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.playUnit(0, 0);
+            const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (a: any) => a.confirm === true);
+            if (confirm) engine.step(confirm);
+            const pick = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET', (a: any) => (engine.state.revealedCards[a.revealedIndex]?.cost || 0) <= 3);
+            if (pick) engine.step(pick);
+            const lowCostSkill = p1.skillZone.find((card: any) => card.id.startsWith('ST11-014')) as any;
+            return [
+                { pass: !!confirm, message: '옵션 확인 선택 가능' },
+                { pass: !!pick, message: '3코 이하 스킬 선택 가능' },
+                { pass: lowCostSkill?.turnCostOverride?.cost === 0, message: '턴 한정 0코스트 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-054',
+        name: '풀 파티 세헤라자드 엔트리 트래시 스킬 발동',
+        description: '엔트리로 덱 상단 3장을 트래시하고 스킬 1장 효과를 발동할 수 있다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT06-054')];
+            p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002'), getCard('ST11-014')];
+            p1.leaderLevel = 10;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.playUnit(0, 0);
+            const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (a: any) => a.confirm === true);
+            if (confirm) engine.step(confirm);
+            const pick = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET');
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!confirm, message: '엔트리 옵션 확인 가능' },
+                { pass: !!pick, message: '트래시된 스킬 선택 가능' },
+                { pass: p1.hand.length >= 2, message: '선택 스킬 효과 발동' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-054-Passive',
+        name: '풀 파티 세헤라자드 패시브 드로우 트리거',
+        description: '상대의 비트리거 효과 드로우에만 턴당 1회 반응하고, 턴이 바뀌면 다시 발동한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-054');
+            p1.deck = [
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+            ];
+            p2.deck = [
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+            ];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const base = p1.hand.length;
+
+            engine.drawCard(1, 1, { reason: 'RULE' });
+            const afterRule = p1.hand.length;
+
+            engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.DAMAGE_TRIGGER });
+            const afterTriggerEffectDraw = p1.hand.length;
+
+            engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.ACTIVE });
+            const afterFirstNonTriggerEffectDraw = p1.hand.length;
+
+            engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.ACTIVE });
+            const afterSecondNonTriggerEffectDraw = p1.hand.length;
+
+            let guard = 0;
+            while (!(engine.currentPlayer.id === p2.id && engine.state.phase === Phase.MAIN) && guard < 24) {
+                engine.nextPhase();
+                guard += 1;
+            }
+
+            engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.DAMAGE_TRIGGER });
+            const afterNextTurnTriggerEffectDraw = p1.hand.length;
+
+            engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.ACTIVE });
+            const afterNextTurnNonTriggerEffectDraw = p1.hand.length;
+
+            return [
+                { pass: afterRule === base, message: '룰 드로우에는 패시브 미발동' },
+                { pass: afterTriggerEffectDraw === base, message: '트리거 효과 드로우에는 패시브 미발동' },
+                { pass: afterFirstNonTriggerEffectDraw === base + 1, message: '비트리거 효과 드로우에 패시브 발동' },
+                { pass: afterSecondNonTriggerEffectDraw === base + 1, message: '같은 턴 추가 드로우에는 재발동 안 함' },
+                { pass: guard < 24, message: '다음 턴 진행 성공' },
+                { pass: afterNextTurnTriggerEffectDraw === base + 1, message: '다음 턴 트리거 효과 드로우에는 여전히 미발동' },
+                { pass: afterNextTurnNonTriggerEffectDraw === base + 2, message: '턴 리셋 후 비트리거 효과 드로우에 재발동' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-055',
+        name: 'DJ 베나카 엔트리 트래시 스킬 발동',
+        description: '엔트리로 덱 상단 3장을 트래시하고 스킬 1장 효과를 발동할 수 있다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT06-055')];
+            p1.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002'), getCard('ST11-014')];
+            p1.leaderLevel = 10;
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.playUnit(0, 0);
+            const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (a: any) => a.confirm === true);
+            if (confirm) engine.step(confirm);
+            const pick = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET');
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!confirm, message: '엔트리 옵션 확인 가능' },
+                { pass: !!pick, message: '트래시된 스킬 선택 가능' },
+                { pass: p1.hand.length >= 2, message: '선택 스킬 효과 발동' },
+            ];
+        },
+    },
+    {
+        testId: 'BT06-056',
+        name: '타락한 날개 올리비에 2디펜더 선택 + 1대미지',
+        description: '디펜더 2장을 선택해 1대미지를 주고 해당 2장을 턴 종료까지 공격 불가로 만든다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT06-056');
+            p1.skillZone = [getCard('ST10-015')];
+            p1.unitZones[1].unit = getCard('BT06-050');
+            p1.unitZones[2].unit = getCard('BT06-048');
+            p2.damage = [];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.activateEffect(0, 0);
+            const pick1 = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p1.id && a.zoneIndex === 1);
+            if (pick1) engine.step(pick1);
+            const pick2 = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) => a.targetPlayerId === p1.id && a.zoneIndex === 2);
+            if (pick2) engine.step(pick2);
+            const confirm = findAction(engine, p1.id, 'CONFIRM_TARGETS');
+            if (confirm) engine.step(confirm);
+
+            engine.state.phase = Phase.ATTACK;
+            const canAttack1 = engine.getLegalActions(p1.id).some((a: any) => a.type === 'ATTACK' && a.attackerZoneIndex === 1);
+            const canAttack2 = engine.getLegalActions(p1.id).some((a: any) => a.type === 'ATTACK' && a.attackerZoneIndex === 2);
+            return [
+                { pass: !!pick1 && !!pick2, message: '디펜더 2장 선택 가능' },
+                { pass: !!confirm, message: '2장 선택 확정 가능' },
+                { pass: p2.damage.length === 1, message: '상대 1대미지 적용' },
+                { pass: !canAttack1 && !canAttack2, message: '선택 유닛 2장 공격 불가 적용' },
             ];
         },
     },

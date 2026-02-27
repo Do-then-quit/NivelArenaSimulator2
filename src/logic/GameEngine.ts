@@ -58,6 +58,13 @@ interface PendingRuntimeState {
     effect: Effect | null;
 }
 
+interface DrawCardMeta {
+    reason?: 'RULE' | 'EFFECT';
+    sourceActivation?: ActivationCondition | string;
+    sourcePlayerId?: string;
+    sourceCardId?: string;
+}
+
 type CardReferenceArea = 'LEVEL' | 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'ZONE_UNIT' | 'ZONE_ITEM' | 'REVEALED';
 
 interface CardReferenceLocator {
@@ -434,6 +441,71 @@ export class GameEngine {
                         ...((sourceContext?.flags as Record<string, any>) || {}),
                     },
                 }, { enqueueOnly: true, batchStep });
+            });
+        });
+
+        this.effectManager.processQueue();
+    }
+
+    public notifyCardsDrawn(player: PlayerState, cards: Card[], sourceMeta: DrawCardMeta = {}) {
+        if (!cards.length) return;
+
+        const reason = sourceMeta.reason ?? 'RULE';
+        const sourceActivation = sourceMeta.sourceActivation;
+        const drawnByEffect = reason === 'EFFECT';
+        const drawnByTriggerEffect = drawnByEffect && sourceActivation === ActivationCondition.DAMAGE_TRIGGER;
+        const drawnByNonTriggerEffect = drawnByEffect && !drawnByTriggerEffect;
+
+        // DRAWN windows currently care about effect-driven draws only.
+        if (!drawnByEffect) return;
+
+        const batchStep = this.incrementAndGetGlobalStep();
+        const [turnPlayer, nonTurnPlayer] = this.getPlayersInTurnOrder();
+        [turnPlayer, nonTurnPlayer].forEach(controller => {
+            const sourceOpponent = this.getOpponentOf(controller);
+            const commonFlags = {
+                drawnCount: cards.length,
+                drawnPlayerId: player.id,
+                isOwnDraw: controller.id === player.id,
+                isOpponentDraw: controller.id !== player.id,
+                drawnByEffect,
+                drawnByTriggerEffect,
+                drawnByNonTriggerEffect,
+                DRAWN_BY_NON_TRIGGER_EFFECT: drawnByNonTriggerEffect,
+                OPPONENT_DREW_NON_TRIGGER_EFFECT: controller.id !== player.id && drawnByNonTriggerEffect,
+            };
+
+            if (controller.levelZone) {
+                this.effectManager.processEffects(ActivationCondition.DRAWN, {
+                    sourceCard: controller.levelZone,
+                    player: controller,
+                    opponent: sourceOpponent,
+                    machine: this,
+                    flags: commonFlags,
+                }, { enqueueOnly: true, batchStep });
+            }
+
+            controller.unitZones.forEach(zone => {
+                if (!zone.unit) return;
+                this.effectManager.processEffects(ActivationCondition.DRAWN, {
+                    sourceCard: zone.unit,
+                    player: controller,
+                    opponent: sourceOpponent,
+                    unitZone: zone,
+                    machine: this,
+                    flags: commonFlags,
+                }, { enqueueOnly: true, batchStep });
+
+                zone.items.forEach(item => {
+                    this.effectManager.processEffects(ActivationCondition.DRAWN, {
+                        sourceCard: item,
+                        player: controller,
+                        opponent: sourceOpponent,
+                        unitZone: zone,
+                        machine: this,
+                        flags: commonFlags,
+                    }, { enqueueOnly: true, batchStep });
+                });
             });
         });
 
@@ -917,7 +989,7 @@ export class GameEngine {
         );
     }
 
-    drawCard(playerIndex: number, count: number = 1): Card[] {
+    drawCard(playerIndex: number, count: number = 1, meta: DrawCardMeta = { reason: 'RULE' }): Card[] {
         const player = this.state.players[playerIndex];
         const drawn: Card[] = [];
         for (let i = 0; i < count; i++) {
@@ -929,6 +1001,7 @@ export class GameEngine {
             player.hand.push(card);
             drawn.push(card);
         }
+        this.notifyCardsDrawn(player, drawn, meta);
         return drawn;
     }
 
@@ -1156,6 +1229,7 @@ export class GameEngine {
         // Switch
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
         this.state.turnCount++;
+        this.clearExpiredTurnCountAttackLocks();
         this.assignInteractionOwner(this.currentPlayer.id);
         this.enterPhase(Phase.LEVEL_UP); // Correctly enter next phase
 
@@ -1164,6 +1238,18 @@ export class GameEngine {
 
         // Process delayed actions (Legacy support, maybe merge into TURN_END effects?)
         this.processDelayedActions();
+    }
+
+    private clearExpiredTurnCountAttackLocks() {
+        this.state.players.forEach(player => {
+            player.unitZones.forEach(zone => {
+                zone.temporaryEffects = zone.temporaryEffects.filter(effect => {
+                    const untilTurnCount = effect?.action?.params?.cannotAttackUntilTurnCount;
+                    if (typeof untilTurnCount !== 'number') return true;
+                    return this.state.turnCount <= untilTurnCount;
+                });
+            });
+        });
     }
 
     private processDelayedActions() {

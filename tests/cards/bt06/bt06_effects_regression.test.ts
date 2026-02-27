@@ -1100,4 +1100,260 @@ describe('BT06 Effects Regression', () => {
         expect(p1.hand.some(card => card.id.startsWith('ST01-002'))).toBe(true);
     });
 
+    it('BT06-043 can cast a trashed skill effect or skip the cast choice', () => {
+        const castEngine = createEngine(60035);
+        const p1Cast = castEngine.state.players[0];
+
+        p1Cast.levelZone = getCard('BT06-043');
+        if (p1Cast.levelZone) p1Cast.levelZone.isAwakened = true;
+        p1Cast.leaderLevel = 5;
+        p1Cast.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST11-014')];
+        castEngine.state.phase = Phase.MAIN;
+
+        const beforeCastHand = p1Cast.hand.length;
+        castEngine.activateEffect(0, 1, 'LEADER');
+        const pick = findAction(
+            castEngine,
+            p1Cast.id,
+            'SELECT_REVEALED_TARGET',
+            action => (castEngine.state.revealedCards[action.revealedIndex]?.id || '').startsWith('ST11-014')
+        );
+        expect(pick).toBeDefined();
+        if (pick) expect(castEngine.step(pick)).toBe(true);
+        expect(p1Cast.hand.length).toBe(beforeCastHand + 2);
+
+        const skipEngine = createEngine(60036);
+        const p1Skip = skipEngine.state.players[0];
+
+        p1Skip.levelZone = getCard('BT06-043');
+        if (p1Skip.levelZone) p1Skip.levelZone.isAwakened = true;
+        p1Skip.leaderLevel = 5;
+        p1Skip.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST11-014')];
+        skipEngine.state.phase = Phase.MAIN;
+
+        const beforeSkipHand = p1Skip.hand.length;
+        skipEngine.activateEffect(0, 1, 'LEADER');
+        const confirmSkip = findAction(
+            skipEngine,
+            p1Skip.id,
+            'CONFIRM_TARGETS'
+        );
+        expect(confirmSkip).toBeDefined();
+        if (confirmSkip) expect(skipEngine.step(confirmSkip)).toBe(true);
+        expect(p1Skip.hand.length).toBe(beforeSkipHand);
+        expect(skipEngine.state.revealedCards.length).toBe(0);
+    });
+
+    it('BT06-046 granted DEFENDER(+2000) lasts until opponent turn end then expires', () => {
+        const engine = createEngine(60037);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.unitZones[0].unit = getCard('BT06-046');
+        p1.unitZones[1].unit = getCard('ST01-002');
+        engine.state.phase = Phase.MAIN;
+
+        engine.activateEffect(0, 0);
+        const pick = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p1.id && action.zoneIndex === 1
+        );
+        expect(pick).toBeDefined();
+        if (pick) expect(engine.step(pick)).toBe(true);
+
+        const grantedNow = p1.unitZones[1].temporaryEffects.some(effect =>
+            effect.activation === ActivationCondition.DEFENDER &&
+            effect.duration === 'OPP_TURN_END'
+        );
+        expect(grantedNow).toBe(true);
+
+        advanceUntil(
+            engine,
+            () => engine.currentPlayer.id === p2.id && engine.state.phase === Phase.ATTACK,
+            40
+        );
+        const stillGranted = p1.unitZones[1].temporaryEffects.some(effect => effect.activation === ActivationCondition.DEFENDER);
+        expect(stillGranted).toBe(true);
+
+        advanceUntil(
+            engine,
+            () => engine.currentPlayer.id === p1.id && engine.state.phase === Phase.MAIN,
+            70
+        );
+        const removed = p1.unitZones[1].temporaryEffects.some(effect => effect.activation === ActivationCondition.DEFENDER);
+        expect(removed).toBe(false);
+    });
+
+    it('BT06-048 passive removes ATTACK legal action from the unit', () => {
+        const engine = createEngine(60038);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('BT06-048');
+        engine.state.phase = Phase.ATTACK;
+
+        const canAttack = engine.getLegalActions(p1.id).some(action =>
+            action.type === 'ATTACK' && action.attackerZoneIndex === 0
+        );
+        expect(canAttack).toBe(false);
+    });
+
+    it('BT06-051 lock blocks attack through opponent turn and is released after that turn ends', () => {
+        const engine = createEngine(60039);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.hand = [getCard('BT06-051')];
+        p1.leaderLevel = 10;
+        p2.unitZones[0].unit = getCard('ST01-002');
+        engine.state.phase = Phase.MAIN;
+
+        engine.playUnit(0, 0);
+        const lockedUntil = p2.unitZones[0].temporaryEffects.find(effect =>
+            typeof effect?.action?.params?.cannotAttackUntilTurnCount === 'number'
+        )?.action?.params?.cannotAttackUntilTurnCount as number | undefined;
+        expect(typeof lockedUntil).toBe('number');
+
+        advanceUntil(
+            engine,
+            () => engine.currentPlayer.id === p2.id && engine.state.phase === Phase.ATTACK,
+            40
+        );
+        const canAttackWhileLocked = engine.getLegalActions(p2.id).some(action =>
+            action.type === 'ATTACK' && action.attackerZoneIndex === 0
+        );
+        expect(canAttackWhileLocked).toBe(false);
+
+        advanceUntil(
+            engine,
+            () =>
+                engine.currentPlayer.id === p2.id &&
+                engine.state.phase === Phase.ATTACK &&
+                typeof lockedUntil === 'number' &&
+                engine.state.turnCount > lockedUntil,
+            90
+        );
+        const canAttackAfterRelease = engine.getLegalActions(p2.id).some(action =>
+            action.type === 'ATTACK' && action.attackerZoneIndex === 0
+        );
+        expect(canAttackAfterRelease).toBe(true);
+    });
+
+    it('BT06-053 zero-cost selection is filtered to <=3 cost skills in skill zone', () => {
+        const engine = createEngine(60040);
+        const p1 = engine.state.players[0];
+
+        p1.hand = [getCard('BT06-053')];
+        p1.skillZone = [getCard('ST11-014'), getCard('ST10-015')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+
+        engine.playUnit(0, 0);
+        const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', action => action.confirm === true);
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+
+        expect(engine.state.revealedCards.length).toBe(1);
+        const pick = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET');
+        expect(pick).toBeDefined();
+        if (pick) expect(engine.step(pick)).toBe(true);
+
+        const lowCost = p1.skillZone.find(card => card.id.startsWith('ST11-014')) as any;
+        const highCost = p1.skillZone.find(card => card.id.startsWith('ST10-015')) as any;
+        expect(lowCost?.turnCostOverride?.cost).toBe(0);
+        expect(lowCost?.turnCostOverride?.turnCount).toBe(engine.state.turnCount);
+        expect(highCost?.turnCostOverride).toBeUndefined();
+    });
+
+    it('BT06-054 DRAWN passive triggers on opponent non-trigger effect draw once per turn and resets next turn', () => {
+        const engine = createEngine(60041);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('BT06-054');
+        p1.deck = Array.from({ length: 10 }, () => getCard('ST01-002'));
+        engine.state.phase = Phase.MAIN;
+
+        const before = p1.hand.length;
+
+        engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.ACTIVE });
+        expect(p1.hand.length).toBe(before + 1);
+
+        engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.ACTIVE });
+        expect(p1.hand.length).toBe(before + 1);
+
+        advanceUntil(
+            engine,
+            () => engine.currentPlayer.id === engine.state.players[1].id && engine.state.phase === Phase.MAIN,
+            40
+        );
+
+        engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.ACTIVE });
+        expect(p1.hand.length).toBe(before + 2);
+    });
+
+    it('BT06-054 DRAWN passive does not trigger on rule draw or trigger-effect draw', () => {
+        const engine = createEngine(60042);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('BT06-054');
+        p1.deck = Array.from({ length: 10 }, () => getCard('ST01-002'));
+        engine.state.phase = Phase.MAIN;
+
+        const before = p1.hand.length;
+
+        engine.drawCard(1, 1);
+        engine.drawCard(1, 1, { reason: 'EFFECT', sourceActivation: ActivationCondition.DAMAGE_TRIGGER });
+
+        expect(p1.hand.length).toBe(before);
+    });
+
+    it('BT06-056 selects 2 defenders, deals 1 damage, and locks those units from attacking this turn', () => {
+        const engine = createEngine(60043);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.unitZones[0].unit = getCard('BT06-056');
+        p1.skillZone = [getCard('ST11-014')];
+        p1.unitZones[1].unit = getCard('BT06-050');
+        p1.unitZones[2].unit = getCard('BT06-048');
+        p2.damage = [];
+        engine.state.phase = Phase.MAIN;
+
+        engine.activateEffect(0, 0);
+
+        const pick1 = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p1.id && action.zoneIndex === 1
+        );
+        const pick2 = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p1.id && action.zoneIndex === 2
+        );
+        expect(pick1).toBeDefined();
+        expect(pick2).toBeDefined();
+        if (pick1) expect(engine.step(pick1)).toBe(true);
+        if (pick2) expect(engine.step(pick2)).toBe(true);
+
+        const confirm = findAction(engine, p1.id, 'CONFIRM_TARGETS');
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+
+        expect(p2.damage.length).toBe(1);
+
+        engine.state.phase = Phase.ATTACK;
+        const canAttack1 = engine.getLegalActions(p1.id).some(action =>
+            action.type === 'ATTACK' && action.attackerZoneIndex === 1
+        );
+        const canAttack2 = engine.getLegalActions(p1.id).some(action =>
+            action.type === 'ATTACK' && action.attackerZoneIndex === 2
+        );
+        expect(canAttack1).toBe(false);
+        expect(canAttack2).toBe(false);
+    });
+
 });

@@ -307,7 +307,11 @@ export class EffectManager {
                 }
             }
 
-            const params = { ...action.params, duration: resolvedDuration };
+            const params = {
+                ...action.params,
+                duration: resolvedDuration,
+                __sourceActivation: effect.activation,
+            };
             actionImpl(context, params, targets);
             this.engine.checkRuleProcessing();
         } else {

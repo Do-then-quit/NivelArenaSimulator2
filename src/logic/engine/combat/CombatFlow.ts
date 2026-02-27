@@ -71,7 +71,12 @@ export function stepBattleResolution(engine: any, attackerZone: UnitZoneState) {
     // INFILTRATION (Rule 10.2.3.1): If Infiltration & No Blocker -> Draw 1
     if (!engine.state.combatBlocked && (engine.hasKeywordInZone(attackerZone, '침투') || engine.hasKeywordInZone(attackerZone, 'INFILTRATION'))) {
         console.log("Infiltration Triggered.");
-        engine.drawCard(engine.state.turnPlayerIndex, 1);
+        engine.drawCard(engine.state.turnPlayerIndex, 1, {
+            reason: 'EFFECT',
+            sourceActivation: ActivationCondition.ATTACKER,
+            sourcePlayerId: engine.currentPlayer.id,
+            sourceCardId: attackerZone.unit?.id,
+        });
     }
 
     // 3. Resolution

@@ -41,6 +41,7 @@ export enum ActivationCondition {
     UNIT_TRASHED = 'UNIT_TRASHED', // New: Triggered when any unit is moved to trash
     ESCAPE = 'ESCAPE', // New: When unit is returned to deck bottom from field (Entry of Main Phase)
     HAND_TRASHED = 'HAND_TRASHED', // New: Triggered when cards are moved from hand to trash
+    DRAWN = 'DRAWN', // New: Triggered when cards are drawn
 }
 
 export type ActionType =

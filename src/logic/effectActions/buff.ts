@@ -111,7 +111,10 @@ export const buffPowerAndDrawIfTrashed: ActionImplementation = (ctx, params, tar
                     const pIdx = ctx.machine.state.players.indexOf(ctx.player);
                     const drawCount = params.drawCount ?? 1;
                     if (drawCount > 0) {
-                        ctx.machine.drawCard(pIdx, drawCount);
+                        ctx.machine.drawCard(pIdx, drawCount, {
+                            reason: 'EFFECT',
+                            sourceActivation: params?.__sourceActivation,
+                        });
                     }
                 }
             }

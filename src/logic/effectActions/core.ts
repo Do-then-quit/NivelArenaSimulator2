@@ -1,5 +1,12 @@
 import { ActionImplementation, ActivationCondition, Phase, UnitZoneState } from '../types';
 
+function resolveEffectDrawMeta(params: any) {
+    return {
+        reason: 'EFFECT' as const,
+        sourceActivation: params?.__sourceActivation,
+    };
+}
+
 export const gainLevel: ActionImplementation = (ctx, params) => {
     const amount = params.value || 1;
     const pIdx = ctx.machine.state.players.indexOf(ctx.player);
@@ -24,7 +31,7 @@ export const drawCard: ActionImplementation = (ctx, params) => {
         targetPlayer.deck.unshift(...revealed);
     } else {
         const count = params.count || 1;
-        const drawn = ctx.machine.drawCard(targetPlayerIndex, count);
+        const drawn = ctx.machine.drawCard(targetPlayerIndex, count, resolveEffectDrawMeta(params));
         if (targetPlayer === ctx.player) {
             (ctx as any).lastDrawnCards = drawn;
         }
@@ -134,7 +141,7 @@ export const drawDynamic: ActionImplementation = (ctx, params, targets) => {
 
     if (count > 0) {
         const pIdx = ctx.machine.state.players.indexOf(player);
-        ctx.machine.drawCard(pIdx, count);
+        ctx.machine.drawCard(pIdx, count, resolveEffectDrawMeta(params));
         console.log(`Drew ${count} cards dynamically.`);
     }
 };
@@ -244,7 +251,7 @@ export const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => 
     const discardCount = params.discardCount || 1;
     const pIdx = ctx.machine.state.players.indexOf(player);
 
-    const drawnCards = ctx.machine.drawCard(pIdx, drawCount);
+    const drawnCards = ctx.machine.drawCard(pIdx, drawCount, resolveEffectDrawMeta(params));
     console.log(`${player.name} drew ${drawnCards.length} cards for DRAW_THEN_DISCARD effect.`);
 
     if (drawnCards.length === 0) return;

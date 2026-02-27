@@ -720,5 +720,240 @@ export const BT06_EFFECTS: Record<string, Effect[]> = {
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
         },
     ],
+    "BT06-043": [
+        {
+            activation: ActivationCondition.AWAKEN,
+            description: "각성 : 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다.",
+            condition: { type: 'LEADER_LEVEL', value: 5 },
+            action: { type: 'AWAKEN' as any, params: {} },
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "각성면 액티브: 메인 - 자신의 덱 맨 위에서 카드를 1장 트래시한다. 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_TRASH_TOP_AND_PROMPT_TRASHED_SKILL_CAST',
+                    count: 1,
+                    allowSkip: true,
+                },
+            },
+        },
+    ],
+    "BT06-044": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "버프 1 액티브: 메인 - 자신의 스킬 존에 있는 스킬이 1장 이상이라면 카드를 1장 드로우한다.",
+            condition: { type: 'SKILL_ZONE_COUNT_MIN', value: 1 },
+            action: { type: 'DRAW', params: { count: 1 } },
+        },
+    ],
+    "BT06-045": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 필드에 있는 광전사를 가진 모든 상대 유닛의 파워-500.",
+            targets: {
+                scope: 'OPP_FIELD',
+                type: 'UNIT',
+                count: 0,
+                filters: [{ type: 'HAS_KEYWORD', value: '광전사' }],
+                selectMode: 'ALL',
+            },
+            action: { type: 'BUFF_POWER', params: { value: -500 } },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+1000.",
+            action: { type: 'BUFF_POWER', params: { value: 1000 } },
+        },
+    ],
+    "BT06-046": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "액티브: 메인 - 필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「디펜더 : 이 방어가 끝날 때까지 파워+2000」을 얻는다.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.DEFENDER,
+                        description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+                        action: { type: 'BUFF_POWER', params: { value: 2000 } },
+                        duration: 'BATTLE_END',
+                    },
+                },
+            },
+            duration: 'OPP_TURN_END',
+        },
+    ],
+    "BT06-047": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 스킬 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+            action: {
+                type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND',
+                params: {
+                    count: 3,
+                    remainingDestination: 'TRASH',
+                    filters: [{ type: 'UNIT_TYPE', value: CardType.SKILL }],
+                },
+            },
+        },
+    ],
+    "BT06-048": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 이 유닛은 공격할 수 없다.",
+            action: { type: 'NONE', params: { cannotAttack: true } },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
+    "BT06-049": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 트래시 존에서 3코스트 이하인 스킬 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.SKILL },
+                    { type: 'COST_LIMIT', value: 3 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-050": [
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
+    "BT06-051": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 조우 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+            targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_051_LOCK_ENCOUNTER_UNTIL_OPP_TURN_END' },
+            },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
+    "BT06-052": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 필드에 있는 버프를 가진 모든 자신 유닛의 파워+1500.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 0,
+                filters: [{ type: 'HAS_KEYWORD', value: '버프' }],
+                selectMode: 'ALL',
+            },
+            action: { type: 'BUFF_POWER', params: { value: 1500 } },
+        },
+    ],
+    "BT06-053": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 스킬 존에서 3코스트 이하인 스킬을 1장 고를 수 있다. 그러면 그 스킬은 이 턴이 끝날 때까지 0코스트가 된다.",
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'PROMPT_SELECT_SKILL_ZONE_CARD_FOR_ZERO_COST',
+                    costMax: 3,
+                    allowSkip: true,
+                    contextFlagKey: 'BT06_053_SKILL_SELECTED',
+                },
+            },
+        },
+    ],
+    "BT06-054": [
+        {
+            id: 'BT06-054-DRAWN-PASSIVE',
+            activation: ActivationCondition.DRAWN,
+            description: "패시브 : 자신과 상대의 턴마다 1번씩, 상대가 트리거 이외의 효과로 카드를 드로우했다면 카드를 1장 드로우한다.",
+            condition: {
+                type: 'ONCE_PER_TURN',
+                value: { contextFlag: 'OPPONENT_DREW_NON_TRIGGER_EFFECT' },
+            },
+            action: { type: 'DRAW', params: { count: 1 } },
+        },
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_TRASH_TOP_AND_PROMPT_TRASHED_SKILL_CAST',
+                    count: 3,
+                    allowSkip: true,
+                },
+            },
+        },
+    ],
+    "BT06-055": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 덱 맨 위에서 카드를 3장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_TRASH_TOP_AND_PROMPT_TRASHED_SKILL_CAST',
+                    count: 3,
+                    allowSkip: true,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
+    "BT06-056": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "버프 1 액티브: 메인 - 자신의 스킬 존에 있는 스킬이 1장 이상이라면 필드에 있는 디펜더를 가진 자신 유닛을 2장 고른다. 그러면 상대에게 1대미지를 준다. 고른 2장은 이 턴이 끝날 때까지 공격할 수 없다.",
+            condition: { type: 'SKILL_ZONE_COUNT_MIN', value: 1 },
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 2,
+                filters: [{ type: 'HAS_KEYWORD', value: '디펜더' }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'DAMAGE', params: { value: 1 } },
+                        { type: 'LOCK_ATTACK_UNTIL_TURN_END', params: {} },
+                    ],
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
 
 };

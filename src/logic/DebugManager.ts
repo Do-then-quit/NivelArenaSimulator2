@@ -6,6 +6,7 @@ import { registerST01DebugScenarios } from './debugScenarios/st01';
 import { registerST02DebugScenarios } from './debugScenarios/st02';
 import { registerST03DebugScenarios } from './debugScenarios/st03';
 import { registerBT01DebugScenarios } from './debugScenarios/bt01';
+import { registerBT06DebugScenarios } from './debugScenarios/bt06';
 
 export class DebugManager {
     game: GameEngine;
@@ -20,6 +21,7 @@ export class DebugManager {
         registerST02DebugScenarios(this);
         registerST03DebugScenarios(this);
         registerBT01DebugScenarios(this);
+        registerBT06DebugScenarios(this);
     }
 
     private getPlayer(playerIndex: number): PlayerState {

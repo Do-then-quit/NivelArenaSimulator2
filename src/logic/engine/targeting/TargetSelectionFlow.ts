@@ -1,5 +1,5 @@
 import { TargetSelector } from '../../TargetSelector';
-import type { GameContext, GameState } from '../../types';
+import { ActivationCondition, Phase, type GameContext, type GameState } from '../../types';
 
 function getTargetCard(target: any): any | null {
     if (!target) return null;
@@ -128,7 +128,11 @@ export function confirmTargets(engine: any) {
     const effect = runtime?.effect;
     const context = runtime?.context;
     const targetSchema = pending.targetSchema;
-    if (!effect || !context || !targetSchema) return;
+    if (!context || !targetSchema) return;
+    const allowsEffectlessConfirm =
+        pending.actionType === 'BT06_SELECT_SKILL_ZONE_CARD' ||
+        pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST';
+    if (!effect && !allowsEffectlessConfirm) return;
 
     // Validation - can be empty if no valid targets were found among revealed
 
@@ -226,6 +230,12 @@ export function confirmTargets(engine: any) {
             player.deck.unshift(...finalOrder);
         }
         engine.state.revealedCards = [];
+    }
+
+    if (pending.actionType === 'BT06_SELECT_SKILL_ZONE_CARD' || pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST') {
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
     }
 
     // Execute Effect via Manager
@@ -495,6 +505,31 @@ export function selectRevealedTarget(engine: any, index: number) {
 
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer) return;
+        const sourceOpponent = engine.state.players.find((player: any) => player.id !== sourcePlayer.id);
+        if (!sourceOpponent) return;
+
+        const batchStep = engine.incrementAndGetGlobalStep();
+        const castContext: GameContext = {
+            sourceCard: card,
+            player: sourcePlayer,
+            opponent: sourceOpponent,
+            machine: engine,
+        };
+
+        engine.state.revealedCards = [];
+        engine.effectManager.processEffects(ActivationCondition.ACTIVE, castContext, { enqueueOnly: true, batchStep });
+        if (engine.state.phase === Phase.MAIN) {
+            engine.effectManager.processEffects(ActivationCondition.ACTIVE_MAIN, castContext, { enqueueOnly: true, batchStep });
+        }
+
+        engine.handleEffectCompletion(context, pending);
+        engine.effectManager.processQueue();
         return;
     }
 
