@@ -1433,24 +1433,45 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'BT06-045',
-        name: '학교의 여왕 엠마 광전사 디버프',
-        description: '상대 광전사 유닛의 파워를 -500 한다.',
+        name: '학교의 여왕 엠마 패시브 광전사 디버프',
+        description: '패시브로 상대 광전사 유닛만 파워를 -500 한다.',
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
-            const berserk = getCard('ST01-002');
-            berserk.id = 'BT06-TST-BERSERK';
-            berserk.keywords = [...(berserk.keywords || []), '광전사'];
+            const oppBerserk = getCard('ST01-002');
+            oppBerserk.id = 'BT06-TST-OPP-BERSERK';
+            oppBerserk.keywords = [...(oppBerserk.keywords || []), '광전사'];
+
+            const allyBerserk = getCard('ST01-002');
+            allyBerserk.id = 'BT06-TST-ALLY-BERSERK';
+            allyBerserk.keywords = [...(allyBerserk.keywords || []), '광전사'];
+
+            const oppNonBerserk = getCard('ST10-005');
+            oppNonBerserk.id = 'BT06-TST-OPP-NON-BERSERK';
+            oppNonBerserk.keywords = (oppNonBerserk.keywords || []).filter((keyword: string) => keyword !== '광전사');
+
             p1.unitZones[0].unit = getCard('BT06-045');
-            p2.unitZones[0].unit = berserk;
+            p1.unitZones[1].unit = allyBerserk;
+            p2.unitZones[0].unit = oppBerserk;
+            p2.unitZones[1].unit = oppNonBerserk;
             engine.state.turnPlayerIndex = 0;
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
+            const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
-            const power = getZonePower(engine, p2, 0);
+            const oppBerserkPower = getZonePower(engine, p2, 0);
+            const oppNonBerserkPower = getZonePower(engine, p2, 1);
+            const allyBerserkPower = getZonePower(engine, p1, 1);
+
+            const oppBerserkBase = p2.unitZones[0].unit?.power || 0;
+            const oppNonBerserkBase = p2.unitZones[1].unit?.power || 0;
+            const allyBerserkBase = p1.unitZones[1].unit?.power || 0;
+
             return [
-                { pass: power === (p2.unitZones[0].unit?.power || 0) - 500, message: '광전사 상대 유닛 -500 적용' },
+                { pass: oppBerserkPower === oppBerserkBase - 500, message: '상대 광전사 유닛 -500 적용' },
+                { pass: oppNonBerserkPower === oppNonBerserkBase, message: '상대 비광전사 유닛은 변화 없음' },
+                { pass: allyBerserkPower === allyBerserkBase, message: '아군 광전사 유닛은 변화 없음' },
             ];
         },
     },
@@ -1671,7 +1692,7 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
-        testId: 'BT06-054-Passive',
+        testId: 'BT06-054',
         name: '풀 파티 세헤라자드 패시브 드로우 트리거',
         description: '상대의 비트리거 효과 드로우에만 턴당 1회 반응하고, 턴이 바뀌면 다시 발동한다.',
         setup: (engine, getCard) => {
