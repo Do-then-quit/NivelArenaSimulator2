@@ -92,6 +92,15 @@ function createPromptOptionCard(id: string, name: string, text: string, imageUrl
     };
 }
 
+function cardHasKeywordLike(card: any, keyword: string): boolean {
+    if (!card || !keyword) return false;
+    if (Array.isArray(card.keywords) && card.keywords.includes(keyword)) return true;
+    if (Array.isArray(card.effects)) {
+        return card.effects.some((effect: any) => String(effect?.description || '').includes(keyword));
+    }
+    return false;
+}
+
 const complexAction: ActionImplementation = (ctx, params, _targets) => {
     if ((params as any).mode === 'GUARDIAN_TRANSFER_POWER') {
         if (!_targets || _targets.length < 2) return;
@@ -290,6 +299,129 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         };
         ctx.machine.setPendingRuntime(ctx, null);
         ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_058_RETURN_ENCOUNTER_AND_SET_HIT') {
+        if (!ctx.unitZone || !ctx.unitZone.unit) return;
+        const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
+        if (laneIndex < 0) return;
+
+        const encounterZone = ctx.opponent.unitZones[laneIndex];
+        if (!encounterZone?.unit) return;
+        if ((encounterZone.unit.cost || 0) < 4) return;
+
+        returnUnitAndItemsToHand(ctx, {}, [encounterZone]);
+        buffHit(ctx, { value: 1, mode: 'SET', duration: 'TURN_END' }, [ctx.unitZone]);
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_062_PROMPT_UNIQUE_TRASH_SKILLS') {
+        const cardType = (params as any).cardType || CardType.SKILL;
+        const excludeKeyword = (params as any).excludeKeyword || '트리거';
+        const requiredCount = Math.max(1, (params as any).requiredCount ?? 3);
+
+        const uniqueByName = new Map<string, any>();
+        ctx.player.trash.forEach((card: any) => {
+            if (!card || card.type !== cardType) return;
+            if (excludeKeyword && cardHasKeywordLike(card, excludeKeyword)) return;
+            const nameKey = String(card.name || card.id || '').trim();
+            if (!nameKey) return;
+            if (!uniqueByName.has(nameKey)) {
+                uniqueByName.set(nameKey, card);
+            }
+        });
+
+        const options = Array.from(uniqueByName.values());
+        if (options.length < requiredCount) return;
+
+        const selectionSchema = {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: requiredCount,
+            selectMode: 'MANUAL',
+        } as const;
+
+        ctx.machine.state.revealedCards = options as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT06_062_SELECT_UNIQUE_TRASH_SKILLS',
+            actionValue: {
+                allowPartialSelection: false,
+            },
+            effectDescription: '카드명이 다른 비트리거 스킬 3장을 고른다.',
+            validTargets: 'REVEALED',
+            targetSchema: selectionSchema,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: 'BT06-062 unique trash skills resolve',
+            targets: selectionSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_062_RESOLVE_UNIQUE_TRASH_SKILLS',
+                    damageValue: (params as any).damageValue ?? 2,
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_062_RESOLVE_UNIQUE_TRASH_SKILLS') {
+        const selectedCards = (_targets || []).filter(card => ctx.player.trash.includes(card));
+        if (selectedCards.length === 0) return;
+
+        const movedToDeckBottom: any[] = [];
+        selectedCards.forEach((card: any) => {
+            const trashIndex = ctx.player.trash.indexOf(card);
+            if (trashIndex === -1) return;
+            const [removed] = ctx.player.trash.splice(trashIndex, 1);
+            if (removed) movedToDeckBottom.push(removed);
+        });
+        if (movedToDeckBottom.length > 0) {
+            ctx.player.deck.unshift(...movedToDeckBottom);
+        }
+
+        const damageValue = Math.max(0, (params as any).damageValue ?? 2);
+        if (damageValue > 0) {
+            ctx.machine.dealDamage(ctx.opponent, damageValue);
+        }
+
+        if (ctx.unitZone?.unit) {
+            ctx.unitZone.temporaryEffects.push({
+                activation: ActivationCondition.PASSIVE,
+                description: '패시브 : 이 유닛은 이 턴이 끝날 때까지 공격할 수 없다.',
+                action: { type: 'NONE', params: { cannotAttack: true } },
+                duration: 'TURN_END',
+            } as any);
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_070_GRANT_ATTACKER_OPPONENT_DRAW_UNTIL_OPP_TURN_END') {
+        const untilTurnCount = ctx.machine.state.turnCount + Math.max(0, (params as any).untilTurnCountOffset ?? 1);
+        (_targets || []).forEach((target: any) => {
+            if (!target || !('temporaryEffects' in target) || !target.unit) return;
+            target.temporaryEffects.push({
+                activation: ActivationCondition.ATTACKER,
+                description: '어태커 : 상대는 카드를 1장 드로우한다.',
+                action: {
+                    type: 'DRAW',
+                    params: {
+                        count: 1,
+                        target: 'OPPONENT',
+                        untilTurnCount,
+                    },
+                },
+                duration: 'PERMANENT',
+            } as any);
+        });
         return;
     }
 

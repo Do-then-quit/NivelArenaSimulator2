@@ -1244,7 +1244,12 @@ export class GameEngine {
         this.state.players.forEach(player => {
             player.unitZones.forEach(zone => {
                 zone.temporaryEffects = zone.temporaryEffects.filter(effect => {
-                    const untilTurnCount = effect?.action?.params?.cannotAttackUntilTurnCount;
+                    const attackLockUntil = effect?.action?.params?.cannotAttackUntilTurnCount;
+                    const genericUntil = effect?.action?.params?.untilTurnCount;
+                    const untilTurnCount =
+                        typeof attackLockUntil === 'number'
+                            ? attackLockUntil
+                            : (typeof genericUntil === 'number' ? genericUntil : undefined);
                     if (typeof untilTurnCount !== 'number') return true;
                     return this.state.turnCount <= untilTurnCount;
                 });

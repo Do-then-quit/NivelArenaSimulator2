@@ -225,4 +225,34 @@ describe('game view fit layout', () => {
         expect(fallbackName?.textContent).toContain('Option 1');
         expect(fallbackText?.textContent).toContain('Activate selected [ACTIVE:ATTACK] effect.');
     });
+
+    it('renders a modal confirm button for multi-select revealed targeting when confirm action is legal', async () => {
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        const game = createMockGame();
+        const cardA = createCard('r-1', 'Revealed A');
+        const cardB = createCard('r-2', 'Revealed B');
+        const cardC = createCard('r-3', 'Revealed C');
+        game.state.revealedCards = [cardA, cardB, cardC];
+        game.state.interactionMode = 'SELECT_TARGET';
+        game.state.pendingEffect = {
+            validTargets: 'REVEALED',
+            selectedTargets: [cardA, cardB, cardC],
+            targetSchema: { count: 3, selectMode: 'MANUAL' },
+        };
+        game.getLegalActions = () => [{ type: 'CONFIRM_TARGETS', actorPlayerId: 'P1' }];
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = game;
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.expanded = true;
+        uiState.gameLogView.autoCollapsed = false;
+
+        renderGame();
+
+        const confirmBtn = document.getElementById('confirm-targets-modal-btn') as HTMLButtonElement | null;
+        expect(confirmBtn).not.toBeNull();
+        expect(confirmBtn?.disabled).toBe(false);
+    });
 });

@@ -518,6 +518,22 @@ export class EffectManager {
                 const bonus = this.getAttackCountReferenceBonus(context);
                 return baseCount + bonus >= min;
             }
+            case 'TRASH_DISTINCT_NAME_COUNT_MIN': {
+                const config = typeof value === 'number' ? { min: value } : (value || {});
+                const min = Math.max(0, Number(config.min ?? 1));
+                const cardType = config.cardType;
+                const excludeKeyword = config.excludeKeyword;
+                const distinctNames = new Set<string>();
+
+                context.player.trash.forEach((card: any) => {
+                    if (!card) return;
+                    if (cardType && card.type !== cardType) return;
+                    if (excludeKeyword && this.cardHasKeyword(card, excludeKeyword)) return;
+                    distinctNames.add(String(card.name || card.id || ''));
+                });
+
+                return distinctNames.size >= min;
+            }
             default:
                 return true;
         }

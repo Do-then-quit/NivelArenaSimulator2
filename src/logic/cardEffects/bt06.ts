@@ -955,5 +955,354 @@ export const BT06_EFFECTS: Record<string, Effect[]> = {
             action: { type: 'BUFF_POWER', params: { value: 2000 } },
         },
     ],
+    "BT06-057": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 상대의 턴이 끝날 때까지 「패시브 : 조우 유닛은 광전사를 얻는다」를 얻는다.",
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.PASSIVE,
+                        description: "패시브 : 조우 유닛은 광전사를 얻는다.",
+                        targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 0, selectMode: 'ALL' },
+                        action: {
+                            type: 'GRANT_EFFECT',
+                            params: {
+                                effect: {
+                                    activation: ActivationCondition.PASSIVE,
+                                    description: '광전사',
+                                    action: { type: 'NONE', params: { keyword: 'BERSERK' } },
+                                    duration: 'TURN_END',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            duration: 'OPP_TURN_END',
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+3000.",
+            action: { type: 'BUFF_POWER', params: { value: 3000 } },
+        },
+    ],
+    "BT06-058": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "버프 2 액티브: 어택 - 자신의 스킬 존에 있는 스킬이 2장 이상이고 조우 유닛이 4코스트 이상이라면 조우 유닛과 그 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다. 이 유닛의 히트가 이 턴이 끝날 때까지 1이 된다.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'CONTEXT_FLAG', value: 'PHASE_ATTACK' },
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 2 },
+                ],
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_058_RETURN_ENCOUNTER_AND_SET_HIT' },
+            },
+        },
+    ],
+    "BT06-059": [
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 카드를 1장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 1 } },
+        },
+    ],
+    "BT06-060": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "버프 1 액티브: 어택 - 자신의 스킬 존에 있는 스킬이 1장 이상이라면 자신의 트래시 존에서 트리거를 가지지 않고 3코스트 이상인 스킬 카드를 1장 골라 덱 맨 아래에 놓는다. 그러면 상대에게 1대미지를 준다.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'CONTEXT_FLAG', value: 'PHASE_ATTACK' },
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 1 },
+                ],
+            },
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.SKILL },
+                    { type: 'NOT_HAS_KEYWORD', value: '트리거' },
+                    { type: 'COST_MIN', value: 3 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'MOVE_FROM_TRASH_TO_DECK_BOTTOM', params: {} },
+                        { type: 'DAMAGE', params: { value: 1 } },
+                    ],
+                },
+            },
+        },
+    ],
+    "BT06-061": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 상대의 턴이 끝날 때까지 상대는 패에서 4코스트 이상인 유닛을 이 유닛이 있는 레인에 배치할 수 없다.",
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.PASSIVE,
+                        description: "패시브 : 상대는 패에서 4코스트 이상인 유닛을 이 유닛이 있는 레인에 배치할 수 없다.",
+                        action: { type: 'NONE', params: { preventOpponentPlayUnitCostMin: 4 } },
+                    },
+                },
+            },
+            duration: 'OPP_TURN_END',
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "버프 1 액티브: 메인 - 자신의 스킬 존에 있는 스킬이 1장 이상이라면 상대의 턴이 끝날 때까지 「패시브 : 조우 유닛은 광전사를 얻는다」를 얻는다.",
+            condition: { type: 'SKILL_ZONE_COUNT_MIN', value: 1 },
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.PASSIVE,
+                        description: "패시브 : 조우 유닛은 광전사를 얻는다.",
+                        targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 0, selectMode: 'ALL' },
+                        action: {
+                            type: 'GRANT_EFFECT',
+                            params: {
+                                effect: {
+                                    activation: ActivationCondition.PASSIVE,
+                                    description: '광전사',
+                                    action: { type: 'NONE', params: { keyword: 'BERSERK' } },
+                                    duration: 'TURN_END',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            duration: 'OPP_TURN_END',
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+3000.",
+            action: { type: 'BUFF_POWER', params: { value: 3000 } },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-062": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 필드에 있는 히트가 1 이하인 상대 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+            targets: {
+                scope: 'OPP_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'HIT_LIMIT', value: 1 }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_051_LOCK_ENCOUNTER_UNTIL_OPP_TURN_END' },
+            },
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "버프 2 액티브: 메인 - 자신의 스킬 존에 있는 스킬이 2장 이상이라면 자신의 트래시 존에서 트리거를 가지지 않고 카드명이 다른 스킬 카드 3장을 골라 덱 맨 아래에 원하는 순서대로 놓는다. 그러면 상대에게 2대미지를 준다. 이 유닛은 이 턴이 끝날 때까지 공격할 수 없다.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'SKILL_ZONE_COUNT_MIN', value: 2 },
+                    {
+                        type: 'TRASH_DISTINCT_NAME_COUNT_MIN',
+                        value: { min: 3, cardType: CardType.SKILL, excludeKeyword: '트리거' },
+                    },
+                ],
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_062_PROMPT_UNIQUE_TRASH_SKILLS',
+                    requiredCount: 3,
+                    cardType: CardType.SKILL,
+                    excludeKeyword: '트리거',
+                    damageValue: 2,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-063": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 덱 맨 위에서 카드를 5장 트래시할 수 있다. 그러면 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_TRASH_TOP_AND_PROMPT_TRASHED_SKILL_CAST',
+                    count: 5,
+                    allowSkip: true,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-064": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "버프 2 액티브: 메인 - 자신의 스킬 존에 있는 스킬이 2장 이상이라면 상대의 턴이 끝날 때까지 「패시브 : 조우 유닛은 광전사를 얻는다」를 얻는다.",
+            condition: { type: 'SKILL_ZONE_COUNT_MIN', value: 2 },
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.PASSIVE,
+                        description: "패시브 : 조우 유닛은 광전사를 얻는다.",
+                        targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 0, selectMode: 'ALL' },
+                        action: {
+                            type: 'GRANT_EFFECT',
+                            params: {
+                                effect: {
+                                    activation: ActivationCondition.PASSIVE,
+                                    description: '광전사',
+                                    action: { type: 'NONE', params: { keyword: 'BERSERK' } },
+                                    duration: 'TURN_END',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            duration: 'OPP_TURN_END',
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "가디언 : 방벽[3]",
+            action: { type: 'NONE', params: { guardianBarrierCost: 3 } },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-065": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "카드를 1장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 1 } },
+        },
+    ],
+    "BT06-066": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 덱 맨 위에서 카드를 1장 트래시한다. 이 효과로 트래시한 카드 중 스킬 카드를 1장 골라 효과를 발동할 수 있다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_TRASH_TOP_AND_PROMPT_TRASHED_SKILL_CAST',
+                    count: 1,
+                    allowSkip: true,
+                },
+            },
+        },
+    ],
+    "BT06-067": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 자신 유닛을 1장 골라, 상대의 턴이 끝날 때까지 파워+2000.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'OPP_TURN_END',
+        },
+    ],
+    "BT06-068": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 패를 1장 골라 트래시할 수 있다. 그러면 카드를 2장 드로우한다.",
+            optional: true,
+            targets: { scope: 'MY_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'DISCARD', params: { target: 'SELF', count: 1 } },
+                        { type: 'DRAW', params: { count: 2 } },
+                    ],
+                },
+            },
+        },
+    ],
+    "BT06-069": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「패시브 : 조우 유닛은 광전사를 얻는다」를 얻는다.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.PASSIVE,
+                        description: "패시브 : 조우 유닛은 광전사를 얻는다.",
+                        targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 0, selectMode: 'ALL' },
+                        action: {
+                            type: 'GRANT_EFFECT',
+                            params: {
+                                effect: {
+                                    activation: ActivationCondition.PASSIVE,
+                                    description: '광전사',
+                                    action: { type: 'NONE', params: { keyword: 'BERSERK' } },
+                                    duration: 'TURN_END',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            duration: 'OPP_TURN_END',
+        },
+    ],
+    "BT06-070": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 2장까지 고른다. 고른 유닛은 모두 상대의 턴이 끝날 때까지 「어태커 : 상대는 카드를 1장 드로우한다」를 얻는다.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 2, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_070_GRANT_ATTACKER_OPPONENT_DRAW_UNTIL_OPP_TURN_END',
+                    allowPartialSelection: true,
+                    untilTurnCountOffset: 1,
+                },
+            },
+        },
+    ],
 
 };

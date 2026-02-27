@@ -1356,4 +1356,64 @@ describe('BT06 Effects Regression', () => {
         expect(canAttack2).toBe(false);
     });
 
+    it('BT06-062 confirm clears revealed prompt state and resolves once', () => {
+        const engine = createEngine(60044);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        const skillA = getCard('ST11-014');
+        skillA.id = 'BT06-062-R-A';
+        skillA.name = 'BT06-062 R A';
+        const skillB = getCard('ST10-015');
+        skillB.id = 'BT06-062-R-B';
+        skillB.name = 'BT06-062 R B';
+        const skillC = getCard('ST11-013');
+        skillC.id = 'BT06-062-R-C';
+        skillC.name = 'BT06-062 R C';
+
+        p1.unitZones[0].unit = getCard('BT06-062');
+        p1.skillZone = [getCard('ST10-015'), getCard('ST11-014')];
+        p1.trash = [skillA, skillB, skillC];
+        p1.deck = [getCard('ST01-002')];
+        p2.damage = [];
+        engine.state.phase = Phase.MAIN;
+
+        engine.activateEffect(0, 1);
+        expect(engine.state.revealedCards.length).toBe(3);
+
+        const pickA = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => engine.state.revealedCards[action.revealedIndex]?.id === 'BT06-062-R-A'
+        );
+        const pickB = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => engine.state.revealedCards[action.revealedIndex]?.id === 'BT06-062-R-B'
+        );
+        const pickC = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => engine.state.revealedCards[action.revealedIndex]?.id === 'BT06-062-R-C'
+        );
+        expect(pickA).toBeDefined();
+        expect(pickB).toBeDefined();
+        expect(pickC).toBeDefined();
+        if (pickA) expect(engine.step(pickA)).toBe(true);
+        if (pickB) expect(engine.step(pickB)).toBe(true);
+        if (pickC) expect(engine.step(pickC)).toBe(true);
+
+        const confirm = findAction(engine, p1.id, 'CONFIRM_TARGETS');
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+
+        expect(p2.damage.length).toBe(2);
+        expect(engine.state.revealedCards.length).toBe(0);
+        expect(engine.state.interactionMode).toBe('NORMAL');
+        expect(engine.state.pendingEffect).toBeNull();
+    });
+
 });

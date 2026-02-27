@@ -185,7 +185,8 @@ export interface EffectCondition {
     | 'ITEM_COUNT_GTE_ENCOUNTER_HIT'
     | 'CONTEXT_FLAG'
     | 'SKILL_ZONE_COUNT_MIN'
-    | 'ATTACK_COUNT_THIS_TURN_MIN';
+    | 'ATTACK_COUNT_THIS_TURN_MIN'
+    | 'TRASH_DISTINCT_NAME_COUNT_MIN';
     value?: any;
     trashedUnitCostMin?: number; // New: for triggers like Cinderella's UNIT_TRASHED
     friendlyOnly?: boolean; // New: check if trashed unit belongs to player

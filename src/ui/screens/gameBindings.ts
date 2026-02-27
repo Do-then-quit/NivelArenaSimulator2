@@ -686,12 +686,15 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             item.addEventListener('mouseleave', () => uiState.hoverPreview.hide());
         });
 
-        document.getElementById('confirm-targets-btn')?.addEventListener('click', () => {
+        const onConfirmTargets = () => {
             if (!canLocalHumanInput()) return;
             dispatchEngineAction({ type: 'CONFIRM_TARGETS', actorPlayerId: actorId });
             logAction('[????좏깮] ?뺤씤');
             uiState.render?.();
-        });
+        };
+
+        document.getElementById('confirm-targets-btn')?.addEventListener('click', onConfirmTargets);
+        document.getElementById('confirm-targets-modal-btn')?.addEventListener('click', onConfirmTargets);
     }
 
     if (uiState.game.state.interactionMode === 'SELECT_OPTIONAL' && localHumanCanInput) {

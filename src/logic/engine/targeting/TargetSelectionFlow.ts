@@ -238,6 +238,11 @@ export function confirmTargets(engine: any) {
         return;
     }
 
+    if (pending.actionType === 'BT06_062_SELECT_UNIQUE_TRASH_SKILLS') {
+        // Clear prompt cards before resolving to avoid stale revealed modal after confirm.
+        engine.state.revealedCards = [];
+    }
+
     // Execute Effect via Manager
     engine.effectManager.executeEffect(effect, context, pending.selectedTargets ?? []);
 

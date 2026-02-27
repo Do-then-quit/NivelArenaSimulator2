@@ -397,13 +397,26 @@ function renderRevealedCardsModal() {
     const isSelecting = uiState.game.state.interactionMode === 'SELECT_TARGET' && pending?.validTargets === 'REVEALED';
     const isTakeAll = pending?.actionType === 'TAKE_ALL_REVEALED';
     const filter = pending?.targetSchema?.filters?.[0];
+    const actorPlayerId = uiState.game ? getActionOwnerPlayerId(uiState.game) : '';
+    const canConfirm = isSelecting
+        ? uiState.game.getLegalActions(actorPlayerId).some(action => action.type === 'CONFIRM_TARGETS')
+        : false;
+    const targetCount = pending?.targetSchema?.count ?? 1;
+    const selectedCount = pending?.selectedTargets?.length ?? 0;
+    const selectionGuide = !isSelecting
+        ? 'Cards revealed by effect'
+        : isTakeAll
+            ? 'Cards matching the filter will be added to hand'
+            : targetCount > 1
+                ? `Select ${targetCount} cards (${selectedCount}/${targetCount}) then confirm`
+                : 'Select a card to add to hand';
 
     return `
         <div class="modal-overlay">
             <div class="trash-modal">
                 <h3>Revealed Cards</h3>
                 <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
-                    ${isTakeAll ? 'Cards matching the filter will be added to hand' : (isSelecting ? 'Select a card to add to hand' : 'Cards revealed by effect')}
+                    ${selectionGuide}
                 </p>
                 <div class="trash-grid">
                     ${uiState.game.state.revealedCards.map((c, i) => {
@@ -422,6 +435,11 @@ function renderRevealedCardsModal() {
                     `;
     }).join('')}
                 </div>
+                ${isSelecting ? `
+                    <div class="modal-actions">
+                        <button id="confirm-targets-modal-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                    </div>
+                ` : ''}
             </div>
         </div>
     `;

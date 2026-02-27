@@ -12,6 +12,14 @@ export class RuleValidator {
         if (!card || card.type !== CardType.UNIT) return { valid: false, reason: "Card is not a unit" };
 
         const zone = player.unitZones[zoneIndex];
+        const opponent = engine.state.players.find(p => p.id !== player.id);
+        if (opponent) {
+            const lockedLane = opponent.unitZones[zoneIndex];
+            const lockCostMin = this.getPreventOpponentPlayUnitCostMin(engine, opponent, lockedLane);
+            if (typeof lockCostMin === 'number' && card.cost >= lockCostMin) {
+                return { valid: false, reason: `Lane lock: cannot place unit cost ${lockCostMin} or higher in this lane` };
+            }
+        }
 
         // 6.4.1.1.3 Check if unit was already placed in this zone this turn
         if (zone.hasPlacedUnitThisTurn) {
@@ -232,9 +240,53 @@ export class RuleValidator {
         return skillCard?.cost || 0;
     }
 
+    private static getPreventOpponentPlayUnitCostMin(engine: GameEngine, sourcePlayer: PlayerState, sourceZone: any): number | null {
+        if (!sourceZone) return null;
+        const sourceOpponent = engine.state.players.find(player => player.id !== sourcePlayer.id);
+        if (!sourceOpponent) return null;
+
+        const minValues: number[] = [];
+        const evaluateEffectList = (sourceCard: any, effects: any[]) => {
+            if (!sourceCard || !Array.isArray(effects)) return;
+            effects.forEach((effect: any) => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+                if (effect.action?.type !== 'NONE') return;
+                const minCost = effect.action?.params?.preventOpponentPlayUnitCostMin;
+                if (typeof minCost !== 'number') return;
+                const context: any = {
+                    player: sourcePlayer,
+                    opponent: sourceOpponent,
+                    sourceCard,
+                    unitZone: sourceZone,
+                    machine: engine,
+                };
+                if (!engine.effectManager.checkCondition(effect, context)) return;
+                minValues.push(minCost);
+            });
+        };
+
+        if (sourceZone.unit) {
+            evaluateEffectList(sourceZone.unit, sourceZone.unit.effects || []);
+        }
+        if (Array.isArray(sourceZone.items)) {
+            sourceZone.items.forEach((item: any) => evaluateEffectList(item, item?.effects || []));
+        }
+        if (Array.isArray(sourceZone.temporaryEffects)) {
+            const fallbackCard = sourceZone.unit || sourcePlayer.levelZone || null;
+            evaluateEffectList(fallbackCard, sourceZone.temporaryEffects);
+        }
+
+        if (minValues.length === 0) return null;
+        return Math.min(...minValues);
+    }
+
     private static cardHasKeyword(card: any, keyword: string): boolean {
         if (!card) return false;
-        if (card.keywords?.includes(keyword)) return true;
+        const aliases = this.getKeywordAliases(keyword);
+        if (Array.isArray(card.keywords) && card.keywords.some((k: string) => aliases.includes(k))) return true;
+        if (this.isBerserkKeyword(keyword)) {
+            return Array.isArray(card.effects) && card.effects.some((effect: any) => this.effectDirectlyDefinesKeyword(effect, keyword));
+        }
         if (card.effects?.some((effect: any) => (effect.description || '').includes(keyword))) return true;
         return false;
     }
@@ -243,13 +295,25 @@ export class RuleValidator {
         if (!zone || !zone.unit) return false;
         if (this.cardHasKeyword(zone.unit, keyword) || this.cardHasKeyword(zone.unit, 'BERSERK')) return true;
         if (Array.isArray(zone.items) && zone.items.some((item: any) => this.cardHasKeyword(item, keyword) || this.cardHasKeyword(item, 'BERSERK'))) return true;
-        if (Array.isArray(zone.temporaryEffects) && zone.temporaryEffects.some((effect: any) => (effect.description || '').includes(keyword) || (effect.description || '').includes('BERSERK'))) return true;
+        if (Array.isArray(zone.temporaryEffects) && zone.temporaryEffects.some((effect: any) => this.effectDirectlyDefinesKeyword(effect, keyword) || this.effectDirectlyDefinesKeyword(effect, 'BERSERK'))) return true;
 
         const allSources: Array<{ owner: PlayerState; zone: any; card: any }> = [];
         engine.state.players.forEach(sourceOwner => {
             sourceOwner.unitZones.forEach(sourceZone => {
                 if (sourceZone.unit) allSources.push({ owner: sourceOwner, zone: sourceZone, card: sourceZone.unit });
                 sourceZone.items.forEach((item: any) => allSources.push({ owner: sourceOwner, zone: sourceZone, card: item }));
+                if (sourceZone.unit && Array.isArray(sourceZone.temporaryEffects)) {
+                    sourceZone.temporaryEffects.forEach((effect: any) => {
+                        allSources.push({
+                            owner: sourceOwner,
+                            zone: sourceZone,
+                            card: {
+                                ...sourceZone.unit!,
+                                effects: [effect],
+                            },
+                        });
+                    });
+                }
             });
             if (sourceOwner.levelZone) allSources.push({ owner: sourceOwner, zone: null, card: sourceOwner.levelZone });
         });
@@ -264,8 +328,10 @@ export class RuleValidator {
                 if (effect.action?.type !== 'GRANT_EFFECT') return false;
                 const granted = effect.action?.params?.effect;
                 if (!granted) return false;
-                const grantedText = granted.description || '';
-                if (!grantedText.includes(keyword) && !grantedText.includes('BERSERK')) return false;
+                if (
+                    !this.effectContainsGrantedKeyword(granted, keyword) &&
+                    !this.effectContainsGrantedKeyword(granted, 'BERSERK')
+                ) return false;
 
                 const context: any = {
                     player: source.owner,
@@ -279,5 +345,35 @@ export class RuleValidator {
                 return TargetSelector.isValidTarget(engine, effect.targets, context, zone);
             });
         });
+    }
+
+    private static isBerserkKeyword(keyword: string): boolean {
+        return keyword === '광전사' || keyword === 'BERSERK';
+    }
+
+    private static getKeywordAliases(keyword: string): string[] {
+        if (this.isBerserkKeyword(keyword)) return ['광전사', 'BERSERK'];
+        return [keyword];
+    }
+
+    private static effectDirectlyDefinesKeyword(effect: any, keyword: string): boolean {
+        if (!effect) return false;
+        const aliases = this.getKeywordAliases(keyword);
+        const paramsKeyword = effect.action?.params?.keyword;
+        if (typeof paramsKeyword === 'string' && aliases.includes(paramsKeyword)) return true;
+
+        const normalized = String(effect.description || '').replace(/\u00a0/g, ' ').trim();
+        return aliases.some((alias) => {
+            const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const labelPattern = new RegExp(`^[\\s「\\[]*${escaped}\\s*:`);
+            return labelPattern.test(normalized);
+        });
+    }
+
+    private static effectContainsGrantedKeyword(effect: any, keyword: string): boolean {
+        if (!effect) return false;
+        if (this.effectDirectlyDefinesKeyword(effect, keyword)) return true;
+        if (effect.action?.type !== 'GRANT_EFFECT') return false;
+        return this.effectContainsGrantedKeyword(effect.action?.params?.effect, keyword);
     }
 }

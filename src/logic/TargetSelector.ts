@@ -304,6 +304,7 @@ export class TargetSelector {
             case 'BOTH_FIELDS': inScope = player.unitZones.includes(target) || (opponent ? opponent.unitZones.includes(target) : false); break;
             case 'MY_LEADER': inScope = (target === player.levelZone); break;
             case 'OPP_LEADER': inScope = opponent ? (target === opponent.levelZone) : false; break;
+            case 'ENCOUNTER':
             case 'ENCOUNTER_UNIT':
                 if (context.unitZone) {
                     const idx = player.unitZones.indexOf(context.unitZone);
