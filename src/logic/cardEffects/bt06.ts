@@ -1304,5 +1304,233 @@ export const BT06_EFFECTS: Record<string, Effect[]> = {
             },
         },
     ],
+    "BT06-071": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 트래시 존에서 [트리거]를 가지지 않고 파워가 4000 이상인 유닛 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'UNIT',
+                count: 1,
+                filters: [
+                    { type: 'NOT_HAS_KEYWORD', value: '트리거' },
+                    { type: 'POWER_MIN', value: 4000 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-072": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 「[패시브] 이 유닛이 있는 레인에 상대 유닛이 배치되면 그 유닛의 히트가 1이 된다」를 얻는다. 그 유닛의 조우 유닛의 히트가 상대의 턴이 끝날 때까지 1이 된다.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.PASSIVE,
+                        description: "패시브 : 이 유닛이 있는 레인의 조우 유닛의 히트가 1이 된다.",
+                        targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 0, selectMode: 'ALL' },
+                        action: { type: 'BUFF_HIT', params: { value: 1, mode: 'SET' } },
+                    },
+                },
+            },
+            duration: 'OPP_TURN_END',
+        },
+    ],
+    "BT06-073": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "카드를 3장 드로우한다. 그러면 상대는 카드를 1장 드로우한다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'DRAW', params: { count: 3 } },
+                        { type: 'DRAW', params: { count: 1, target: 'OPPONENT' } },
+                    ],
+                },
+            },
+        },
+    ],
+    "BT06-074": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_051_LOCK_ENCOUNTER_UNTIL_OPP_TURN_END' },
+            },
+        },
+    ],
+    "BT06-075": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 [엔트리]를 가진 자신 유닛을 1장 고른다. 그 유닛이 가진 [엔트리] 효과를 하나 골라 발동한다.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'HAS_KEYWORD', value: '엔트리' }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'PROMPT_SELECT_ENTRY_EFFECT' },
+            },
+        },
+    ],
+    "BT06-076": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 모든 상대 유닛은 상대의 턴이 끝날 때까지 광전사를 얻는다.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 0, selectMode: 'ALL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_GRANT_BERSERK_UNTIL_OPP_TURN_END',
+                    untilTurnCountOffset: 1,
+                },
+            },
+        },
+    ],
+    "BT06-077": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 [디펜더]를 가진 자신 유닛의 수만큼 카드를 드로우한다. 상대의 턴이 끝날 때까지 상대는 [어태커] 효과를 발동할 수 없다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_077_DRAW_BY_DEFENDER_AND_LOCK_OPP_ATTACKER',
+                    untilTurnCountOffset: 1,
+                },
+            },
+        },
+    ],
+    "BT06-078": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 패에서 스킬 카드를 1장 골라 트래시한다. 그러면 상대에게 1대미지를 준다.",
+            targets: {
+                scope: 'MY_HAND',
+                type: 'CARD',
+                count: 1,
+                filters: [{ type: 'UNIT_TYPE', value: CardType.SKILL }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'DISCARD', params: { target: 'SELF', count: 1 } },
+                        { type: 'DAMAGE', params: { value: 1 } },
+                    ],
+                },
+            },
+        },
+    ],
+    "BT06-079": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 트래시 존에서 〈데이드림 콜〉 이외의 [트리거]를 가지지 않고 카드명이 다른 스킬 카드를 3장 골라 덱 맨 아래에 원하는 순서대로 놓는다. 그러면 상대에게 1대미지를 준다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_062_PROMPT_UNIQUE_TRASH_SKILLS',
+                    requiredCount: 3,
+                    cardType: CardType.SKILL,
+                    excludeKeyword: '트리거',
+                    excludeName: '데이드림 콜',
+                    damageValue: 1,
+                },
+            },
+        },
+    ],
+    "BT06-080": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 패를 모두 트래시한다. 패가 5장이 될 때까지 카드를 드로우한다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT06_080_DISCARD_ALL_AND_DRAW_TO_HAND_SIZE',
+                    targetHandSize: 5,
+                },
+            },
+        },
+    ],
+    "BT06-081": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 모든 상대 유닛은 상대의 턴이 끝날 때까지 파워-5000.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 0, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: -5000 } },
+            duration: 'OPP_TURN_END',
+        },
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "상대는 카드를 1장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 1, target: 'OPPONENT' } },
+        },
+    ],
+    "BT06-082": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "상대에게 2대미지를 준다.",
+            action: { type: 'DAMAGE', params: { value: 2 } },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "자신의 트래시 존에서 코스트가 자신의 리더 레벨 이하인 유닛 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.UNIT },
+                    { type: 'COST_LIMIT_BY_LEADER_LEVEL' },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT06-083": [
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
+    "BT06-084": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "장착조건 6코스트 이하",
+            condition: { type: 'COST_COMPARISON', value: { operator: 'LTE', cost: 6 } },
+            action: { type: 'NONE', params: {} },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "가디언 : 상쇄〈사신의 수의〉",
+            action: {
+                type: 'NONE',
+                params: {
+                    guardianBlockItemCost: {
+                        itemName: '사신의 수의',
+                        itemCardId: 'BT06-084',
+                        count: 1,
+                    },
+                },
+            },
+        },
+    ],
 
 };

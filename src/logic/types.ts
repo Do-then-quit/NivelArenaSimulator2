@@ -111,6 +111,7 @@ export interface TargetFilter {
     | 'COST_LIMIT'
     | 'HIT_LIMIT'
     | 'COST_MIN'
+    | 'POWER_MIN'
     | 'POWER_LIMIT'
     | 'COST_LOWER_THAN_COST_PAYMENT'
     | 'COST_LOWER_THAN_SKILL_ZONE_COUNT'
@@ -334,6 +335,7 @@ export interface PlayerState {
     unitZones: [UnitZoneState, UnitZoneState, UnitZoneState]; // 3 zones
     skillZone: Card[];
     lockedActivationsUntilTurnEnd: Partial<Record<ActivationCondition, boolean>>;
+    lockedActivationsUntilTurnCount: Partial<Record<ActivationCondition, number>>;
 }
 
 export interface GameState {

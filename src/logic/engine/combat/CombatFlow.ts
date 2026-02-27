@@ -1,5 +1,78 @@
 import { ActivationCondition, Phase, type Card, type Effect, type GameContext, type UnitZoneState } from '../../types';
 
+interface GuardianBlockItemCost {
+    itemName?: string;
+    itemCardId?: string;
+    count: number;
+}
+
+function getGuardianBlockItemCost(
+    engine: any,
+    owner: any,
+    opponent: any,
+    zone: UnitZoneState
+): GuardianBlockItemCost | null {
+    if (!zone?.unit) return null;
+
+    const effectSources: Array<{ sourceCard: Card; effect: Effect }> = [];
+    if (zone.unit.effects) {
+        zone.unit.effects.forEach(effect => effectSources.push({ sourceCard: zone.unit!, effect }));
+    }
+    zone.items.forEach(item => {
+        if (item.effects) {
+            item.effects.forEach(effect => effectSources.push({ sourceCard: item, effect }));
+        }
+    });
+    zone.temporaryEffects.forEach(effect => {
+        effectSources.push({ sourceCard: zone.unit!, effect });
+    });
+
+    for (const { sourceCard, effect } of effectSources) {
+        if (!effect || effect.activation !== ActivationCondition.PASSIVE) continue;
+        if (effect.action?.type !== 'NONE') continue;
+        const raw = effect.action?.params?.guardianBlockItemCost;
+        if (!raw || typeof raw !== 'object') continue;
+
+        const context: GameContext = {
+            sourceCard,
+            player: owner,
+            opponent,
+            unitZone: zone,
+            machine: engine,
+        };
+        if (!engine.effectManager.checkCondition(effect, context)) continue;
+
+        return {
+            itemName: typeof raw.itemName === 'string' ? raw.itemName : undefined,
+            itemCardId: typeof raw.itemCardId === 'string' ? raw.itemCardId : undefined,
+            count: Math.max(1, Number(raw.count) || 1),
+        };
+    }
+
+    return null;
+}
+
+function isGuardianBlockItemMatch(item: Card, spec: GuardianBlockItemCost): boolean {
+    if (!item) return false;
+    if (spec.itemCardId && item.id !== spec.itemCardId) return false;
+    if (spec.itemName && !String(item.name || '').includes(spec.itemName)) return false;
+    return true;
+}
+
+function getGuardianBlockPayableItems(zone: UnitZoneState, spec: GuardianBlockItemCost): Card[] {
+    if (!Array.isArray(zone?.items)) return [];
+    return zone.items.filter(item => isGuardianBlockItemMatch(item, spec));
+}
+
+function failBlockDeclaration(engine: any) {
+    engine.state.combatBlocked = false;
+    engine.state.pendingBlockerZoneIndex = null;
+    engine.assignInteractionOwner(engine.currentPlayer.id);
+    if (engine.state.effectQueue.length === 0) {
+        engine.advanceCombatStep();
+    }
+}
+
 export function advanceCombatStep(engine: any) {
     // Combat progression must pause while any interaction window is open.
     if (engine.state.interactionMode !== 'NORMAL') {
@@ -262,15 +335,76 @@ export function resolveBlock(engine: any, shouldBlock: boolean, blockerZoneIndex
     }
 
     const isGuardianBlock = selectedBlockerZoneIndex !== attackerZoneIndex;
+    const guardianBlockItemCost = isGuardianBlock
+        ? getGuardianBlockItemCost(engine, engine.opponentPlayer, engine.currentPlayer, selectedBlockerZone)
+        : null;
+
+    if (isGuardianBlock && guardianBlockItemCost) {
+        const payableItems = getGuardianBlockPayableItems(selectedBlockerZone, guardianBlockItemCost);
+        if (payableItems.length < guardianBlockItemCost.count) {
+            failBlockDeclaration(engine);
+            return;
+        }
+
+        if (guardianBlockItemCost.count === 1 && payableItems.length === 1) {
+            const itemToTrash = payableItems[0];
+            const itemIndex = selectedBlockerZone.items.indexOf(itemToTrash);
+            if (itemIndex === -1) {
+                failBlockDeclaration(engine);
+                return;
+            }
+            const [removed] = selectedBlockerZone.items.splice(itemIndex, 1);
+            if (!removed) {
+                failBlockDeclaration(engine);
+                return;
+            }
+            engine.opponentPlayer.trash.push(removed);
+            engine.commitBlockDeclaration(selectedBlockerZoneIndex);
+            return;
+        }
+
+        const controllerPlayerId = engine.opponentPlayer.id;
+        engine.state.interactionMode = 'SELECT_TARGET';
+        engine.state.pendingEffect = {
+            sourceCard: selectedBlockerZone.unit,
+            sourcePlayerId: engine.opponentPlayer.id,
+            controllerPlayerId,
+            actionType: 'GUARDIAN_BLOCK_ITEM_COST',
+            actionValue: {
+                blockerZoneIndex: selectedBlockerZoneIndex,
+                itemName: guardianBlockItemCost.itemName,
+                itemCardId: guardianBlockItemCost.itemCardId,
+                requiredCount: guardianBlockItemCost.count,
+            },
+            effectDescription: 'Guardian block item cost',
+            validTargets: 'MY_FIELD_ITEMS',
+            targetSchema: {
+                scope: 'MY_FIELD_ITEMS',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+                filters: [
+                    { type: 'EQUIPPED_ON_SOURCE_UNIT' },
+                    ...(guardianBlockItemCost.itemName ? [{ type: 'HAS_NAME', value: guardianBlockItemCost.itemName }] : []),
+                ],
+            },
+            selectedTargets: [],
+        };
+        engine.setPendingRuntime({
+            sourceCard: selectedBlockerZone.unit,
+            player: engine.opponentPlayer,
+            opponent: engine.currentPlayer,
+            unitZone: selectedBlockerZone,
+            machine: engine,
+        }, null);
+        engine.assignInteractionOwner(controllerPlayerId);
+        return;
+    }
+
     const barrierCost = isGuardianBlock ? engine.getGuardianBarrierCost(selectedBlockerZone) : 0;
     if (isGuardianBlock && barrierCost > 0) {
         if (engine.opponentPlayer.hand.length < barrierCost) {
-            engine.state.combatBlocked = false;
-            engine.state.pendingBlockerZoneIndex = null;
-            engine.assignInteractionOwner(engine.currentPlayer.id);
-            if (engine.state.effectQueue.length === 0) {
-                engine.advanceCombatStep();
-            }
+            failBlockDeclaration(engine);
             return;
         }
 
@@ -382,6 +516,14 @@ export function getAvailableBlockerZoneIndexes(engine: any, attackerZoneIndex: n
             if (hasCannotBlockFlag(engine, zone, defender, defenderOpponent)) return;
             if (!(engine.hasKeywordInZone(zone, '가디언') || engine.hasKeywordInZone(zone, 'GUARDIAN'))) return;
             if (engine.isBlockPreventedByBreakthrough(attackerZone, zone)) return;
+
+            const guardianBlockItemCost = getGuardianBlockItemCost(engine, defender, defenderOpponent, zone);
+            if (guardianBlockItemCost) {
+                const payableItems = getGuardianBlockPayableItems(zone, guardianBlockItemCost);
+                if (payableItems.length < guardianBlockItemCost.count) return;
+                candidateSet.add(zoneIndex);
+                return;
+            }
 
             const barrierCost = engine.getGuardianBarrierCost(zone);
             if (defender.hand.length < barrierCost) return;

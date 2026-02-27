@@ -142,6 +142,18 @@ export class TargetSelector {
                             return (card.power || 0) <= filter.value;
                         });
                         break;
+                    case 'POWER_MIN':
+                        candidates = candidates.filter(c => {
+                            if (c && typeof c === 'object' && 'unit' in c) {
+                                const zone = c as UnitZoneState;
+                                const owner = this.getOwner(engine, zone);
+                                return engine.getUnitPower(zone, owner) >= filter.value;
+                            }
+                            const card = this.getCardFromTarget(c);
+                            if (!card) return false;
+                            return (card.power || 0) >= filter.value;
+                        });
+                        break;
                     case 'HIT_LIMIT':
                         candidates = candidates.filter(c => {
                             if (c && typeof c === 'object' && 'unit' in c) {
@@ -405,6 +417,18 @@ export class TargetSelector {
                         {
                             const card = this.getCardFromTarget(target);
                             if (!card || (card.power || 0) > filter.value) return false;
+                        }
+                        break;
+                    case 'POWER_MIN':
+                        if (target && typeof target === 'object' && 'unit' in target) {
+                            const zoneTarget = target as UnitZoneState;
+                            const owner = this.getOwner(engine, zoneTarget);
+                            if (engine.getUnitPower(zoneTarget, owner) < filter.value) return false;
+                            break;
+                        }
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || (card.power || 0) < filter.value) return false;
                         }
                         break;
                     case 'COST_LOWER_THAN_COST_PAYMENT':

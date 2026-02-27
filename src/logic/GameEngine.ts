@@ -251,6 +251,7 @@ export class GameEngine {
             ],
             skillZone: [],
             lockedActivationsUntilTurnEnd: {},
+            lockedActivationsUntilTurnCount: {},
         };
     }
 
@@ -2201,6 +2202,10 @@ export class GameEngine {
             p.unitZones.forEach(z => {
                 if (z.unit) allPotentialSources.push({ card: z.unit, zone: z, owner: p });
                 z.items.forEach(item => allPotentialSources.push({ card: item, zone: z, owner: p }));
+                z.temporaryEffects.forEach(effect => {
+                    if (!z.unit) return;
+                    allPotentialSources.push({ card: { ...z.unit, effects: [effect] }, zone: z, owner: p });
+                });
             });
             if (p.levelZone) allPotentialSources.push({ card: p.levelZone, owner: p });
         });
@@ -2223,6 +2228,7 @@ export class GameEngine {
                         if (TargetSelector.isValidTarget(this, effect.targets!, context, zone)) {
                             const params = effect.action.params || {};
                             let value = params.value || 0;
+                            const mode = params.mode || 'ADD';
                             if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
                                 value = source.owner.leaderLevel * value;
                             } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
@@ -2235,7 +2241,11 @@ export class GameEngine {
                                 const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
                                 value = equippedUnitCount * value;
                             }
-                            hit += value;
+                            if (mode === 'SET') {
+                                hit = value;
+                            } else {
+                                hit += value;
+                            }
                         }
                     }
                 });

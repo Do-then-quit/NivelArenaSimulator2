@@ -84,8 +84,12 @@ export class EffectManager {
     private isActivationLocked(player: any, activation: ActivationCondition | string | undefined): boolean {
         if (!player || !activation) return false;
         const lockMap = (player as any).lockedActivationsUntilTurnEnd as Record<string, boolean> | undefined;
-        if (!lockMap) return false;
-        return lockMap[String(activation)] === true;
+        if (lockMap?.[String(activation)] === true) return true;
+
+        const lockUntilMap = (player as any).lockedActivationsUntilTurnCount as Record<string, number> | undefined;
+        const untilTurnCount = lockUntilMap?.[String(activation)];
+        if (typeof untilTurnCount !== 'number') return false;
+        return this.engine.state.turnCount <= untilTurnCount;
     }
 
     public queueEphemeralEffect(effect: Effect, context: GameContext) {

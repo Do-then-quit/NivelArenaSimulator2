@@ -1416,4 +1416,427 @@ describe('BT06 Effects Regression', () => {
         expect(engine.state.pendingEffect).toBeNull();
     });
 
+    it('BT06-071 excludes trigger and low-power unit cards from trash selection', () => {
+        const engine = createEngine(60045);
+        const p1 = engine.state.players[0];
+
+        p1.hand = [getCard('BT06-071')];
+        p1.trash = [getCard('ST01-009'), getCard('ST01-002'), getCard('BT06-006')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+
+        engine.playSkill(0);
+        const legal = engine.getLegalActions(p1.id).filter(action => action.type === 'SELECT_TRASH_TARGET') as any[];
+        const selectableIds = legal.map(action => p1.trash[action.trashIndex]?.id);
+        expect(selectableIds.some(id => id?.startsWith('ST01-009'))).toBe(true);
+        expect(selectableIds.some(id => id?.startsWith('ST01-002'))).toBe(false);
+        expect(selectableIds.some(id => id?.startsWith('BT06-006'))).toBe(false);
+
+        const pick = legal.find(action => p1.trash[action.trashIndex]?.id.startsWith('ST01-009'));
+        expect(pick).toBeDefined();
+        if (pick) expect(engine.step(pick)).toBe(true);
+        expect(p1.hand.some(card => card.id.startsWith('ST01-009'))).toBe(true);
+    });
+
+    it('BT06-072 sets encounter HIT to 1 through opponent turn end and then expires', () => {
+        const engine = createEngine(60046);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.hand = [getCard('BT06-072')];
+        p1.unitZones[1].unit = getCard('ST10-005');
+        p2.unitZones[1].unit = getCard('ST01-011');
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+
+        const baseHit = engine.getUnitHit(p2.unitZones[1], p2);
+
+        engine.playSkill(0);
+        const pick = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p1.id && action.zoneIndex === 1
+        );
+        expect(pick).toBeDefined();
+        if (pick) expect(engine.step(pick)).toBe(true);
+
+        expect(engine.getUnitHit(p2.unitZones[1], p2)).toBe(1);
+
+        p2.unitZones[1].unit = getCard('ST01-011');
+        expect(engine.getUnitHit(p2.unitZones[1], p2)).toBe(1);
+
+        advanceUntil(
+            engine,
+            () => engine.currentPlayer.id === p1.id && engine.state.phase === Phase.LEVEL_UP,
+            40
+        );
+        expect(engine.getUnitHit(p2.unitZones[1], p2)).toBe(baseHit);
+    });
+
+    it('BT06-075 prompts entry effect selection and executes only the selected entry', () => {
+        const engine = createEngine(60047);
+        const p1 = engine.state.players[0];
+
+        const dualEntryUnit: Card = {
+            ...getCard('ST10-005'),
+            id: 'BT06-TST-075',
+            name: 'BT06 엔트리 테스트 유닛',
+            effects: [
+                {
+                    activation: ActivationCondition.ENTRY,
+                    description: '테스트 엔트리 1',
+                    targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+                    action: { type: 'BUFF_POWER', params: { value: 1000 } },
+                    duration: 'TURN_END',
+                },
+                {
+                    activation: ActivationCondition.ENTRY,
+                    description: '테스트 엔트리 2',
+                    action: { type: 'DRAW', params: { count: 1 } },
+                },
+            ],
+        };
+
+        p1.hand = [getCard('BT06-075')];
+        p1.unitZones[0].unit = dualEntryUnit;
+        p1.deck = [getCard('ST01-002')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+
+        const basePower = zonePower(engine, p1, 0);
+        const handBefore = p1.hand.length;
+
+        engine.playSkill(0);
+        const pickUnit = findAction(
+            engine,
+            p1.id,
+            'SELECT_ZONE_TARGET',
+            action => action.targetPlayerId === p1.id && action.zoneIndex === 0
+        );
+        expect(pickUnit).toBeDefined();
+        if (pickUnit) expect(engine.step(pickUnit)).toBe(true);
+
+        const entryOptions = engine.getLegalActions(p1.id).filter(action => action.type === 'SELECT_REVEALED_TARGET');
+        expect(entryOptions.length).toBe(2);
+        const pickSecond = entryOptions.find((action: any) => action.revealedIndex === 1);
+        expect(pickSecond).toBeDefined();
+        if (pickSecond) expect(engine.step(pickSecond)).toBe(true);
+
+        expect(p1.hand.length).toBe(handBefore);
+        expect(zonePower(engine, p1, 0)).toBe(basePower);
+    });
+
+    it('BT06-076 granted berserk on opponent field prevents skipping ATTACK phase until attack is made', () => {
+        const engine = createEngine(60076);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        const oppUnit = getCard('ST01-002');
+        oppUnit.effects = [];
+        oppUnit.keywords = [];
+        p1.hand = [getCard('BT06-076')];
+        p2.unitZones[0].unit = oppUnit;
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+
+        engine.playSkill(0);
+        const granted = p2.unitZones[0].temporaryEffects.some(effect => effect.action?.params?.keyword === 'BERSERK');
+        expect(granted).toBe(true);
+
+        advanceUntil(
+            engine,
+            () => engine.currentPlayer.id === p2.id && engine.state.phase === Phase.ATTACK,
+            40
+        );
+        const canEndBeforeAttack = engine.getLegalActions(p2.id).some(action => action.type === 'NEXT_PHASE');
+        expect(canEndBeforeAttack).toBe(false);
+
+        const attack = findAction(engine, p2.id, 'ATTACK', action => action.attackerZoneIndex === 0);
+        expect(attack).toBeDefined();
+        if (attack) expect(engine.step(attack)).toBe(true);
+        const resolveBlock = findAction(engine, p1.id, 'RESOLVE_BLOCK', action => action.shouldBlock === false);
+        if (resolveBlock) expect(engine.step(resolveBlock)).toBe(true);
+
+        const canEndAfterAttack = engine.getLegalActions(p2.id).some(action => action.type === 'NEXT_PHASE');
+        expect(canEndAfterAttack).toBe(true);
+    });
+
+    it('BT06-077 draws by defender count and locks opponent ATTACKER effects until opponent turn end', () => {
+        const engine = createEngine(60048);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        const attackerDrawUnit: Card = {
+            ...getCard('ST01-002'),
+            id: 'BT06-TST-077-ATK',
+            name: 'BT06 ATTACKER DRAW TEST',
+            effects: [
+                {
+                    activation: ActivationCondition.ATTACKER,
+                    description: '테스트 어태커: 카드 1장 드로우',
+                    action: { type: 'DRAW', params: { count: 1 } },
+                },
+            ],
+        };
+
+        p1.hand = [getCard('BT06-077')];
+        p1.unitZones[0].unit = getCard('BT06-050');
+        p1.unitZones[1].unit = getCard('BT06-048');
+        p2.unitZones[0].unit = attackerDrawUnit;
+        p2.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+
+        const p1HandBefore = p1.hand.length;
+        engine.playSkill(0);
+        expect(p1.hand.length).toBe(p1HandBefore + 1);
+
+        const lockUntil = p2.lockedActivationsUntilTurnCount?.[ActivationCondition.ATTACKER];
+        expect(typeof lockUntil).toBe('number');
+
+        advanceUntil(
+            engine,
+            () => engine.currentPlayer.id === p2.id && engine.state.phase === Phase.ATTACK,
+            40
+        );
+
+        const p2HandBeforeLockedAttack = p2.hand.length;
+        engine.attack(0);
+        const resolveBlock = findAction(engine, p1.id, 'RESOLVE_BLOCK', action => action.shouldBlock === false);
+        expect(resolveBlock).toBeDefined();
+        if (resolveBlock) expect(engine.step(resolveBlock)).toBe(true);
+        expect(p2.hand.length).toBe(p2HandBeforeLockedAttack);
+
+        advanceUntil(
+            engine,
+            () =>
+                engine.currentPlayer.id === p2.id &&
+                engine.state.phase === Phase.ATTACK &&
+                typeof lockUntil === 'number' &&
+                engine.state.turnCount > lockUntil,
+            90
+        );
+
+        const p2HandBeforeUnlockedAttack = p2.hand.length;
+        engine.attack(0);
+        const resolveBlockNext = findAction(engine, p1.id, 'RESOLVE_BLOCK', action => action.shouldBlock === false);
+        expect(resolveBlockNext).toBeDefined();
+        if (resolveBlockNext) expect(engine.step(resolveBlockNext)).toBe(true);
+        expect(p2.hand.length).toBe(p2HandBeforeUnlockedAttack + 1);
+    });
+
+    it('BT06-079 enforces unique names, excludes self name/trigger, and deals 1 damage after resolution', () => {
+        const engine = createEngine(60049);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        const skillA = getCard('ST11-014');
+        skillA.id = 'BT06-079-R-A';
+        skillA.name = 'BT06-079 R A';
+        const skillB = getCard('ST10-015');
+        skillB.id = 'BT06-079-R-B';
+        skillB.name = 'BT06-079 R B';
+        const skillC = getCard('ST11-013');
+        skillC.id = 'BT06-079-R-C';
+        skillC.name = 'BT06-079 R C';
+        const duplicateName = getCard('ST11-014');
+        duplicateName.id = 'BT06-079-R-DUP';
+        duplicateName.name = 'BT06-079 R A';
+
+        p1.hand = [getCard('BT06-079')];
+        p1.trash = [skillA, duplicateName, skillB, skillC, getCard('BT06-006'), getCard('BT06-079')];
+        p1.deck = [getCard('ST01-002')];
+        p2.damage = [];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+
+        engine.playSkill(0);
+        const revealedIds = engine.state.revealedCards.map(card => card.id);
+        const revealedNames = engine.state.revealedCards.map(card => card.name);
+
+        expect(revealedIds).toContain('BT06-079-R-A');
+        expect(revealedIds).toContain('BT06-079-R-B');
+        expect(revealedIds).toContain('BT06-079-R-C');
+        expect(revealedIds).not.toContain('BT06-079-R-DUP');
+        expect(revealedIds.some(id => id.startsWith('BT06-006'))).toBe(false);
+        expect(revealedNames.includes('데이드림 콜')).toBe(false);
+
+        const pickA = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => engine.state.revealedCards[action.revealedIndex]?.id === 'BT06-079-R-A'
+        );
+        const pickB = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => engine.state.revealedCards[action.revealedIndex]?.id === 'BT06-079-R-B'
+        );
+        const pickC = findAction(
+            engine,
+            p1.id,
+            'SELECT_REVEALED_TARGET',
+            action => engine.state.revealedCards[action.revealedIndex]?.id === 'BT06-079-R-C'
+        );
+        expect(pickA).toBeDefined();
+        expect(pickB).toBeDefined();
+        expect(pickC).toBeDefined();
+        if (pickA) expect(engine.step(pickA)).toBe(true);
+        if (pickB) expect(engine.step(pickB)).toBe(true);
+        if (pickC) expect(engine.step(pickC)).toBe(true);
+
+        const confirm = findAction(engine, p1.id, 'CONFIRM_TARGETS');
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+
+        expect(p2.damage.length).toBe(1);
+        expect(p1.deck.slice(0, 3).map(card => card.id)).toEqual(['BT06-079-R-A', 'BT06-079-R-B', 'BT06-079-R-C']);
+        expect(p1.trash.some(card => card.id === 'BT06-079-R-A' || card.id === 'BT06-079-R-B' || card.id === 'BT06-079-R-C')).toBe(false);
+    });
+
+    it('BT06-080 trashes all hand cards then draws exactly up to 5 cards in hand', () => {
+        const engine = createEngine(60050);
+        const p1 = engine.state.players[0];
+
+        p1.hand = [getCard('BT06-080'), getCard('ST01-002'), getCard('ST11-014'), getCard('ST01-003')];
+        p1.deck = [
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+        ];
+        p1.leaderLevel = 10;
+        engine.state.phase = Phase.MAIN;
+
+        const trashBefore = p1.trash.length;
+        const deckBefore = p1.deck.length;
+        engine.playSkill(0);
+
+        expect(p1.hand.length).toBe(5);
+        expect(p1.trash.length).toBeGreaterThanOrEqual(trashBefore + 3);
+        expect(p1.deck.length).toBe(deckBefore - 5);
+    });
+
+    it('BT06-082 trigger resolves in two steps: self-trash first, then recover <= leader level unit', () => {
+        const mainEngine = createEngine(60051);
+        const p1Main = mainEngine.state.players[0];
+        const p2Main = mainEngine.state.players[1];
+        p1Main.hand = [getCard('BT06-082')];
+        p2Main.damage = [];
+        p1Main.leaderLevel = 10;
+        mainEngine.state.phase = Phase.MAIN;
+        mainEngine.playSkill(0);
+        expect(p2Main.damage.length).toBe(2);
+
+        const triggerEngine = createEngine(60052);
+        const p1 = triggerEngine.state.players[0];
+        const p2 = triggerEngine.state.players[1];
+
+        const recoverable = getCard('ST01-002');
+        recoverable.id = 'BT06-082-RECOVER';
+        const tooHigh = getCard('BT06-064');
+        tooHigh.id = 'BT06-082-TOO-HIGH';
+        tooHigh.cost = 5;
+
+        p1.leaderLevel = 2;
+        p1.trash = [recoverable, tooHigh];
+        p1.damage = [];
+        p1.deck = [getCard('ST01-002'), getCard('BT06-082')];
+        p2.deck = [getCard('ST01-002')];
+
+        triggerEngine.dealDamage(p1, 1);
+
+        expect(p1.trash.some(card => card.id.startsWith('BT06-082'))).toBe(true);
+        expect(p1.damage.some(card => card.id.startsWith('BT06-082'))).toBe(false);
+
+        const legal = triggerEngine.getLegalActions(p1.id).filter(action => action.type === 'SELECT_TRASH_TARGET') as any[];
+        const selectableIds = legal.map(action => p1.trash[action.trashIndex]?.id);
+        expect(selectableIds).toContain('BT06-082-RECOVER');
+        expect(selectableIds).not.toContain('BT06-082-TOO-HIGH');
+
+        const pick = legal.find(action => p1.trash[action.trashIndex]?.id === 'BT06-082-RECOVER');
+        expect(pick).toBeDefined();
+        if (pick) expect(triggerEngine.step(pick)).toBe(true);
+        expect(p1.hand.some(card => card.id === 'BT06-082-RECOVER')).toBe(true);
+    });
+
+    it('BT06-084 enforces equipped shroud trash cost for adjacent guardian block, blocks when unavailable, and respects <=6 equip condition', () => {
+        const autoCostEngine = createEngine(60053);
+        const p1Auto = autoCostEngine.state.players[0];
+        const p2Auto = autoCostEngine.state.players[1];
+
+        p1Auto.unitZones[1].unit = getCard('ST01-002');
+        p2Auto.unitZones[0].unit = getCard('ST01-002');
+        p2Auto.unitZones[0].items = [getCard('BT06-084')];
+        autoCostEngine.state.phase = Phase.ATTACK;
+
+        autoCostEngine.attack(1);
+        const adjacentBlock = findAction(
+            autoCostEngine,
+            p2Auto.id,
+            'RESOLVE_BLOCK',
+            action => action.shouldBlock && action.blockerZoneIndex === 0
+        );
+        expect(adjacentBlock).toBeDefined();
+        if (adjacentBlock) expect(autoCostEngine.step(adjacentBlock)).toBe(true);
+
+        expect(p2Auto.unitZones[0].items.length).toBe(0);
+        expect(p2Auto.trash.some(card => card.id.startsWith('BT06-084'))).toBe(true);
+        expect(autoCostEngine.state.interactionMode).toBe('NORMAL');
+        expect(autoCostEngine.state.pendingEffect).toBeNull();
+
+        const noCostEngine = createEngine(60054);
+        const p1NoCost = noCostEngine.state.players[0];
+        const p2NoCost = noCostEngine.state.players[1];
+        p1NoCost.unitZones[1].unit = getCard('ST01-002');
+        p2NoCost.unitZones[0].unit = getCard('BT06-064');
+        p2NoCost.hand = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+        p2NoCost.unitZones[0].temporaryEffects.push({
+            activation: ActivationCondition.PASSIVE,
+            description: '테스트 상쇄〈사신의 수의〉',
+            action: {
+                type: 'NONE',
+                params: {
+                    guardianBlockItemCost: {
+                        itemName: '사신의 수의',
+                        itemCardId: 'BT06-084',
+                        count: 1,
+                    },
+                },
+            },
+            duration: 'PERMANENT',
+        } as any);
+        noCostEngine.state.phase = Phase.ATTACK;
+        noCostEngine.attack(1);
+        const blockedActions = noCostEngine.getLegalActions(p2NoCost.id).filter(action =>
+            action.type === 'RESOLVE_BLOCK' && action.shouldBlock && (action as any).blockerZoneIndex === 0
+        );
+        expect(blockedActions.length).toBe(0);
+
+        const equipEngine = createEngine(60055);
+        const p1Equip = equipEngine.state.players[0];
+        const highCostUnit = getCard('ST01-011');
+        highCostUnit.id = 'BT06-084-HIGH';
+        highCostUnit.cost = 7;
+        const lowCostUnit = getCard('ST01-002');
+        lowCostUnit.id = 'BT06-084-LOW';
+        lowCostUnit.cost = 6;
+
+        p1Equip.hand = [getCard('BT06-084')];
+        p1Equip.unitZones[0].unit = highCostUnit;
+        p1Equip.unitZones[1].unit = lowCostUnit;
+        p1Equip.leaderLevel = 20;
+        equipEngine.state.phase = Phase.MAIN;
+
+        const playItemActions = equipEngine.getLegalActions(p1Equip.id).filter(action =>
+            action.type === 'PLAY_ITEM' && (action as any).handIndex === 0
+        ) as any[];
+        expect(playItemActions.some(action => action.zoneIndex === 1)).toBe(true);
+        expect(playItemActions.some(action => action.zoneIndex === 0)).toBe(false);
+    });
+
 });

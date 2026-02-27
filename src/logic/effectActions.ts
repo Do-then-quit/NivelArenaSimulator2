@@ -101,6 +101,25 @@ function cardHasKeywordLike(card: any, keyword: string): boolean {
     return false;
 }
 
+function zoneHasKeywordLike(zone: any, keyword: string): boolean {
+    if (!zone || !zone.unit || !keyword) return false;
+    if (cardHasKeywordLike(zone.unit, keyword)) return true;
+
+    if (Array.isArray(zone.items)) {
+        for (const item of zone.items) {
+            if (cardHasKeywordLike(item, keyword)) return true;
+        }
+    }
+
+    if (Array.isArray(zone.temporaryEffects)) {
+        for (const effect of zone.temporaryEffects) {
+            if (String(effect?.description || '').includes(keyword)) return true;
+        }
+    }
+
+    return false;
+}
+
 const complexAction: ActionImplementation = (ctx, params, _targets) => {
     if ((params as any).mode === 'GUARDIAN_TRANSFER_POWER') {
         if (!_targets || _targets.length < 2) return;
@@ -195,6 +214,82 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 includeActivatedThisTurn,
             },
             effectDescription: '발동할 [액티브: 어택] 효과를 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'PROMPT_SELECT_ENTRY_EFFECT') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+
+        const owner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+
+        const effectOptions = (targetZone.unit.effects || [])
+            .map((effect, effectIndex) => ({ effect, effectIndex }))
+            .filter(({ effect }) => {
+                if (!effect || effect.activation !== ActivationCondition.ENTRY) return false;
+
+                const effectContext = {
+                    sourceCard: targetZone.unit!,
+                    player: ctx.player,
+                    opponent: ctx.opponent,
+                    unitZone: targetZone,
+                    machine: ctx.machine,
+                };
+
+                if (!ctx.machine.effectManager.checkCondition(effect, effectContext)) return false;
+
+                if (effect.cost && effect.cost.type !== 'NONE') {
+                    if (effect.cost.type === 'TRASH_HAND' || effect.cost.type === 'SHUFFLE_HAND_TO_DECK') {
+                        const requiredAmount = effect.cost.amount || 1;
+                        const costFilter = effect.cost.cardTypeFilter;
+                        const payableCount = ctx.player.hand.filter(card => !costFilter || card.type === costFilter).length;
+                        if (payableCount < requiredAmount) return false;
+                    }
+                }
+
+                if (effect.targets && effect.targets.selectMode === 'MANUAL') {
+                    const candidates = TargetSelector.resolve(ctx.machine, effect.targets, effectContext);
+                    if (candidates.length === 0) return false;
+                }
+
+                return true;
+            });
+
+        if (effectOptions.length === 0) return;
+
+        const sourceZoneIndex = owner.unitZones.indexOf(targetZone);
+        if (sourceZoneIndex < 0) return;
+
+        ctx.machine.state.revealedCards = effectOptions.map(({ effect, effectIndex }) =>
+            createPromptOptionCard(
+                `BT06_ENTRY_OPTION_${sourceZoneIndex}_${effectIndex}`,
+                `엔트리 효과 ${effectIndex + 1}`,
+                effect.description || '선택한 [엔트리] 효과를 발동한다.'
+            )
+        ) as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT06_SELECT_ENTRY_EFFECT',
+            actionValue: {
+                sourceZoneIndex,
+                options: effectOptions.map(({ effectIndex }) => ({ effectIndex })),
+            },
+            effectDescription: '발동할 [엔트리] 효과를 선택한다.',
             validTargets: 'REVEALED',
             targetSchema: {
                 scope: 'REVEALED',
@@ -319,6 +414,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
     if ((params as any).mode === 'BT06_062_PROMPT_UNIQUE_TRASH_SKILLS') {
         const cardType = (params as any).cardType || CardType.SKILL;
         const excludeKeyword = (params as any).excludeKeyword || '트리거';
+        const excludeName = typeof (params as any).excludeName === 'string' ? String((params as any).excludeName).trim() : '';
         const requiredCount = Math.max(1, (params as any).requiredCount ?? 3);
 
         const uniqueByName = new Map<string, any>();
@@ -327,6 +423,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             if (excludeKeyword && cardHasKeywordLike(card, excludeKeyword)) return;
             const nameKey = String(card.name || card.id || '').trim();
             if (!nameKey) return;
+            if (excludeName && nameKey === excludeName) return;
             if (!uniqueByName.has(nameKey)) {
                 uniqueByName.set(nameKey, card);
             }
@@ -425,6 +522,55 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         return;
     }
 
+    if ((params as any).mode === 'BT06_GRANT_BERSERK_UNTIL_OPP_TURN_END') {
+        const untilTurnCount = ctx.machine.state.turnCount + Math.max(0, (params as any).untilTurnCountOffset ?? 1);
+        (_targets || []).forEach((target: any) => {
+            if (!target || !('temporaryEffects' in target) || !target.unit) return;
+            target.temporaryEffects.push({
+                activation: ActivationCondition.PASSIVE,
+                description: '광전사',
+                action: { type: 'NONE', params: { keyword: 'BERSERK', untilTurnCount } },
+                duration: 'PERMANENT',
+            } as any);
+        });
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_077_DRAW_BY_DEFENDER_AND_LOCK_OPP_ATTACKER') {
+        const defenderCount = ctx.player.unitZones.filter((zone: any) =>
+            zoneHasKeywordLike(zone, '디펜더') || zoneHasKeywordLike(zone, 'DEFENDER')
+        ).length;
+
+        if (defenderCount > 0) {
+            const playerIndex = ctx.machine.state.players.indexOf(ctx.player);
+            ctx.machine.drawCard(playerIndex, defenderCount, {
+                reason: 'EFFECT',
+                sourceActivation: (params as any).__sourceActivation,
+            });
+        }
+
+        const untilTurnCount = ctx.machine.state.turnCount + Math.max(0, (params as any).untilTurnCountOffset ?? 1);
+        const lockUntilMap = (ctx.opponent.lockedActivationsUntilTurnCount || {}) as Record<string, number>;
+        const current = lockUntilMap[String(ActivationCondition.ATTACKER)] ?? 0;
+        lockUntilMap[String(ActivationCondition.ATTACKER)] = Math.max(current, untilTurnCount);
+        ctx.opponent.lockedActivationsUntilTurnCount = lockUntilMap as any;
+        return;
+    }
+
+    if ((params as any).mode === 'BT06_080_DISCARD_ALL_AND_DRAW_TO_HAND_SIZE') {
+        discardAll(ctx, {}, _targets);
+        const targetHandSize = Math.max(0, (params as any).targetHandSize ?? 5);
+        const drawCount = Math.max(0, targetHandSize - ctx.player.hand.length);
+        if (drawCount > 0) {
+            const playerIndex = ctx.machine.state.players.indexOf(ctx.player);
+            ctx.machine.drawCard(playerIndex, drawCount, {
+                reason: 'EFFECT',
+                sourceActivation: (params as any).__sourceActivation,
+            });
+        }
+        return;
+    }
+
     if ((params as any).mode === 'BT06_029_KEEP_AND_REFILL') {
         const keepSet = new Set((_targets || []).filter(card => ctx.player.hand.includes(card)));
         const cardsToTrash = ctx.player.hand.filter(card => !keepSet.has(card));
@@ -513,6 +659,15 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         const targetPlayer = (params as any).target === 'OPPONENT' ? ctx.opponent : ctx.player;
         const activation = (params as any).activation;
         if (!targetPlayer || !activation) return;
+
+        if (typeof (params as any).untilTurnCountOffset === 'number') {
+            const untilTurnCount = ctx.machine.state.turnCount + Math.max(0, (params as any).untilTurnCountOffset);
+            const lockUntilMap = (targetPlayer.lockedActivationsUntilTurnCount || {}) as Record<string, number>;
+            const current = lockUntilMap[String(activation)] ?? 0;
+            lockUntilMap[String(activation)] = Math.max(current, untilTurnCount);
+            targetPlayer.lockedActivationsUntilTurnCount = lockUntilMap as any;
+            return;
+        }
 
         const lockMap = (targetPlayer.lockedActivationsUntilTurnEnd || {}) as Record<string, boolean>;
         lockMap[String(activation)] = true;

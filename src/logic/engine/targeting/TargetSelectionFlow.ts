@@ -358,7 +358,8 @@ export function selectItemTargetByPlayerId(engine: any, zoneIndex: number, itemI
     const effect = runtime?.effect;
     const context = runtime?.context;
     const targetSchema = pending.targetSchema;
-    if (!effect || !context || !targetSchema) return;
+    const allowsEffectlessSelection = pending.actionType === 'GUARDIAN_BLOCK_ITEM_COST';
+    if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
 
     const targetPlayer = engine.getPlayerById(targetPlayerId);
     if (!targetPlayer) return;
@@ -369,6 +370,32 @@ export function selectItemTargetByPlayerId(engine: any, zoneIndex: number, itemI
 
     if (!TargetSelector.isValidTarget(engine, targetSchema, context, targetCard)) {
         console.log("Invalid Item Target Selected.");
+        return;
+    }
+
+    if (pending.actionType === 'GUARDIAN_BLOCK_ITEM_COST') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+
+        const blockerZoneIndex = pending.actionValue?.blockerZoneIndex;
+        if (typeof blockerZoneIndex !== 'number') return;
+        if (zoneIndex !== blockerZoneIndex) return;
+
+        const requiredItemName = pending.actionValue?.itemName;
+        const requiredItemCardId = pending.actionValue?.itemCardId;
+        if (requiredItemCardId && targetCard.id !== requiredItemCardId) return;
+        if (requiredItemName && !String(targetCard.name || '').includes(requiredItemName)) return;
+
+        const [removed] = zone.items.splice(itemIndex, 1);
+        if (!removed) return;
+        sourcePlayer.trash.push(removed);
+
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.pendingEffect = null;
+        engine.clearPendingRuntime();
+        engine.assignInteractionOwner(engine.currentPlayer.id);
+
+        engine.commitBlockDeclaration(blockerZoneIndex);
         return;
     }
 
@@ -479,6 +506,35 @@ export function selectRevealedTarget(engine: any, index: number) {
             sourceCard: sourceUnit,
             player: sourcePlayer,
             opponent,
+            unitZone: sourceZone,
+            machine: engine,
+        };
+
+        engine.state.revealedCards = [];
+        engine.effectManager.processEffect(selectedEffect, selectedEffectContext);
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT06_SELECT_ENTRY_EFFECT') {
+        const option = pending.actionValue?.options?.[index];
+        const sourceZoneIndex = pending.actionValue?.sourceZoneIndex;
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || typeof sourceZoneIndex !== 'number' || !option) return;
+
+        const sourceZone = sourcePlayer.unitZones[sourceZoneIndex];
+        const sourceUnit = sourceZone?.unit;
+        if (!sourceZone || !sourceUnit) return;
+
+        const selectedEffect = sourceUnit.effects?.[option.effectIndex];
+        if (!selectedEffect) return;
+        const sourceOpponent = engine.state.players.find((player: any) => player.id !== sourcePlayer.id);
+        if (!sourceOpponent) return;
+
+        const selectedEffectContext: GameContext = {
+            sourceCard: sourceUnit,
+            player: sourcePlayer,
+            opponent: sourceOpponent,
             unitZone: sourceZone,
             machine: engine,
         };
