@@ -10,8 +10,24 @@ import {
     setReady,
     submitDeckSelection,
 } from '../online/onlineMatchController';
+import {
+    buildInviteLink,
+    getInviteRoomCodeFromCurrentLocation,
+    trackOnlineGrowthEvent,
+} from '../online/inviteGrowth';
 
 const ONLINE_NAME_KEY = 'nivelarena_online_name';
+let inviteFeedbackMessage = '';
+let inviteFeedbackTone: 'INFO' | 'WARN' = 'INFO';
+
+function setInviteFeedback(message: string, tone: 'INFO' | 'WARN' = 'INFO'): void {
+    inviteFeedbackMessage = message;
+    inviteFeedbackTone = tone;
+    const node = document.getElementById('online-invite-feedback');
+    if (!node) return;
+    node.textContent = message;
+    node.style.color = tone === 'WARN' ? '#fab1a0' : '#74b9ff';
+}
 
 function getSavedPlayerName(): string {
     const saved = localStorage.getItem(ONLINE_NAME_KEY);
@@ -53,7 +69,10 @@ function renderDeckSummary(summary: DeckSummary | null): string {
 }
 
 function renderEntryPanel() {
+    inviteFeedbackMessage = '';
+    inviteFeedbackTone = 'INFO';
     const savedName = getSavedPlayerName();
+    const inviteRoomCode = getInviteRoomCodeFromCurrentLocation();
 
     uiState.app.innerHTML = `
         <div class="setup-screen">
@@ -72,8 +91,9 @@ function renderEntryPanel() {
 
                     <div style="margin-top: 20px;">
                         <label style="display:block;">Room Code (6 digits)</label>
-                        <input id="online-room-code-input" class="db-input" type="text" maxlength="6" placeholder="123456" />
+                        <input id="online-room-code-input" class="db-input" type="text" maxlength="6" placeholder="123456" value="${inviteRoomCode ?? ''}" />
                         <button id="online-join-room-btn" class="primary-btn" style="margin-top: 10px; width: 100%;">Join Room</button>
+                        ${inviteRoomCode ? `<p style="margin-top:10px; color:#74b9ff;">Invite link detected. Room code ${inviteRoomCode} is prefilled.</p>` : ''}
                     </div>
                 </div>
             </div>
@@ -109,6 +129,10 @@ function renderEntryPanel() {
             alert('Room code must be 6 digits.');
             return;
         }
+        if (inviteRoomCode && roomCode === inviteRoomCode) {
+            trackOnlineGrowthEvent('invite_accepted', { roomCode });
+            uiState.gameLogFeed.pushUiLog(`[Growth] invite_accepted room=${roomCode}`, 'SYSTEM');
+        }
         joinRoom(roomCode, name);
     });
 
@@ -134,6 +158,9 @@ function renderLobbyPanel() {
     const roomPlayers = [...room.players].sort((a, b) => a.slot.localeCompare(b.slot));
     const inGame = room.phase === 'IN_GAME';
     const canReady = !!localPlayer?.deckSummary && isDeckSummaryValid(localPlayer.deckSummary) && !inGame;
+    const inviteLink = buildInviteLink(room.roomCode);
+    const canNativeShare = typeof navigator.share === 'function';
+    const inviteFeedbackColor = inviteFeedbackTone === 'WARN' ? '#fab1a0' : '#74b9ff';
 
     uiState.app.innerHTML = `
         <div class="setup-screen">
@@ -144,6 +171,13 @@ function renderLobbyPanel() {
                     <div class="preview-info"><strong>Connection:</strong> ${uiState.onlineSession.connected ? 'Connected' : 'Disconnected'}</div>
                     <div class="preview-info"><strong>Phase:</strong> ${room.phase}</div>
                     <div class="preview-info"><strong>Role:</strong> ${uiState.onlineSession.role ?? 'N/A'}</div>
+                    <label style="display:block; margin-top: 12px;">Invite Link</label>
+                    <input id="online-invite-link-input" class="db-input" type="text" readonly value="${inviteLink}" />
+                    <div style="display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;">
+                        <button id="online-copy-invite-btn" class="primary-btn">Copy Invite Link</button>
+                        <button id="online-share-invite-btn" class="secondary-btn" ${canNativeShare ? '' : 'disabled'}>Share Invite</button>
+                    </div>
+                    <p id="online-invite-feedback" style="margin-top:10px; color:${inviteFeedbackColor};">${inviteFeedbackMessage}</p>
                 </div>
 
                 <div class="player-setup">
@@ -187,6 +221,50 @@ function renderLobbyPanel() {
         const ok = submitDeckSelection(deckId);
         if (!ok) {
             alert('Deck must contain exactly 40 cards and a leader.');
+        }
+    });
+
+    document.getElementById('online-copy-invite-btn')?.addEventListener('click', async () => {
+        trackOnlineGrowthEvent('share_clicked', { method: 'copy', roomCode: room.roomCode });
+        uiState.gameLogFeed.pushUiLog(`[Growth] share_clicked method=copy room=${room.roomCode}`, 'SYSTEM');
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(inviteLink);
+                setInviteFeedback('Invite link copied.');
+                return;
+            }
+            setInviteFeedback('Clipboard unavailable. Copy the invite link from the field.', 'WARN');
+        } catch {
+            setInviteFeedback('Copy failed. Copy the invite link from the field.', 'WARN');
+        }
+    });
+
+    document.getElementById('online-share-invite-btn')?.addEventListener('click', async () => {
+        if (typeof navigator.share !== 'function') {
+            setInviteFeedback('Native share unavailable. Use Copy Invite Link.', 'WARN');
+            return;
+        }
+
+        trackOnlineGrowthEvent('share_clicked', { method: 'native', roomCode: room.roomCode });
+        uiState.gameLogFeed.pushUiLog(`[Growth] share_clicked method=native room=${room.roomCode}`, 'SYSTEM');
+
+        try {
+            await navigator.share({
+                title: 'Join my NivelArena room',
+                text: `Join my room with code ${room.roomCode}.`,
+                url: inviteLink,
+            });
+            setInviteFeedback('Invite shared.');
+        } catch (error) {
+            const canceled = typeof error === 'object'
+                && error !== null
+                && 'name' in error
+                && (error as { name?: string }).name === 'AbortError';
+            if (canceled) {
+                setInviteFeedback('Share canceled.', 'WARN');
+                return;
+            }
+            setInviteFeedback('Share failed. Use Copy Invite Link.', 'WARN');
         }
     });
 

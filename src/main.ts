@@ -24,6 +24,7 @@ import { renderMenu, renderDeckBuilder, renderSetup } from './ui/screens/menu';
 import { renderOnlineRoom } from './ui/screens/onlineRoom';
 import { renderBotReplaySetup } from './ui/screens/replaySetup';
 import { clearPlaybackLogHistory, clearPlaybackRuntimeState } from './ui/playbackOrchestrator';
+import { getInviteRoomCodeFromCurrentLocation } from './ui/online/inviteGrowth';
 
 function startGame(
     deck1: Card[],
@@ -296,6 +297,10 @@ uiState.startGame = startGame;
 uiState.startVerificationScenario = startVerificationScenario;
 uiState.goToNextVerificationTest = goToNextVerificationTest;
 uiState.returnToVerificationScreen = returnToVerificationScreen;
+
+if (getInviteRoomCodeFromCurrentLocation()) {
+    uiState.currentScreen = Screen.ONLINE_ROOM;
+}
 
 window.addEventListener('keydown', handleVerificationHotkeys);
 window.addEventListener('keydown', handleGameHotkeys);
