@@ -1,5 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { fileURLToPath } from 'node:url';
+import { realpathSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
     ClientToServerMessage,
     DeckSubmission,
@@ -412,7 +414,7 @@ function onMessage(socket: WebSocket, raw: WebSocket.RawData): void {
 export function createRelayServer(port: number): WebSocketServer {
     rooms.clear();
     clients.clear();
-    const wss = new WebSocketServer({ port });
+    const wss = new WebSocketServer({ port, host: '0.0.0.0' });
 
     wss.on('connection', (socket) => {
         const client: ClientSession = {
@@ -442,8 +444,23 @@ export function createRelayServer(port: number): WebSocketServer {
     return wss;
 }
 
-const modulePath = fileURLToPath(import.meta.url);
-if (process.argv[1] === modulePath) {
+function isMainModule(): boolean {
+    const importMetaMain = (import.meta as ImportMeta & { main?: boolean }).main;
+    if (importMetaMain === true) return true;
+
+    const argvEntry = process.argv[1];
+    if (!argvEntry) return false;
+
+    try {
+        const modulePath = realpathSync(fileURLToPath(import.meta.url));
+        const entryPath = realpathSync(resolve(argvEntry));
+        return modulePath === entryPath;
+    } catch {
+        return false;
+    }
+}
+
+if (isMainModule()) {
     const port = Number.parseInt(process.env.PORT ?? '8787', 10);
     createRelayServer(port);
 }
