@@ -7,18 +7,6 @@ type StorageLike = {
     length: number;
 };
 
-function isValidStorage(value: unknown): value is StorageLike {
-    if (!value || typeof value !== 'object') return false;
-    const candidate = value as Record<string, unknown>;
-    return (
-        typeof candidate.getItem === 'function' &&
-        typeof candidate.setItem === 'function' &&
-        typeof candidate.removeItem === 'function' &&
-        typeof candidate.clear === 'function' &&
-        typeof candidate.key === 'function'
-    );
-}
-
 function createMemoryStorage(): StorageLike {
     const store = new Map<string, string>();
     return {
@@ -43,26 +31,6 @@ function createMemoryStorage(): StorageLike {
     };
 }
 
-function readWindowLocalStorage(): unknown {
-    try {
-        if (typeof window !== 'undefined') {
-            return window.localStorage;
-        }
-    } catch {
-        // ignore and fallback
-    }
-    return undefined;
-}
-
-function readGlobalLocalStorage(): unknown {
-    try {
-        return (globalThis as any).localStorage;
-    } catch {
-        // ignore and fallback
-    }
-    return undefined;
-}
-
 function installStorage(target: object, storage: StorageLike): void {
     Object.defineProperty(target, 'localStorage', {
         value: storage,
@@ -71,18 +39,9 @@ function installStorage(target: object, storage: StorageLike): void {
     });
 }
 
-const windowStorage = readWindowLocalStorage();
-const globalStorage = readGlobalLocalStorage();
-const storage = isValidStorage(windowStorage)
-    ? windowStorage
-    : isValidStorage(globalStorage)
-        ? globalStorage
-        : createMemoryStorage();
+const storage = createMemoryStorage();
+installStorage(globalThis, storage);
 
-if (!isValidStorage(globalStorage)) {
-    installStorage(globalThis, storage);
-}
-
-if (typeof window !== 'undefined' && !isValidStorage(windowStorage)) {
+if (typeof window !== 'undefined') {
     installStorage(window, storage);
 }
