@@ -18,6 +18,12 @@ function zonePower(engine: any, player: any, zoneIndex: number): number {
     return engine.getUnitPower(zone, player);
 }
 
+function zoneHit(engine: any, player: any, zoneIndex: number): number {
+    const zone = player.unitZones[zoneIndex];
+    if (!zone?.unit) return 0;
+    return engine.getUnitHit(zone, player);
+}
+
 function setHighSize(engine: any): void {
     engine.state.players.forEach((player: any) => {
         player.leaderLevel = 10;
@@ -599,6 +605,472 @@ const tests: UnifiedTestCase[] = [
                 { pass: !!selectTarget, message: '대상 선택 가능' },
                 { pass: !!payCost, message: '패 코스트 지불 가능' },
                 { pass: p2.unitZones[0].unit !== null && after === 3000, message: `파워 3000 설정 (${after})` },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-018-Awaken',
+        name: '리더 각성 (레벨 5)',
+        description: 'BT03-018 리더는 레벨 5 이상에서 각성한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.levelZone = getCard('BT03-018');
+            p1.levelZone.isAwakened = false;
+            p1.leaderLevel = 4;
+            engine.state.phase = Phase.LEVEL_UP;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.nextPhase();
+            return [
+                { pass: p1.leaderLevel >= 5, message: `리더 레벨 증가 (${p1.leaderLevel})` },
+                { pass: p1.levelZone?.isAwakened === true, message: 'BT03-018 각성 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-018',
+        name: '각성면 전선구축 버프 +1000',
+        description: '각성면에서 전선구축 조건을 만족하면 모든 아군 유닛 파워+1000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.levelZone = getCard('BT03-018');
+            p1.levelZone.isAwakened = true;
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.unitZones[2].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const base0 = p1.unitZones[0].unit?.power || 0;
+            const base1 = p1.unitZones[1].unit?.power || 0;
+            const base2 = p1.unitZones[2].unit?.power || 0;
+            return [
+                { pass: zonePower(engine, p1, 0) === base0 + 1000, message: '0번 유닛 +1000' },
+                { pass: zonePower(engine, p1, 1) === base1 + 1000, message: '1번 유닛 +1000' },
+                { pass: zonePower(engine, p1, 2) === base2 + 1000, message: '2번 유닛 +1000' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-019',
+        name: '레벨링크 6에서 자기 +2000',
+        description: '리더 레벨 6 이상이면 자기 파워+2000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 6;
+            p1.unitZones[0].unit = getCard('BT03-019');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const base = p1.unitZones[0].unit?.power || 0;
+            return [
+                { pass: zonePower(engine, p1, 0) === base + 2000, message: '파워 +2000 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-020',
+        name: '레벨링크+전선구축 스탯 상승',
+        description: '레벨 6 + 전선구축 조건에서 자기 파워+3000, 히트+1.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 6;
+            p1.unitZones[0].unit = getCard('BT03-020');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.unitZones[2].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const basePower = p1.unitZones[0].unit?.power || 0;
+            const baseHit = p1.unitZones[0].unit?.hit || 0;
+            return [
+                { pass: zonePower(engine, p1, 0) === basePower + 3000, message: '파워 +3000' },
+                { pass: zoneHit(engine, p1, 0) === baseHit + 1, message: '히트 +1' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-020-Trigger',
+        name: '트리거: 자기 트래시 + 3코 이하 상대 파괴',
+        description: '대미지 트리거로 자기 자신을 트래시하고 3코 이하 상대 유닛 1장을 파괴한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.deck = [getCard('BT03-020')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            engine.dealDamage(p1, 1);
+            const selectTarget = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) =>
+                action.targetPlayerId === p2.id && action.zoneIndex === 0
+            );
+            if (selectTarget) engine.step(selectTarget);
+            return [
+                { pass: !!selectTarget, message: '상대 3코 이하 유닛 선택 가능' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT03-020')), message: '자기 자신 트래시' },
+                { pass: p2.unitZones[0].unit === null, message: '상대 유닛 파괴 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-021',
+        name: '전선구축 엔트리 레벨+1',
+        description: '전선구축 조건에서 엔트리 시 리더 레벨+1.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.leaderLevel = 6;
+            p1.hand = [getCard('BT03-021')];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const beforeLevel = p1.leaderLevel;
+            engine.playUnit(0, 2);
+            return [
+                { pass: p1.leaderLevel === beforeLevel + 1, message: '리더 레벨 +1 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-022',
+        name: '다른 3코 이하 아군만 +2000',
+        description: '레벨링크+전선구축 조건에서 다른 3코 이하 아군에게만 +2000.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 6;
+            p1.unitZones[0].unit = getCard('BT03-022');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.unitZones[2].unit = getCard('ST01-011');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const selfBase = p1.unitZones[0].unit?.power || 0;
+            const lowBase = p1.unitZones[1].unit?.power || 0;
+            const highBase = p1.unitZones[2].unit?.power || 0;
+            return [
+                { pass: zonePower(engine, p1, 0) === selfBase, message: '자기 자신 제외' },
+                { pass: zonePower(engine, p1, 1) === lowBase + 2000, message: '3코 이하 아군 +2000' },
+                { pass: zonePower(engine, p1, 2) === highBase, message: '3코 초과 아군 버프 제외' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-023',
+        name: '상단 2장 공개, 4코 이하 유닛 1장 회수',
+        description: '공개한 카드 중 4코 이하 유닛 1장을 패에 넣고 나머지는 트래시.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-023')];
+            p1.deck = [getCard('BT03-027'), getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playUnit(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET');
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '공개 카드 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '4코 이하 유닛 회수 성공' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT03-027')), message: '나머지 카드 트래시' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-024',
+        name: '다른 아군 유효 히트 합 비례 파워 증가',
+        description: '다른 아군 유닛의 현재 유효 히트 총합만큼 파워가 증가한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('BT03-024');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.unitZones[2].unit = getCard('ST01-002');
+            p1.unitZones[1].buffs.push({
+                id: 'BT03_024_HIT_BUFF',
+                type: 'HIT',
+                value: 2,
+                duration: 'TURN_END',
+            } as any);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const base = p1.unitZones[0].unit?.power || 0;
+            const hitTotal = zoneHit(engine, p1, 1) + zoneHit(engine, p1, 2);
+            return [
+                { pass: zonePower(engine, p1, 0) === base + hitTotal * 1000, message: `유효 히트 합(${hitTotal}) x1000 반영` },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-025',
+        name: '엔트리 분기(레벨<10이면 +1)',
+        description: '리더 레벨이 10 미만이면 엔트리에서 드로우 대신 레벨+1.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.leaderLevel = 9;
+            p1.hand = [getCard('BT03-025')];
+            p1.deck = [getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playUnit(0, 0);
+            return [
+                { pass: p1.leaderLevel === 10, message: '리더 레벨 +1 분기 적용' },
+                { pass: !p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '드로우 분기 미발동' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-026',
+        name: '바닐라 카드 무효과',
+        description: 'BT03-026은 플레이 시 추가 상호작용 없이 배치된다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-026')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playUnit(0, 0);
+            return [
+                { pass: !!p1.unitZones[0].unit && p1.unitZones[0].unit.id.startsWith('BT03-026'), message: '유닛 배치 성공' },
+                { pass: engine.state.interactionMode === 'NORMAL', message: '추가 선택 상호작용 없음' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-027',
+        name: '파워차 3500 이상일 때 관통[1] 부여',
+        description: '액티브:메인 사용 시 조건 충족이면 자기에게 관통[1]을 부여한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.unitZones[0].unit = getCard('BT03-027');
+            p2.unitZones[0].unit = getCard('ST01-011');
+            if (p2.unitZones[0].unit) p2.unitZones[0].unit.power = 3000;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.activateEffect(0, 0);
+            const granted = p1.unitZones[0].temporaryEffects.some((effect: any) =>
+                effect.activation === 'ATTACKER' && String(effect.description || '').includes('관통[1]')
+            );
+            return [
+                { pass: granted, message: '관통[1] 부여 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-028',
+        name: '트리거: 패 복귀',
+        description: '대미지 트리거 시 BT03-028은 패로 복귀한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.deck = [getCard('BT03-028')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.dealDamage(p1, 1);
+            return [
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT03-028')), message: '패 복귀 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-029',
+        name: '5코 이상 아군 1장 히트+1',
+        description: '5코스트 이상 아군 유닛 1장을 골라 히트+1.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-029')];
+            p1.unitZones[0].unit = getCard('BT03-025');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const beforeHit = zoneHit(engine, p1, 0);
+            engine.playSkill(0);
+            const picks = engine.getLegalActions(p1.id).filter((action: any) => action.type === 'SELECT_ZONE_TARGET');
+            const pick = picks.find((action: any) => action.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            return [
+                { pass: picks.length === 1, message: '5코 이상 대상만 선택 가능' },
+                { pass: !!pick, message: '대상 선택 가능' },
+                { pass: zoneHit(engine, p1, 0) === beforeHit + 1, message: '히트 +1 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-030',
+        name: '3코 이하 전원 히트+1 + 3장 이상이면 1드로우',
+        description: '3코 이하 아군 3장 구성에서 전원 히트+1 후 1장 드로우한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-030')];
+            p1.deck = [getCard('ST01-002')];
+            p1.unitZones[0].unit = getCard('BT03-019');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.unitZones[2].unit = getCard('BT03-020');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const beforeHit0 = zoneHit(engine, p1, 0);
+            const beforeHit1 = zoneHit(engine, p1, 1);
+            const beforeHit2 = zoneHit(engine, p1, 2);
+            engine.playSkill(0);
+            return [
+                { pass: zoneHit(engine, p1, 0) === beforeHit0 + 1, message: '0번 유닛 히트 +1' },
+                { pass: zoneHit(engine, p1, 1) === beforeHit1 + 1, message: '1번 유닛 히트 +1' },
+                { pass: zoneHit(engine, p1, 2) === beforeHit2 + 1, message: '2번 유닛 히트 +1' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '3장 이상 조건 드로우 1 반영' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-031',
+        name: '선택 유닛 파워가 높으면 조우 파괴',
+        description: '선택한 3코 이하 아군 유닛 파워가 조우보다 높을 때 조우를 파괴한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-031')];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            if (p1.unitZones[0].unit) p1.unitZones[0].unit.power = 6000;
+            p2.unitZones[0].unit = getCard('ST01-002');
+            if (p2.unitZones[0].unit) p2.unitZones[0].unit.power = 5000;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            engine.playSkill(0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) =>
+                action.targetPlayerId === p1.id && action.zoneIndex === 0
+            );
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '아군 유닛 선택 가능' },
+                { pass: p2.unitZones[0].unit === null, message: '조우 유닛 파괴 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-032',
+        name: '3코 이하 전원 +5000 + 조건부 히트+1',
+        description: '대상이 3장 이상이면 전원 파워+5000과 히트+1을 적용한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-032')];
+            p1.unitZones[0].unit = getCard('BT03-019');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.unitZones[2].unit = getCard('BT03-020');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const basePower0 = zonePower(engine, p1, 0);
+            const basePower1 = zonePower(engine, p1, 1);
+            const basePower2 = zonePower(engine, p1, 2);
+            const baseHit0 = zoneHit(engine, p1, 0);
+            const baseHit1 = zoneHit(engine, p1, 1);
+            const baseHit2 = zoneHit(engine, p1, 2);
+            engine.playSkill(0);
+            return [
+                { pass: zonePower(engine, p1, 0) === basePower0 + 5000, message: '0번 유닛 파워 +5000' },
+                { pass: zonePower(engine, p1, 1) === basePower1 + 5000, message: '1번 유닛 파워 +5000' },
+                { pass: zonePower(engine, p1, 2) === basePower2 + 5000, message: '2번 유닛 파워 +5000' },
+                { pass: zoneHit(engine, p1, 0) === baseHit0 + 1, message: '0번 유닛 히트 +1' },
+                { pass: zoneHit(engine, p1, 1) === baseHit1 + 1, message: '1번 유닛 히트 +1' },
+                { pass: zoneHit(engine, p1, 2) === baseHit2 + 1, message: '2번 유닛 히트 +1' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-032-Trigger',
+        name: '트리거: 자기 트래시 + 리더 레벨+1',
+        description: '대미지 트리거 시 자기 자신을 트래시하고 리더 레벨+1.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.leaderLevel = 5;
+            p1.deck = [getCard('BT03-032')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.dealDamage(p1, 1);
+            return [
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT03-032')), message: '자기 자신 트래시' },
+                { pass: p1.leaderLevel === 6, message: '리더 레벨 +1' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-033',
+        name: '사이즈 +1 누적',
+        description: 'BT03-033 장착 수만큼 자신의 사이즈가 누적 증가한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-033'), getCard('BT03-033')];
+            p1.unitZones[0].unit = getCard('BT03-025');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const before = engine.getPlayerSize(p1);
+            engine.playItem(0, 0);
+            const afterOne = engine.getPlayerSize(p1);
+            engine.playItem(0, 0);
+            const afterTwo = engine.getPlayerSize(p1);
+            return [
+                { pass: afterOne === before + 1, message: '첫 장착 후 사이즈 +1' },
+                { pass: afterTwo === before + 2, message: '두 번째 장착 후 누적 +2' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-034',
+        name: '장착 조건 및 장착 유닛 스탯 증가',
+        description: '3코 이하 유닛에 장착 시 파워+2500, 히트+1.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-034')];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const basePower = zonePower(engine, p1, 0);
+            const baseHit = zoneHit(engine, p1, 0);
+            engine.playItem(0, 0);
+            return [
+                { pass: zonePower(engine, p1, 0) === basePower + 2500, message: '파워 +2500 적용' },
+                { pass: zoneHit(engine, p1, 0) === baseHit + 1, message: '히트 +1 적용' },
             ];
         },
     },

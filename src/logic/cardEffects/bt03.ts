@@ -369,4 +369,297 @@ export const BT03_EFFECTS: Record<string, Effect[]> = {
             },
         },
     ],
+    "BT03-018": [
+        {
+            activation: ActivationCondition.AWAKEN,
+            description: "각성 : 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다.",
+            condition: { type: 'LEADER_LEVEL', value: 5 },
+            action: { type: 'AWAKEN' as any, params: {} },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "각성면 패시브 : [전선구축] 자신의 모든 유닛 존에 유닛이 존재한다면 모든 자신 유닛의 파워+1000.",
+            condition: { type: 'FRONTLINE' },
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 0, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: 1000 } },
+        },
+    ],
+    "BT03-019": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "[레벨링크: 6] 자신의 리더 레벨이 6 이상이라면 파워+2000.",
+            condition: { type: 'LEVEL_LINK', value: 6 },
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
+    "BT03-020": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "[레벨링크: 6][전선구축] 자신의 리더 레벨이 6 이상이고 자신의 모든 유닛 존에 유닛이 존재한다면 파워+3000.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'LEVEL_LINK', value: 6 },
+                    { type: 'FRONTLINE' },
+                ],
+            },
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: 3000 } },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "[레벨링크: 6][전선구축] 자신의 리더 레벨이 6 이상이고 자신의 모든 유닛 존에 유닛이 존재한다면 히트+1.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'LEVEL_LINK', value: 6 },
+                    { type: 'FRONTLINE' },
+                ],
+            },
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'BUFF_HIT', params: { value: 1 } },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+            targets: {
+                scope: 'OPP_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_LIMIT', value: 3 }],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'DESTROY_UNIT', params: {} },
+        },
+    ],
+    "BT03-021": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "[전선구축][엔트리] 자신의 모든 유닛 존에 유닛이 존재한다면 리더 레벨+1.",
+            condition: { type: 'FRONTLINE' },
+            action: { type: 'GAIN_LEVEL', params: { value: 1 } },
+        },
+    ],
+    "BT03-022": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "[레벨링크: 6][전선구축] 자신의 리더 레벨이 6 이상이고 자신의 모든 유닛 존에 유닛이 존재한다면 3코스트 이하인 다른 모든 자신 유닛의 파워+2000.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'LEVEL_LINK', value: 6 },
+                    { type: 'FRONTLINE' },
+                ],
+            },
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 0,
+                filters: [
+                    { type: 'COST_LIMIT', value: 3 },
+                    { type: 'EXCLUDE_SELF' },
+                ],
+                selectMode: 'ALL',
+            },
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
+    "BT03-023": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "[엔트리] 자신의 덱 맨 위에서 카드를 2장 공개하고, 그중 4코스트 이하인 유닛 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+            action: {
+                type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND',
+                params: {
+                    count: 2,
+                    remainingDestination: 'TRASH',
+                    filters: [
+                        { type: 'UNIT_TYPE', value: CardType.UNIT },
+                        { type: 'COST_LIMIT', value: 4 },
+                    ],
+                },
+            },
+        },
+    ],
+    "BT03-024": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "[패시브] 필드에 있는 다른 모든 자신 유닛의 히트 1마다 파워+1000.",
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: {
+                type: 'BUFF_POWER',
+                params: {
+                    value: 1000,
+                    dynamic: 'OTHER_FRIENDLY_HIT_TOTAL_MULTIPLIER',
+                    excludeSelf: true,
+                },
+            },
+        },
+    ],
+    "BT03-025": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "[엔트리] 자신의 리더 레벨이 10 이상이라면 카드를 1장 드로우한다. 아니라면 리더 레벨+1.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_025_ENTRY_LEVEL_OR_DRAW' },
+            },
+        },
+    ],
+    "BT03-026": [],
+    "BT03-027": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "[액티브: 메인] 조우 유닛보다 파워가 3500 이상 높다면 이 턴이 끝날 때까지 [어태커] 관통[1]을 얻는다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_027_GRANT_PENETRATION_IF_POWER_AHEAD',
+                    threshold: 3500,
+                    penetrationValue: 1,
+                    duration: 'TURN_END',
+                },
+            },
+        },
+    ],
+    "BT03-028": [
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "[레벨링크: 10][어태커] 자신의 리더 레벨이 10 이상이라면 돌파[4코스트 이하]를 얻는다.",
+            condition: { type: 'LEVEL_LINK', value: 10 },
+            action: { type: 'BREAKTHROUGH', params: { costMax: 4 } },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT03-029": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 5코스트 이상인 자신 유닛을 1장 골라, 이 턴이 끝날 때까지 히트+1.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_MIN', value: 5 }],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'BUFF_HIT', params: { value: 1 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT03-030": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 3코스트 이하인 모든 자신 유닛은 이 턴이 끝날 때까지 히트+1. 3코스트 이하인 자신 유닛이 3장 이상이라면 추가로 카드를 1장 드로우한다.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 0,
+                filters: [{ type: 'COST_LIMIT', value: 3 }],
+                selectMode: 'ALL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_030_BUFF_HIT_AND_DRAW_IF_LOW_COST_UNITS_MIN',
+                    hitValue: 1,
+                    minCount: 3,
+                    drawCount: 1,
+                    duration: 'TURN_END',
+                },
+            },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT03-031": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 3코스트 이하인 자신 유닛을 1장 고른다. 그 유닛의 파워가 조우 유닛의 파워보다 높다면 조우 유닛을 트래시한다.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_LIMIT', value: 3 }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_031_DESTROY_ENCOUNTER_IF_SELECTED_UNIT_POWER_HIGHER' },
+            },
+        },
+    ],
+    "BT03-032": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 3코스트 이하인 모든 자신 유닛은 이 턴이 끝날 때까지 파워+5000. 3코스트 이하인 자신 유닛이 3장 이상이라면 추가로 히트+1.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 0,
+                filters: [{ type: 'COST_LIMIT', value: 3 }],
+                selectMode: 'ALL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_032_BUFF_LOW_COST_UNITS_AND_BONUS_HIT',
+                    powerValue: 5000,
+                    hitValue: 1,
+                    minCount: 3,
+                    duration: 'TURN_END',
+                },
+            },
+            duration: 'TURN_END',
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "자신의 리더 레벨+1.",
+            action: { type: 'GAIN_LEVEL', params: { value: 1 } },
+        },
+    ],
+    "BT03-033": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "장착 조건: 5코스트 이상인 유닛",
+            condition: { type: 'COST_COMPARISON', value: { operator: 'GTE', cost: 5 } },
+            action: { type: 'NONE', params: {} },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 자신의 사이즈+1.",
+            action: { type: 'MODIFY_PLAYER_SIZE', params: { value: 1 } },
+        },
+    ],
+    "BT03-034": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "장착 조건: 3코스트 이하인 유닛",
+            condition: { type: 'COST_COMPARISON', value: { operator: 'LTE', cost: 3 } },
+            action: { type: 'NONE', params: {} },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 파워+2500.",
+            action: { type: 'BUFF_POWER', params: { value: 2500 } },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 히트+1.",
+            action: { type: 'BUFF_HIT', params: { value: 1 } },
+        },
+    ],
 };

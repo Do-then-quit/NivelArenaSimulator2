@@ -2204,20 +2204,43 @@ export class GameEngine {
 
     public getPlayerSize(player: PlayerState): number {
         let size = player.leaderLevel + player.damage.length;
+        const opponent = this.getOpponentOf(player);
+        const applySizeModifier = (effect: Effect, sourceCard: Card, sourceZone?: UnitZoneState) => {
+            if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+            if (effect.action?.type !== 'MODIFY_PLAYER_SIZE') return;
 
-        // Leader Passive Size Bonus (e.g. ST02-001)
-        if (player.levelZone && player.levelZone.effects) {
-            player.levelZone.effects.forEach(effect => {
-                if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'MODIFY_PLAYER_SIZE') {
-                    // Check awakening condition if applicable
-                    // let conditionMet = true;
-                    if (player.levelZone?.isAwakened) {
-                        // For ST02-001, the bonus is on the awakened side
-                        size += (effect.action.params.value || 0);
-                    }
+            const context: GameContext = {
+                player,
+                opponent,
+                sourceCard,
+                unitZone: sourceZone,
+                machine: this,
+            };
+            if (!this.effectManager.checkCondition(effect, context)) return;
+            if (sourceCard.type === CardType.LEADER && !sourceCard.isAwakened && this.requiresAwakenedLeader(effect)) {
+                return;
+            }
+
+            size += effect.action.params?.value || 0;
+        };
+
+        if (player.levelZone?.effects) {
+            player.levelZone.effects.forEach(effect => applySizeModifier(effect, player.levelZone!));
+        }
+
+        player.unitZones.forEach(zone => {
+            if (zone.unit?.effects) {
+                zone.unit.effects.forEach(effect => applySizeModifier(effect, zone.unit!, zone));
+            }
+            zone.items.forEach(item => {
+                if (item.effects) {
+                    item.effects.forEach(effect => applySizeModifier(effect, item, zone));
                 }
             });
-        }
+            if (zone.unit && Array.isArray(zone.temporaryEffects)) {
+                zone.temporaryEffects.forEach(effect => applySizeModifier(effect, zone.unit!, zone));
+            }
+        });
 
         return size;
     }
@@ -2288,6 +2311,14 @@ export class GameEngine {
                                 } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
                                     const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
                                     value = equippedUnitCount * value;
+                                } else if (params.dynamic === 'OTHER_FRIENDLY_HIT_TOTAL_MULTIPLIER') {
+                                    const excludeSelf = params.excludeSelf === true;
+                                    const totalFriendlyHit = source.owner.unitZones.reduce((sum, unitZone) => {
+                                        if (!unitZone.unit) return sum;
+                                        if (excludeSelf && source.zone && unitZone === source.zone) return sum;
+                                        return sum + Math.max(0, this.getUnitHit(unitZone, source.owner));
+                                    }, 0);
+                                    value = totalFriendlyHit * value;
                                 }
                                 power += value;
                             }

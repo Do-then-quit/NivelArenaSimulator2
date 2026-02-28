@@ -976,6 +976,94 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         return;
     }
 
+    if ((params as any).mode === 'BT03_025_ENTRY_LEVEL_OR_DRAW') {
+        const threshold = Math.max(0, (params as any).leaderLevelThreshold ?? 10);
+        if (ctx.player.leaderLevel >= threshold) {
+            drawCard(ctx, { count: Math.max(0, (params as any).drawCount ?? 1), __sourceActivation: (params as any).__sourceActivation }, _targets);
+        } else {
+            gainLevel(ctx, { value: Math.max(0, (params as any).gainLevelValue ?? 1) }, _targets);
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_027_GRANT_PENETRATION_IF_POWER_AHEAD') {
+        if (!ctx.unitZone?.unit) return;
+        const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
+        if (laneIndex < 0) return;
+
+        const encounterZone = ctx.opponent.unitZones[laneIndex];
+        if (!encounterZone?.unit) return;
+
+        const selfPower = ctx.machine.getUnitPower(ctx.unitZone, ctx.player);
+        const encounterPower = ctx.machine.getUnitPower(encounterZone, ctx.opponent);
+        const threshold = Math.max(0, (params as any).threshold ?? 3500);
+        if (selfPower - encounterPower < threshold) return;
+
+        const penetrationValue = Math.max(0, (params as any).penetrationValue ?? 1);
+        const duration = (params as any).duration || 'TURN_END';
+        grantEffect(ctx, {
+            effect: {
+                activation: ActivationCondition.ATTACKER,
+                description: `어태커 : 관통[${penetrationValue}]`,
+                action: { type: 'PENETRATION', params: { value: penetrationValue } },
+                duration,
+            },
+            duration,
+        }, [ctx.unitZone]);
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_030_BUFF_HIT_AND_DRAW_IF_LOW_COST_UNITS_MIN') {
+        const targets = (_targets || []).filter((target: any) => target?.unit);
+        const duration = (params as any).duration || 'TURN_END';
+        const hitValue = (params as any).hitValue ?? 1;
+        const minCount = Math.max(0, (params as any).minCount ?? 3);
+        const drawCount = Math.max(0, (params as any).drawCount ?? 1);
+
+        if (targets.length > 0) {
+            buffHit(ctx, { value: hitValue, duration }, targets);
+        }
+        if (targets.length >= minCount && drawCount > 0) {
+            drawCard(ctx, { count: drawCount, __sourceActivation: (params as any).__sourceActivation }, _targets);
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_031_DESTROY_ENCOUNTER_IF_SELECTED_UNIT_POWER_HIGHER') {
+        const selectedZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!selectedZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, selectedZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+
+        const laneIndex = ctx.player.unitZones.indexOf(selectedZone);
+        if (laneIndex < 0) return;
+        const encounterZone = ctx.opponent.unitZones[laneIndex];
+        if (!encounterZone?.unit) return;
+
+        const selectedPower = ctx.machine.getUnitPower(selectedZone, ctx.player);
+        const encounterPower = ctx.machine.getUnitPower(encounterZone, ctx.opponent);
+        if (selectedPower > encounterPower) {
+            ctx.machine.destroyUnit(ctx.opponent, encounterZone, undefined, 'EFFECT');
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_032_BUFF_LOW_COST_UNITS_AND_BONUS_HIT') {
+        const targets = (_targets || []).filter((target: any) => target?.unit);
+        if (targets.length === 0) return;
+
+        const duration = (params as any).duration || 'TURN_END';
+        const powerValue = (params as any).powerValue ?? 5000;
+        const hitValue = (params as any).hitValue ?? 1;
+        const minCount = Math.max(0, (params as any).minCount ?? 3);
+
+        buffPower(ctx, { value: powerValue, duration }, targets);
+        if (targets.length >= minCount) {
+            buffHit(ctx, { value: hitValue, duration }, targets);
+        }
+        return;
+    }
+
     const subActions = (params as any).subActions;
     if (!Array.isArray(subActions)) return;
 
