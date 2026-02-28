@@ -216,6 +216,13 @@ function renderPlaybackLogPanel(): string {
 
 function renderVerificationSessionPanel(): string {
     if (!uiState.verificationSession) return '';
+    if (uiState.verificationPanelCollapsed) {
+        return `
+            <div class="verification-session-collapsed">
+                <button id="verification-panel-toggle-btn" class="secondary-btn">Show Test Panel</button>
+            </div>
+        `;
+    }
     const currentOrder = uiState.verificationSession.currentIndex + 1;
     const totalTests = uiState.verificationSession.orderedTestIds.length;
     const hasNextTest = uiState.verificationSession.currentIndex < totalTests - 1;
@@ -225,6 +232,7 @@ function renderVerificationSessionPanel(): string {
             <div class="verification-session-actions">
                 <button id="verification-back-btn" class="secondary-btn">Back to Verification (V)</button>
                 <button id="verification-next-btn" class="primary-btn" ${hasNextTest ? '' : 'disabled'}>Next Test (N)</button>
+                <button id="verification-panel-toggle-btn" class="secondary-btn">Hide Panel</button>
             </div>
             <div class="verification-session-meta">
                 <strong>${currentOrder} / ${totalTests}</strong>
@@ -521,21 +529,74 @@ function renderOptionalEffectModal() {
     `;
 }
 
+function isSelectionModalTargetScope(scope: any): boolean {
+    return scope === 'MY_TRASH' || scope === 'REVEALED';
+}
+
+function resolveSelectionModalKey(): string | null {
+    if (!uiState.game) return null;
+    if (uiState.game.state.interactionMode !== 'SELECT_TARGET') return null;
+    const pending = uiState.game.state.pendingEffect as any;
+    if (!pending || !isSelectionModalTargetScope(pending.validTargets)) return null;
+    const sourceCardId = pending.sourceCard?.id || 'UNKNOWN';
+    return `${pending.sourcePlayerId || 'UNKNOWN'}:${pending.actionType || 'UNKNOWN'}:${pending.validTargets}:${sourceCardId}`;
+}
+
+function syncSelectionModalState() {
+    const key = resolveSelectionModalKey();
+    if (!key) {
+        uiState.selectionModalCollapsed = false;
+        uiState.selectionModalKey = null;
+        return;
+    }
+    if (uiState.selectionModalKey !== key) {
+        uiState.selectionModalKey = key;
+        uiState.selectionModalCollapsed = false;
+    }
+}
+
+function renderSelectionModalToggle() {
+    if (!uiState.game) return '';
+    if (!resolveSelectionModalKey()) return '';
+    const collapsed = uiState.selectionModalCollapsed;
+    return `
+        <button
+            id="selection-modal-toggle-btn"
+            class="selection-modal-toggle-btn ${collapsed ? 'collapsed' : ''}"
+            type="button"
+            title="${collapsed ? '선택창 열기' : '선택창 숨기기'}"
+        >
+            ${collapsed ? '선택창 보기' : '선택창 숨기기'}
+        </button>
+    `;
+}
+
 function renderTrashModal() {
     if (!uiState.game) return '';
     if (uiState.game.state.interactionMode !== 'SELECT_TARGET') return '';
     if (isInteractionModalDelayed()) return '';
+    if (uiState.selectionModalCollapsed) return '';
     const pending = uiState.game.state.pendingEffect as any;
     if (!pending || pending.validTargets !== 'MY_TRASH') return '';
 
     const sourcePlayer = uiState.game.state.players.find(p => p.id === pending.sourcePlayerId);
     if (!sourcePlayer) return '';
     const trash = sourcePlayer.trash;
+    const actorPlayerId = getActionOwnerPlayerId(uiState.game);
+    const canConfirm = uiState.game.getLegalActions(actorPlayerId).some(action => action.type === 'CONFIRM_TARGETS');
+    const targetCount = pending?.targetSchema?.count ?? 1;
+    const selectedCount = pending?.selectedTargets?.length ?? 0;
+    const showConfirm = targetCount > 1 || pending?.targetSchema?.selectMode === 'ALL' || pending?.actionValue?.allowPartialSelection === true;
 
     return `
-        <div class="modal-overlay">
+        <div class="modal-overlay selection-modal-overlay">
             <div class="trash-modal">
                 <h3>Select a card from Trash</h3>
+                ${showConfirm ? `
+                    <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
+                        Select cards (${selectedCount}/${targetCount}) then confirm
+                    </p>
+                ` : ''}
                 <div class="trash-grid">
                     ${trash.map((c, i) => {
         const isSelected = pending.selectedTargets?.includes(c);
@@ -546,6 +607,11 @@ function renderTrashModal() {
                     `;
     }).join('')}
                 </div>
+                ${showConfirm ? `
+                    <div class="modal-actions">
+                        <button id="confirm-targets-modal-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                    </div>
+                ` : ''}
             </div>
         </div>
     `;
@@ -555,6 +621,7 @@ function renderRevealedCardsModal() {
     if (!uiState.game) return '';
     if (uiState.game.state.revealedCards.length === 0) return '';
     if (isInteractionModalDelayed()) return '';
+    if (uiState.selectionModalCollapsed) return '';
 
     const pending = uiState.game.state.pendingEffect as any;
     const isSelecting = uiState.game.state.interactionMode === 'SELECT_TARGET' && pending?.validTargets === 'REVEALED';
@@ -575,7 +642,7 @@ function renderRevealedCardsModal() {
                 : 'Select a card to add to hand';
 
     return `
-        <div class="modal-overlay">
+        <div class="modal-overlay selection-modal-overlay">
             <div class="trash-modal">
                 <h3>Revealed Cards</h3>
                 <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
@@ -883,6 +950,7 @@ export function renderHiddenHandCard(isSmall: boolean = false) {
 
 export function renderGame() {
     if (!uiState.game) return;
+    syncSelectionModalState();
     clearAutoPhaseAdvanceTimer();
     applyPhaseThemeClass(uiState.game.state.phase);
     applyAutoLogCollapsePolicy();
@@ -1042,6 +1110,7 @@ export function renderGame() {
       ${renderMulliganModal()}
       ${renderTrashModal()}
       ${renderRevealedCardsModal()}
+      ${renderSelectionModalToggle()}
       ${renderGameOverModal()}
       ${renderReplayOverlayControls()}
     </div>

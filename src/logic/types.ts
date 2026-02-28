@@ -127,6 +127,7 @@ export interface TargetFilter {
     | 'COST_HIGHER_THAN_ENCOUNTER'
     | 'LOWEST_COST_ONLY'
     | 'ITEM_COUNT_MIN'
+    | 'ITEM_COUNT_MAX'
     | 'EXCLUDE_CARD_ID'
     | 'EQUIPPED_ON_SOURCE_UNIT'
     | 'COST_LIMIT_BY_LEADER_LEVEL';

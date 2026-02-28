@@ -66,6 +66,12 @@ interface DrawCardMeta {
     sourceCardId?: string;
 }
 
+interface ItemEquipMeta {
+    sourceActivation?: ActivationCondition | string;
+    sourcePlayerId?: string;
+    sourceCardId?: string;
+}
+
 type CardReferenceArea = 'LEVEL' | 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'ZONE_UNIT' | 'ZONE_ITEM' | 'REVEALED';
 
 interface CardReferenceLocator {
@@ -542,6 +548,89 @@ export class GameEngine {
         });
 
         this.effectManager.processQueue();
+    }
+
+    public notifyItemsEquipped(
+        equippedOwner: PlayerState,
+        equippedZone: UnitZoneState,
+        equippedItems: Card[],
+        sourceMeta: ItemEquipMeta = {}
+    ) {
+        if (!Array.isArray(equippedItems) || equippedItems.length <= 0) return;
+
+        const equippedZoneIndex = equippedOwner.unitZones.indexOf(equippedZone);
+        if (equippedZoneIndex < 0) return;
+
+        const triggerQueue: Array<{ sourceOwner: PlayerState; sourceCard: Card; drawCount: number }> = [];
+        const evaluateSourceEffects = (
+            sourceOwner: PlayerState,
+            sourceCard: Card,
+            effects: Effect[] | undefined,
+            sourceZone?: UnitZoneState
+        ) => {
+            if (!sourceCard || !Array.isArray(effects) || effects.length === 0) return;
+            const sourceOpponent = this.state.players.find((player: any) => player.id !== sourceOwner.id);
+            if (!sourceOpponent) return;
+
+            effects.forEach(effect => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+                if (effect.action?.type !== 'NONE') return;
+                const rawDraw = effect.action?.params?.onItemEquippedDraw;
+                if (!rawDraw) return;
+
+                let drawCount = 1;
+                if (typeof rawDraw === 'number') {
+                    drawCount = Math.max(0, Math.floor(rawDraw));
+                } else if (typeof rawDraw === 'object') {
+                    drawCount = Math.max(0, Math.floor(Number(rawDraw.count ?? 1)));
+                }
+                if (drawCount <= 0) return;
+
+                const context: GameContext = {
+                    sourceCard,
+                    player: sourceOwner,
+                    opponent: sourceOpponent,
+                    ...(sourceZone ? { unitZone: sourceZone } : {}),
+                    machine: this,
+                    flags: {
+                        equippedItemCount: equippedItems.length,
+                        equippedOwnerPlayerId: equippedOwner.id,
+                        equippedZoneIndex,
+                    } as any,
+                };
+                if (!this.effectManager.checkCondition(effect, context)) return;
+                if (sourceCard.type === CardType.LEADER && !sourceCard.isAwakened && this.requiresAwakenedLeader(effect)) {
+                    return;
+                }
+                if (effect.targets && !TargetSelector.isValidTarget(this, effect.targets, context, equippedZone)) return;
+
+                triggerQueue.push({ sourceOwner, sourceCard, drawCount });
+            });
+        };
+
+        this.state.players.forEach(sourceOwner => {
+            sourceOwner.unitZones.forEach(sourceZone => {
+                if (sourceZone.unit) {
+                    evaluateSourceEffects(sourceOwner, sourceZone.unit, sourceZone.unit.effects, sourceZone);
+                    evaluateSourceEffects(sourceOwner, sourceZone.unit, sourceZone.temporaryEffects as any, sourceZone);
+                }
+                sourceZone.items.forEach(item => evaluateSourceEffects(sourceOwner, item, item.effects, sourceZone));
+            });
+            if (sourceOwner.levelZone) {
+                evaluateSourceEffects(sourceOwner, sourceOwner.levelZone, sourceOwner.levelZone.effects);
+            }
+        });
+
+        triggerQueue.forEach(({ sourceOwner, sourceCard, drawCount }) => {
+            const sourceOwnerIndex = this.state.players.indexOf(sourceOwner);
+            if (sourceOwnerIndex < 0) return;
+            this.drawCard(sourceOwnerIndex, drawCount, {
+                reason: 'EFFECT',
+                sourceActivation: sourceMeta.sourceActivation ?? ActivationCondition.PASSIVE,
+                sourcePlayerId: sourceMeta.sourcePlayerId ?? sourceOwner.id,
+                sourceCardId: sourceMeta.sourceCardId ?? sourceCard.id,
+            });
+        });
     }
 
     private getPlayerById(playerId: string): PlayerState | null {
@@ -1490,6 +1579,11 @@ export class GameEngine {
         // Move from Hand to Unit Zone Items
         this.currentPlayer.hand.splice(cardIndex, 1);
         zone.items.push(card);
+        this.notifyItemsEquipped(this.currentPlayer, zone, [card], {
+            sourceActivation: ActivationCondition.ACTIVE,
+            sourcePlayerId: this.currentPlayer.id,
+            sourceCardId: card.id,
+        });
 
         console.log(`Equipped ${card.name} to unit in zone ${zoneIndex}`);
     }
@@ -2069,13 +2163,31 @@ export class GameEngine {
         player: PlayerState,
         zone: UnitZoneState,
         reason: 'BATTLE' | 'EFFECT' | 'RULE',
-    ): Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }> {
+    ): Array<{
+        type:
+        | 'TRASH_EQUIPPED_ITEM'
+        | 'DISCARD_HAND_BY_HIT'
+        | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
+        | 'BT03_083_TRASH_SELF_AND_RETURN';
+        sourceCard: Card;
+        requiredHandCount?: number;
+        description: string;
+    }> {
         return runCollectDestroyReplacements(this, player, zone, reason);
     }
 
     private beginDestroyReplacementPrompt(
         destroyPayload: { targetPlayerId: string; zoneIndex: number; reason: 'BATTLE' | 'EFFECT' | 'RULE'; killerCard?: Card },
-        replacements: Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }>,
+        replacements: Array<{
+            type:
+            | 'TRASH_EQUIPPED_ITEM'
+            | 'DISCARD_HAND_BY_HIT'
+            | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
+            | 'BT03_083_TRASH_SELF_AND_RETURN';
+            sourceCard: Card;
+            requiredHandCount?: number;
+            description: string;
+        }>,
         index: number,
     ) {
         runBeginDestroyReplacementPrompt(this, destroyPayload, replacements, index);

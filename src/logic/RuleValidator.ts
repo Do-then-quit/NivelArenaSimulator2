@@ -90,6 +90,45 @@ export class RuleValidator {
         const zone = player.unitZones[zoneIndex];
         if (!zone.unit) return { valid: false, reason: "Target zone has no unit" };
 
+        // Passive equip restrictions on the equipped unit can block normal PLAY_ITEM.
+        const sourceOpponent = engine.state.players.find(p => p.id !== player.id);
+        let restrictExternalItemEquip = false;
+        let preventDuplicateItemNameOnUnit = false;
+        const evaluateRestrictionEffects = (sourceCard: any, effects: any[]) => {
+            if (!sourceCard || !Array.isArray(effects)) return;
+            effects.forEach((effect: any) => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+                if (effect.action?.type !== 'NONE') return;
+                const params = effect.action?.params || {};
+                if (params.restrictExternalItemEquip !== true && params.preventDuplicateItemNameOnUnit !== true) return;
+
+                const context: any = {
+                    player,
+                    opponent: sourceOpponent,
+                    sourceCard,
+                    unitZone: zone,
+                    machine: engine,
+                };
+                if (!engine.effectManager.checkCondition(effect, context)) return;
+                if (params.restrictExternalItemEquip === true) restrictExternalItemEquip = true;
+                if (params.preventDuplicateItemNameOnUnit === true) preventDuplicateItemNameOnUnit = true;
+            });
+        };
+        evaluateRestrictionEffects(zone.unit, zone.unit.effects || []);
+        if (Array.isArray(zone.items)) {
+            zone.items.forEach((item: any) => evaluateRestrictionEffects(item, item?.effects || []));
+        }
+        if (Array.isArray(zone.temporaryEffects)) {
+            evaluateRestrictionEffects(zone.unit, zone.temporaryEffects);
+        }
+
+        if (restrictExternalItemEquip) {
+            return { valid: false, reason: "This unit cannot equip items by external methods" };
+        }
+        if (preventDuplicateItemNameOnUnit && zone.items.some(item => item?.name === card.name)) {
+            return { valid: false, reason: "Cannot equip duplicate item name on this unit" };
+        }
+
         // Size Limit Check
         const currentSize = engine.getPlayerSize(player);
         const currentFieldCost = this.calculateFieldCost(engine, player);
@@ -98,36 +137,40 @@ export class RuleValidator {
             return { valid: false, reason: "Cost exceeds Size limit" };
         }
 
-        // Equipment Requirement Check: Items with COST_COMPARISON passive effects
-        if (card.effects) {
-            for (const effect of card.effects) {
-                if (effect.activation === ActivationCondition.PASSIVE && effect.condition?.type === 'COST_COMPARISON') {
-                    const val = effect.condition.value;
-                    if (val && val.operator === 'GTE' && zone.unit.cost < val.cost) {
-                        return { valid: false, reason: `Requires unit cost ${val.cost} or higher` };
-                    }
-                    if (val && val.operator === 'LTE' && zone.unit.cost > val.cost) {
-                        return { valid: false, reason: `Requires unit cost ${val.cost} or lower` };
-                    }
-                }
+        return this.validateItemEquipConditions(engine, player, zone, card);
+    }
 
-                if (effect.activation === ActivationCondition.PASSIVE && effect.condition?.type === 'HAS_KEYWORD') {
-                    const requiredKeyword = typeof effect.condition.value === 'string'
-                        ? effect.condition.value
-                        : effect.condition.value?.keyword;
-                    if (requiredKeyword && !this.cardHasKeyword(zone.unit, requiredKeyword)) {
-                        return { valid: false, reason: `Requires unit keyword ${requiredKeyword}` };
-                    }
-                }
+    static validateItemEquipConditions(
+        engine: GameEngine,
+        player: PlayerState,
+        zone: any,
+        itemCard: any,
+    ): ValidationResult {
+        if (!zone?.unit) return { valid: false, reason: "Target zone has no unit" };
+        if (!itemCard || itemCard.type !== CardType.ITEM) return { valid: false, reason: "Card is not an item" };
 
-                if (effect.activation === ActivationCondition.PASSIVE && effect.condition?.type === 'HAS_TRAIT') {
-                    const requiredTrait = typeof effect.condition.value === 'string'
-                        ? effect.condition.value
-                        : effect.condition.value?.trait;
-                    if (requiredTrait && !zone.unit.traits?.includes(requiredTrait)) {
-                        return { valid: false, reason: `Requires unit trait ${requiredTrait}` };
-                    }
-                }
+        const sourceOpponent = engine.state.players.find(p => p.id !== player.id);
+        if (!sourceOpponent) return { valid: false, reason: "No opponent found" };
+
+        const equipConditionEffects = (itemCard.effects || []).filter((effect: any) => {
+            if (!effect || effect.activation !== ActivationCondition.PASSIVE) return false;
+            if (effect.action?.type !== 'NONE') return false;
+
+            // Equip-condition lines in card data consistently start with this label.
+            const description = String(effect.description || '').replace(/\u00a0/g, ' ').trim();
+            return /^장착\s*조건/.test(description) || /^장착조건/.test(description);
+        });
+
+        for (const effect of equipConditionEffects) {
+            const context: any = {
+                player,
+                opponent: sourceOpponent,
+                sourceCard: itemCard,
+                unitZone: zone,
+                machine: engine,
+            };
+            if (!engine.effectManager.checkCondition(effect, context)) {
+                return { valid: false, reason: "Equip condition is not satisfied" };
             }
         }
 
@@ -221,10 +264,23 @@ export class RuleValidator {
         let cost = 0;
         player.unitZones.forEach(z => {
             if (z.unit) cost += z.unit.cost;
-            z.items.forEach(i => cost += i.cost);
+            z.items.forEach(i => cost += this.getEffectiveItemCost(engine, i));
         });
         player.skillZone.forEach(s => cost += this.getEffectiveSkillCost(engine, s));
         return cost;
+    }
+
+    private static getEffectiveItemCost(engine: GameEngine, itemCard: any): number {
+        const override = itemCard?.turnCostOverride;
+        if (
+            override &&
+            typeof override === 'object' &&
+            override.turnCount === engine.state.turnCount &&
+            typeof override.cost === 'number'
+        ) {
+            return Math.max(0, override.cost);
+        }
+        return itemCard?.cost || 0;
     }
 
     private static getEffectiveSkillCost(engine: GameEngine, skillCard: any): number {

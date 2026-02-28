@@ -249,6 +249,7 @@ export const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => 
     const player = ctx.player;
     const drawCount = params.drawCount || 2;
     const discardCount = params.discardCount || 1;
+    const discardFrom = params.discardFrom === 'HAND' ? 'HAND' : 'DRAWN';
     const pIdx = ctx.machine.state.players.indexOf(player);
 
     const drawnCards = ctx.machine.drawCard(pIdx, drawCount, resolveEffectDrawMeta(params));
@@ -261,26 +262,30 @@ export const drawThenDiscard: ActionImplementation = (ctx, params, _targets) => 
         description: 'Choose card to discard',
         action: { type: 'DISCARD', params: { target: 'SELF', count: discardCount } },
         targets: {
-            scope: 'REVEALED',
+            scope: discardFrom === 'HAND' ? 'MY_HAND' : 'REVEALED',
             type: 'CARD',
             count: discardCount,
             selectMode: 'MANUAL'
         }
     } as any;
 
-    ctx.machine.state.revealedCards = drawnCards;
+    if (discardFrom === 'DRAWN') {
+        ctx.machine.state.revealedCards = drawnCards;
+    }
     ctx.machine.state.interactionMode = 'SELECT_TARGET';
     ctx.machine.state.pendingEffect = {
         sourceCard: ctx.sourceCard,
         sourcePlayerId: player.id,
         controllerPlayerId: player.id,
-        actionType: 'DISCARD_FROM_DRAWN',
+        actionType: discardFrom === 'HAND' ? 'DISCARD_FROM_HAND_AFTER_DRAW' : 'DISCARD_FROM_DRAWN',
         actionValue: { discardCount },
         effectDescription: selectionEffect.description,
         sourceActivation: params?.__sourceActivation,
         triggerReason: '드로우 후 디스카드 처리',
-        selectionPurpose: `드로우한 카드 중 ${discardCount}장 선택하여 버리기`,
-        validTargets: 'REVEALED',
+        selectionPurpose: discardFrom === 'HAND'
+            ? `자신의 패에서 ${discardCount}장 선택하여 버리기`
+            : `드로우한 카드 중 ${discardCount}장 선택하여 버리기`,
+        validTargets: discardFrom === 'HAND' ? 'MY_HAND' : 'REVEALED',
         targetSchema: selectionEffect.targets,
         selectedTargets: []
     };

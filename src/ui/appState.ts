@@ -153,6 +153,7 @@ export const uiState = {
     testResults: [] as UITestResult[],
     testRunning: false,
     verificationSession: null as VerificationSessionState | null,
+    verificationPanelCollapsed: false,
     pendingSetupConfig: HUMAN_VS_HUMAN_CONFIG as MatchControlConfig,
     activeMatchConfig: HUMAN_VS_HUMAN_CONFIG as MatchControlConfig,
     pendingMatchViewConfig: { revealBotHand: true } as MatchViewConfig,
@@ -206,6 +207,8 @@ export const uiState = {
     deckBuilderReturnScreen: Screen.MENU as Screen,
     selectedPacks: new Set<string>(),
     draggedCardIndex: null as number | null,
+    selectionModalCollapsed: false,
+    selectionModalKey: null as string | null,
 
     // callbacks wired by main orchestrator
     render: null as (() => void) | null,

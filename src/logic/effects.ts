@@ -410,7 +410,15 @@ export class EffectManager {
                 return false;
             case 'HAS_ITEM': {
                 if (!context.unitZone) return false;
-                const allItems = context.unitZone.items || [];
+                let allItems = context.unitZone.items || [];
+                const snapshotItems = context.flags?.equippedItemsSnapshot;
+                if (
+                    allItems.length === 0 &&
+                    effect.activation === ActivationCondition.EXIT &&
+                    Array.isArray(snapshotItems)
+                ) {
+                    allItems = snapshotItems;
+                }
                 const minCount = typeof value === 'number' ? value : (value?.minCount ?? 1);
                 const costMin = typeof value === 'object' ? value?.costMin : undefined;
                 const traitFilter = typeof value === 'object' ? value?.hasTrait : undefined;

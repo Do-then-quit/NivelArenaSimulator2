@@ -1268,4 +1268,289 @@ export const BT03_EFFECTS: Record<string, Effect[]> = {
             action: { type: 'BUFF_POWER', params: { value: 3000 } },
         },
     ],
+    "BT03-069": [
+        {
+            activation: ActivationCondition.AWAKEN,
+            description: "각성 : 자신의 리더 레벨이 6 이상이라면 이 카드를 뒤집는다.",
+            condition: { type: 'LEADER_LEVEL', value: 6 },
+            action: { type: 'AWAKEN' as any, params: {} },
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "각성면 액티브: 메인 - 자신의 덱 맨 위에서 카드를 3장 트래시한다. 이 효과로 트래시된 아이템 카드가 1장 이상이라면 카드를 1장 드로우한다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_069_TRASH_TOP3_DRAW_IF_ITEM' },
+            },
+        },
+    ],
+    "BT03-070": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "암드 : 아이템을 장착하고 있다면 파워+2000.",
+            condition: { type: 'HAS_ITEM', value: { minCount: 1 } },
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+        },
+    ],
+    "BT03-071": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 필드에 아이템을 장착한 자신 유닛이 존재한다면 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 아이템 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+            condition: { type: 'EQUIPPED_UNIT_COUNT_MIN', value: 1 },
+            action: {
+                type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND',
+                params: {
+                    count: 3,
+                    remainingDestination: 'TRASH',
+                    filters: [{ type: 'UNIT_TYPE', value: CardType.ITEM }],
+                },
+            },
+        },
+    ],
+    "BT03-072": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 자신의 트래시 존에서 2코스트인 아이템 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.ITEM },
+                    { type: 'COST_EQUAL', value: 2 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT03-073": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "암드 액티브: 메인 - 이 유닛이 장착한 아이템 1장마다 자신의 덱 맨 위에서 카드를 3장 트래시한다. 이 턴이 끝날 때까지 이 효과로 트래시된 아이템 카드 1장마다 히트+1.",
+            condition: { type: 'HAS_ITEM', value: { minCount: 1 } },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_073_ACTIVE_TRASH_BY_EQUIPPED_COUNT_AND_BUFF_HIT' },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "카드를 2장 드로우한다. 그러면 자신의 패를 2장 골라 트래시한다.",
+            action: { type: 'DRAW_THEN_DISCARD', params: { drawCount: 2, discardCount: 2, discardFrom: 'HAND' } },
+        },
+    ],
+    "BT03-074": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "암드 : 이 유닛이 장착한 아이템 1장마다 파워+1000.",
+            action: { type: 'BUFF_POWER', params: { value: 1000, dynamic: 'ITEM_COUNT_MULTIPLIER' } },
+        },
+        {
+            activation: ActivationCondition.EXIT,
+            description: "암드 : 아이템을 2장 이상 장착하고 있다면 필드에 있는 아이템을 장착하지 않은 유닛을 1장 골라 트래시할 수 있다.",
+            condition: { type: 'HAS_ITEM', value: { minCount: 2 } },
+            optional: true,
+            targets: {
+                scope: 'BOTH_FIELDS',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'ITEM_COUNT_MAX', value: 0 }],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'DESTROY_UNIT', params: {} },
+        },
+    ],
+    "BT03-075": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 트래시 존에서 아이템 카드를 3장까지 골라 덱 맨 아래에 원하는 순서대로 놓을 수 있다. 놓은 카드의 코스트 합이 조우 유닛의 코스트 이상이라면 조우 유닛을 트래시한다.",
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_075_ENTRY_TRASH_ITEMS_TO_BOTTOM_THEN_DESTROY_ENCOUNTER' },
+            },
+        },
+    ],
+    "BT03-076": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 자신의 대미지 존에서 〈레오나-주 키퍼〉가 아닌 유닛 카드를 1장 골라 패에 넣는다. 그러면 이 유닛 카드를 대미지 존에 놓는다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_076_EXIT_SWAP_DAMAGE_WITH_SELF' },
+            },
+        },
+    ],
+    "BT03-077": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 이 유닛은 자신의 효과 이외의 방법으로 아이템을 장착할 수 없고 이름이 같은 아이템을 2장 이상 장착할 수 없다.",
+            action: {
+                type: 'NONE',
+                params: {
+                    restrictExternalItemEquip: true,
+                    preventDuplicateItemNameOnUnit: true,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "액티브: 메인 - 자신의 트래시 존에서 아이템 카드를 2장까지 골라 사이즈를 무시하고 장착할 수 있다. 이 유닛이 장착한 모든 아이템은 이 턴이 끝날 때까지 0코스트가 된다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_077_ACTIVE_EQUIP_UP_TO_TWO_FROM_TRASH_AND_SET_ZERO_COST' },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT03-078": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "암드 : 아이템을 장착하고 있다면 전투나 효과로 트래시될 때 자신의 트래시 존에서 아이템 카드를 1장 골라 덱 맨 아래에 놓을 수 있다. 그러면 이 유닛과 이 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
+            condition: {
+                type: 'ALL',
+                value: [
+                    { type: 'HAS_ITEM', value: { minCount: 1 } },
+                    { type: 'TRASH_REASON', value: ['BATTLE', 'EFFECT'] },
+                ],
+            },
+            action: {
+                type: 'NONE',
+                params: {
+                    destroyReplacement: 'BT03_078_RETURN_WITH_ITEM_BOTTOM',
+                },
+            },
+        },
+    ],
+    "BT03-079": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 트래시 존과 패에서 아이템 카드를 8장 골라 덱 맨 아래에 원하는 순서대로 놓을 수 있다. 그러면 코스트 합이 8코스트 이하가 되도록 필드에 있는 상대 유닛을 원하는 수만큼 골라 트래시한다. 이 효과로 트래시한 유닛 1장마다 카드를 1장 드로우한다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_079_ENTRY_PAY_8_ITEMS_THEN_DESTROY_AND_DRAW' },
+            },
+        },
+    ],
+    "BT03-080": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 자신 유닛을 1장 고른다. 그 유닛은 이 턴이 끝날 때까지 「패시브 : 아이템을 1장 이상 장착할 때마다 카드를 1장 드로우한다」를 얻는다.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.PASSIVE,
+                        description: "패시브 : 아이템을 1장 이상 장착할 때마다 카드를 1장 드로우한다.",
+                        action: { type: 'NONE', params: { onItemEquippedDraw: 1 } },
+                        duration: 'TURN_END',
+                    },
+                },
+            },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT03-081": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 덱 맨 위에서 카드를 5장 트래시한다. 자신의 트래시 존에서 유닛 카드를 1장 골라 패에 넣는다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_081_TRASH_TOP5_THEN_RECOVER_UNIT' },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "자신의 덱에서 1코스트 이하인 아이템 카드를 1장 골라 패에 넣는다. 덱을 섞는다.",
+            action: {
+                type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND',
+                params: {
+                    count: 999,
+                    filters: [
+                        { type: 'UNIT_TYPE', value: CardType.ITEM },
+                        { type: 'COST_LIMIT', value: 1 },
+                    ],
+                    remainingDestination: 'DECK',
+                },
+            },
+        },
+    ],
+    "BT03-082": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 자신 유닛 1장과 그 유닛이 장착한 아이템을 1장 고른다. 필드에 있는 다른 모든 자신 유닛은 이 턴이 끝날 때까지 그 아이템의 효과를 얻는다.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_082_COPY_SELECTED_ITEM_EFFECTS_TO_OTHER_UNITS' },
+            },
+        },
+    ],
+    "BT03-083": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "장착 조건: 아이템을 장착한 유닛.",
+            condition: { type: 'HAS_ITEM', value: { minCount: 1 } },
+            action: { type: 'NONE', params: {} },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 이 유닛이 전투나 효과로 트래시될 때 장착한 〈코드 넘버 : IX 고글〉을 1장 골라 트래시할 수 있다. 그러면 이 유닛과 이 유닛이 장착한 아이템을 모두 주인의 패로 되돌린다.",
+            condition: { type: 'TRASH_REASON', value: ['BATTLE', 'EFFECT'] },
+            action: {
+                type: 'NONE',
+                params: {
+                    destroyReplacement: 'BT03_083_TRASH_SELF_AND_RETURN',
+                },
+            },
+        },
+    ],
+    "BT03-084": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "장착 조건: 없음.",
+            action: { type: 'NONE', params: {} },
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "액티브: 메인 - 자신의 덱 맨 위에서 카드를 3장 트래시한다. 이 효과로 트래시된 아이템 카드가 1장 이상이라면 상대의 턴이 끝날 때까지 파워+3000.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_084_TRASH_TOP3_BUFF_IF_ITEM' },
+            },
+        },
+    ],
+    "BT03-085": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "장착 조건: 3코스트 이상인 유닛.",
+            condition: { type: 'COST_COMPARISON', value: { operator: 'GTE', cost: 3 } },
+            action: { type: 'NONE', params: {} },
+        },
+        {
+            activation: ActivationCondition.ATTACKER,
+            description: "어태커 : 자신의 패를 1장 골라 트래시할 수 있다. 그러면 상대는 이 유닛의 히트만큼 패를 골라 트래시할 수 있다. 상대가 트래시하지 않았다면 조우 유닛을 트래시한다.",
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_085_SELF_DISCARD_THEN_OPP_DISCARD_OR_DESTROY_ENCOUNTER' },
+            },
+        },
+    ],
 };

@@ -248,6 +248,7 @@ export function confirmTargets(engine: any) {
         pending.actionType === 'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
         pending.actionType === 'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
         pending.actionType === 'BT03_011_SELECT_TRASH_LOWER_COST_TO_HAND' ||
+        pending.actionType === 'BT03_079_SELECT_8_ITEMS_FROM_HAND_TRASH' ||
         pending.actionType === 'GUARDIAN_BLOCK_UNIT_COST';
     if (!effect && !allowsEffectlessConfirm) return;
 
@@ -361,6 +362,65 @@ export function confirmTargets(engine: any) {
         return;
     }
 
+    if (pending.actionType === 'BT03_079_SELECT_8_ITEMS_FROM_HAND_TRASH') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        const sourceOpponent = sourcePlayer ? engine.getOpponentOf(sourcePlayer) : null;
+        if (!sourcePlayer || !sourceOpponent) return;
+
+        const selectedCards = (pending.selectedTargets ?? []).slice(0, 8);
+        if (selectedCards.length !== 8) return;
+
+        const movedCards: any[] = [];
+        selectedCards.forEach((card: any) => {
+            const handIndex = sourcePlayer.hand.indexOf(card);
+            if (handIndex !== -1) {
+                const [removed] = sourcePlayer.hand.splice(handIndex, 1);
+                if (removed) movedCards.push(removed);
+                return;
+            }
+            const trashIndex = sourcePlayer.trash.indexOf(card);
+            if (trashIndex !== -1) {
+                const [removed] = sourcePlayer.trash.splice(trashIndex, 1);
+                if (removed) movedCards.push(removed);
+            }
+        });
+        if (movedCards.length !== 8) return;
+
+        sourcePlayer.deck.unshift(...movedCards);
+        engine.state.revealedCards = [];
+
+        pending.actionType = 'BT03_079_SELECT_OPP_UNITS_COST_SUM_UP_TO_8';
+        pending.actionValue = {
+            totalCostLimit: 8,
+            allowPartialSelection: true,
+        };
+        pending.effectDescription = '코스트 합이 8 이하가 되도록 트래시할 상대 유닛을 선택한다.';
+        pending.validTargets = 'OPP_UNITS' as any;
+        pending.targetSchema = {
+            scope: 'OPP_FIELD',
+            type: 'UNIT',
+            count: 3,
+            totalCostLimit: 8,
+            selectMode: 'MANUAL',
+        } as any;
+        pending.selectedTargets = [];
+        engine.setPendingRuntime(context, {
+            activation: 'ACTIVE' as any,
+            description: 'BT03-079 resolve destroy and draw',
+            targets: pending.targetSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_079_ENTRY_PAY_8_ITEMS_THEN_DESTROY_AND_DRAW',
+                    stage: 'RESOLVE_DESTROY_AND_DRAW',
+                    totalCostLimit: 8,
+                },
+            },
+        } as any);
+        engine.assignInteractionOwner(sourcePlayer.id);
+        return;
+    }
+
     if (pending.actionType === 'BT06_062_SELECT_UNIQUE_TRASH_SKILLS') {
         // Clear prompt cards before resolving to avoid stale revealed modal after confirm.
         engine.state.revealedCards = [];
@@ -380,7 +440,8 @@ export function selectTrashTarget(engine: any, trashIndex: number, targetPlayerI
     const effect = runtime?.effect;
     const context = runtime?.context;
     const targetSchema = pending.targetSchema;
-    if (!effect || !context || !targetSchema) return;
+    const allowsEffectlessSelection = pending.actionType === 'BT03_078_REPLACEMENT_SELECT_TRASH_ITEM_TO_BOTTOM';
+    if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
     // Verify scope is MY_TRASH
     if (pending.validTargets !== 'MY_TRASH') {
         console.log("Invalid Target: Expected Trash selection.");
@@ -402,6 +463,37 @@ export function selectTrashTarget(engine: any, trashIndex: number, targetPlayerI
     // Validate with TargetSelector
     if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) {
         console.log("Invalid Trash Target Selected.");
+        return;
+    }
+
+    if (pending.actionType === 'BT03_078_REPLACEMENT_SELECT_TRASH_ITEM_TO_BOTTOM') {
+        const player = engine.getPlayerById(pending.sourcePlayerId);
+        if (!player || player.id !== expectedPlayerId) return;
+
+        const selectedIndex = player.trash.indexOf(card);
+        if (selectedIndex === -1) return;
+        const [selectedItem] = player.trash.splice(selectedIndex, 1);
+        if (!selectedItem) return;
+        player.deck.unshift(selectedItem);
+
+        const destroyPayload = pending.actionValue?.destroyPayload;
+        const zoneIndex = destroyPayload?.zoneIndex;
+        if (typeof zoneIndex === 'number' && zoneIndex >= 0 && zoneIndex < player.unitZones.length) {
+            const zone = player.unitZones[zoneIndex];
+            if (zone?.unit) {
+                player.hand.push(zone.unit);
+                zone.items.forEach((item: any) => player.hand.push(item));
+                zone.unit = null;
+                zone.items = [];
+                zone.buffs = [];
+                zone.temporaryEffects = [];
+                zone.attackCountThisTurn = 0;
+                zone.extraAttackAllowance = 0;
+                zone.hasAttacked = false;
+            }
+        }
+
+        engine.resetInteractionMode();
         return;
     }
 
@@ -481,7 +573,9 @@ export function selectItemTargetByPlayerId(engine: any, zoneIndex: number, itemI
     const effect = runtime?.effect;
     const context = runtime?.context;
     const targetSchema = pending.targetSchema;
-    const allowsEffectlessSelection = pending.actionType === 'GUARDIAN_BLOCK_ITEM_COST';
+    const allowsEffectlessSelection =
+        pending.actionType === 'GUARDIAN_BLOCK_ITEM_COST' ||
+        pending.actionType === 'BT03_083_REPLACEMENT_SELECT_EQUIPPED_ITEM_TO_TRASH';
     if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
 
     const targetPlayer = engine.getPlayerById(targetPlayerId);
@@ -519,6 +613,34 @@ export function selectItemTargetByPlayerId(engine: any, zoneIndex: number, itemI
         engine.assignInteractionOwner(engine.currentPlayer.id);
 
         engine.commitBlockDeclaration(blockerZoneIndex);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_083_REPLACEMENT_SELECT_EQUIPPED_ITEM_TO_TRASH') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        const destroyPayload = pending.actionValue?.destroyPayload;
+        const payloadZoneIndex = destroyPayload?.zoneIndex;
+        if (typeof payloadZoneIndex !== 'number' || payloadZoneIndex !== zoneIndex) return;
+        if (!targetCard?.id?.startsWith('BT03-083')) return;
+
+        const [trashedGoggle] = zone.items.splice(itemIndex, 1);
+        if (!trashedGoggle) return;
+        sourcePlayer.trash.push(trashedGoggle);
+
+        if (zone.unit) {
+            sourcePlayer.hand.push(zone.unit);
+            zone.items.forEach((item: any) => sourcePlayer.hand.push(item));
+            zone.unit = null;
+            zone.items = [];
+            zone.buffs = [];
+            zone.temporaryEffects = [];
+            zone.attackCountThisTurn = 0;
+            zone.extraAttackAllowance = 0;
+            zone.hasAttacked = false;
+        }
+
+        engine.resetInteractionMode();
         return;
     }
 
@@ -568,6 +690,16 @@ export function selectHandTargetByPlayerId(engine: any, handIndex: number, targe
     }
 
     if (pending.actionType === 'BT03_057_OPP_SELECT_MATCH_OR_SKIP') {
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
+        if (selectedTargets.includes(targetCard)) {
+            pending.selectedTargets = selectedTargets.filter((card: any) => card !== targetCard);
+        } else {
+            pending.selectedTargets = [targetCard];
+        }
+        return;
+    }
+
+    if (pending.actionType === 'BT03_085_OPP_SELECT_HAND_FOR_HIT_OR_SKIP') {
         const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
         if (selectedTargets.includes(targetCard)) {
             pending.selectedTargets = selectedTargets.filter((card: any) => card !== targetCard);
@@ -849,6 +981,47 @@ export function selectRevealedTarget(engine: any, index: number) {
         return;
     }
 
+    if (pending.actionType === 'BT03_082_SELECT_EQUIPPED_ITEM_TO_COPY') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        const sourceZoneIndex = pending.actionValue?.sourceZoneIndex;
+        if (!sourcePlayer || !option || typeof sourceZoneIndex !== 'number') return;
+
+        const sourceZone = sourcePlayer.unitZones[sourceZoneIndex];
+        if (!sourceZone?.unit) return;
+        const itemIndex = option.itemIndex;
+        if (typeof itemIndex !== 'number' || itemIndex < 0 || itemIndex >= sourceZone.items.length) return;
+        const selectedItem = sourceZone.items[itemIndex];
+        if (!selectedItem) return;
+
+        sourcePlayer.unitZones.forEach((targetZone: any, targetZoneIndex: number) => {
+            if (!targetZone?.unit) return;
+            if (targetZoneIndex === sourceZoneIndex) return;
+            (selectedItem.effects || []).forEach((itemEffect: any) => {
+                const copiedEffect = JSON.parse(JSON.stringify(itemEffect));
+                copiedEffect.duration = 'TURN_END';
+                targetZone.temporaryEffects.push(copiedEffect);
+            });
+        });
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_079_SELECT_8_ITEMS_FROM_HAND_TRASH') {
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
+        const maxCount = targetSchema.count || 8;
+        const existingIndex = selectedTargets.indexOf(card);
+        if (existingIndex !== -1) {
+            selectedTargets.splice(existingIndex, 1);
+            return;
+        }
+        if (selectedTargets.length >= maxCount) return;
+        selectedTargets.push(card);
+        return;
+    }
+
     if (pending.actionType === 'BT03_041_SELECT_EXIT_HAND_CARD') {
         const option = pending.actionValue?.options?.[index];
         const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
@@ -1029,6 +1202,9 @@ export function handleEffectCompletion(engine: any, context: GameContext, curren
     if (engine.state.interactionMode !== 'NORMAL' && engine.state.pendingEffect !== currentPending) {
         console.log("[GameEngine] Action triggered a nested selection mode. Queue paused.");
     } else {
+        if (currentPending?.validTargets === 'REVEALED') {
+            engine.state.revealedCards = [];
+        }
         engine.resetInteractionMode();
     }
 
