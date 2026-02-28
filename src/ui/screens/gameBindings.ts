@@ -80,6 +80,11 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         uiState.goToNextVerificationTest?.();
     });
 
+    document.getElementById('verification-panel-toggle-btn')?.addEventListener('click', () => {
+        uiState.verificationPanelCollapsed = !uiState.verificationPanelCollapsed;
+        uiState.render?.();
+    });
+
     document.getElementById('replay-next-action')?.addEventListener('click', () => {
         stepReplayForward();
     });
@@ -699,6 +704,11 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         document.getElementById('confirm-targets-btn')?.addEventListener('click', onConfirmTargets);
         document.getElementById('confirm-targets-modal-btn')?.addEventListener('click', onConfirmTargets);
     }
+
+    document.getElementById('selection-modal-toggle-btn')?.addEventListener('click', () => {
+        uiState.selectionModalCollapsed = !uiState.selectionModalCollapsed;
+        uiState.render?.();
+    });
 
     if (uiState.game.state.interactionMode === 'SELECT_OPTIONAL' && localHumanCanInput) {
         document.getElementById('opt-confirm')?.addEventListener('click', () => {

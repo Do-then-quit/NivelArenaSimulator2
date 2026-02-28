@@ -66,6 +66,12 @@ interface DrawCardMeta {
     sourceCardId?: string;
 }
 
+interface ItemEquipMeta {
+    sourceActivation?: ActivationCondition | string;
+    sourcePlayerId?: string;
+    sourceCardId?: string;
+}
+
 type CardReferenceArea = 'LEVEL' | 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'ZONE_UNIT' | 'ZONE_ITEM' | 'REVEALED';
 
 interface CardReferenceLocator {
@@ -542,6 +548,89 @@ export class GameEngine {
         });
 
         this.effectManager.processQueue();
+    }
+
+    public notifyItemsEquipped(
+        equippedOwner: PlayerState,
+        equippedZone: UnitZoneState,
+        equippedItems: Card[],
+        sourceMeta: ItemEquipMeta = {}
+    ) {
+        if (!Array.isArray(equippedItems) || equippedItems.length <= 0) return;
+
+        const equippedZoneIndex = equippedOwner.unitZones.indexOf(equippedZone);
+        if (equippedZoneIndex < 0) return;
+
+        const triggerQueue: Array<{ sourceOwner: PlayerState; sourceCard: Card; drawCount: number }> = [];
+        const evaluateSourceEffects = (
+            sourceOwner: PlayerState,
+            sourceCard: Card,
+            effects: Effect[] | undefined,
+            sourceZone?: UnitZoneState
+        ) => {
+            if (!sourceCard || !Array.isArray(effects) || effects.length === 0) return;
+            const sourceOpponent = this.state.players.find((player: any) => player.id !== sourceOwner.id);
+            if (!sourceOpponent) return;
+
+            effects.forEach(effect => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+                if (effect.action?.type !== 'NONE') return;
+                const rawDraw = effect.action?.params?.onItemEquippedDraw;
+                if (!rawDraw) return;
+
+                let drawCount = 1;
+                if (typeof rawDraw === 'number') {
+                    drawCount = Math.max(0, Math.floor(rawDraw));
+                } else if (typeof rawDraw === 'object') {
+                    drawCount = Math.max(0, Math.floor(Number(rawDraw.count ?? 1)));
+                }
+                if (drawCount <= 0) return;
+
+                const context: GameContext = {
+                    sourceCard,
+                    player: sourceOwner,
+                    opponent: sourceOpponent,
+                    ...(sourceZone ? { unitZone: sourceZone } : {}),
+                    machine: this,
+                    flags: {
+                        equippedItemCount: equippedItems.length,
+                        equippedOwnerPlayerId: equippedOwner.id,
+                        equippedZoneIndex,
+                    } as any,
+                };
+                if (!this.effectManager.checkCondition(effect, context)) return;
+                if (sourceCard.type === CardType.LEADER && !sourceCard.isAwakened && this.requiresAwakenedLeader(effect)) {
+                    return;
+                }
+                if (effect.targets && !TargetSelector.isValidTarget(this, effect.targets, context, equippedZone)) return;
+
+                triggerQueue.push({ sourceOwner, sourceCard, drawCount });
+            });
+        };
+
+        this.state.players.forEach(sourceOwner => {
+            sourceOwner.unitZones.forEach(sourceZone => {
+                if (sourceZone.unit) {
+                    evaluateSourceEffects(sourceOwner, sourceZone.unit, sourceZone.unit.effects, sourceZone);
+                    evaluateSourceEffects(sourceOwner, sourceZone.unit, sourceZone.temporaryEffects as any, sourceZone);
+                }
+                sourceZone.items.forEach(item => evaluateSourceEffects(sourceOwner, item, item.effects, sourceZone));
+            });
+            if (sourceOwner.levelZone) {
+                evaluateSourceEffects(sourceOwner, sourceOwner.levelZone, sourceOwner.levelZone.effects);
+            }
+        });
+
+        triggerQueue.forEach(({ sourceOwner, sourceCard, drawCount }) => {
+            const sourceOwnerIndex = this.state.players.indexOf(sourceOwner);
+            if (sourceOwnerIndex < 0) return;
+            this.drawCard(sourceOwnerIndex, drawCount, {
+                reason: 'EFFECT',
+                sourceActivation: sourceMeta.sourceActivation ?? ActivationCondition.PASSIVE,
+                sourcePlayerId: sourceMeta.sourcePlayerId ?? sourceOwner.id,
+                sourceCardId: sourceMeta.sourceCardId ?? sourceCard.id,
+            });
+        });
     }
 
     private getPlayerById(playerId: string): PlayerState | null {
@@ -1311,6 +1400,11 @@ export class GameEngine {
     private clearExpiredTurnCountAttackLocks() {
         this.state.players.forEach(player => {
             player.unitZones.forEach(zone => {
+                zone.buffs = zone.buffs.filter(buff => {
+                    const untilTurnCount = (buff as any)?.untilTurnCount;
+                    if (typeof untilTurnCount !== 'number') return true;
+                    return this.state.turnCount <= untilTurnCount;
+                });
                 zone.temporaryEffects = zone.temporaryEffects.filter(effect => {
                     const attackLockUntil = effect?.action?.params?.cannotAttackUntilTurnCount;
                     const genericUntil = effect?.action?.params?.untilTurnCount;
@@ -1485,6 +1579,11 @@ export class GameEngine {
         // Move from Hand to Unit Zone Items
         this.currentPlayer.hand.splice(cardIndex, 1);
         zone.items.push(card);
+        this.notifyItemsEquipped(this.currentPlayer, zone, [card], {
+            sourceActivation: ActivationCondition.ACTIVE,
+            sourcePlayerId: this.currentPlayer.id,
+            sourceCardId: card.id,
+        });
 
         console.log(`Equipped ${card.name} to unit in zone ${zoneIndex}`);
     }
@@ -1864,6 +1963,8 @@ export class GameEngine {
         this.state.pendingAttackerIndex = attackerZoneIndex;
         this.assignInteractionOwner(this.currentPlayer.id);
 
+        this.resolveOpponentAttackReactiveDraws(attackerZoneIndex);
+
         // Trigger ATTACKER effects as one simultaneous event.
         const attackerBatchStep = this.incrementAndGetGlobalStep();
         this.effectManager.processEffects(ActivationCondition.ATTACKER, {
@@ -1898,6 +1999,70 @@ export class GameEngine {
         if (this.state.effectQueue.length === 0 && this.state.interactionMode === 'NORMAL') {
             this.advanceCombatStep();
         }
+    }
+
+    private resolveOpponentAttackReactiveDraws(attackerZoneIndex: number) {
+        const defendingPlayer = this.opponentPlayer;
+        const attackingPlayer = this.currentPlayer;
+        const defendingPlayerIndex = this.state.players.indexOf(defendingPlayer);
+        if (defendingPlayerIndex < 0) return;
+
+        const triggerQueue: Array<{ sourceCard: Card; drawCount: number }> = [];
+        const evaluateSourceEffects = (sourceCard: Card, effects: Effect[] | undefined, unitZone?: UnitZoneState) => {
+            if (!sourceCard || !Array.isArray(effects) || effects.length === 0) return;
+            effects.forEach(effect => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+                if (effect.action?.type !== 'NONE') return;
+
+                const rawDraw = effect.action?.params?.onOpponentUnitAttackDraw;
+                if (!rawDraw) return;
+
+                let drawCount = 1;
+                if (typeof rawDraw === 'number') {
+                    drawCount = Math.max(0, Math.floor(rawDraw));
+                } else if (typeof rawDraw === 'object') {
+                    drawCount = Math.max(0, Math.floor(Number(rawDraw.count ?? 1)));
+                }
+                if (drawCount <= 0) return;
+
+                const context: GameContext = {
+                    sourceCard,
+                    player: defendingPlayer,
+                    opponent: attackingPlayer,
+                    ...(unitZone ? { unitZone } : {}),
+                    machine: this,
+                    flags: {
+                        attackerZoneIndex,
+                    } as any,
+                };
+                if (!this.effectManager.checkCondition(effect, context)) return;
+                if (sourceCard.type === CardType.LEADER && !sourceCard.isAwakened && this.requiresAwakenedLeader(effect)) {
+                    return;
+                }
+
+                triggerQueue.push({ sourceCard, drawCount });
+            });
+        };
+
+        defendingPlayer.unitZones.forEach(zone => {
+            if (zone.unit) {
+                evaluateSourceEffects(zone.unit, zone.unit.effects, zone);
+                evaluateSourceEffects(zone.unit, zone.temporaryEffects as any, zone);
+            }
+            zone.items.forEach(item => evaluateSourceEffects(item, item.effects, zone));
+        });
+        if (defendingPlayer.levelZone) {
+            evaluateSourceEffects(defendingPlayer.levelZone, defendingPlayer.levelZone.effects);
+        }
+
+        triggerQueue.forEach(({ sourceCard, drawCount }) => {
+            this.drawCard(defendingPlayerIndex, drawCount, {
+                reason: 'EFFECT',
+                sourceActivation: ActivationCondition.PASSIVE,
+                sourcePlayerId: defendingPlayer.id,
+                sourceCardId: sourceCard.id,
+            });
+        });
     }
 
     private getAttackCostEffect(zone: UnitZoneState): Effect | undefined {
@@ -1998,13 +2163,31 @@ export class GameEngine {
         player: PlayerState,
         zone: UnitZoneState,
         reason: 'BATTLE' | 'EFFECT' | 'RULE',
-    ): Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }> {
+    ): Array<{
+        type:
+        | 'TRASH_EQUIPPED_ITEM'
+        | 'DISCARD_HAND_BY_HIT'
+        | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
+        | 'BT03_083_TRASH_SELF_AND_RETURN';
+        sourceCard: Card;
+        requiredHandCount?: number;
+        description: string;
+    }> {
         return runCollectDestroyReplacements(this, player, zone, reason);
     }
 
     private beginDestroyReplacementPrompt(
         destroyPayload: { targetPlayerId: string; zoneIndex: number; reason: 'BATTLE' | 'EFFECT' | 'RULE'; killerCard?: Card },
-        replacements: Array<{ type: 'TRASH_EQUIPPED_ITEM' | 'DISCARD_HAND_BY_HIT'; sourceCard: Card; requiredHandCount?: number; description: string }>,
+        replacements: Array<{
+            type:
+            | 'TRASH_EQUIPPED_ITEM'
+            | 'DISCARD_HAND_BY_HIT'
+            | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
+            | 'BT03_083_TRASH_SELF_AND_RETURN';
+            sourceCard: Card;
+            requiredHandCount?: number;
+            description: string;
+        }>,
         index: number,
     ) {
         runBeginDestroyReplacementPrompt(this, destroyPayload, replacements, index);
@@ -2204,20 +2387,43 @@ export class GameEngine {
 
     public getPlayerSize(player: PlayerState): number {
         let size = player.leaderLevel + player.damage.length;
+        const opponent = this.getOpponentOf(player);
+        const applySizeModifier = (effect: Effect, sourceCard: Card, sourceZone?: UnitZoneState) => {
+            if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+            if (effect.action?.type !== 'MODIFY_PLAYER_SIZE') return;
 
-        // Leader Passive Size Bonus (e.g. ST02-001)
-        if (player.levelZone && player.levelZone.effects) {
-            player.levelZone.effects.forEach(effect => {
-                if (effect.activation === ActivationCondition.PASSIVE && effect.action.type === 'MODIFY_PLAYER_SIZE') {
-                    // Check awakening condition if applicable
-                    // let conditionMet = true;
-                    if (player.levelZone?.isAwakened) {
-                        // For ST02-001, the bonus is on the awakened side
-                        size += (effect.action.params.value || 0);
-                    }
+            const context: GameContext = {
+                player,
+                opponent,
+                sourceCard,
+                unitZone: sourceZone,
+                machine: this,
+            };
+            if (!this.effectManager.checkCondition(effect, context)) return;
+            if (sourceCard.type === CardType.LEADER && !sourceCard.isAwakened && this.requiresAwakenedLeader(effect)) {
+                return;
+            }
+
+            size += effect.action.params?.value || 0;
+        };
+
+        if (player.levelZone?.effects) {
+            player.levelZone.effects.forEach(effect => applySizeModifier(effect, player.levelZone!));
+        }
+
+        player.unitZones.forEach(zone => {
+            if (zone.unit?.effects) {
+                zone.unit.effects.forEach(effect => applySizeModifier(effect, zone.unit!, zone));
+            }
+            zone.items.forEach(item => {
+                if (item.effects) {
+                    item.effects.forEach(effect => applySizeModifier(effect, item, zone));
                 }
             });
-        }
+            if (zone.unit && Array.isArray(zone.temporaryEffects)) {
+                zone.temporaryEffects.forEach(effect => applySizeModifier(effect, zone.unit!, zone));
+            }
+        });
 
         return size;
     }
@@ -2288,6 +2494,14 @@ export class GameEngine {
                                 } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
                                     const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
                                     value = equippedUnitCount * value;
+                                } else if (params.dynamic === 'OTHER_FRIENDLY_HIT_TOTAL_MULTIPLIER') {
+                                    const excludeSelf = params.excludeSelf === true;
+                                    const totalFriendlyHit = source.owner.unitZones.reduce((sum, unitZone) => {
+                                        if (!unitZone.unit) return sum;
+                                        if (excludeSelf && source.zone && unitZone === source.zone) return sum;
+                                        return sum + Math.max(0, this.getUnitHit(unitZone, source.owner));
+                                    }, 0);
+                                    value = totalFriendlyHit * value;
                                 }
                                 power += value;
                             }

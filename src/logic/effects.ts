@@ -134,8 +134,20 @@ export class EffectManager {
             effectsToProcess.push(...sourceCard.effects.filter((e: Effect) => e.activation === activation));
         }
 
-        // Add temporary effects from unitZone if applicable
-        if (context.unitZone && context.unitZone.temporaryEffects) {
+        // Add zone temporary effects only when resolving the affected unit itself.
+        // For EXIT, unit is already removed from zone, so use destroyedUnitId context flag.
+        const shouldIncludeZoneTemporaryEffects =
+            !!context.unitZone &&
+            !!context.unitZone.temporaryEffects &&
+            (
+                context.unitZone.unit === context.sourceCard ||
+                (
+                    context.unitZone.unit === null &&
+                    context.flags?.destroyedUnitId !== undefined &&
+                    context.sourceCard?.id === context.flags.destroyedUnitId
+                )
+            );
+        if (shouldIncludeZoneTemporaryEffects) {
             effectsToProcess.push(...context.unitZone.temporaryEffects.filter((e: Effect) => e.activation === activation));
         }
 
@@ -398,7 +410,15 @@ export class EffectManager {
                 return false;
             case 'HAS_ITEM': {
                 if (!context.unitZone) return false;
-                const allItems = context.unitZone.items || [];
+                let allItems = context.unitZone.items || [];
+                const snapshotItems = context.flags?.equippedItemsSnapshot;
+                if (
+                    allItems.length === 0 &&
+                    effect.activation === ActivationCondition.EXIT &&
+                    Array.isArray(snapshotItems)
+                ) {
+                    allItems = snapshotItems;
+                }
                 const minCount = typeof value === 'number' ? value : (value?.minCount ?? 1);
                 const costMin = typeof value === 'object' ? value?.costMin : undefined;
                 const traitFilter = typeof value === 'object' ? value?.hasTrait : undefined;
@@ -466,6 +486,11 @@ export class EffectManager {
             case 'TRASHED_FRIENDLY_BY_EFFECT_THIS_TURN_MIN': {
                 const min = typeof value === 'number' ? value : value?.min ?? 1;
                 const countByEffect = context.machine.getEffectTrashedFriendlyUnitCount(context.player.id);
+                return countByEffect >= min;
+            }
+            case 'OPPONENT_HAND_TRASHED_BY_EFFECT_THIS_TURN_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const countByEffect = context.machine.getHandTrashedByEffectCount(context.opponent.id);
                 return countByEffect >= min;
             }
             case 'TRASH_REASON': {

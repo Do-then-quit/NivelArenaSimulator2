@@ -1056,6 +1056,20 @@ body.phase-theme-end {
     overflow: auto;
 }
 
+.verification-session-collapsed {
+    position: fixed;
+    top: 12px;
+    left: 14px;
+    z-index: 7500;
+    display: flex;
+}
+
+.verification-session-collapsed .secondary-btn {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+}
+
 .verification-session-actions {
     display: flex;
     gap: 8px;
@@ -1552,6 +1566,11 @@ body.phase-theme-end {
     backdrop-filter: blur(5px);
 }
 
+.selection-modal-overlay {
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: none;
+}
+
 .trash-modal {
     background: rgba(25, 27, 40, 0.95);
     border: 2px solid #4a9eff;
@@ -1561,6 +1580,32 @@ body.phase-theme-end {
     max-height: 80%;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.selection-modal-toggle-btn {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 3200;
+    border: 1px solid rgba(74, 158, 255, 0.7);
+    background: rgba(25, 27, 40, 0.92);
+    color: #dbeafe;
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.selection-modal-toggle-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(36, 40, 58, 0.96);
+}
+
+.selection-modal-toggle-btn.collapsed {
+    background: rgba(19, 128, 96, 0.92);
+    border-color: rgba(104, 211, 145, 0.8);
+    color: #ecfdf5;
 }
 
 .trash-modal h3 {
@@ -2255,6 +2300,12 @@ body.phase-theme-end {
     .verification-session-actions .secondary-btn {
         flex: 1;
         min-width: 160px;
+    }
+
+    .verification-session-collapsed {
+        top: 8px;
+        left: 8px;
+        right: 8px;
     }
 
     .bot-replay-options-grid {

@@ -42,6 +42,7 @@ function startGame(
     uiState.gameLogView.expanded = true;
     uiState.replaySession = null;
     uiState.verificationSession = null;
+    uiState.verificationPanelCollapsed = false;
     uiState.activeMatchConfig = controlConfig;
     uiState.activeMatchViewConfig = {
         ...getDefaultViewConfig(controlConfig),
@@ -112,6 +113,7 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
     uiState.game = engine;
+    uiState.verificationPanelCollapsed = false;
     uiState.verificationSession = {
         orderedTestIds: resolvedOrderedTestIds,
         currentIndex,

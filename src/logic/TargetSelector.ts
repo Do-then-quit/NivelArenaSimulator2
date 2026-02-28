@@ -231,6 +231,14 @@ export class TargetSelector {
                             return Array.isArray((c as UnitZoneState).items) && (c as UnitZoneState).items.length >= minCount;
                         });
                         break;
+                    case 'ITEM_COUNT_MAX':
+                        candidates = candidates.filter(c => {
+                            if (!c || typeof c !== 'object' || !('items' in c)) return false;
+                            const maxCount = typeof filter.value === 'number' ? filter.value : 0;
+                            const itemCount = Array.isArray((c as UnitZoneState).items) ? (c as UnitZoneState).items.length : 0;
+                            return itemCount <= maxCount;
+                        });
+                        break;
                     case 'LOWEST_COST_ONLY': {
                         const costs = candidates
                             .map(c => this.getCardFromTarget(c))
@@ -465,6 +473,14 @@ export class TargetSelector {
                             const minCount = typeof filter.value === 'number' ? filter.value : 0;
                             const itemCount = Array.isArray((target as UnitZoneState).items) ? (target as UnitZoneState).items.length : 0;
                             if (itemCount < minCount) return false;
+                        }
+                        break;
+                    case 'ITEM_COUNT_MAX':
+                        if (!target || typeof target !== 'object' || !('items' in target)) return false;
+                        {
+                            const maxCount = typeof filter.value === 'number' ? filter.value : 0;
+                            const itemCount = Array.isArray((target as UnitZoneState).items) ? (target as UnitZoneState).items.length : 0;
+                            if (itemCount > maxCount) return false;
                         }
                         break;
                     case 'LOWEST_COST_ONLY': {
