@@ -983,4 +983,289 @@ export const BT03_EFFECTS: Record<string, Effect[]> = {
             duration: 'OPP_TURN_END',
         },
     ],
+    "BT03-052": [
+        {
+            activation: ActivationCondition.AWAKEN,
+            description: "각성 : 자신의 리더 레벨이 6 이상이라면 이 카드를 뒤집는다.",
+            condition: { type: 'LEADER_LEVEL', value: 6 },
+            action: { type: 'AWAKEN' as any, params: {} },
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "각성면 액티브: 메인 - 자신의 스킬 존에서 3코스트인 스킬을 1장 골라 트래시한다. 그러면 필드에 있는 [엔트리]를 가진 자신 유닛을 1장 고른다. 그 유닛이 가진 [엔트리]효과를 하나 골라 발동한다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_052_PROMPT_TRASH_COST3_SKILL_THEN_ENTRY_EFFECT',
+                },
+            },
+        },
+    ],
+    "BT03-053": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 카드를 1장 드로우한다. 그러면 상대는 카드를 1장 드로우한다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'DRAW', params: { count: 1 } },
+                        { type: 'DRAW', params: { count: 1, target: 'OPPONENT' } },
+                    ],
+                },
+            },
+        },
+    ],
+    "BT03-054": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 덱 맨 위에서 카드를 1장 트래시한다. 그 카드가 스킬 카드라면 효과를 발동할 수 있다. 아니라면 카드를 1장 드로우하고 상대는 카드를 1장 드로우한다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_054_ENTRY_TRASH_TOP_SKILL_OR_DRAW',
+                },
+            },
+        },
+    ],
+    "BT03-055": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 덱 맨 위에서 카드를 3장 공개하고, 그중 스킬 카드를 1장 골라 패에 넣는다. 나머지는 모두 트래시한다.",
+            action: {
+                type: 'REVEAL_TOP_AND_CHOOSE_TO_HAND',
+                params: {
+                    count: 3,
+                    remainingDestination: 'TRASH',
+                    filters: [{ type: 'UNIT_TYPE', value: CardType.SKILL }],
+                },
+            },
+        },
+    ],
+    "BT03-056": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 조우 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+            targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_051_LOCK_ENCOUNTER_UNTIL_OPP_TURN_END' },
+            },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'BATTLE_END',
+        },
+    ],
+    "BT03-057": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "액티브: 메인 - 상대는 카드를 1장 드로우한다. 자신의 패에서 유닛 카드를 1장 골라 트래시한다. 상대는 트래시한 카드와 코스트가 같은 카드를 패에서 1장 골라 트래시할 수 있다. 트래시하지 않았다면 상대는 트래시한 유닛 카드의 히트만큼 대미지를 받는다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_057_PROMPT_DISCARD_AND_OPP_MATCH_OR_DAMAGE',
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "카드를 1장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 1 } },
+        },
+    ],
+    "BT03-058": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 필드에 있는 상대 유닛이 공격할 때마다 카드를 1장 드로우한다.",
+            action: {
+                type: 'NONE',
+                params: {
+                    onOpponentUnitAttackDraw: 1,
+                },
+            },
+        },
+    ],
+    "BT03-059": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 패를 2장 골라 트래시할 수 있다. 그러면 상대의 턴이 끝날 때까지 상대는 패에서 5코스트 이상인 유닛을 배치할 수 없다.",
+            optional: true,
+            cost: { type: 'TRASH_HAND', amount: 2 },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_059_LOCK_OPP_HIGH_COST_UNIT_PLAY_GLOBAL',
+                    costMin: 5,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+1000.",
+            action: { type: 'BUFF_POWER', params: { value: 1000 } },
+            duration: 'BATTLE_END',
+        },
+    ],
+    "BT03-060": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 이 유닛은 이 턴이 끝날 때까지 공격할 수 없다. 상대의 패가 5장보다 많다면 그 차이만큼 상대에게 대미지를 준다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_060_ENTRY_LOCK_SELF_AND_DAMAGE_BY_OPP_HAND_DIFF',
+                    handThreshold: 5,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+1000.",
+            action: { type: 'BUFF_POWER', params: { value: 1000 } },
+            duration: 'BATTLE_END',
+        },
+    ],
+    "BT03-061": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "가디언 방벽[2] : 인접 레인 방어 시 패 2장을 트래시해야 한다.",
+            action: {
+                type: 'NONE',
+                params: {
+                    guardianBarrierCost: 2,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+4000.",
+            action: { type: 'BUFF_POWER', params: { value: 4000 } },
+            duration: 'BATTLE_END',
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT03-062": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 자신의 패를 1장 골라 트래시할 수 있다. 그러면 자신의 스킬 존에서 스킬을 1장 골라 효과를 발동한다.",
+            optional: true,
+            cost: { type: 'TRASH_HAND', amount: 1 },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_062_PROMPT_SKILL_ZONE_CAST',
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DEFENDER,
+            description: "디펜더 : 이 방어가 끝날 때까지 파워+2000.",
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'BATTLE_END',
+        },
+    ],
+    "BT03-063": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 상대 유닛을 1장 고른다. 그 유닛은 상대의 턴이 끝날 때까지 공격할 수 없다.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT06_051_LOCK_ENCOUNTER_UNTIL_OPP_TURN_END' },
+            },
+        },
+    ],
+    "BT03-064": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 [디펜더]를 가진 자신 유닛을 1장 골라 그 유닛의 히트만큼 자신의 패를 골라 트래시할 수 있다. 그러면 조우 유닛을 주인의 패로 되돌린다.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'HAS_KEYWORD', value: '디펜더' }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_064_PROMPT_DISCARD_BY_SELECTED_HIT_THEN_RETURN_ENCOUNTER',
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "카드를 1장 드로우한다.",
+            action: { type: 'DRAW', params: { count: 1 } },
+        },
+    ],
+    "BT03-065": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 [엔트리]를 가진 자신 유닛의 수만큼 카드를 드로우한다. 상대의 턴이 끝날 때까지 상대는 [엔트리] 효과를 발동할 수 없다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_065_DRAW_BY_ENTRY_COUNT_AND_LOCK_OPP_ENTRY',
+                },
+            },
+        },
+    ],
+    "BT03-066": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 패가 7장 이상이라면 6장이 되도록 카드를 골라 트래시한다. 그러면 트래시한 카드 1장마다 상대에게 1대미지를 준다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_066_PROMPT_DISCARD_TO_SIX_THEN_DAMAGE',
+                },
+            },
+        },
+    ],
+    "BT03-067": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 자신의 패를 1장 골라 트래시할 수 있다. 그러면 유닛이 없는 자신의 유닛 존에 이 유닛 카드를 배치한다.",
+            optional: true,
+            cost: { type: 'TRASH_HAND', amount: 1 },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_067_PROMPT_REVIVE_TRASHED_EQUIPPED_UNIT',
+                },
+            },
+        },
+    ],
+    "BT03-068": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "장착 조건: [디펜더]를 가진 유닛.",
+            condition: { type: 'HAS_KEYWORD', value: '디펜더' },
+            action: { type: 'NONE', params: {} },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 장착 유닛의 파워+3000.",
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: 3000 } },
+        },
+    ],
 };

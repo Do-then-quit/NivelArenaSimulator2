@@ -80,7 +80,8 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
     const targetSchema = pending.targetSchema;
     const allowsEffectlessSelection =
         pending.actionType === 'GUARDIAN_BLOCK_UNIT_COST' ||
-        pending.actionType === 'BT03_041_SELECT_EMPTY_ZONE_TO_REVIVE_SELF';
+        pending.actionType === 'BT03_041_SELECT_EMPTY_ZONE_TO_REVIVE_SELF' ||
+        pending.actionType === 'BT03_067_SELECT_EMPTY_ZONE_TO_REVIVE_EQUIPPED_UNIT';
     if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
     const targetPlayer = engine.getPlayerById(targetPlayerId);
     if (!targetPlayer) return;
@@ -161,6 +162,38 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
                 untilTurnCount: engine.state.turnCount + 1,
             });
         }
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_067_SELECT_EMPTY_ZONE_TO_REVIVE_EQUIPPED_UNIT') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        if (targetZone.unit) return;
+
+        const reviveCardRef = pending.actionValue?.reviveCardRef;
+        const reviveCardId = pending.actionValue?.reviveCardId;
+        const trashIndexByRef = sourcePlayer.trash.indexOf(reviveCardRef);
+        const trashIndex = trashIndexByRef !== -1
+            ? trashIndexByRef
+            : sourcePlayer.trash.findIndex((card: any) => card?.id === reviveCardId);
+        if (trashIndex < 0) return;
+        const [revivedUnit] = sourcePlayer.trash.splice(trashIndex, 1);
+        if (!revivedUnit) return;
+
+        targetZone.unit = revivedUnit;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+        targetZone.hasAttacked = false;
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.isExhausted = false;
+        targetZone.hasPlacedUnitThisTurn = false;
+        targetZone.hasActivatedEffectThisTurn = false;
+        targetZone.activatedEffectKeys = {};
 
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
@@ -534,6 +567,16 @@ export function selectHandTargetByPlayerId(engine: any, handIndex: number, targe
         return;
     }
 
+    if (pending.actionType === 'BT03_057_OPP_SELECT_MATCH_OR_SKIP') {
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
+        if (selectedTargets.includes(targetCard)) {
+            pending.selectedTargets = selectedTargets.filter((card: any) => card !== targetCard);
+        } else {
+            pending.selectedTargets = [targetCard];
+        }
+        return;
+    }
+
     // Multi-target logic for hand
     const maxCount = targetSchema.count || 1;
     const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
@@ -635,6 +678,47 @@ export function selectRevealedTarget(engine: any, index: number) {
         return;
     }
 
+    if (pending.actionType === 'BT03_052_SELECT_SKILL_ZONE_COST3_TO_TRASH') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || !option) return;
+
+        const skillZoneIndex = option.skillZoneIndex;
+        if (typeof skillZoneIndex !== 'number' || skillZoneIndex < 0 || skillZoneIndex >= sourcePlayer.skillZone.length) return;
+        const [selectedSkill] = sourcePlayer.skillZone.splice(skillZoneIndex, 1);
+        if (!selectedSkill) return;
+        sourcePlayer.trash.push(selectedSkill);
+
+        const sourceOpponent = engine.state.players.find((player: any) => player.id !== sourcePlayer.id);
+        if (!sourceOpponent) return;
+        const followUpEffect = {
+            activation: ActivationCondition.ACTIVE,
+            description: 'BT03-052 : [엔트리]를 가진 자신 유닛을 1장 선택한다.',
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'HAS_KEYWORD', value: '엔트리' }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'PROMPT_SELECT_ENTRY_EFFECT' },
+            },
+        } as any;
+        const followUpContext: GameContext = {
+            sourceCard: pending.sourceCard,
+            player: sourcePlayer,
+            opponent: sourceOpponent,
+            machine: engine,
+        };
+        engine.effectManager.processEffect(followUpEffect, followUpContext);
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
     if (pending.actionType === 'BT06_SELECT_SKILL_ZONE_CARD') {
         const option = pending.actionValue?.options?.[index];
         const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
@@ -731,6 +815,37 @@ export function selectRevealedTarget(engine: any, index: number) {
 
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_062_SELECT_SKILL_ZONE_TO_CAST') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || !option) return;
+
+        const skillZoneIndex = option.skillZoneIndex;
+        if (typeof skillZoneIndex !== 'number' || skillZoneIndex < 0 || skillZoneIndex >= sourcePlayer.skillZone.length) return;
+        const selectedSkill = sourcePlayer.skillZone[skillZoneIndex];
+        if (!selectedSkill) return;
+
+        const sourceOpponent = engine.state.players.find((player: any) => player.id !== sourcePlayer.id);
+        if (!sourceOpponent) return;
+
+        const batchStep = engine.incrementAndGetGlobalStep();
+        const castContext: GameContext = {
+            sourceCard: selectedSkill,
+            player: sourcePlayer,
+            opponent: sourceOpponent,
+            machine: engine,
+        };
+
+        engine.state.revealedCards = [];
+        engine.effectManager.processEffects(ActivationCondition.ACTIVE, castContext, { enqueueOnly: true, batchStep });
+        if (engine.state.phase === Phase.MAIN) {
+            engine.effectManager.processEffects(ActivationCondition.ACTIVE_MAIN, castContext, { enqueueOnly: true, batchStep });
+        }
+        engine.handleEffectCompletion(context, pending);
+        engine.effectManager.processQueue();
         return;
     }
 

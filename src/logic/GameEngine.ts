@@ -1869,6 +1869,8 @@ export class GameEngine {
         this.state.pendingAttackerIndex = attackerZoneIndex;
         this.assignInteractionOwner(this.currentPlayer.id);
 
+        this.resolveOpponentAttackReactiveDraws(attackerZoneIndex);
+
         // Trigger ATTACKER effects as one simultaneous event.
         const attackerBatchStep = this.incrementAndGetGlobalStep();
         this.effectManager.processEffects(ActivationCondition.ATTACKER, {
@@ -1903,6 +1905,70 @@ export class GameEngine {
         if (this.state.effectQueue.length === 0 && this.state.interactionMode === 'NORMAL') {
             this.advanceCombatStep();
         }
+    }
+
+    private resolveOpponentAttackReactiveDraws(attackerZoneIndex: number) {
+        const defendingPlayer = this.opponentPlayer;
+        const attackingPlayer = this.currentPlayer;
+        const defendingPlayerIndex = this.state.players.indexOf(defendingPlayer);
+        if (defendingPlayerIndex < 0) return;
+
+        const triggerQueue: Array<{ sourceCard: Card; drawCount: number }> = [];
+        const evaluateSourceEffects = (sourceCard: Card, effects: Effect[] | undefined, unitZone?: UnitZoneState) => {
+            if (!sourceCard || !Array.isArray(effects) || effects.length === 0) return;
+            effects.forEach(effect => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+                if (effect.action?.type !== 'NONE') return;
+
+                const rawDraw = effect.action?.params?.onOpponentUnitAttackDraw;
+                if (!rawDraw) return;
+
+                let drawCount = 1;
+                if (typeof rawDraw === 'number') {
+                    drawCount = Math.max(0, Math.floor(rawDraw));
+                } else if (typeof rawDraw === 'object') {
+                    drawCount = Math.max(0, Math.floor(Number(rawDraw.count ?? 1)));
+                }
+                if (drawCount <= 0) return;
+
+                const context: GameContext = {
+                    sourceCard,
+                    player: defendingPlayer,
+                    opponent: attackingPlayer,
+                    ...(unitZone ? { unitZone } : {}),
+                    machine: this,
+                    flags: {
+                        attackerZoneIndex,
+                    } as any,
+                };
+                if (!this.effectManager.checkCondition(effect, context)) return;
+                if (sourceCard.type === CardType.LEADER && !sourceCard.isAwakened && this.requiresAwakenedLeader(effect)) {
+                    return;
+                }
+
+                triggerQueue.push({ sourceCard, drawCount });
+            });
+        };
+
+        defendingPlayer.unitZones.forEach(zone => {
+            if (zone.unit) {
+                evaluateSourceEffects(zone.unit, zone.unit.effects, zone);
+                evaluateSourceEffects(zone.unit, zone.temporaryEffects as any, zone);
+            }
+            zone.items.forEach(item => evaluateSourceEffects(item, item.effects, zone));
+        });
+        if (defendingPlayer.levelZone) {
+            evaluateSourceEffects(defendingPlayer.levelZone, defendingPlayer.levelZone.effects);
+        }
+
+        triggerQueue.forEach(({ sourceCard, drawCount }) => {
+            this.drawCard(defendingPlayerIndex, drawCount, {
+                reason: 'EFFECT',
+                sourceActivation: ActivationCondition.PASSIVE,
+                sourcePlayerId: defendingPlayer.id,
+                sourceCardId: sourceCard.id,
+            });
+        });
     }
 
     private getAttackCostEffect(zone: UnitZoneState): Effect | undefined {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
 import { GameEngine } from '../../../src/logic/GameEngine';
 import { RuleValidator } from '../../../src/logic/RuleValidator';
-import { Card, Phase } from '../../../src/logic/types';
+import { ActivationCondition, Card, Phase } from '../../../src/logic/types';
 
 function getCard(id: string): Card {
     const card = DUMMY_CARDS.find(c => c.id === id);
@@ -652,5 +652,382 @@ describe('BT03 Effects Regression', () => {
         const beforeLevel = p1.leaderLevel;
         engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
         expect(p1.leaderLevel).toBe(beforeLevel + 1);
+    });
+
+    it('BT03-052 chains skill-zone cost(3) trash -> entry unit select -> entry effect select', () => {
+        const engine = createEngine(30100);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.levelZone = getCard('BT03-052');
+        if (p1.levelZone) p1.levelZone.isAwakened = true;
+        p1.skillZone = [getCard('BT03-063')];
+        p1.unitZones[0].unit = getCard('BT03-053');
+        p1.deck = [getCard('ST01-002')];
+        p2.deck = [getCard('ST01-002')];
+        engine.state.phase = Phase.MAIN;
+
+        engine.activateEffect(0, 1, 'LEADER');
+        expect(engine.state.pendingEffect?.actionType).toBe('BT03_052_SELECT_SKILL_ZONE_COST3_TO_TRASH');
+
+        const pickSkill = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET');
+        expect(pickSkill).toBeDefined();
+        if (pickSkill) expect(engine.step(pickSkill)).toBe(true);
+        expect(p1.skillZone.length).toBe(0);
+        expect(p1.trash.some(card => card.id.startsWith('BT03-063'))).toBe(true);
+
+        const pickEntryUnit = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) =>
+            action.targetPlayerId === p1.id && action.zoneIndex === 0
+        );
+        expect(pickEntryUnit).toBeDefined();
+        if (pickEntryUnit) expect(engine.step(pickEntryUnit)).toBe(true);
+        expect(engine.state.pendingEffect?.actionType).toBe('BT06_SELECT_ENTRY_EFFECT');
+
+        const pickEntryEffect = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET');
+        expect(pickEntryEffect).toBeDefined();
+        if (pickEntryEffect) expect(engine.step(pickEntryEffect)).toBe(true);
+        expect(p1.hand.some(card => card.id.startsWith('ST01-002'))).toBe(true);
+        expect(p2.hand.some(card => card.id.startsWith('ST01-002'))).toBe(true);
+    });
+
+    it('BT03-054 handles skill/non-skill top-card branch and reveals trashed skill for optional cast', () => {
+        const skillBranch = createEngine(30101);
+        const p1Skill = skillBranch.state.players[0];
+        const p2Skill = skillBranch.state.players[1];
+        p1Skill.hand = [getCard('BT03-054')];
+        p1Skill.deck = [getCard('BT03-063')];
+        p2Skill.unitZones[0].unit = getCard('ST01-011');
+        skillBranch.playUnit(0, 0);
+
+        const pickActions = skillBranch
+            .getLegalActions(p1Skill.id)
+            .filter(action => action.type === 'SELECT_REVEALED_TARGET') as Array<any>;
+        expect(pickActions.length).toBe(1);
+        expect(skillBranch.state.pendingEffect?.actionType).toBe('BT06_SELECT_TRASHED_SKILL_TO_CAST');
+        expect(skillBranch.state.revealedCards[pickActions[0]?.revealedIndex]?.id).toMatch(/^BT03-063/);
+
+        const skipCast = findAction(skillBranch, p1Skill.id, 'CONFIRM_TARGETS');
+        expect(skipCast).toBeDefined();
+        if (skipCast) expect(skillBranch.step(skipCast)).toBe(true);
+        const lockedWhenSkipped = p2Skill.unitZones[0].temporaryEffects.some(effect =>
+            typeof effect?.action?.params?.cannotAttackUntilTurnCount === 'number'
+        );
+        expect(lockedWhenSkipped).toBe(false);
+        expect(p1Skill.trash.some(card => card.id.startsWith('BT03-063'))).toBe(true);
+
+        const nonSkillBranch = createEngine(30102);
+        const p1Non = nonSkillBranch.state.players[0];
+        const p2Non = nonSkillBranch.state.players[1];
+        p1Non.hand = [getCard('BT03-054')];
+        p1Non.deck = [getCard('ST01-002'), getCard('ST01-002')];
+        p2Non.deck = [getCard('ST01-002')];
+        nonSkillBranch.playUnit(0, 0);
+        expect(p1Non.hand.some(card => card.id.startsWith('ST01-002'))).toBe(true);
+        expect(p2Non.hand.some(card => card.id.startsWith('ST01-002'))).toBe(true);
+    });
+
+    it('BT03-057 resolves both branches: match discard prevents damage, otherwise damage by discarded hit', () => {
+        const noMatch = createEngine(30103);
+        const p1No = noMatch.state.players[0];
+        const p2No = noMatch.state.players[1];
+        p1No.unitZones[0].unit = getCard('BT03-057');
+        p1No.hand = [getCard('BT03-060')];
+        p2No.hand = [getCard('BT03-053')];
+        p2No.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('BT03-053')];
+        const noMatchBefore = p2No.damage.length;
+        noMatch.activateEffect(0, 0);
+        const pickSelfDiscard = findAction(noMatch, p1No.id, 'SELECT_HAND_TARGET', (action: any) => action.targetPlayerId === p1No.id);
+        expect(pickSelfDiscard).toBeDefined();
+        if (pickSelfDiscard) expect(noMatch.step(pickSelfDiscard)).toBe(true);
+        const discardedForDamage = p1No.trash.find(card => card.id.startsWith('BT03-060'));
+        const expectedDamage = Math.max(0, discardedForDamage?.hit || 0);
+        expect(p2No.damage.length).toBe(noMatchBefore + expectedDamage);
+
+        const withMatch = createEngine(30104);
+        const p1Match = withMatch.state.players[0];
+        const p2Match = withMatch.state.players[1];
+        p1Match.unitZones[0].unit = getCard('BT03-057');
+        p1Match.hand = [getCard('BT03-060')];
+        p2Match.hand = [getCard('BT03-060')];
+        p2Match.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('BT03-053')];
+        const withMatchBefore = p2Match.damage.length;
+        withMatch.activateEffect(0, 0);
+        const pickSelf = findAction(withMatch, p1Match.id, 'SELECT_HAND_TARGET', (action: any) => action.targetPlayerId === p1Match.id);
+        expect(pickSelf).toBeDefined();
+        if (pickSelf) expect(withMatch.step(pickSelf)).toBe(true);
+        expect(withMatch.state.pendingEffect?.actionType).toBe('BT03_057_OPP_SELECT_MATCH_OR_SKIP');
+
+        const pickOppMatch = findAction(withMatch, p2Match.id, 'SELECT_HAND_TARGET', (action: any) => action.targetPlayerId === p2Match.id);
+        expect(pickOppMatch).toBeDefined();
+        if (pickOppMatch) expect(withMatch.step(pickOppMatch)).toBe(true);
+        const confirmOpp = findAction(withMatch, p2Match.id, 'CONFIRM_TARGETS');
+        expect(confirmOpp).toBeDefined();
+        if (confirmOpp) expect(withMatch.step(confirmOpp)).toBe(true);
+
+        expect(p2Match.damage.length).toBe(withMatchBefore);
+        expect(p2Match.trash.some(card => card.id.startsWith('BT03-060'))).toBe(true);
+    });
+
+    it('BT03-058 draws once per each opponent attack declaration', () => {
+        const engine = createEngine(30105);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        engine.state.turnPlayerIndex = 1;
+        engine.state.phase = Phase.ATTACK;
+        p1.unitZones[2].unit = getCard('BT03-058');
+        p1.deck = Array.from({ length: 20 }, () => getCard('ST01-002'));
+        p2.unitZones[0].unit = getCard('ST01-011');
+
+        const before = p1.hand.length;
+        engine.attack(0);
+        p2.unitZones[0].hasAttacked = false;
+        p2.unitZones[0].attackCountThisTurn = 0;
+        p2.unitZones[0].isExhausted = false;
+        engine.state.phase = Phase.ATTACK;
+        engine.attack(0);
+        expect(p1.hand.length).toBe(before + 2);
+    });
+
+    it('BT03-059 applies global cost>=5 placement lock to all lanes until opponent turn end', () => {
+        const engine = createEngine(30106);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.hand = [getCard('BT03-059'), getCard('ST01-002'), getCard('ST01-002')];
+        p2.hand = [getCard('BT03-060'), getCard('BT03-053')];
+        engine.state.phase = Phase.MAIN;
+
+        engine.playUnit(0, 0);
+        const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+        const payA = findAction(engine, p1.id, 'SELECT_COST_HAND');
+        expect(payA).toBeDefined();
+        if (payA) expect(engine.step(payA)).toBe(true);
+        const payB = findAction(engine, p1.id, 'SELECT_COST_HAND');
+        expect(payB).toBeDefined();
+        if (payB) expect(engine.step(payB)).toBe(true);
+
+        expect(RuleValidator.canPlayUnit(engine, p2, 0, 0).valid).toBe(false);
+        expect(RuleValidator.canPlayUnit(engine, p2, 0, 1).valid).toBe(false);
+        expect(RuleValidator.canPlayUnit(engine, p2, 0, 2).valid).toBe(false);
+        expect(RuleValidator.canPlayUnit(engine, p2, 1, 1).valid).toBe(true);
+
+        engine.state.phase = Phase.END;
+        engine.nextPhase(); // p1 end -> p2 turn
+        engine.state.phase = Phase.END;
+        engine.nextPhase(); // p2 end -> p1 turn (lock expired)
+        engine.state.phase = Phase.MAIN;
+        expect(RuleValidator.canPlayUnit(engine, p2, 0, 1).valid).toBe(true);
+    });
+
+    it('BT03-060 entry both locks self attack this turn and deals hand-diff damage', () => {
+        const engine = createEngine(30107);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.hand = [getCard('BT03-060')];
+        p2.hand = [
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+        ];
+
+        const before = p2.damage.length;
+        engine.playUnit(0, 0);
+        expect(p2.damage.length).toBe(before + 2);
+        engine.state.phase = Phase.ATTACK;
+        expect(RuleValidator.canAttack(engine, p1, 0).valid).toBe(false);
+    });
+
+    it('BT03-062 casts selected skill from skill-zone without moving it out of skill-zone', () => {
+        const engine = createEngine(30108);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.hand = [getCard('BT03-062'), getCard('ST01-002')];
+        p1.skillZone = [getCard('BT03-063')];
+        p2.unitZones[0].unit = getCard('ST01-011');
+        engine.state.phase = Phase.MAIN;
+
+        engine.playUnit(0, 0);
+        const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+        const payCost = findAction(engine, p1.id, 'SELECT_COST_HAND');
+        expect(payCost).toBeDefined();
+        if (payCost) expect(engine.step(payCost)).toBe(true);
+        const pickSkill = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET');
+        expect(pickSkill).toBeDefined();
+        if (pickSkill) expect(engine.step(pickSkill)).toBe(true);
+        const pickTarget = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) =>
+            action.targetPlayerId === p2.id && action.zoneIndex === 0
+        );
+        expect(pickTarget).toBeDefined();
+        if (pickTarget) expect(engine.step(pickTarget)).toBe(true);
+
+        expect(p1.skillZone.some(card => card.id.startsWith('BT03-063'))).toBe(true);
+        const locked = p2.unitZones[0].temporaryEffects.some(effect =>
+            typeof effect?.action?.params?.cannotAttackUntilTurnCount === 'number'
+        );
+        expect(locked).toBe(true);
+    });
+
+    it('BT03-064 returns encounter only when discard count is exactly selected defender current hit', () => {
+        const success = createEngine(30109);
+        const p1Success = success.state.players[0];
+        const p2Success = success.state.players[1];
+        p1Success.hand = [getCard('BT03-064'), getCard('ST01-002'), getCard('ST01-002')];
+        p1Success.unitZones[0].unit = getCard('BT03-061'); // hit 2
+        p2Success.unitZones[0].unit = getCard('ST01-011');
+        success.playSkill(0);
+        const pickDefender = findAction(success, p1Success.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p1Success.id && action.zoneIndex === 0);
+        expect(pickDefender).toBeDefined();
+        if (pickDefender) expect(success.step(pickDefender)).toBe(true);
+        const confirm = findAction(success, p1Success.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(confirm).toBeDefined();
+        if (confirm) expect(success.step(confirm)).toBe(true);
+        const handChoices = success.getLegalActions(p1Success.id).filter(action => action.type === 'SELECT_HAND_TARGET') as Array<any>;
+        expect(handChoices.length).toBeGreaterThanOrEqual(2);
+        expect(success.step(handChoices[0])).toBe(true);
+        expect(success.step(handChoices[1])).toBe(true);
+        const confirmDiscard = findAction(success, p1Success.id, 'CONFIRM_TARGETS');
+        expect(confirmDiscard).toBeDefined();
+        if (confirmDiscard) expect(success.step(confirmDiscard)).toBe(true);
+        expect(p2Success.unitZones[0].unit).toBeNull();
+        expect(p2Success.hand.some(card => card.id.startsWith('ST01-011'))).toBe(true);
+
+        const fail = createEngine(30110);
+        const p1Fail = fail.state.players[0];
+        const p2Fail = fail.state.players[1];
+        p1Fail.hand = [getCard('BT03-064'), getCard('ST01-002')];
+        p1Fail.unitZones[0].unit = getCard('BT03-061'); // requires 2, only 1 payable
+        p2Fail.unitZones[0].unit = getCard('ST01-011');
+        fail.playSkill(0);
+        const pickDefenderFail = findAction(fail, p1Fail.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p1Fail.id && action.zoneIndex === 0);
+        expect(pickDefenderFail).toBeDefined();
+        if (pickDefenderFail) expect(fail.step(pickDefenderFail)).toBe(true);
+        const confirmFail = findAction(fail, p1Fail.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(confirmFail).toBeDefined();
+        if (confirmFail) expect(fail.step(confirmFail)).toBe(true);
+        const noHandPrompt = fail.getLegalActions(p1Fail.id).filter(action => action.type === 'SELECT_HAND_TARGET');
+        expect(noHandPrompt.length).toBe(0);
+        expect(p2Fail.unitZones[0].unit).not.toBeNull();
+    });
+
+    it('BT03-065 draws by friendly entry count and entry-lock expires after opponent turn end', () => {
+        const engine = createEngine(30111);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+        p1.hand = [getCard('BT03-065')];
+        p1.deck = [getCard('ST01-002'), getCard('ST01-002')];
+        p1.unitZones[0].unit = getCard('BT03-053');
+        p1.unitZones[1].unit = getCard('BT03-055');
+        p1.unitZones[2].unit = getCard('ST01-002');
+        engine.playSkill(0);
+        expect(p1.hand.filter(card => card.id.startsWith('ST01-002')).length).toBeGreaterThanOrEqual(2);
+
+        const lockUntil = (p2.lockedActivationsUntilTurnCount as any)[ActivationCondition.ENTRY];
+        expect(typeof lockUntil).toBe('number');
+        expect(lockUntil).toBe(engine.state.turnCount + 1);
+
+        engine.state.phase = Phase.END;
+        engine.nextPhase(); // p1 end -> p2 turn
+        p2.hand = [getCard('BT03-053')];
+        p2.deck = [getCard('ST01-002')];
+        engine.state.phase = Phase.MAIN;
+        engine.playUnit(0, 0);
+        expect(p2.hand.some(card => card.id.startsWith('ST01-002'))).toBe(false); // entry locked
+
+        engine.state.phase = Phase.END;
+        engine.nextPhase(); // p2 end -> p1 turn
+        engine.state.phase = Phase.END;
+        engine.nextPhase(); // p1 end -> p2 turn (expired)
+        p2.hand = [getCard('BT03-053')];
+        p2.deck = [getCard('ST01-002')];
+        engine.state.phase = Phase.MAIN;
+        engine.playUnit(0, 1);
+        expect(p2.hand.some(card => card.id.startsWith('ST01-002'))).toBe(true); // entry unlocked
+    });
+
+    it('BT03-066 only resolves discard-to-six when hand is 7+, then scales damage by discarded count', () => {
+        const noOp = createEngine(30112);
+        const p1No = noOp.state.players[0];
+        const p2No = noOp.state.players[1];
+        p1No.hand = [
+            getCard('BT03-066'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+        ];
+        const noOpBefore = p2No.damage.length;
+        noOp.playSkill(0);
+        expect(noOp.state.pendingEffect).toBeNull();
+        expect(p2No.damage.length).toBe(noOpBefore);
+
+        const active = createEngine(30113);
+        const p1Act = active.state.players[0];
+        const p2Act = active.state.players[1];
+        p1Act.hand = [
+            getCard('BT03-066'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+            getCard('ST01-002'),
+        ];
+        const actBefore = p2Act.damage.length;
+        active.playSkill(0);
+        const selectDiscard = findAction(active, p1Act.id, 'SELECT_HAND_TARGET', (action: any) => action.targetPlayerId === p1Act.id);
+        expect(selectDiscard).toBeDefined();
+        if (selectDiscard) expect(active.step(selectDiscard)).toBe(true);
+        expect(p1Act.hand.length).toBe(6);
+        expect(p2Act.damage.length).toBe(actBefore + 1);
+    });
+
+    it('BT03-067 revives trashed equipped unit to selected empty zone', () => {
+        const engine = createEngine(30114);
+        const p1 = engine.state.players[0];
+        p1.hand = [getCard('BT03-067'), getCard('ST01-002')];
+        p1.unitZones[0].unit = getCard('ST01-011');
+        engine.state.phase = Phase.MAIN;
+
+        engine.playItem(0, 0);
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+        const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+        const payCost = findAction(engine, p1.id, 'SELECT_COST_HAND');
+        expect(payCost).toBeDefined();
+        if (payCost) expect(engine.step(payCost)).toBe(true);
+        const pickZone = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) =>
+            action.targetPlayerId === p1.id && action.zoneIndex === 1
+        ) || findAction(engine, p1.id, 'SELECT_ZONE_TARGET');
+        expect(pickZone).toBeDefined();
+        if (pickZone) expect(engine.step(pickZone)).toBe(true);
+
+        expect(p1.unitZones[1].unit?.id.startsWith('ST01-011') || p1.unitZones[2].unit?.id.startsWith('ST01-011')).toBe(true);
+    });
+
+    it('BT03-068 enforces defender equip condition and grants +3000 power when equipped', () => {
+        const valid = createEngine(30115);
+        const p1Valid = valid.state.players[0];
+        p1Valid.hand = [getCard('BT03-068')];
+        p1Valid.unitZones[0].unit = getCard('BT03-056');
+        const before = zonePower(valid, p1Valid, 0);
+        valid.playItem(0, 0);
+        expect(zonePower(valid, p1Valid, 0)).toBe(before + 3000);
+
+        const invalid = createEngine(30116);
+        const p1Invalid = invalid.state.players[0];
+        p1Invalid.hand = [getCard('BT03-068')];
+        p1Invalid.unitZones[0].unit = getCard('ST01-002');
+        expect(RuleValidator.canPlayItem(invalid, p1Invalid, 0, 0).valid).toBe(false);
     });
 });
