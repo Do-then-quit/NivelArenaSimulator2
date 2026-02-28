@@ -662,4 +662,325 @@ export const BT03_EFFECTS: Record<string, Effect[]> = {
             action: { type: 'BUFF_HIT', params: { value: 1 } },
         },
     ],
+    "BT03-035": [
+        {
+            activation: ActivationCondition.AWAKEN,
+            description: "각성 : 자신의 리더 레벨이 5 이상이라면 이 카드를 뒤집는다.",
+            condition: { type: 'LEADER_LEVEL', value: 5 },
+            action: { type: 'AWAKEN' as any, params: {} },
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "각성면 액티브: 메인 - 상대의 패가 3장 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 상대는 패를 1장 골라 트래시한다.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
+            optional: true,
+            cost: { type: 'TRASH_HAND', amount: 1 },
+            targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } },
+        },
+    ],
+    "BT03-036": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 필드에 있는 [엑시트]를 가진 자신 유닛 1장마다 카드를 1장 드로우한다.",
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: { mode: 'BT03_036_DRAW_BY_EXIT_UNIT_COUNT', drawPerUnit: 1 },
+            },
+        },
+    ],
+    "BT03-037": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 필드에 있는 상대 유닛을 1장 고른다. 이 턴이 끝날 때까지 필드에 있는 [엑시트]를 가진 자신 유닛 1장마다 그 유닛의 파워-2500.",
+            targets: { scope: 'OPP_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_037_APPLY_DEBUFF_BY_EXIT_UNIT_COUNT',
+                    valuePerUnit: 2500,
+                    duration: 'TURN_END',
+                },
+            },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT03-038": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 상대의 패가 3장 이상이라면 자신의 패를 1장 골라 트래시할 수 있다. 그러면 상대는 패를 1장 골라 트래시한다.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
+            optional: true,
+            cost: { type: 'TRASH_HAND', amount: 1 },
+            targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } },
+        },
+    ],
+    "BT03-039": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 자신의 트래시 존에서 4코스트인 유닛 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.UNIT },
+                    { type: 'COST_EQUAL', value: 4 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT03-040": [
+        {
+            activation: ActivationCondition.DRAWN,
+            description: "패시브 : 상대가 [트리거]가 아닌 효과로 카드를 드로우했다면 상대는 패를 4장만 남기고 모두 트래시한다.",
+            condition: { type: 'CONTEXT_FLAG', value: 'OPPONENT_DREW_NON_TRIGGER_EFFECT' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_040_PROMPT_OPP_DISCARD_TO_HAND_SIZE',
+                    keepCount: 4,
+                },
+            },
+        },
+    ],
+    "BT03-041": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "가디언 희생[1] : 인접 레인 가디언 방어 시 필드의 다른 자신 유닛 1장을 트래시해야 한다.",
+            action: {
+                type: 'NONE',
+                params: {
+                    guardianBlockUnitSacrificeCost: 1,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 상대의 턴이라면 자신의 패에서 [엑시트]를 가진 유닛 카드나 [엑시트]를 가진 아이템 카드를 1장 골라 트래시할 수 있다. 그러면 유닛이 없는 자신의 유닛 존에 이 유닛 카드를 배치하고 자신의 턴이 끝날 때까지 파워+2500.",
+            condition: { type: 'OPPONENT_TURN' },
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_041_EXIT_PROMPT_DISCARD_AND_REVIVE',
+                    powerBuffValue: 2500,
+                },
+            },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 자신의 패에 넣는다.",
+            action: { type: 'RETURN_TO_HAND', params: {} },
+        },
+    ],
+    "BT03-042": [
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: "패시브 : 이 턴 동안 트래시된 상대의 패가 1장 이상이라면 파워+2500.",
+            condition: { type: 'OPPONENT_HAND_TRASHED_BY_EFFECT_THIS_TURN_MIN', value: 1 },
+            targets: { scope: 'SELF', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'BUFF_POWER', params: { value: 2500 } },
+        },
+    ],
+    "BT03-043": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 조우 유닛이 4코스트 이하라면 그 유닛은 이 턴이 끝날 때까지 [디펜더] 종결을 얻는다.",
+            targets: {
+                scope: 'ENCOUNTER',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_LIMIT', value: 4 }],
+                selectMode: 'ALL',
+            },
+            action: {
+                type: 'GRANT_EFFECT',
+                params: {
+                    effect: {
+                        activation: ActivationCondition.DEFENDER,
+                        description: "디펜더 : 종결",
+                        action: { type: 'TERMINATE_ATTACK', params: {} },
+                        duration: 'TURN_END',
+                    },
+                },
+            },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT03-044": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 상대의 패가 1장 이하라면 조우 유닛을 트래시한다.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: { max: 1 } },
+            targets: { scope: 'ENCOUNTER', type: 'UNIT', count: 1, selectMode: 'ALL' },
+            action: { type: 'DESTROY_UNIT', params: {} },
+        },
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "액티브: 메인 - 상대의 패가 2장 이하라면 이 턴이 끝날 때까지 파워+3000.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: { max: 2 } },
+            action: { type: 'BUFF_POWER', params: { value: 3000 } },
+            duration: 'TURN_END',
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "자신의 트래시 존에서 [엑시트]를 가진 유닛 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.UNIT },
+                    { type: 'HAS_KEYWORD', value: '엑시트' },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+    ],
+    "BT03-045": [
+        {
+            activation: ActivationCondition.ENTRY,
+            description: "엔트리 : 필드에 있는 자신 유닛을 1장 골라 트래시한다. 그러면 필드에 있는 모든 자신 유닛은 이 턴이 끝날 때까지 [엑시트] 귀환을 얻는다.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_045_TRASH_AND_GRANT_EXIT_RETURN',
+                    duration: 'TURN_END',
+                },
+            },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT03-046": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 2코스트 이하인 자신 유닛을 1장 골라 트래시한다. 그러면 카드를 1장 드로우한다.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_LIMIT', value: 2 }],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    subActions: [
+                        { type: 'DESTROY_UNIT', params: {} },
+                        { type: 'DRAW', params: { count: 1 } },
+                    ],
+                },
+            },
+        },
+    ],
+    "BT03-047": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 [엑시트]를 가진 모든 자신 유닛은 이 턴이 끝날 때까지 파워+2000.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 0,
+                filters: [{ type: 'HAS_KEYWORD', value: '엑시트' }],
+                selectMode: 'ALL',
+            },
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT03-048": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "자신의 트래시 존에서 4코스트 이상 6코스트 이하인 유닛 카드를 1장 골라 패에 넣는다.",
+            targets: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 1,
+                filters: [
+                    { type: 'UNIT_TYPE', value: CardType.UNIT },
+                    { type: 'COST_MIN', value: 4 },
+                    { type: 'COST_LIMIT', value: 6 },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "트리거 / 이 카드를 트래시한다.",
+            action: { type: 'TRASH_SELF', params: {} },
+        },
+        {
+            activation: ActivationCondition.DAMAGE_TRIGGER,
+            description: "상대의 패가 3장 이상이라면 상대는 패를 1장 골라 트래시한다.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: 3 },
+            targets: { scope: 'OPP_HAND', type: 'CARD', count: 1, selectMode: 'MANUAL' },
+            action: { type: 'DISCARD', params: { target: 'OPPONENT', count: 1 } },
+        },
+    ],
+    "BT03-049": [
+        {
+            activation: ActivationCondition.ACTIVE,
+            description: "필드에 있는 자신 유닛을 1장 고른다. 필드에 있는 다른 모든 자신 유닛의 파워가 이 턴이 끝날 때까지 그 유닛의 파워만큼 증가한다. 그 유닛을 트래시한다.",
+            targets: { scope: 'MY_FIELD', type: 'UNIT', count: 1, selectMode: 'MANUAL' },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_049_BUFF_OTHERS_BY_SELECTED_POWER_THEN_TRASH',
+                    duration: 'TURN_END',
+                },
+            },
+            duration: 'TURN_END',
+        },
+    ],
+    "BT03-050": [
+        {
+            activation: ActivationCondition.EXIT,
+            description: "엑시트 : 상대의 패가 3장 이하라면 필드에 있는 3코스트 이하인 상대 유닛을 1장 골라 트래시한다.",
+            condition: { type: 'OPPONENT_HAND_COUNT', value: { max: 3 } },
+            targets: {
+                scope: 'OPP_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [{ type: 'COST_LIMIT', value: 3 }],
+                selectMode: 'MANUAL',
+            },
+            action: { type: 'DESTROY_UNIT', params: {} },
+        },
+    ],
+    "BT03-051": [
+        {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: "액티브: 메인 - 필드에 있는 [엑시트]를 가진 다른 자신 유닛을 1장 고른다. 상대의 턴이 끝날 때까지 그 유닛이 가진 [엑시트]효과를 하나 골라 얻는다.",
+            targets: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                filters: [
+                    { type: 'HAS_KEYWORD', value: '엑시트' },
+                    { type: 'EXCLUDE_SELF' },
+                ],
+                selectMode: 'MANUAL',
+            },
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_051_PROMPT_SELECT_TARGET_EXIT_EFFECT',
+                    duration: 'OPP_TURN_END',
+                },
+            },
+            duration: 'OPP_TURN_END',
+        },
+    ],
 };

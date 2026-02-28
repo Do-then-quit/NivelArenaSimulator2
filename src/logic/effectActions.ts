@@ -120,6 +120,10 @@ function zoneHasKeywordLike(zone: any, keyword: string): boolean {
     return false;
 }
 
+function countFriendlyExitUnits(player: any): number {
+    return player.unitZones.filter((zone: any) => zone?.unit && zoneHasKeywordLike(zone, '엑시트')).length;
+}
+
 const complexAction: ActionImplementation = (ctx, params, _targets) => {
     if ((params as any).mode === 'GUARDIAN_TRANSFER_POWER') {
         if (!_targets || _targets.length < 2) return;
@@ -1061,6 +1065,226 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         if (targets.length >= minCount) {
             buffHit(ctx, { value: hitValue, duration }, targets);
         }
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_036_DRAW_BY_EXIT_UNIT_COUNT') {
+        const drawPerUnit = Math.max(0, (params as any).drawPerUnit ?? 1);
+        const exitUnitCount = countFriendlyExitUnits(ctx.player);
+        const drawCount = exitUnitCount * drawPerUnit;
+        if (drawCount <= 0) return;
+        drawCard(ctx, {
+            count: drawCount,
+            __sourceActivation: (params as any).__sourceActivation,
+        }, _targets);
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_037_APPLY_DEBUFF_BY_EXIT_UNIT_COUNT') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const valuePerUnit = Math.max(0, (params as any).valuePerUnit ?? 2500);
+        const exitUnitCount = countFriendlyExitUnits(ctx.player);
+        const debuffValue = exitUnitCount * valuePerUnit;
+        if (debuffValue <= 0) return;
+        targetZone.buffs.push({
+            id: ctx.machine.createRuntimeId('BUFF'),
+            sourceCard: ctx.sourceCard,
+            type: 'POWER',
+            value: -debuffValue,
+            duration: (params as any).duration || 'TURN_END',
+        });
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_040_PROMPT_OPP_DISCARD_TO_HAND_SIZE') {
+        const keepCount = Math.max(0, (params as any).keepCount ?? 4);
+        const discardCount = Math.max(0, ctx.opponent.hand.length - keepCount);
+        if (discardCount <= 0) return;
+
+        const handSelectionSchema = {
+            scope: 'OPP_HAND',
+            type: 'CARD',
+            count: discardCount,
+            selectMode: 'MANUAL',
+        } as const;
+
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.opponent.id,
+            actionType: 'BT03_040_OPP_SELECT_HAND_TO_TRASH',
+            actionValue: { allowPartialSelection: false, requiredCount: discardCount },
+            effectDescription: '상대는 패를 4장 남기고 버릴 카드를 고른다.',
+            selectionPurpose: '버릴 상대 패 선택',
+            validTargets: 'OPP_HAND',
+            targetSchema: handSelectionSchema,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: 'ACTIVE' as any,
+            description: 'BT03-040 opponent discard to hand size',
+            targets: handSelectionSchema as any,
+            action: { type: 'DISCARD', params: { target: 'OPPONENT', count: discardCount } },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.opponent.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_041_EXIT_PROMPT_DISCARD_AND_REVIVE') {
+        const exitCandidates = ctx.player.hand
+            .map((card: any, handIndex: number) => ({ card, handIndex }))
+            .filter(({ card }) =>
+                !!card &&
+                (card.type === CardType.UNIT || card.type === CardType.ITEM) &&
+                cardHasKeywordLike(card, '엑시트')
+            );
+        if (exitCandidates.length === 0) return;
+
+        ctx.machine.state.revealedCards = exitCandidates.map(({ card, handIndex }) =>
+            createPromptOptionCard(
+                `BT03_041_HAND_OPTION_${handIndex}_${card.id}`,
+                card.name,
+                card.text || `${card.name}를 트래시`,
+                card.imageUrl,
+            )
+        ) as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT03_041_SELECT_EXIT_HAND_CARD',
+            actionValue: {
+                options: exitCandidates.map(({ handIndex }) => ({ handIndex })),
+                powerBuffValue: Math.max(0, (params as any).powerBuffValue ?? 2500),
+            },
+            effectDescription: '트래시할 [엑시트] 카드 1장을 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_045_TRASH_AND_GRANT_EXIT_RETURN') {
+        const selectedZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!selectedZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, selectedZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+
+        ctx.machine.destroyUnit(owner, selectedZone, undefined, 'EFFECT');
+
+        const remainingFriendlyUnits = ctx.player.unitZones.filter((zone: any) => zone?.unit);
+        if (remainingFriendlyUnits.length <= 0) return;
+
+        grantEffect(ctx, {
+            effect: {
+                activation: ActivationCondition.EXIT,
+                description: '엑시트 : 귀환',
+                action: { type: 'RETURN_FROM_TRASH_AT_TURN_END', params: {} },
+                duration: (params as any).duration || 'TURN_END',
+            },
+            duration: (params as any).duration || 'TURN_END',
+        }, remainingFriendlyUnits);
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_049_BUFF_OTHERS_BY_SELECTED_POWER_THEN_TRASH') {
+        const selectedZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!selectedZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, selectedZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+
+        const selectedPower = Math.max(0, ctx.machine.getUnitPower(selectedZone, ctx.player));
+        const duration = (params as any).duration || 'TURN_END';
+
+        ctx.player.unitZones.forEach((zone: any) => {
+            if (!zone?.unit || zone === selectedZone) return;
+            zone.buffs.push({
+                id: ctx.machine.createRuntimeId('BUFF'),
+                sourceCard: ctx.sourceCard,
+                type: 'POWER',
+                value: selectedPower,
+                duration,
+            });
+        });
+
+        ctx.machine.destroyUnit(ctx.player, selectedZone, undefined, 'EFFECT');
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_051_PROMPT_SELECT_TARGET_EXIT_EFFECT') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit || !ctx.unitZone?.unit) return;
+
+        const exitEffects: any[] = [];
+        (targetZone.unit.effects || []).forEach((effect: any) => {
+            if (effect?.activation === ActivationCondition.EXIT) exitEffects.push(effect);
+        });
+        (targetZone.temporaryEffects || []).forEach((effect: any) => {
+            if (effect?.activation === ActivationCondition.EXIT) exitEffects.push(effect);
+        });
+
+        if (exitEffects.length <= 0) return;
+
+        if (exitEffects.length === 1) {
+            const selected = exitEffects[0];
+            const actionDurationOverride =
+                selected.actionDurationOverride !== undefined
+                    ? selected.actionDurationOverride
+                    : (selected.duration && selected.duration !== 'TURN_END' ? selected.duration : undefined);
+            ctx.unitZone.temporaryEffects.push({
+                ...selected,
+                duration: (params as any).duration || 'OPP_TURN_END',
+                actionDurationOverride,
+            });
+            return;
+        }
+
+        const owner = getOwnerOfZone(ctx.machine, ctx.unitZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+        const sourceZoneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
+        if (sourceZoneIndex < 0) return;
+
+        ctx.machine.state.revealedCards = exitEffects.map((effect: any, effectIndex: number) =>
+            createPromptOptionCard(
+                `BT03_051_EXIT_EFFECT_OPTION_${effectIndex}`,
+                `엑시트 효과 ${effectIndex + 1}`,
+                effect.description || '획득할 [엑시트] 효과 선택'
+            )
+        ) as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT03_051_SELECT_EXIT_EFFECT_TO_GAIN',
+            actionValue: {
+                sourceZoneIndex,
+                options: exitEffects.map((effect: any) => ({ effect })),
+                duration: (params as any).duration || 'OPP_TURN_END',
+            },
+            effectDescription: '획득할 [엑시트] 효과를 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
         return;
     }
 

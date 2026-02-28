@@ -1074,6 +1074,521 @@ const tests: UnifiedTestCase[] = [
             ];
         },
     },
+    {
+        testId: 'BT03-035',
+        name: '각성면 액티브: 코스트 트래시 후 상대 1디스카드',
+        description: '상대 패 3장 이상일 때 코스트를 지불하면 상대가 패 1장을 트래시한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.levelZone = getCard('BT03-035');
+            p1.levelZone.isAwakened = true;
+            p1.hand = [getCard('ST01-002')];
+            p2.hand = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            engine.activateEffect(0, 1, 'LEADER');
+            const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+            if (confirm) engine.step(confirm);
+            const payCost = findAction(engine, p1.id, 'SELECT_COST_HAND');
+            if (payCost) engine.step(payCost);
+            const oppDiscard = findAction(engine, p2.id, 'SELECT_HAND_TARGET', (action: any) => action.targetPlayerId === p2.id);
+            if (oppDiscard) engine.step(oppDiscard);
+            return [
+                { pass: !!confirm, message: '옵션 수락 가능' },
+                { pass: !!payCost, message: '코스트 지불 가능' },
+                { pass: !!oppDiscard, message: '상대 패 선택 트래시 가능' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('ST01-002')), message: '자신 코스트 트래시 반영' },
+                { pass: p2.hand.length === 2, message: '상대 패 1장 감소' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-036',
+        name: '엑시트 수만큼 드로우',
+        description: 'EXIT 해결 시 현재 필드의 [엑시트] 아군 유닛 수만큼 드로우한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('BT03-036');
+            p1.unitZones[1].unit = getCard('BT03-038');
+            p1.deck = [getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            return [
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '드로우 1 반영' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-037',
+        name: '엑시트 수 스케일 파워 디버프',
+        description: 'EXIT 시 상대 유닛 1장에게 [엑시트] 수 ×2500 디버프를 적용한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.unitZones[0].unit = getCard('BT03-037');
+            p1.unitZones[1].unit = getCard('BT03-038');
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            const before = zonePower(engine, p2, 0);
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p2.id && action.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            const after = p2.unitZones[0].unit ? zonePower(engine, p2, 0) : 0;
+            return [
+                { pass: !!pick, message: '상대 유닛 선택 가능' },
+                { pass: p2.unitZones[0].unit === null || after === before - 2500, message: '파워 -2500 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-038',
+        name: '엑시트 코스트 트래시 후 상대 1디스카드',
+        description: 'EXIT 옵션 수락 시 패 1장 코스트로 상대 패 1장을 트래시한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.unitZones[0].unit = getCard('BT03-038');
+            p1.hand = [getCard('ST01-002')];
+            p2.hand = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+            if (confirm) engine.step(confirm);
+            const payCost = findAction(engine, p1.id, 'SELECT_COST_HAND');
+            if (payCost) engine.step(payCost);
+            const oppDiscard = findAction(engine, p2.id, 'SELECT_HAND_TARGET', (action: any) => action.targetPlayerId === p2.id);
+            if (oppDiscard) engine.step(oppDiscard);
+            return [
+                { pass: !!confirm, message: '옵션 수락 가능' },
+                { pass: !!payCost, message: '코스트 지불 가능' },
+                { pass: !!oppDiscard, message: '상대 패 선택 가능' },
+                { pass: p2.hand.length === 2, message: '상대 패 1장 감소' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-039',
+        name: '엑시트: 트래시 4코 유닛 회수',
+        description: 'EXIT 시 자신의 트래시에서 4코 유닛 1장을 패로 회수한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('BT03-039');
+            p1.trash = [getCard('BT03-024')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const pick = findAction(engine, p1.id, 'SELECT_TRASH_TARGET');
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '트래시 대상 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT03-024')), message: '4코 유닛 회수 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-040',
+        name: '비트리거 드로우 시 상대 패 4장 정리',
+        description: '상대가 실제 드로우 스킬(효과) 발동으로 드로우하면 상대가 4장만 남기고 트래시한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p2.unitZones[0].unit = getCard('BT03-040');
+            p1.hand = [
+                getCard('BT06-065'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+            ];
+            p1.deck = [getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playSkill(0); // BT06-065: 액티브로 1드로우
+            const discardOptions = engine.getLegalActions(p1.id).filter((action: any) =>
+                action.type === 'SELECT_HAND_TARGET' && action.targetPlayerId === p1.id
+            );
+            const discardPick1 = discardOptions[0];
+            const discardPick2 = discardOptions[1];
+            if (discardPick1) engine.step(discardPick1);
+            if (discardPick2) engine.step(discardPick2);
+
+            const confirm = findAction(engine, p1.id, 'CONFIRM_TARGETS');
+            if (confirm) engine.step(confirm);
+            return [
+                { pass: p1.skillZone.some((card: Card) => card.id.startsWith('BT06-065')), message: '현재 플레이어가 드로우 스킬 발동' },
+                { pass: !!discardPick1 && !!discardPick2, message: '버릴 카드 선택 2회 가능' },
+                { pass: !!confirm, message: '선택 확정 가능' },
+                { pass: p1.hand.length === 4, message: '패 4장 유지 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-041',
+        name: '상대 턴 엑시트 부활 +2500',
+        description: '상대 턴 EXIT 옵션으로 손패 [엑시트]를 트래시하고 빈 존에 부활한 뒤 +2500을 얻는다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            engine.state.phase = Phase.ATTACK;
+            // 현재 플레이어가 즉시 공격 버튼을 볼 수 있도록 공격 유닛을 배치한다.
+            p1.unitZones[1].unit = getCard('ST01-011');
+            // BT03-041은 상대 필드에 배치하여 "상대 턴" 조건을 충족시킨다.
+            p2.unitZones[0].unit = getCard('BT03-041');
+            p2.unitZones[2].unit = getCard('ST01-002');
+            p2.hand = [getCard('BT03-038')];
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const attackAction = findAction(engine, p1.id, 'ATTACK', (action: any) => action.attackerZoneIndex === 1);
+            engine.destroyUnit(p2, p2.unitZones[0], undefined, 'EFFECT');
+            const confirm = findAction(engine, p2.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+            if (confirm) engine.step(confirm);
+            const pickHandExit = findAction(engine, p2.id, 'SELECT_REVEALED_TARGET');
+            if (pickHandExit) engine.step(pickHandExit);
+            const pickEmptyZone = findAction(engine, p2.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p2.id && action.zoneIndex === 1);
+            if (pickEmptyZone) engine.step(pickEmptyZone);
+            const afterPower = p2.unitZones[1].unit ? zonePower(engine, p2, 1) : 0;
+            const revivedBasePower = p2.unitZones[1].unit?.power || 0;
+            return [
+                { pass: !!attackAction, message: 'setup 상태에서 현재 플레이어 공격 가능' },
+                { pass: !!confirm, message: '옵션 수락 가능' },
+                { pass: !!pickHandExit, message: '손패 [엑시트] 선택 가능' },
+                { pass: !!pickEmptyZone, message: '빈 유닛존 선택 가능' },
+                { pass: p2.unitZones[1].unit?.id.startsWith('BT03-041') === true, message: 'BT03-041 부활 배치 성공' },
+                { pass: p2.unitZones[1].unit ? afterPower === revivedBasePower + 2500 : false, message: '부활 후 +2500 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-042',
+        name: '상대 손패 효과 트래시 턴 조건 +2500',
+        description: '리더 효과로 상대 손패를 실제로 트래시하면 BT03-042의 파워+2500이 적용된다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.unitZones[0].unit = getCard('BT03-042');
+            p1.levelZone = getCard('BT03-035');
+            if (p1.levelZone) p1.levelZone.isAwakened = true;
+            p1.hand = [getCard('ST01-002')]; // BT03-035 코스트 지불용
+            p2.hand = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            const before = zonePower(engine, p1, 0);
+            engine.activateEffect(0, 1, 'LEADER');
+            const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+            if (confirm) engine.step(confirm);
+            const payCost = findAction(engine, p1.id, 'SELECT_COST_HAND');
+            if (payCost) engine.step(payCost);
+            const oppDiscard = findAction(engine, p2.id, 'SELECT_HAND_TARGET', (action: any) => action.targetPlayerId === p2.id);
+            if (oppDiscard) engine.step(oppDiscard);
+            const after = zonePower(engine, p1, 0);
+            return [
+                { pass: !!confirm, message: '리더 효과 옵션 수락 가능' },
+                { pass: !!payCost, message: '리더 효과 코스트 지불 가능' },
+                { pass: !!oppDiscard, message: '상대 손패 트래시 선택 가능' },
+                { pass: after === before + 2500, message: '조건 충족 시 파워 +2500' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-043',
+        name: '엔트리 조우<=4에 디펜더 종결 부여',
+        description: '조우 유닛이 4코 이하라면 해당 유닛에 디펜더 종결을 부여한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-043')];
+            p2.unitZones[0].unit = getCard('BT03-024');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p2 = engine.opponentPlayer;
+            engine.playUnit(0, 0);
+            const granted = p2.unitZones[0].temporaryEffects.some((effect: any) =>
+                effect.activation === 'DEFENDER' && effect.action?.type === 'TERMINATE_ATTACK'
+            );
+            return [
+                { pass: granted, message: '디펜더 종결 부여 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-044',
+        name: '엔트리 파괴 + 액티브 파워 증가',
+        description: '상대 패 조건에서 엔트리로 조우를 트래시하고 액티브로 +3000을 얻는다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-044')];
+            p2.hand = [getCard('ST01-002')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            engine.playUnit(0, 0);
+            const afterEntryDestroyed = p2.unitZones[0].unit === null;
+            const beforePower = zonePower(engine, p1, 0);
+            engine.activateEffect(0, 1);
+            const afterPower = zonePower(engine, p1, 0);
+            return [
+                { pass: afterEntryDestroyed, message: '엔트리 조건 조우 트래시 성공' },
+                { pass: afterPower === beforePower + 3000, message: '액티브 +3000 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-044-Trigger',
+        name: '트리거: 자기 트래시 후 [엑시트] 유닛 회수',
+        description: '대미지 트리거 발동 시 자기 자신을 트래시하고 트래시의 [엑시트] 유닛 1장을 회수한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.deck = [getCard('BT03-044')];
+            p1.trash = [getCard('BT03-038')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.dealDamage(p1, 1);
+            const pick = findAction(engine, p1.id, 'SELECT_TRASH_TARGET');
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '회수 대상 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT03-038')), message: '[엑시트] 유닛 회수 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-045',
+        name: '엔트리: 아군 1장 트래시 후 남은 아군에 귀환 EXIT 부여',
+        description: '아군 1장을 트래시한 뒤 남은 모든 아군 유닛에게 귀환 EXIT 효과를 부여한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-045')];
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.unitZones[2].unit = getCard('BT03-038');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playUnit(0, 0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p1.id && action.zoneIndex === 1);
+            if (pick) engine.step(pick);
+            const zone0Granted = p1.unitZones[0].temporaryEffects.some((effect: any) => effect.activation === 'EXIT' && effect.action?.type === 'RETURN_FROM_TRASH_AT_TURN_END');
+            const zone2Granted = p1.unitZones[2].temporaryEffects.some((effect: any) => effect.activation === 'EXIT' && effect.action?.type === 'RETURN_FROM_TRASH_AT_TURN_END');
+            return [
+                { pass: !!pick, message: '트래시 대상 선택 가능' },
+                { pass: p1.unitZones[1].unit === null, message: '선택 유닛 트래시 성공' },
+                { pass: zone0Granted && zone2Granted, message: '남은 아군에게 귀환 EXIT 부여' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-046',
+        name: '2코 이하 아군 트래시 후 1드로우',
+        description: '2코 이하 아군 유닛 1장을 트래시하고 1장 드로우한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-046')];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.deck = [getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playSkill(0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p1.id && action.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '대상 선택 가능' },
+                { pass: p1.unitZones[0].unit === null, message: '2코 이하 유닛 트래시 성공' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '1드로우 반영' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-047',
+        name: '[엑시트] 아군 전원 +2000',
+        description: '필드의 [엑시트]를 가진 아군 유닛 전부에 +2000을 적용한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-047')];
+            p1.unitZones[0].unit = getCard('BT03-038');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const beforeExit = zonePower(engine, p1, 0);
+            const beforeNormal = zonePower(engine, p1, 1);
+            engine.playSkill(0);
+            return [
+                { pass: zonePower(engine, p1, 0) === beforeExit + 2000, message: '[엑시트] 유닛 +2000' },
+                { pass: zonePower(engine, p1, 1) === beforeNormal, message: '비[엑시트] 유닛 변화 없음' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-048',
+        name: '메인: 4~6코 유닛 회수',
+        description: '메인 효과로 트래시의 4~6코 유닛 1장을 패에 넣는다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-048')];
+            p1.trash = [getCard('BT03-024')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playSkill(0);
+            const pick = findAction(engine, p1.id, 'SELECT_TRASH_TARGET');
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '회수 대상 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT03-024')), message: '4~6코 유닛 회수 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-048-Trigger',
+        name: '트리거: 자기 트래시 + 조건부 상대 1디스카드',
+        description: '상대 패 3장 이상일 때 트리거로 상대 패 1장을 트래시한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.deck = [getCard('BT03-048')];
+            p2.hand = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            engine.dealDamage(p1, 1);
+            const pick = findAction(engine, p2.id, 'SELECT_HAND_TARGET', (action: any) => action.targetPlayerId === p2.id);
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '상대 패 트래시 대상 선택 가능' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT03-048')), message: '자기 자신 트래시' },
+                { pass: p2.hand.length === 2, message: '상대 패 1장 감소' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-049',
+        name: '선택 유닛 파워만큼 다른 아군 버프 후 선택 유닛 트래시',
+        description: '선택 유닛의 현재 유효 파워만큼 다른 아군 전원에 버프를 주고 선택 유닛을 트래시한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-049')];
+            p1.unitZones[0].unit = getCard('BT03-024');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.unitZones[2].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const before1 = zonePower(engine, p1, 1);
+            const before2 = zonePower(engine, p1, 2);
+            const selectedPower = zonePower(engine, p1, 0);
+            engine.playSkill(0);
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p1.id && action.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '아군 유닛 선택 가능' },
+                { pass: p1.unitZones[0].unit === null, message: '선택 유닛 트래시' },
+                { pass: zonePower(engine, p1, 1) === before1 + selectedPower, message: '다른 아군1 버프 적용' },
+                { pass: zonePower(engine, p1, 2) === before2 + selectedPower, message: '다른 아군2 버프 적용' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-050',
+        name: '아이템 EXIT 조건부 상대 저코스트 트래시',
+        description: '상대 패 3장 이하일 때 EXIT로 상대 3코 이하 유닛 1장을 트래시한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-050')];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p2.hand = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            engine.playItem(0, 0);
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const pick = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p2.id && action.zoneIndex === 0);
+            if (pick) engine.step(pick);
+            return [
+                { pass: !!pick, message: '상대 3코 이하 유닛 선택 가능' },
+                { pass: p2.unitZones[0].unit === null, message: '상대 유닛 트래시 성공' },
+            ];
+        },
+    },
+    {
+        testId: 'BT03-051',
+        name: '다른 아군 EXIT 효과 획득',
+        description: '다른 아군 [엑시트] 유닛을 선택해 장착 유닛이 EXIT 효과를 획득한다.',
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine);
+            p1.hand = [getCard('BT03-051')];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.unitZones[1].unit = getCard('BT03-036');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.playItem(0, 0);
+            engine.activateEffect(0, 0, 'ITEM', 0);
+            const pickTarget = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) =>
+                action.targetPlayerId === p1.id && action.zoneIndex === 1
+            );
+            if (pickTarget) engine.step(pickTarget);
+            const gained = p1.unitZones[0].temporaryEffects.some((effect: any) =>
+                effect.activation === 'EXIT' && String(effect.description || '').includes('드로우')
+            );
+            return [
+                { pass: !!pickTarget, message: '대상 [엑시트] 유닛 선택 가능' },
+                { pass: gained, message: '장착 유닛 EXIT 효과 획득 성공' },
+            ];
+        },
+    },
 ];
 
 export const BT03Module: UnifiedTestModule = {

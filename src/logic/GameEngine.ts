@@ -1311,6 +1311,11 @@ export class GameEngine {
     private clearExpiredTurnCountAttackLocks() {
         this.state.players.forEach(player => {
             player.unitZones.forEach(zone => {
+                zone.buffs = zone.buffs.filter(buff => {
+                    const untilTurnCount = (buff as any)?.untilTurnCount;
+                    if (typeof untilTurnCount !== 'number') return true;
+                    return this.state.turnCount <= untilTurnCount;
+                });
                 zone.temporaryEffects = zone.temporaryEffects.filter(effect => {
                     const attackLockUntil = effect?.action?.params?.cannotAttackUntilTurnCount;
                     const genericUntil = effect?.action?.params?.untilTurnCount;

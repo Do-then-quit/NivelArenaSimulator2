@@ -134,8 +134,20 @@ export class EffectManager {
             effectsToProcess.push(...sourceCard.effects.filter((e: Effect) => e.activation === activation));
         }
 
-        // Add temporary effects from unitZone if applicable
-        if (context.unitZone && context.unitZone.temporaryEffects) {
+        // Add zone temporary effects only when resolving the affected unit itself.
+        // For EXIT, unit is already removed from zone, so use destroyedUnitId context flag.
+        const shouldIncludeZoneTemporaryEffects =
+            !!context.unitZone &&
+            !!context.unitZone.temporaryEffects &&
+            (
+                context.unitZone.unit === context.sourceCard ||
+                (
+                    context.unitZone.unit === null &&
+                    context.flags?.destroyedUnitId !== undefined &&
+                    context.sourceCard?.id === context.flags.destroyedUnitId
+                )
+            );
+        if (shouldIncludeZoneTemporaryEffects) {
             effectsToProcess.push(...context.unitZone.temporaryEffects.filter((e: Effect) => e.activation === activation));
         }
 
@@ -466,6 +478,11 @@ export class EffectManager {
             case 'TRASHED_FRIENDLY_BY_EFFECT_THIS_TURN_MIN': {
                 const min = typeof value === 'number' ? value : value?.min ?? 1;
                 const countByEffect = context.machine.getEffectTrashedFriendlyUnitCount(context.player.id);
+                return countByEffect >= min;
+            }
+            case 'OPPONENT_HAND_TRASHED_BY_EFFECT_THIS_TURN_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const countByEffect = context.machine.getHandTrashedByEffectCount(context.opponent.id);
                 return countByEffect >= min;
             }
             case 'TRASH_REASON': {

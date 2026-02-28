@@ -190,6 +190,7 @@ export interface EffectCondition {
     | 'ONCE_PER_TURN'
     | 'EQUIPPED_UNIT_COUNT_MIN'
     | 'TRASHED_FRIENDLY_BY_EFFECT_THIS_TURN_MIN'
+    | 'OPPONENT_HAND_TRASHED_BY_EFFECT_THIS_TURN_MIN'
     | 'TRASH_REASON'
     | 'ITEM_COUNT_GTE_ENCOUNTER_HIT'
     | 'CONTEXT_FLAG'
@@ -331,6 +332,7 @@ export interface Buff {
     value: number;
     duration: 'TURN_END' | 'PERMANENT' | 'OPP_TURN_END' | 'BATTLE_END';
     mode?: 'ADD' | 'SET';
+    untilTurnCount?: number;
 }
 
 export interface PlayerState {

@@ -55,6 +55,20 @@ function executeBt06FollowUpSubActions(engine: any, context: GameContext, subAct
     }
 }
 
+function trashUnitZoneWithoutTriggers(player: any, zone: any) {
+    if (!player || !zone?.unit) return;
+    const unit = zone.unit;
+    zone.unit = null;
+    player.trash.push(unit);
+    zone.items.forEach((item: any) => player.trash.push(item));
+    zone.items = [];
+    zone.buffs = [];
+    zone.temporaryEffects = [];
+    zone.attackCountThisTurn = 0;
+    zone.extraAttackAllowance = 0;
+    zone.hasAttacked = false;
+}
+
 export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targetPlayerId: string) {
     if (engine.state.interactionMode !== 'SELECT_TARGET' || !engine.state.pendingEffect) return;
 
@@ -64,7 +78,10 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
     const effect = runtime?.effect;
     const context = runtime?.context;
     const targetSchema = pending.targetSchema;
-    if (!effect || !context || !targetSchema) return;
+    const allowsEffectlessSelection =
+        pending.actionType === 'GUARDIAN_BLOCK_UNIT_COST' ||
+        pending.actionType === 'BT03_041_SELECT_EMPTY_ZONE_TO_REVIVE_SELF';
+    if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
     const targetPlayer = engine.getPlayerById(targetPlayerId);
     if (!targetPlayer) return;
     if (zoneIndex < 0 || zoneIndex >= targetPlayer.unitZones.length) return;
@@ -85,6 +102,69 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
             console.log("Invalid Target: Lane is not shared.");
             return;
         }
+    }
+
+    if (pending.actionType === 'GUARDIAN_BLOCK_UNIT_COST') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+
+        const blockerZoneIndex = pending.actionValue?.blockerZoneIndex;
+        if (typeof blockerZoneIndex !== 'number') return;
+        if (zoneIndex === blockerZoneIndex) return;
+        if (!targetZone.unit) return;
+
+        trashUnitZoneWithoutTriggers(sourcePlayer, targetZone);
+
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.pendingEffect = null;
+        engine.clearPendingRuntime();
+        engine.assignInteractionOwner(engine.currentPlayer.id);
+
+        engine.commitBlockDeclaration(blockerZoneIndex);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_041_SELECT_EMPTY_ZONE_TO_REVIVE_SELF') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        if (targetZone.unit) return;
+
+        const sourceCard = pending.sourceCard;
+        const trashIndexByRef = sourcePlayer.trash.indexOf(sourceCard);
+        const trashIndexById = trashIndexByRef !== -1
+            ? trashIndexByRef
+            : sourcePlayer.trash.findIndex((card: any) => card?.id === sourceCard?.id);
+        if (trashIndexById !== -1) {
+            sourcePlayer.trash.splice(trashIndexById, 1);
+        }
+
+        targetZone.unit = sourceCard;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+        targetZone.hasAttacked = false;
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.isExhausted = false;
+        targetZone.hasPlacedUnitThisTurn = false;
+        targetZone.hasActivatedEffectThisTurn = false;
+        targetZone.activatedEffectKeys = {};
+
+        const powerBuffValue = Math.max(0, Number(pending.actionValue?.powerBuffValue ?? 2500));
+        if (powerBuffValue > 0) {
+            targetZone.buffs.push({
+                id: engine.createRuntimeId('BUFF'),
+                sourceCard: sourceCard,
+                type: 'POWER',
+                value: powerBuffValue,
+                duration: 'PERMANENT',
+                untilTurnCount: engine.state.turnCount + 1,
+            });
+        }
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
     }
 
     // If everything good, execute
@@ -134,7 +214,8 @@ export function confirmTargets(engine: any) {
         pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST' ||
         pending.actionType === 'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
         pending.actionType === 'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
-        pending.actionType === 'BT03_011_SELECT_TRASH_LOWER_COST_TO_HAND';
+        pending.actionType === 'BT03_011_SELECT_TRASH_LOWER_COST_TO_HAND' ||
+        pending.actionType === 'GUARDIAN_BLOCK_UNIT_COST';
     if (!effect && !allowsEffectlessConfirm) return;
 
     // Validation - can be empty if no valid targets were found among revealed
@@ -647,6 +728,72 @@ export function selectRevealedTarget(engine: any, index: number) {
         if (selectedCard) {
             sourcePlayer.hand.push(selectedCard);
         }
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_041_SELECT_EXIT_HAND_CARD') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || !option) return;
+
+        const handIndex = option.handIndex;
+        if (typeof handIndex !== 'number' || handIndex < 0 || handIndex >= sourcePlayer.hand.length) return;
+        const [selectedCard] = sourcePlayer.hand.splice(handIndex, 1);
+        if (selectedCard) {
+            sourcePlayer.trash.push(selectedCard);
+            engine.notifyHandTrashed(sourcePlayer, [selectedCard], {
+                flags: { handTrashByEffect: true },
+            });
+        }
+
+        const emptyZones = sourcePlayer.unitZones
+            .map((zone: any, zoneIndex: number) => ({ zone, zoneIndex }))
+            .filter(({ zone }: any) => !zone?.unit);
+        if (emptyZones.length === 0) {
+            engine.state.revealedCards = [];
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        engine.state.revealedCards = [];
+        pending.actionType = 'BT03_041_SELECT_EMPTY_ZONE_TO_REVIVE_SELF';
+        pending.effectDescription = '부활시킬 빈 유닛 존을 선택한다.';
+        pending.validTargets = 'MY_UNITS';
+        pending.targetSchema = {
+            scope: 'MY_FIELD',
+            type: 'ALL',
+            count: 1,
+            selectMode: 'MANUAL',
+        } as any;
+        pending.selectedTargets = [];
+        engine.assignInteractionOwner(pending.controllerPlayerId ?? pending.sourcePlayerId);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_051_SELECT_EXIT_EFFECT_TO_GAIN') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        const sourceZoneIndex = pending.actionValue?.sourceZoneIndex;
+        if (!sourcePlayer || !option || typeof sourceZoneIndex !== 'number') return;
+
+        const sourceZone = sourcePlayer.unitZones[sourceZoneIndex];
+        if (!sourceZone?.unit) return;
+        const selectedEffect = option.effect;
+        if (!selectedEffect) return;
+
+        const actionDurationOverride =
+            selectedEffect.actionDurationOverride !== undefined
+                ? selectedEffect.actionDurationOverride
+                : (selectedEffect.duration && selectedEffect.duration !== 'TURN_END' ? selectedEffect.duration : undefined);
+
+        sourceZone.temporaryEffects.push({
+            ...selectedEffect,
+            duration: pending.actionValue?.duration || 'OPP_TURN_END',
+            actionDurationOverride,
+        });
 
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);

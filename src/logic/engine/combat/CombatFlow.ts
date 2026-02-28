@@ -6,6 +6,12 @@ interface GuardianBlockItemCost {
     count: number;
 }
 
+interface GuardianBlockUnitSacrificeCost {
+    unitName?: string;
+    unitCardId?: string;
+    count: number;
+}
+
 function getGuardianBlockItemCost(
     engine: any,
     owner: any,
@@ -52,6 +58,61 @@ function getGuardianBlockItemCost(
     return null;
 }
 
+function getGuardianBlockUnitSacrificeCost(
+    engine: any,
+    owner: any,
+    opponent: any,
+    zone: UnitZoneState
+): GuardianBlockUnitSacrificeCost | null {
+    if (!zone?.unit) return null;
+
+    const effectSources: Array<{ sourceCard: Card; effect: Effect }> = [];
+    if (zone.unit.effects) {
+        zone.unit.effects.forEach(effect => effectSources.push({ sourceCard: zone.unit!, effect }));
+    }
+    zone.items.forEach(item => {
+        if (item.effects) {
+            item.effects.forEach(effect => effectSources.push({ sourceCard: item, effect }));
+        }
+    });
+    zone.temporaryEffects.forEach(effect => {
+        effectSources.push({ sourceCard: zone.unit!, effect });
+    });
+
+    for (const { sourceCard, effect } of effectSources) {
+        if (!effect || effect.activation !== ActivationCondition.PASSIVE) continue;
+        if (effect.action?.type !== 'NONE') continue;
+
+        const raw = effect.action?.params?.guardianBlockUnitSacrificeCost;
+        if (raw === undefined || raw === null) continue;
+
+        const context: GameContext = {
+            sourceCard,
+            player: owner,
+            opponent,
+            unitZone: zone,
+            machine: engine,
+        };
+        if (!engine.effectManager.checkCondition(effect, context)) continue;
+
+        if (typeof raw === 'number') {
+            return {
+                count: Math.max(1, Number(raw) || 1),
+            };
+        }
+
+        if (typeof raw === 'object') {
+            return {
+                unitName: typeof raw.unitName === 'string' ? raw.unitName : undefined,
+                unitCardId: typeof raw.unitCardId === 'string' ? raw.unitCardId : undefined,
+                count: Math.max(1, Number(raw.count) || 1),
+            };
+        }
+    }
+
+    return null;
+}
+
 function isGuardianBlockItemMatch(item: Card, spec: GuardianBlockItemCost): boolean {
     if (!item) return false;
     if (spec.itemCardId && item.id !== spec.itemCardId) return false;
@@ -62,6 +123,22 @@ function isGuardianBlockItemMatch(item: Card, spec: GuardianBlockItemCost): bool
 function getGuardianBlockPayableItems(zone: UnitZoneState, spec: GuardianBlockItemCost): Card[] {
     if (!Array.isArray(zone?.items)) return [];
     return zone.items.filter(item => isGuardianBlockItemMatch(item, spec));
+}
+
+function isGuardianBlockUnitMatch(unit: Card, spec: GuardianBlockUnitSacrificeCost): boolean {
+    if (!unit) return false;
+    if (spec.unitCardId && unit.id !== spec.unitCardId) return false;
+    if (spec.unitName && !String(unit.name || '').includes(spec.unitName)) return false;
+    return true;
+}
+
+function getGuardianBlockPayableUnits(owner: any, blockerZoneIndex: number, spec: GuardianBlockUnitSacrificeCost): UnitZoneState[] {
+    if (!owner || !Array.isArray(owner.unitZones)) return [];
+    return owner.unitZones.filter((candidateZone: UnitZoneState, zoneIndex: number) => {
+        if (zoneIndex === blockerZoneIndex) return false;
+        if (!candidateZone?.unit) return false;
+        return isGuardianBlockUnitMatch(candidateZone.unit, spec);
+    });
 }
 
 function failBlockDeclaration(engine: any) {
@@ -335,6 +412,83 @@ export function resolveBlock(engine: any, shouldBlock: boolean, blockerZoneIndex
     }
 
     const isGuardianBlock = selectedBlockerZoneIndex !== attackerZoneIndex;
+    const guardianBlockUnitSacrificeCost = isGuardianBlock
+        ? getGuardianBlockUnitSacrificeCost(engine, engine.opponentPlayer, engine.currentPlayer, selectedBlockerZone)
+        : null;
+
+    if (isGuardianBlock && guardianBlockUnitSacrificeCost) {
+        const payableUnits = getGuardianBlockPayableUnits(
+            engine.opponentPlayer,
+            selectedBlockerZoneIndex,
+            guardianBlockUnitSacrificeCost
+        );
+        if (payableUnits.length < guardianBlockUnitSacrificeCost.count) {
+            failBlockDeclaration(engine);
+            return;
+        }
+
+        if (guardianBlockUnitSacrificeCost.count === 1 && payableUnits.length === 1) {
+            const payZone = payableUnits[0];
+            const payUnit = payZone.unit;
+            if (!payUnit) {
+                failBlockDeclaration(engine);
+                return;
+            }
+            payZone.unit = null;
+            engine.opponentPlayer.trash.push(payUnit);
+            payZone.items.forEach((item: Card) => engine.opponentPlayer.trash.push(item));
+            payZone.items = [];
+            payZone.buffs = [];
+            payZone.temporaryEffects = [];
+            payZone.attackCountThisTurn = 0;
+            payZone.extraAttackAllowance = 0;
+            payZone.hasAttacked = false;
+
+            engine.commitBlockDeclaration(selectedBlockerZoneIndex);
+            return;
+        }
+
+        const controllerPlayerId = engine.opponentPlayer.id;
+        engine.state.interactionMode = 'SELECT_TARGET';
+        engine.state.pendingEffect = {
+            sourceCard: selectedBlockerZone.unit,
+            sourcePlayerId: engine.opponentPlayer.id,
+            controllerPlayerId,
+            actionType: 'GUARDIAN_BLOCK_UNIT_COST',
+            actionValue: {
+                blockerZoneIndex: selectedBlockerZoneIndex,
+                unitName: guardianBlockUnitSacrificeCost.unitName,
+                unitCardId: guardianBlockUnitSacrificeCost.unitCardId,
+                requiredCount: guardianBlockUnitSacrificeCost.count,
+            },
+            effectDescription: 'Guardian block unit sacrifice cost',
+            sourceActivation: ActivationCondition.DEFENDER,
+            triggerReason: '가디언 블록 선언 비용',
+            selectionPurpose: '가디언 블록에 사용할 희생 유닛 선택',
+            validTargets: 'MY_UNITS',
+            targetSchema: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                selectMode: 'MANUAL',
+                filters: [
+                    { type: 'EXCLUDE_SELF' },
+                    ...(guardianBlockUnitSacrificeCost.unitName ? [{ type: 'HAS_NAME', value: guardianBlockUnitSacrificeCost.unitName }] : []),
+                ],
+            },
+            selectedTargets: [],
+        };
+        engine.setPendingRuntime({
+            sourceCard: selectedBlockerZone.unit,
+            player: engine.opponentPlayer,
+            opponent: engine.currentPlayer,
+            unitZone: selectedBlockerZone,
+            machine: engine,
+        }, null);
+        engine.assignInteractionOwner(controllerPlayerId);
+        return;
+    }
+
     const guardianBlockItemCost = isGuardianBlock
         ? getGuardianBlockItemCost(engine, engine.opponentPlayer, engine.currentPlayer, selectedBlockerZone)
         : null;
@@ -522,6 +676,12 @@ export function getAvailableBlockerZoneIndexes(engine: any, attackerZoneIndex: n
             if (hasCannotBlockFlag(engine, zone, defender, defenderOpponent)) return;
             if (!(engine.hasKeywordInZone(zone, '가디언') || engine.hasKeywordInZone(zone, 'GUARDIAN'))) return;
             if (engine.isBlockPreventedByBreakthrough(attackerZone, zone)) return;
+
+            const guardianBlockUnitSacrificeCost = getGuardianBlockUnitSacrificeCost(engine, defender, defenderOpponent, zone);
+            if (guardianBlockUnitSacrificeCost) {
+                const payableUnits = getGuardianBlockPayableUnits(defender, zoneIndex, guardianBlockUnitSacrificeCost);
+                if (payableUnits.length < guardianBlockUnitSacrificeCost.count) return;
+            }
 
             const guardianBlockItemCost = getGuardianBlockItemCost(engine, defender, defenderOpponent, zone);
             if (guardianBlockItemCost) {
