@@ -15,9 +15,16 @@
 - 실행 명령:
   - 개발 서버: `npm run dev`
   - 빌드: `npm run build`
+  - 프리뷰 서버: `npm run preview`
   - 전체 테스트: `npm test`
   - 부분 테스트: `npx vitest run <파일경로>`
   - Bot soak: `npm run test:bot-soak`
+  - 온라인 릴레이(개발): `npm run relay:dev`
+  - 온라인 릴레이(실행): `npm run relay:start` (또는 `npm run start`)
+  - AI 회귀 게이트: `npm run ai:regression`
+  - AI 벤치/라더: `npm run ai:bench`, `npm run ai:ladder`
+  - AI 고급 게이트: `npm run ai:phase4:matrix`, `npm run ai:phase4.1:promote`
+  - TODO: 로드맵 placeholder 커맨드(`ai:fixed:*`)가 실제 스크립트로 연결되면 별칭 정리
 
 ## 2) Source of Truth
 1. 카드 텍스트 (룰 1.3.1)
