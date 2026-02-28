@@ -4,7 +4,7 @@ import { DECK_BUILDER_ALLOWED_PACKS, getDeckBuilderCards } from '../../../src/lo
 
 describe('DeckBuilderCardPool', () => {
     it('uses the expected pack allow list', () => {
-        expect(DECK_BUILDER_ALLOWED_PACKS).toEqual(['ST01', 'ST02', 'ST03', 'ST04', 'ST05', 'ST10', 'ST11', 'BT01', 'BT02', 'BT06']);
+        expect(DECK_BUILDER_ALLOWED_PACKS).toEqual(['ST01', 'ST02', 'ST03', 'ST04', 'ST05', 'ST10', 'ST11', 'BT01', 'BT02', 'BT03', 'BT06']);
     });
 
     it('returns only cards from allowed pack prefixes', () => {
@@ -16,16 +16,16 @@ describe('DeckBuilderCardPool', () => {
     it('excludes cards from non-allowed packs', () => {
         const cards = getDeckBuilderCards(DUMMY_CARDS);
         expect(cards.some(card => card.id.startsWith('ST06-'))).toBe(false);
-        expect(cards.some(card => card.id.startsWith('BT03-'))).toBe(false);
         expect(cards.some(card => card.id.startsWith('SB01-'))).toBe(false);
     });
 
-    it('includes ST05, ST10, ST11, BT02, and BT06 cards', () => {
+    it('includes ST05, ST10, ST11, BT02, BT03, and BT06 cards', () => {
         const cards = getDeckBuilderCards(DUMMY_CARDS);
         expect(cards.some(card => card.id.startsWith('ST05-'))).toBe(true);
         expect(cards.some(card => card.id.startsWith('ST10-'))).toBe(true);
         expect(cards.some(card => card.id.startsWith('ST11-'))).toBe(true);
         expect(cards.some(card => card.id.startsWith('BT02-'))).toBe(true);
+        expect(cards.some(card => card.id.startsWith('BT03-'))).toBe(true);
         expect(cards.some(card => card.id.startsWith('BT06-'))).toBe(true);
     });
 });

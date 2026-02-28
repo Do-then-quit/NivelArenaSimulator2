@@ -351,6 +351,91 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         return;
     }
 
+    if ((params as any).mode === 'BT03_PROMPT_SELECT_SKILL_ZONE_CARD_TO_TRASH') {
+        const costMax = typeof (params as any).costMax === 'number' ? Math.max(0, (params as any).costMax) : null;
+        const skills = ctx.player.skillZone
+            .map((card, skillZoneIndex) => ({ card, skillZoneIndex }))
+            .filter(({ card }) => {
+                if (card?.type !== CardType.SKILL) return false;
+                if (costMax === null) return true;
+                return (card.cost || 0) <= costMax;
+            });
+
+        if (skills.length === 0) return;
+
+        ctx.machine.state.revealedCards = skills.map(({ card, skillZoneIndex }) =>
+            createPromptOptionCard(
+                `BT03_SKILL_OPTION_${skillZoneIndex}_${card.id}`,
+                card.name,
+                card.text || `${card.name}를 트래시`,
+                card.imageUrl
+            )
+        ) as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH',
+            actionValue: {
+                options: skills.map(({ skillZoneIndex }) => ({ skillZoneIndex })),
+                followUpSubActions: Array.isArray((params as any).followUpSubActions) ? (params as any).followUpSubActions : [],
+                contextFlagKey: (params as any).contextFlagKey || 'BT03_SKILL_ZONE_CARD_TRASHED',
+            },
+            effectDescription: '트래시할 스킬을 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_011_PROMPT_TRASH_LOWER_COST_TO_HAND') {
+        const skills = ctx.player.skillZone
+            .map((card, skillZoneIndex) => ({ card, skillZoneIndex }))
+            .filter(({ card }) => card?.type === CardType.SKILL);
+
+        if (skills.length === 0) return;
+
+        ctx.machine.state.revealedCards = skills.map(({ card, skillZoneIndex }) =>
+            createPromptOptionCard(
+                `BT03_011_SKILL_OPTION_${skillZoneIndex}_${card.id}`,
+                card.name,
+                card.text || `${card.name}를 트래시`,
+                card.imageUrl
+            )
+        ) as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH',
+            actionValue: {
+                options: skills.map(({ skillZoneIndex }) => ({ skillZoneIndex })),
+            },
+            effectDescription: '트래시할 스킬을 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
     if ((params as any).mode === 'BT06_TRASH_TOP_AND_PROMPT_TRASHED_SKILL_CAST') {
         const trashCount = Math.max(0, (params as any).count ?? 1);
         const costMax = typeof (params as any).costMax === 'number' ? Math.max(0, (params as any).costMax) : null;
@@ -644,12 +729,14 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         if (!targetZone?.unit) return;
         const diff = Math.abs(ctx.player.hand.length - ctx.opponent.hand.length);
         if (diff <= 0) return;
+        const valuePerDiff = Math.max(0, (params as any).valuePerDiff ?? 2000);
+        if (valuePerDiff <= 0) return;
 
         targetZone.buffs.push({
             id: ctx.machine.createRuntimeId('BUFF'),
             sourceCard: ctx.sourceCard,
             type: 'POWER',
-            value: -2000 * diff,
+            value: -valuePerDiff * diff,
             duration: (params as any).duration || 'TURN_END',
         });
         return;
@@ -715,6 +802,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 params: {
                     mode: 'BT06_039_RESOLVE_DISCARD_AND_APPLY',
                     duration: (params as any).duration || 'TURN_END',
+                    valuePerCard: Math.max(0, (params as any).valuePerCard ?? 3000),
                 },
             },
         } as any);
@@ -745,7 +833,8 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
 
         const targetPlayerId = ctx.flags?.BT06_039_TARGET_PLAYER_ID;
         const targetZoneIndex = ctx.flags?.BT06_039_TARGET_ZONE_INDEX;
-        const debuffValue = trashedCards.length * 3000;
+        const valuePerCard = Math.max(0, (params as any).valuePerCard ?? 3000);
+        const debuffValue = trashedCards.length * valuePerCard;
         if (!targetPlayerId || typeof targetZoneIndex !== 'number' || debuffValue <= 0) return;
 
         const targetPlayer = ctx.machine.state.players.find((player: any) => player.id === targetPlayerId);
@@ -757,6 +846,131 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             sourceCard: ctx.sourceCard,
             type: 'POWER',
             value: -debuffValue,
+            duration: (params as any).duration || 'TURN_END',
+        });
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_015_PROMPT_UNIT_DISCARD_FOR_POWER_DEBUFF') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!owner) return;
+        const zoneIndex = owner.unitZones.indexOf(targetZone);
+        if (zoneIndex < 0) return;
+
+        const payableUnitCount = ctx.player.hand.filter(card => card.type === CardType.UNIT).length;
+        if (payableUnitCount <= 0) return;
+
+        ctx.flags = ctx.flags || {};
+        ctx.flags.BT03_015_TARGET_PLAYER_ID = owner.id;
+        ctx.flags.BT03_015_TARGET_ZONE_INDEX = zoneIndex;
+
+        ctx.machine.state.interactionMode = 'SELECT_COST';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT03_015_SELECT_UNIT_DISCARD_FOR_DEBUFF',
+            actionValue: {},
+            effectDescription: '패의 유닛 카드 1장을 트래시한다.',
+            selectionPurpose: '패 유닛 카드 1장 코스트 지불',
+            costToPay: { type: 'TRASH_HAND', amount: 1, cardTypeFilter: CardType.UNIT },
+            costCardTypeFilter: CardType.UNIT,
+            costPaidCount: 0,
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: 'ACTIVE' as any,
+            description: 'BT03-015 discard unit and apply debuff',
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_015_RESOLVE_DISCARD_AND_APPLY',
+                    duration: (params as any).duration || 'TURN_END',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_015_RESOLVE_DISCARD_AND_APPLY') {
+        const targetPlayerId = ctx.flags?.BT03_015_TARGET_PLAYER_ID;
+        const targetZoneIndex = ctx.flags?.BT03_015_TARGET_ZONE_INDEX;
+        const costCard = ctx.costPaymentCard;
+        const debuffValue = Math.max(0, costCard?.power || 0);
+        if (!targetPlayerId || typeof targetZoneIndex !== 'number' || debuffValue <= 0) return;
+
+        const targetPlayer = ctx.machine.state.players.find((player: any) => player.id === targetPlayerId);
+        const targetZone = targetPlayer?.unitZones?.[targetZoneIndex];
+        if (!targetZone?.unit) return;
+
+        targetZone.buffs.push({
+            id: ctx.machine.createRuntimeId('BUFF'),
+            sourceCard: ctx.sourceCard,
+            type: 'POWER',
+            value: -debuffValue,
+            duration: (params as any).duration || 'TURN_END',
+        });
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_017_PROMPT_DISCARD_THEN_SET_OPP_POWER') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!owner) return;
+        const zoneIndex = owner.unitZones.indexOf(targetZone);
+        if (zoneIndex < 0) return;
+        if (ctx.player.hand.length <= 0) return;
+
+        ctx.flags = ctx.flags || {};
+        ctx.flags.BT03_017_TARGET_PLAYER_ID = owner.id;
+        ctx.flags.BT03_017_TARGET_ZONE_INDEX = zoneIndex;
+
+        ctx.machine.state.interactionMode = 'SELECT_COST';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'BT03_017_SELECT_HAND_DISCARD_FOR_SET_POWER',
+            actionValue: {},
+            effectDescription: '패 1장을 트래시한다.',
+            selectionPurpose: '패 1장 코스트 지불',
+            costToPay: { type: 'TRASH_HAND', amount: 1 },
+            costPaidCount: 0,
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: 'ACTIVE' as any,
+            description: 'BT03-017 discard and set opponent power',
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'BT03_017_RESOLVE_DISCARD_AND_APPLY',
+                    setValue: Math.max(0, (params as any).setValue ?? 3000),
+                    duration: (params as any).duration || 'TURN_END',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'BT03_017_RESOLVE_DISCARD_AND_APPLY') {
+        const targetPlayerId = ctx.flags?.BT03_017_TARGET_PLAYER_ID;
+        const targetZoneIndex = ctx.flags?.BT03_017_TARGET_ZONE_INDEX;
+        if (!targetPlayerId || typeof targetZoneIndex !== 'number') return;
+
+        const targetPlayer = ctx.machine.state.players.find((player: any) => player.id === targetPlayerId);
+        const targetZone = targetPlayer?.unitZones?.[targetZoneIndex];
+        if (!targetZone?.unit) return;
+
+        targetZone.buffs.push({
+            id: ctx.machine.createRuntimeId('BUFF'),
+            sourceCard: ctx.sourceCard,
+            type: 'POWER',
+            value: Math.max(0, (params as any).setValue ?? 3000),
+            mode: 'SET',
             duration: (params as any).duration || 'TURN_END',
         });
         return;

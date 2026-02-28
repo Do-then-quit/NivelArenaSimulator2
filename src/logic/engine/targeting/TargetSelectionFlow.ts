@@ -131,7 +131,10 @@ export function confirmTargets(engine: any) {
     if (!context || !targetSchema) return;
     const allowsEffectlessConfirm =
         pending.actionType === 'BT06_SELECT_SKILL_ZONE_CARD' ||
-        pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST';
+        pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST' ||
+        pending.actionType === 'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
+        pending.actionType === 'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
+        pending.actionType === 'BT03_011_SELECT_TRASH_LOWER_COST_TO_HAND';
     if (!effect && !allowsEffectlessConfirm) return;
 
     // Validation - can be empty if no valid targets were found among revealed
@@ -232,7 +235,13 @@ export function confirmTargets(engine: any) {
         engine.state.revealedCards = [];
     }
 
-    if (pending.actionType === 'BT06_SELECT_SKILL_ZONE_CARD' || pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST') {
+    if (
+        pending.actionType === 'BT06_SELECT_SKILL_ZONE_CARD' ||
+        pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST' ||
+        pending.actionType === 'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
+        pending.actionType === 'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
+        pending.actionType === 'BT03_011_SELECT_TRASH_LOWER_COST_TO_HAND'
+    ) {
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
         return;
@@ -563,6 +572,81 @@ export function selectRevealedTarget(engine: any, index: number) {
         context.flags[contextFlagKey] = true;
 
         executeBt06FollowUpSubActions(engine, context, pending.actionValue?.followUpSubActions || []);
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || !option) return;
+
+        const skillZoneIndex = option.skillZoneIndex;
+        if (typeof skillZoneIndex !== 'number' || skillZoneIndex < 0 || skillZoneIndex >= sourcePlayer.skillZone.length) return;
+        const [selectedSkill] = sourcePlayer.skillZone.splice(skillZoneIndex, 1);
+        if (!selectedSkill) return;
+        sourcePlayer.trash.push(selectedSkill);
+
+        context.flags = context.flags || {};
+        const contextFlagKey = pending.actionValue?.contextFlagKey || 'BT03_SKILL_ZONE_CARD_TRASHED';
+        context.flags[contextFlagKey] = true;
+        context.flags.BT03_LAST_TRASHED_SKILL_COST = selectedSkill.cost || 0;
+
+        executeBt06FollowUpSubActions(engine, context, pending.actionValue?.followUpSubActions || []);
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || !option) return;
+
+        const skillZoneIndex = option.skillZoneIndex;
+        if (typeof skillZoneIndex !== 'number' || skillZoneIndex < 0 || skillZoneIndex >= sourcePlayer.skillZone.length) return;
+        const [selectedSkill] = sourcePlayer.skillZone.splice(skillZoneIndex, 1);
+        if (!selectedSkill) return;
+        sourcePlayer.trash.push(selectedSkill);
+
+        const selectedCost = selectedSkill.cost || 0;
+        const lowerCostCandidates = sourcePlayer.trash.filter((targetCard: any) =>
+            targetCard && targetCard !== selectedSkill && (targetCard.cost || 0) < selectedCost
+        );
+
+        if (lowerCostCandidates.length === 0) {
+            engine.state.revealedCards = [];
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        engine.state.revealedCards = lowerCostCandidates;
+        pending.actionType = 'BT03_011_SELECT_TRASH_LOWER_COST_TO_HAND';
+        pending.actionValue = { allowPartialSelection: false };
+        pending.effectDescription = '패에 넣을 카드를 선택한다.';
+        pending.validTargets = 'REVEALED';
+        pending.targetSchema = {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: 1,
+            selectMode: 'MANUAL',
+        } as any;
+        pending.selectedTargets = [];
+        return;
+    }
+
+    if (pending.actionType === 'BT03_011_SELECT_TRASH_LOWER_COST_TO_HAND') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer) return;
+        const trashIndex = sourcePlayer.trash.indexOf(card);
+        if (trashIndex === -1) return;
+        const [selectedCard] = sourcePlayer.trash.splice(trashIndex, 1);
+        if (selectedCard) {
+            sourcePlayer.hand.push(selectedCard);
+        }
 
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
