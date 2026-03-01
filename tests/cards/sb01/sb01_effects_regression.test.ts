@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DUMMY_CARDS } from '../../../src/logic/CardDatabase';
 import { GameEngine } from '../../../src/logic/GameEngine';
-import { Card, Phase } from '../../../src/logic/types';
+import { ActivationCondition, Card, Phase } from '../../../src/logic/types';
 
 function getCard(id: string): Card {
     const card = DUMMY_CARDS.find(c => c.id === id);
@@ -409,6 +409,83 @@ describe('SB01 Effects Regression', () => {
 
         expect(p1.unitZones[0].unit?.id).toBe('SB01-020');
         expect(p1.trash.some(card => card.id === 'SB01-020')).toBe(false);
+    });
+
+    it('SB01-020 replacement works when destroyed by opponent effect without explicit killerCard', () => {
+        const engine = createEngine(2010202);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.unitZones[0].unit = getCard('SB01-020');
+        p1.unitZones[0].buffs.push({
+            id: 'sb01-020-power-buff-2',
+            type: 'POWER',
+            value: 1000,
+            duration: 'PERMANENT',
+        } as any);
+        p1.hand = [getCard('ST01-002')];
+
+        p2.unitZones[0].unit = getCard('ST10-005');
+
+        engine.effectManager.executeEffect(
+            {
+                activation: ActivationCondition.ACTIVE,
+                description: '테스트: 조우 유닛을 트래시한다.',
+                action: { type: 'DESTROY_ENCOUNTER', params: {} },
+            } as any,
+            {
+                sourceCard: p2.unitZones[0].unit!,
+                player: p2,
+                opponent: p1,
+                unitZone: p2.unitZones[0],
+                machine: engine,
+            } as any,
+            [p2.unitZones[0]]
+        );
+
+        expect(engine.state.interactionMode).toBe('SELECT_OPTIONAL');
+        const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+
+        expect(engine.state.interactionMode).toBe('SELECT_COST');
+        const pay = findAction(engine, p1.id, 'SELECT_COST_HAND');
+        expect(pay).toBeDefined();
+        if (pay) expect(engine.step(pay)).toBe(true);
+
+        expect(p1.unitZones[0].unit?.id).toBe('SB01-020');
+        expect(p1.trash.some(card => card.id === 'SB01-020')).toBe(false);
+    });
+
+    it('SB01-020 grants berserk only to encounter unit, so owner can still end ATTACK without attacking', () => {
+        const engine = createEngine(2010201);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.unitZones[0].unit = getCard('SB01-020');
+        const encounter = getCard('ST01-002');
+        encounter.effects = [];
+        encounter.keywords = [];
+        p2.unitZones[0].unit = encounter;
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.ATTACK;
+        const canP1EndWithoutAttack = engine.getLegalActions(p1.id).some(action => action.type === 'NEXT_PHASE');
+        expect(canP1EndWithoutAttack).toBe(true);
+
+        engine.state.turnPlayerIndex = 1;
+        engine.state.phase = Phase.ATTACK;
+        const canP2EndBeforeAttack = engine.getLegalActions(p2.id).some(action => action.type === 'NEXT_PHASE');
+        expect(canP2EndBeforeAttack).toBe(false);
+
+        const attack = findAction(engine, p2.id, 'ATTACK', (action: any) => action.attackerZoneIndex === 0);
+        expect(attack).toBeDefined();
+        if (attack) expect(engine.step(attack)).toBe(true);
+        const resolveBlock = findAction(engine, p1.id, 'RESOLVE_BLOCK', (action: any) => action.shouldBlock === false);
+        if (resolveBlock) expect(engine.step(resolveBlock)).toBe(true);
+
+        const canP2EndAfterAttack = engine.getLegalActions(p2.id).some(action => action.type === 'NEXT_PHASE');
+        expect(canP2EndAfterAttack).toBe(true);
     });
 
     it('SB01-022 aura grants armed ON_KILL discard to opponent', () => {

@@ -400,28 +400,65 @@ export class RuleValidator {
             const sourceOpponent = engine.state.players.find(player => player.id !== source.owner.id);
             if (!sourceOpponent) return false;
 
-            return source.card.effects.some((effect: any) => {
-                if (effect.activation !== ActivationCondition.PASSIVE) return false;
-                if (effect.action?.type !== 'GRANT_EFFECT') return false;
-                const granted = effect.action?.params?.effect;
-                if (!granted) return false;
-                if (
-                    !this.effectContainsGrantedKeyword(granted, keyword) &&
-                    !this.effectContainsGrantedKeyword(granted, 'BERSERK')
-                ) return false;
+            const baseContext: any = {
+                player: source.owner,
+                opponent: sourceOpponent,
+                sourceCard: source.card,
+                unitZone: source.zone,
+                machine: engine,
+            };
 
-                const context: any = {
-                    player: source.owner,
-                    opponent: sourceOpponent,
-                    sourceCard: source.card,
-                    unitZone: source.zone,
-                    machine: engine,
-                };
-                if (!engine.effectManager.checkCondition(effect, context)) return false;
-                if (!effect.targets) return false;
-                return TargetSelector.isValidTarget(engine, effect.targets, context, zone);
+            return source.card.effects.some((effect: any) => {
+                return this.effectGrantsKeywordToZone(engine, effect, baseContext, zone, keyword);
             });
         });
+    }
+
+    private static effectGrantsKeywordToZone(
+        engine: GameEngine,
+        effect: any,
+        context: any,
+        targetZone: any,
+        keyword: string,
+        depth: number = 0,
+    ): boolean {
+        if (!effect || depth > 8) return false;
+        if (effect.activation !== ActivationCondition.PASSIVE) return false;
+        if (!engine.effectManager.checkCondition(effect, context)) return false;
+
+        if (this.effectDirectlyDefinesKeyword(effect, keyword) || this.effectDirectlyDefinesKeyword(effect, 'BERSERK')) {
+            if (!effect.targets) return context.unitZone === targetZone;
+            return TargetSelector.isValidTarget(engine, effect.targets, context, targetZone);
+        }
+
+        if (effect.action?.type !== 'GRANT_EFFECT') return false;
+        const grantedEffect = effect.action?.params?.effect;
+        if (!grantedEffect || !effect.targets) return false;
+
+        const resolvedTargets = TargetSelector.resolve(engine, effect.targets, context).filter((candidate: any) =>
+            candidate && typeof candidate === 'object' && 'unit' in candidate && candidate.unit
+        );
+
+        return resolvedTargets.some((resolvedZone: any) => {
+            const nestedContext = this.createZoneContext(engine, resolvedZone, context.sourceCard);
+            if (!nestedContext) return false;
+            return this.effectGrantsKeywordToZone(engine, grantedEffect, nestedContext, targetZone, keyword, depth + 1);
+        });
+    }
+
+    private static createZoneContext(engine: GameEngine, zone: any, fallbackSourceCard: any): any | null {
+        const owner = engine.state.players.find(player => player.unitZones.includes(zone));
+        if (!owner) return null;
+        const opponent = engine.state.players.find(player => player.id !== owner.id);
+        if (!opponent) return null;
+
+        return {
+            player: owner,
+            opponent,
+            sourceCard: zone.unit || fallbackSourceCard || owner.levelZone || null,
+            unitZone: zone,
+            machine: engine,
+        };
     }
 
     private static isBerserkKeyword(keyword: string): boolean {
@@ -447,10 +484,4 @@ export class RuleValidator {
         });
     }
 
-    private static effectContainsGrantedKeyword(effect: any, keyword: string): boolean {
-        if (!effect) return false;
-        if (this.effectDirectlyDefinesKeyword(effect, keyword)) return true;
-        if (effect.action?.type !== 'GRANT_EFFECT') return false;
-        return this.effectContainsGrantedKeyword(effect.action?.params?.effect, keyword);
-    }
 }

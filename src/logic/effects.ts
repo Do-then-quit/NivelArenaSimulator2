@@ -340,8 +340,13 @@ export class EffectManager {
                 duration: resolvedDuration,
                 __sourceActivation: effect.activation,
             };
-            actionImpl(context, params, targets);
-            this.engine.checkRuleProcessing();
+            this.engine.pushResolvingEffectContext(context);
+            try {
+                actionImpl(context, params, targets);
+                this.engine.checkRuleProcessing();
+            } finally {
+                this.engine.popResolvingEffectContext();
+            }
         } else {
             console.warn(`Unknown or unimplemented action type: ${action.type}`);
         }

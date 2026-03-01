@@ -97,6 +97,7 @@ export class GameEngine {
     private pendingRuntime: PendingRuntimeState | null = null;
     private awaitingEndPhaseHandAdjustment = false;
     private readonly destroyInProgressKeys = new Set<string>();
+    private readonly resolvingEffectContextStack: GameContext[] = [];
     private isRuleProcessing = false;
     private pendingRuleProcessing = false;
     private readonly uiTraceEvents: UiTraceEvent[] = [];
@@ -764,6 +765,21 @@ export class GameEngine {
 
     private clearPendingRuntime() {
         this.pendingRuntime = null;
+    }
+
+    public pushResolvingEffectContext(context: GameContext) {
+        this.resolvingEffectContextStack.push(context);
+    }
+
+    public popResolvingEffectContext() {
+        if (this.resolvingEffectContextStack.length > 0) {
+            this.resolvingEffectContextStack.pop();
+        }
+    }
+
+    public getCurrentResolvingEffectContext(): GameContext | null {
+        if (this.resolvingEffectContextStack.length === 0) return null;
+        return this.resolvingEffectContextStack[this.resolvingEffectContextStack.length - 1] ?? null;
     }
 
     public getSerializableState(): GameState {

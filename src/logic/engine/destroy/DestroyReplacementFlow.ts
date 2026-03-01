@@ -45,6 +45,21 @@ export function collectDestroyReplacements(
         trashReason: reason,
     };
 
+    const findCardOwnerId = (card?: Card): string | null => {
+        if (!card) return null;
+        for (const candidate of engine.state.players as PlayerState[]) {
+            if (candidate.levelZone === card) return candidate.id;
+            if (candidate.hand.includes(card)) return candidate.id;
+            if (candidate.deck.includes(card)) return candidate.id;
+            if (candidate.damage.includes(card)) return candidate.id;
+            if (candidate.trash.includes(card)) return candidate.id;
+            if (candidate.unitZones.some((candidateZone: UnitZoneState) =>
+                candidateZone.unit === card || candidateZone.items.includes(card)
+            )) return candidate.id;
+        }
+        return null;
+    };
+
     zone.unit.effects?.forEach(effect => {
         if (effect.activation !== ActivationCondition.PASSIVE) return;
         if (effect.action?.type !== 'NONE') return;
@@ -78,13 +93,11 @@ export function collectDestroyReplacements(
         if (effect.action?.type !== 'NONE') return;
         if (effect.action?.params?.destroyReplacement !== 'SB01_020_DISCARD_HAND_PREVENT_DESTROY') return;
         if (reason !== 'EFFECT') return;
-        if (!killerCard) return;
-        const killerOwner = engine.state.players.find((candidate: PlayerState) =>
-            candidate.unitZones.some((candidateZone: UnitZoneState) =>
-                candidateZone.unit === killerCard || candidateZone.items.includes(killerCard)
-            )
-        );
-        if (!killerOwner || killerOwner.id === player.id) return;
+        const resolvingContext = typeof engine.getCurrentResolvingEffectContext === 'function'
+            ? engine.getCurrentResolvingEffectContext()
+            : null;
+        const sourceOwnerId = findCardOwnerId(killerCard) ?? resolvingContext?.player?.id ?? null;
+        if (!sourceOwnerId || sourceOwnerId === player.id) return;
         if (!engine.effectManager.checkCondition(effect, unitContext)) return;
         if (player.hand.length < 1) return;
 
