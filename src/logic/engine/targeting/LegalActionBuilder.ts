@@ -375,7 +375,10 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
         const selectableZones: UnitZoneState[] = [];
         engine.state.players.forEach((targetPlayer: any) => {
             targetPlayer.unitZones.forEach((targetZone: UnitZoneState, zoneIndex: number) => {
-                if (pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY' && targetZone.unit) return;
+                const requiresEmptyZone =
+                    pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+                    pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY';
+                if (requiresEmptyZone && targetZone.unit) return;
                 if (TargetSelector.isValidTarget(engine, targetSchema, context, targetZone)) {
                     if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, targetZone, context)) return;
                     selectableZones.push(targetZone);

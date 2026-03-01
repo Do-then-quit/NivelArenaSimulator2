@@ -439,6 +439,132 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'SB01-011_콤보테스트',
+        name: '콤보: SB01-011~015 + BT02-022 연계',
+        description: '013 증폭 + 014/015 효과트래시 누적 + 012/011/022 연계 대미지와 드로우를 검증한다.',
+        setup: (engine, getCard) => {
+            prepare(engine, Phase.MAIN, 0);
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+
+            p1.leaderLevel = 20;
+            p2.leaderLevel = 20;
+
+            p1.hand = [
+                getCard('SB01-014'),
+                getCard('SB01-015'),
+                getCard('SB01-013'),
+                getCard('BT02-022'),
+            ];
+            p1.skillZone = [];
+            p1.trash = [getCard('ST11-006'), getCard('ST11-006')];
+            p1.deck = [
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+            ];
+            p1.unitZones.forEach((zone: any) => {
+                zone.unit = null;
+                zone.items = [];
+                zone.buffs = [];
+                zone.temporaryEffects = [];
+                zone.hasAttacked = false;
+                zone.attackCountThisTurn = 0;
+                zone.extraAttackAllowance = 0;
+                zone.isExhausted = false;
+                zone.hasPlacedUnitThisTurn = false;
+                zone.hasActivatedEffectThisTurn = false;
+                zone.activatedEffectKeys = {};
+            });
+            p1.unitZones[0].unit = getCard('SB01-011');
+            p1.unitZones[1].unit = getCard('SB01-012');
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const beforeDamage = p2.damage.length;
+
+            const play014 = findAction(engine, p1.id, 'PLAY_SKILL', (a: any) =>
+                p1.hand[a.handIndex]?.id.startsWith('SB01-014')
+            );
+            if (play014) engine.step(play014);
+
+            const pickTrashFor014 = findAction(engine, p1.id, 'SELECT_TRASH_TARGET', (a: any) =>
+                p1.trash[a.trashIndex]?.id.startsWith('ST11-006')
+            );
+            if (pickTrashFor014) engine.step(pickTrashFor014);
+            const pickZoneFor014 = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) =>
+                a.targetPlayerId === p1.id && a.zoneIndex === 2
+            );
+            if (pickZoneFor014) engine.step(pickZoneFor014);
+            const deployedBy014 = p1.unitZones[2].unit?.id.startsWith('ST11-006') === true;
+
+            const play015 = findAction(engine, p1.id, 'PLAY_SKILL', (a: any) =>
+                p1.hand[a.handIndex]?.id.startsWith('SB01-015')
+            );
+            if (play015) engine.step(play015);
+
+            const pickZoneFor015 = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (a: any) =>
+                a.targetPlayerId === p1.id && a.zoneIndex === 2
+            );
+            if (pickZoneFor015) engine.step(pickZoneFor015);
+
+            const trashedAfter015 = engine.getEffectTrashedFriendlyUnitCount(p1.id);
+
+            engine.activateEffect(1, 0);
+
+            const damageAfter012 = p2.damage.length;
+            const trashedAfter012 = engine.getEffectTrashedFriendlyUnitCount(p1.id);
+
+            const play013 = findAction(engine, p1.id, 'PLAY_UNIT', (a: any) =>
+                p1.hand[a.handIndex]?.id.startsWith('SB01-013') && a.zoneIndex === 1
+            );
+            if (play013) engine.step(play013);
+            const decline013Swap = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (a: any) => a.confirm === false);
+            if (decline013Swap) engine.step(decline013Swap);
+            const activeDamageBonusState = (p1 as any).sb01ActiveDamageBonusUntilTurnEnd;
+
+            engine.destroyUnit(p1, p1.unitZones[2], undefined, 'EFFECT');
+            const trashedAfterManualDestroy = engine.getEffectTrashedFriendlyUnitCount(p1.id);
+
+            const play022 = findAction(engine, p1.id, 'PLAY_UNIT', (a: any) =>
+                p1.hand[a.handIndex]?.id.startsWith('BT02-022') && a.zoneIndex === 2
+            );
+            if (play022) engine.step(play022);
+            engine.activateEffect(2, 0);
+            const damageAfter022 = p2.damage.length;
+
+            const handBefore011Exit = p1.hand.length;
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const handAfter011Exit = p1.hand.length;
+            const damageAfter011 = p2.damage.length;
+            const trashedAfter011 = engine.getEffectTrashedFriendlyUnitCount(p1.id);
+
+            return [
+                { pass: !!play014 && !!pickTrashFor014 && !!pickZoneFor014, message: 'SB01-014로 대상/빈 라인 선택 배치 성공' },
+                { pass: deployedBy014, message: 'SB01-014 배치 유닛 필드 정착' },
+                { pass: !!play015 && !!pickZoneFor015, message: 'SB01-015 대상 선택 및 처리 성공' },
+                { pass: trashedAfter015 >= 1, message: 'SB01-015 처리로 효과 트래시 카운트 1 이상' },
+                { pass: damageAfter012 === beforeDamage + 1, message: 'SB01-012 액티브 대미지 1 적용' },
+                { pass: trashedAfter012 >= 2, message: 'SB01-012 자가 트래시 포함 카운트 2 이상 충족' },
+                { pass: !!play013, message: 'SB01-013 배치 성공' },
+                { pass: !!decline013Swap, message: 'SB01-013 교체 선택을 비활성(미사용)으로 처리' },
+                {
+                    pass: activeDamageBonusState?.bonus === 1 && activeDamageBonusState?.untilTurnCount === engine.state.turnCount,
+                    message: 'SB01-013 액티브 대미지 +1 증폭 상태 활성',
+                },
+                { pass: trashedAfterManualDestroy >= 3, message: '연계 파괴 포함 효과 트래시 카운트 3 이상' },
+                { pass: !!play022, message: 'BT02-022 배치 성공' },
+                { pass: damageAfter022 === beforeDamage + 3, message: 'BT02-022 액티브 대미지 2(013 증폭) 적용' },
+                { pass: handAfter011Exit === handBefore011Exit + 4, message: 'SB01-011 EXIT로 4드로우 적용' },
+                { pass: damageAfter011 === beforeDamage + 4, message: 'SB01-011 EXIT 추가 1대미지 적용' },
+                { pass: trashedAfter011 >= 4, message: 'SB01-011 EXIT 시점 카운트 4 이상 유지' },
+            ];
+        },
+    },
+    {
         testId: 'SB01-012',
         name: '액티브 메인 자가트래시 + 1대미지',
         description: '이번 턴 효과로 아군 유닛이 트래시된 상태에서 발동하면 자신을 트래시하고 1대미지를 준다.',
@@ -494,12 +620,13 @@ const tests: UnifiedTestCase[] = [
     {
         testId: 'SB01-014',
         name: '트래시 2코 이하 배치 + EXIT 스킬 트래시',
-        description: '트래시의 2코 이하 유닛을 배치하고 EXIT로 스킬존 페인 이터를 트래시한다.',
+        description: '트래시의 2코 이하 유닛을 선택한 빈 존에 배치하고 EXIT로 스킬존 페인 이터를 트래시한다.',
         setup: (engine, getCard) => {
             prepare(engine, Phase.MAIN, 0);
             const p1 = engine.state.players[0];
             p1.hand = [getCard('SB01-014')];
             p1.trash = [getCard('ST11-006')];
+            p1.unitZones[0].unit = getCard('ST01-002');
         },
         verify: (engine) => {
             const p1 = engine.state.players[0];
@@ -507,6 +634,12 @@ const tests: UnifiedTestCase[] = [
 
             const pick = findAction(engine, p1.id, 'SELECT_TRASH_TARGET');
             if (pick) engine.step(pick);
+            const zoneChoices = engine
+                .getLegalActions(p1.id)
+                .filter((action: any) => action.type === 'SELECT_ZONE_TARGET' && action.targetPlayerId === p1.id) as any[];
+            const onlyEmptyZones = zoneChoices.length > 0 && zoneChoices.every((action: any) => !p1.unitZones[action.zoneIndex].unit);
+            const pickZone = zoneChoices.find((action: any) => action.zoneIndex === 2);
+            if (pickZone) engine.step(pickZone);
 
             const deployedZoneIndex = p1.unitZones.findIndex((zone: any) => zone.unit?.id.startsWith('ST11-006'));
             if (deployedZoneIndex >= 0) {
@@ -515,7 +648,9 @@ const tests: UnifiedTestCase[] = [
 
             return [
                 { pass: !!pick, message: '트래시 배치 대상 선택 가능' },
-                { pass: deployedZoneIndex >= 0, message: '2코 이하 유닛 배치 성공' },
+                { pass: onlyEmptyZones, message: '빈 유닛 존만 선택지로 노출' },
+                { pass: !!pickZone, message: '배치할 빈 존 직접 선택 가능' },
+                { pass: deployedZoneIndex === 2, message: '선택한 존에 2코 이하 유닛 배치 성공' },
                 { pass: p1.skillZone.every((card: any) => !card.id.startsWith('SB01-014')), message: 'EXIT 연계 스킬존 페인 이터 트래시' },
             ];
         },

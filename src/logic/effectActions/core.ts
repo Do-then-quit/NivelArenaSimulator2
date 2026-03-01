@@ -204,7 +204,11 @@ export const moveFromTrashToDeckBottom: ActionImplementation = (ctx, params, tar
 export const damage: ActionImplementation = (ctx, params, _targets) => {
     let value = params.value || 0;
     const targetPlayer = params.target === 'SELF' ? ctx.player : ctx.opponent;
-    if (params?.__sourceActivation === ActivationCondition.ACTIVE && targetPlayer.id === ctx.opponent.id) {
+    const sourceActivation = params?.__sourceActivation;
+    const isOwnActiveDamage =
+        (sourceActivation === ActivationCondition.ACTIVE || sourceActivation === ActivationCondition.ACTIVE_MAIN)
+        && targetPlayer.id === ctx.opponent.id;
+    if (isOwnActiveDamage) {
         const activeDamageBonusState = (ctx.player as any).sb01ActiveDamageBonusUntilTurnEnd as
             | { untilTurnCount: number; bonus: number }
             | undefined;

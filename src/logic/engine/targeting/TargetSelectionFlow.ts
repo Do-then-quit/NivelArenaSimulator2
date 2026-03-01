@@ -82,7 +82,8 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         pending.actionType === 'GUARDIAN_BLOCK_UNIT_COST' ||
         pending.actionType === 'BT03_041_SELECT_EMPTY_ZONE_TO_REVIVE_SELF' ||
         pending.actionType === 'BT03_067_SELECT_EMPTY_ZONE_TO_REVIVE_EQUIPPED_UNIT' ||
-        pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY';
+        pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+        pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY';
     if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
     const targetPlayer = engine.getPlayerById(targetPlayerId);
     if (!targetPlayer) return;
@@ -241,6 +242,59 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         };
 
         engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        if (targetZone.unit) return;
+
+        const selectedCardRef = pending.actionValue?.selectedCardRef;
+        const selectedCardId = pending.actionValue?.selectedCardId;
+        const trashIndexByRef = sourcePlayer.trash.indexOf(selectedCardRef);
+        const trashIndex = trashIndexByRef !== -1
+            ? trashIndexByRef
+            : sourcePlayer.trash.findIndex((card: any) =>
+                card?.id === selectedCardId &&
+                card?.type === 'UNIT' &&
+                Math.max(0, Number(card?.cost || 0)) <= 2
+            );
+        if (trashIndex < 0) {
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        const [placedUnit] = sourcePlayer.trash.splice(trashIndex, 1);
+        if (!placedUnit) {
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        targetZone.unit = placedUnit;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+        targetZone.hasAttacked = false;
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.isExhausted = false;
+        targetZone.hasPlacedUnitThisTurn = false;
+        targetZone.hasActivatedEffectThisTurn = false;
+        targetZone.activatedEffectKeys = {};
+        targetZone.temporaryEffects.push({
+            activation: ActivationCondition.EXIT,
+            description: '엑시트 : 자신의 스킬 존에서 〈페인 이터〉를 1장 골라 트래시한다.',
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_014_EXIT_TRASH_PAIN_EATER_FROM_SKILL_ZONE',
+                },
+            },
+            duration: 'TURN_END',
+        } as any);
+
         engine.handleEffectCompletion(context, pending);
         return;
     }

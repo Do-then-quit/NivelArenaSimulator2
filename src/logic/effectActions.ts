@@ -985,36 +985,31 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 ctx.player.trash.includes(card) && card.type === CardType.UNIT && Number(card.cost || 0) <= 2
             );
             if (!selectedCard) return;
-            const emptyZone = ctx.player.unitZones.find((zone: any) => !zone?.unit);
-            if (!emptyZone) return;
+            if (!ctx.player.unitZones.some((zone: any) => !zone?.unit)) return;
 
-            const trashIndex = ctx.player.trash.indexOf(selectedCard);
-            if (trashIndex === -1) return;
-            const [placed] = ctx.player.trash.splice(trashIndex, 1);
-            if (!placed) return;
-
-            emptyZone.unit = placed;
-            emptyZone.items = [];
-            emptyZone.buffs = [];
-            emptyZone.temporaryEffects = [];
-            emptyZone.hasAttacked = false;
-            emptyZone.attackCountThisTurn = 0;
-            emptyZone.extraAttackAllowance = 0;
-            emptyZone.isExhausted = false;
-            emptyZone.hasPlacedUnitThisTurn = false;
-            emptyZone.hasActivatedEffectThisTurn = false;
-            emptyZone.activatedEffectKeys = {};
-            emptyZone.temporaryEffects.push({
-                activation: ActivationCondition.EXIT,
-                description: '엑시트 : 자신의 스킬 존에서 〈페인 이터〉를 1장 골라 트래시한다.',
-                action: {
-                    type: 'COMPLEX_ACTION',
-                    params: {
-                        mode: 'SB01_014_EXIT_TRASH_PAIN_EATER_FROM_SKILL_ZONE',
-                    },
+            const zoneSchema = {
+                scope: 'MY_FIELD',
+                type: 'ALL',
+                count: 1,
+                selectMode: 'MANUAL',
+            } as const;
+            ctx.machine.state.interactionMode = 'SELECT_TARGET';
+            ctx.machine.state.pendingEffect = {
+                sourceCard: ctx.sourceCard,
+                sourcePlayerId: ctx.player.id,
+                controllerPlayerId: ctx.player.id,
+                actionType: 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY',
+                actionValue: {
+                    selectedCardRef: selectedCard,
+                    selectedCardId: selectedCard.id,
                 },
-                duration: 'TURN_END',
-            } as any);
+                effectDescription: '배치할 빈 유닛 존을 선택한다.',
+                validTargets: 'MY_UNITS',
+                targetSchema: zoneSchema as any,
+                selectedTargets: [],
+            };
+            ctx.machine.setPendingRuntime(ctx, null);
+            ctx.machine.setInteractionOwner(ctx.player.id);
             return;
         }
 
