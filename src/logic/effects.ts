@@ -512,12 +512,26 @@ export class EffectManager {
                 return itemCount >= encounterHit;
             }
             case 'CONTEXT_FLAG': {
+                const countFriendlyKeywordZones = (keyword: string): number => {
+                    return context.player.unitZones.filter((zone: any) => {
+                        if (!zone?.unit) return false;
+                        const hasKeywordInZone = (context.machine as any).hasKeywordInZone;
+                        if (typeof hasKeywordInZone === 'function') {
+                            return !!hasKeywordInZone.call(context.machine, zone, keyword);
+                        }
+                        return this.cardHasKeyword(zone.unit, keyword);
+                    }).length;
+                };
+
                 if (typeof value === 'string') {
                     if (value === 'HAND_TRASH_OWNER_IS_SELF') {
                         return context.flags?.isOwnHandTrash === true;
                     }
                     if (value === 'PHASE_ATTACK') {
                         return context.machine.state.phase === 'ATTACK';
+                    }
+                    if (value === 'FRIENDLY_ATTACKER_COUNT') {
+                        return countFriendlyKeywordZones('어태커') > 0;
                     }
                     if (value === 'TRASHED_IS_OTHER') {
                         return !!context.trashedUnit && context.trashedUnit.id !== context.sourceCard.id;
@@ -536,6 +550,10 @@ export class EffectManager {
                     current = context.flags?.isOwnHandTrash === true;
                 } else if (key === 'PHASE_ATTACK') {
                     current = context.machine.state.phase === 'ATTACK';
+                } else if (key === 'FRIENDLY_ATTACKER_COUNT') {
+                    current = countFriendlyKeywordZones('어태커');
+                } else if (key === 'FRIENDLY_DEFENDER_COUNT') {
+                    current = countFriendlyKeywordZones('디펜더');
                 } else if (key === 'TRASHED_IS_OTHER') {
                     current = !!context.trashedUnit && context.trashedUnit.id !== context.sourceCard.id;
                 } else if (key === 'TRASHED_IS_OTHER_BY_EFFECT') {
@@ -574,6 +592,43 @@ export class EffectManager {
                 });
 
                 return distinctNames.size >= min;
+            }
+            case 'SIZE_MARGIN_MIN': {
+                const margin = Math.max(0, Number(value ?? 0));
+                const playerSize = context.machine.getPlayerSize(context.player);
+                const getEffectiveCost = (card: any): number => {
+                    if (!card) return 0;
+                    const override = card.turnCostOverride;
+                    if (
+                        override &&
+                        typeof override === 'object' &&
+                        override.turnCount === context.machine.state.turnCount &&
+                        typeof override.cost === 'number'
+                    ) {
+                        return Math.max(0, override.cost);
+                    }
+                    return Math.max(0, card.cost || 0);
+                };
+                const fieldCost = context.player.unitZones.reduce((sum: number, zone: any) => {
+                    const unitCost = zone.unit ? getEffectiveCost(zone.unit) : 0;
+                    const itemCost = (zone.items || []).reduce((itemSum: number, item: any) => itemSum + getEffectiveCost(item), 0);
+                    return sum + unitCost + itemCost;
+                }, 0) + context.player.skillZone.reduce((sum: number, skill: any) => sum + getEffectiveCost(skill), 0);
+                return playerSize - fieldCost >= margin;
+            }
+            case 'SELF_POWER_MIN': {
+                if (!context.unitZone || !context.unitZone.unit) return false;
+                const min = Math.max(0, Number(value ?? 0));
+                return context.machine.getUnitPower(context.unitZone, context.player) >= min;
+            }
+            case 'ENCOUNTER_COST_MIN': {
+                if (!context.unitZone) return false;
+                const laneIndex = context.player.unitZones.indexOf(context.unitZone);
+                if (laneIndex < 0) return false;
+                const encounterZone = context.opponent.unitZones[laneIndex];
+                if (!encounterZone?.unit) return false;
+                const min = Math.max(0, Number(value ?? 0));
+                return (encounterZone.unit.cost || 0) >= min;
             }
             default:
                 return true;

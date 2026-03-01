@@ -1113,6 +1113,52 @@ export function selectRevealedTarget(engine: any, index: number) {
         return;
     }
 
+    if (pending.actionType === 'SB01_001_SELECT_SKILL_ZONE_TO_TRASH') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || !option) return;
+
+        const skillZoneIndex = option.skillZoneIndex;
+        if (typeof skillZoneIndex !== 'number' || skillZoneIndex < 0 || skillZoneIndex >= sourcePlayer.skillZone.length) return;
+        const [trashedSkill] = sourcePlayer.skillZone.splice(skillZoneIndex, 1);
+        if (!trashedSkill) return;
+        sourcePlayer.trash.push(trashedSkill);
+
+        context.flags = context.flags || {};
+        context.flags.SB01_001_TRASHED_SKILL_COST = Math.max(0, Number(trashedSkill.cost || 0));
+
+        const targetSchema = {
+            scope: 'OPP_FIELD',
+            type: 'UNIT',
+            count: 1,
+            selectMode: 'MANUAL',
+        } as const;
+
+        pending.actionType = 'SB01_001_SELECT_OPP_UNIT_FOR_DEBUFF';
+        pending.actionValue = {
+            skillCost: Math.max(0, Number(trashedSkill.cost || 0)),
+        };
+        pending.effectDescription = '파워를 감소시킬 상대 유닛을 선택한다.';
+        pending.validTargets = 'OPP_UNITS';
+        pending.targetSchema = targetSchema as any;
+        pending.selectedTargets = [];
+        engine.state.revealedCards = [];
+        engine.setPendingRuntime(context, {
+            activation: ActivationCondition.ENTRY,
+            description: 'SB01-001 resolve debuff by trashed skill cost',
+            targets: targetSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_001_ENTRY_PROMPT_SKILL_COST_DEBUFF',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        engine.assignInteractionOwner(pending.controllerPlayerId ?? pending.sourcePlayerId);
+        return;
+    }
+
     if (!effect) return;
 
     const maxCount = targetSchema.count || 1;

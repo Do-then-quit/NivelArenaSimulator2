@@ -202,8 +202,20 @@ export const moveFromTrashToDeckBottom: ActionImplementation = (ctx, params, tar
 };
 
 export const damage: ActionImplementation = (ctx, params, _targets) => {
-    const value = params.value || 0;
-    const targetPlayer = ctx.opponent;
+    let value = params.value || 0;
+    const targetPlayer = params.target === 'SELF' ? ctx.player : ctx.opponent;
+    if (params?.__sourceActivation === ActivationCondition.ACTIVE && targetPlayer.id === ctx.opponent.id) {
+        const activeDamageBonusState = (ctx.player as any).sb01ActiveDamageBonusUntilTurnEnd as
+            | { untilTurnCount: number; bonus: number }
+            | undefined;
+        if (
+            activeDamageBonusState &&
+            ctx.machine.state.turnCount <= activeDamageBonusState.untilTurnCount &&
+            typeof activeDamageBonusState.bonus === 'number'
+        ) {
+            value += activeDamageBonusState.bonus;
+        }
+    }
     if (value > 0) {
         ctx.machine.dealDamage(targetPlayer, value);
         console.log(`Dealt ${value} damage to ${targetPlayer.name} via effect.`);

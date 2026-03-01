@@ -1,4 +1,5 @@
 import { ActivationCondition, Phase, type Card, type Effect, type GameContext, type UnitZoneState } from '../../types';
+import { TargetSelector } from '../../TargetSelector';
 
 interface GuardianBlockItemCost {
     itemName?: string;
@@ -10,6 +11,116 @@ interface GuardianBlockUnitSacrificeCost {
     unitName?: string;
     unitCardId?: string;
     count: number;
+}
+
+function getRequiredHandDiscardForBlockByHitDiff(
+    engine: any,
+    attackerZone: UnitZoneState,
+    blockerZone: UnitZoneState
+): number {
+    if (!attackerZone?.unit || !blockerZone?.unit) return 0;
+
+    const effectSources: Array<{ sourceCard: Card; effect: Effect }> = [];
+    if (attackerZone.unit.effects) {
+        attackerZone.unit.effects.forEach(effect => effectSources.push({ sourceCard: attackerZone.unit!, effect }));
+    }
+    attackerZone.items.forEach(item => {
+        if (item.effects) {
+            item.effects.forEach(effect => effectSources.push({ sourceCard: item, effect }));
+        }
+    });
+    attackerZone.temporaryEffects.forEach(effect => {
+        effectSources.push({ sourceCard: attackerZone.unit!, effect });
+    });
+
+    const hasRestriction = effectSources.some(({ sourceCard, effect }) => {
+        if (!effect) return false;
+        if (effect.action?.type !== 'NONE') return false;
+        if (effect.action?.params?.requireBlockHandDiscardByHitDiff !== true) return false;
+        if (effect.activation !== ActivationCondition.ATTACKER && effect.activation !== ActivationCondition.PASSIVE) return false;
+
+        const context: GameContext = {
+            sourceCard,
+            player: engine.currentPlayer,
+            opponent: engine.opponentPlayer,
+            unitZone: attackerZone,
+            machine: engine,
+        };
+        return engine.effectManager.checkCondition(effect, context);
+    });
+
+    if (!hasRestriction) return 0;
+
+    const attackerHit = Math.max(0, engine.getUnitHit(attackerZone, engine.currentPlayer));
+    const blockerHit = Math.max(0, engine.getUnitHit(blockerZone, engine.opponentPlayer));
+    if (blockerHit >= attackerHit) return 0;
+    return attackerHit - blockerHit;
+}
+
+function queuePassiveGrantedDefenderEffects(
+    engine: any,
+    defenderOwner: any,
+    defenderZone: UnitZoneState,
+    batchStep: number,
+) {
+    if (!defenderZone?.unit) return;
+    const defenderUnit = defenderZone.unit;
+    const defenderOpponent = engine.getOpponentOf(defenderOwner);
+
+    const evaluateEffectList = (sourceOwner: any, sourceCard: Card, effects: Effect[] | undefined, sourceZone?: UnitZoneState) => {
+        if (!sourceCard || !Array.isArray(effects) || effects.length <= 0) return;
+        const sourceOpponent = engine.getOpponentOf(sourceOwner);
+
+        effects.forEach((passive: any, passiveIndex: number) => {
+            if (!passive || passive.activation !== ActivationCondition.PASSIVE) return;
+            if (passive.action?.type !== 'GRANT_EFFECT') return;
+            const granted = passive.action?.params?.effect;
+            if (!granted || granted.activation !== ActivationCondition.DEFENDER) return;
+
+            const sourceContext: GameContext = {
+                player: sourceOwner,
+                opponent: sourceOpponent,
+                sourceCard,
+                unitZone: sourceZone,
+                machine: engine,
+            };
+            if (!engine.effectManager.checkCondition(passive, sourceContext)) return;
+            if (sourceCard.type === 'LEADER' && !sourceCard.isAwakened && (engine as any).requiresAwakenedLeader?.(passive)) return;
+            if (passive.targets && !TargetSelector.isValidTarget(engine, passive.targets, sourceContext, defenderZone)) return;
+
+            const grantedContext: GameContext = {
+                sourceCard: defenderUnit,
+                player: defenderOwner,
+                opponent: defenderOpponent,
+                unitZone: defenderZone,
+                machine: engine,
+            };
+            engine.state.effectQueue.push({
+                effect: granted,
+                context: grantedContext,
+                id: engine.createRuntimeId(`GRANTED_DEFENDER_${passiveIndex}`),
+                creationTime: batchStep,
+                sourcePlayerId: defenderOwner.id,
+            });
+        });
+    };
+
+    engine.state.players.forEach((sourceOwner: any) => {
+        sourceOwner.unitZones.forEach((sourceZone: UnitZoneState) => {
+            if (sourceZone.unit) {
+                evaluateEffectList(sourceOwner, sourceZone.unit, sourceZone.unit.effects || [], sourceZone);
+                evaluateEffectList(sourceOwner, sourceZone.unit, sourceZone.temporaryEffects as any, sourceZone);
+            }
+            sourceZone.items.forEach((item: any) => {
+                evaluateEffectList(sourceOwner, item, item?.effects || [], sourceZone);
+            });
+        });
+        if (sourceOwner.levelZone) {
+            evaluateEffectList(sourceOwner, sourceOwner.levelZone, sourceOwner.levelZone.effects || [], undefined);
+        }
+    });
+
+    engine.sortEffectQueue();
 }
 
 function getGuardianBlockItemCost(
@@ -411,6 +522,39 @@ export function resolveBlock(engine: any, shouldBlock: boolean, blockerZoneIndex
         return;
     }
 
+    const blockHandDiscardCost = getRequiredHandDiscardForBlockByHitDiff(engine, attackerZone, selectedBlockerZone);
+    if (blockHandDiscardCost > 0) {
+        if (engine.opponentPlayer.hand.length < blockHandDiscardCost) {
+            failBlockDeclaration(engine);
+            return;
+        }
+
+        const controllerPlayerId = engine.opponentPlayer.id;
+        engine.state.interactionMode = 'SELECT_COST';
+        engine.state.pendingEffect = {
+            sourceCard: attackerZone.unit,
+            sourcePlayerId: engine.opponentPlayer.id,
+            controllerPlayerId,
+            actionType: 'SB01_010_BLOCK_HAND_COST',
+            actionValue: { blockerZoneIndex: selectedBlockerZoneIndex, blockHandDiscardCost },
+            effectDescription: `SB01-010 block hand discard cost (${blockHandDiscardCost})`,
+            sourceActivation: ActivationCondition.ATTACKER,
+            triggerReason: '방어 선언 핸드 코스트',
+            selectionPurpose: '방어를 위한 핸드 코스트 지불',
+            costToPay: { type: 'TRASH_HAND', amount: blockHandDiscardCost },
+            selectedTargets: []
+        };
+        engine.setPendingRuntime({
+            sourceCard: attackerZone.unit,
+            player: engine.opponentPlayer,
+            opponent: engine.currentPlayer,
+            unitZone: selectedBlockerZone,
+            machine: engine,
+        }, null);
+        engine.assignInteractionOwner(controllerPlayerId);
+        return;
+    }
+
     const isGuardianBlock = selectedBlockerZoneIndex !== attackerZoneIndex;
     const guardianBlockUnitSacrificeCost = isGuardianBlock
         ? getGuardianBlockUnitSacrificeCost(engine, engine.opponentPlayer, engine.currentPlayer, selectedBlockerZone)
@@ -627,6 +771,8 @@ export function commitBlockDeclaration(engine: any, blockerZoneIndex: number) {
             machine: engine
         } as GameContext, { enqueueOnly: true, batchStep: defenderBatchStep });
     });
+
+    queuePassiveGrantedDefenderEffects(engine, engine.opponentPlayer, blockerZone, defenderBatchStep);
     engine.effectManager.processQueue();
 
     engine.assignInteractionOwner(engine.currentPlayer.id);

@@ -29,6 +29,7 @@ import { BT01_EFFECTS } from './cardEffects/bt01';
 import { BT02_EFFECTS } from './cardEffects/bt02';
 import { BT03_EFFECTS } from './cardEffects/bt03';
 import { BT06_EFFECTS } from './cardEffects/bt06';
+import { SB01_EFFECTS } from './cardEffects/sb01';
 
 const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...ST01_EFFECTS,
@@ -41,7 +42,8 @@ const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...BT01_EFFECTS,
     ...BT02_EFFECTS,
     ...BT03_EFFECTS,
-    ...BT06_EFFECTS
+    ...BT06_EFFECTS,
+    ...SB01_EFFECTS,
 };
 
 function mapType(rawType: string): CardType {

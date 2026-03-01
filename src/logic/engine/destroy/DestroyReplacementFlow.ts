@@ -14,7 +14,8 @@ export interface DestroyReplacement {
     | 'TRASH_EQUIPPED_ITEM'
     | 'DISCARD_HAND_BY_HIT'
     | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
-    | 'BT03_083_TRASH_SELF_AND_RETURN';
+    | 'BT03_083_TRASH_SELF_AND_RETURN'
+    | 'SB01_020_DISCARD_HAND_PREVENT_DESTROY';
     sourceCard: Card;
     requiredHandCount?: number;
     description: string;
@@ -29,6 +30,7 @@ export function collectDestroyReplacements(
     player: PlayerState,
     zone: UnitZoneState,
     reason: DestroyReason,
+    killerCard?: Card,
 ): DestroyReplacement[] {
     if (!isReplacementDestroyReason(reason) || !zone.unit) return [];
     const replacements: DestroyReplacement[] = [];
@@ -68,6 +70,29 @@ export function collectDestroyReplacements(
             type: 'BT03_078_RETURN_WITH_ITEM_BOTTOM',
             sourceCard: zone.unit!,
             description: effect.description || '트래시 아이템 1장을 덱 맨 아래에 두고 유닛/아이템을 패로 되돌린다.',
+        });
+    });
+
+    zone.unit.effects?.forEach(effect => {
+        if (effect.activation !== ActivationCondition.PASSIVE) return;
+        if (effect.action?.type !== 'NONE') return;
+        if (effect.action?.params?.destroyReplacement !== 'SB01_020_DISCARD_HAND_PREVENT_DESTROY') return;
+        if (reason !== 'EFFECT') return;
+        if (!killerCard) return;
+        const killerOwner = engine.state.players.find((candidate: PlayerState) =>
+            candidate.unitZones.some((candidateZone: UnitZoneState) =>
+                candidateZone.unit === killerCard || candidateZone.items.includes(killerCard)
+            )
+        );
+        if (!killerOwner || killerOwner.id === player.id) return;
+        if (!engine.effectManager.checkCondition(effect, unitContext)) return;
+        if (player.hand.length < 1) return;
+
+        replacements.push({
+            type: 'SB01_020_DISCARD_HAND_PREVENT_DESTROY',
+            sourceCard: zone.unit!,
+            requiredHandCount: 1,
+            description: effect.description || '패 1장을 트래시하고 파괴를 대체한다.',
         });
     });
 
@@ -161,7 +186,7 @@ export function tryInitiateDestroyReplacement(
     const zoneIndex = player.unitZones.indexOf(zone);
     if (zoneIndex < 0) return false;
 
-    const replacements = collectDestroyReplacements(engine, player, zone, reason);
+    const replacements = collectDestroyReplacements(engine, player, zone, reason, killerCard);
     if (replacements.length === 0) return false;
 
     beginDestroyReplacementPrompt(
@@ -321,6 +346,32 @@ export function resolveDestructionReplacementChoice(engine: any, confirm: boolea
 
             if (replacement.type === 'DISCARD_HAND_BY_HIT') {
                 const requiredHandCount = replacement.requiredHandCount ?? Math.max(0, engine.getUnitHit(zone, owner));
+                if (owner.hand.length >= requiredHandCount) {
+                    engine.state.interactionMode = 'SELECT_COST';
+                    engine.state.pendingEffect = {
+                        sourceCard: replacement.sourceCard,
+                        sourcePlayerId: owner.id,
+                        controllerPlayerId: owner.id,
+                        actionType: 'DESTRUCTION_REPLACEMENT_PAY_HAND',
+                        actionValue: {
+                            destroyPayload,
+                            replacement,
+                        },
+                        effectDescription: replacement.description,
+                        triggerReason: '파괴 대체 비용 지불',
+                        selectionPurpose: '파괴 대체를 위한 패 코스트 지불',
+                        costToPay: { type: 'TRASH_HAND', amount: requiredHandCount },
+                        costPaidCount: 0,
+                        selectedTargets: [],
+                    };
+                    engine.clearPendingRuntime();
+                    engine.assignInteractionOwner(owner.id);
+                    return;
+                }
+            }
+
+            if (replacement.type === 'SB01_020_DISCARD_HAND_PREVENT_DESTROY') {
+                const requiredHandCount = replacement.requiredHandCount ?? 1;
                 if (owner.hand.length >= requiredHandCount) {
                     engine.state.interactionMode = 'SELECT_COST';
                     engine.state.pendingEffect = {

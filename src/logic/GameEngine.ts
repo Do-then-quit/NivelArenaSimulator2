@@ -548,6 +548,22 @@ export class GameEngine {
         });
 
         this.effectManager.processQueue();
+
+        // SB01-004: while active, when opponent draws by effect, deal 1 damage per active source.
+        if (drawnByEffect) {
+            this.state.players.forEach(sourcePlayer => {
+                if (sourcePlayer.id === player.id) return;
+                const drawPunishState = (sourcePlayer as any).sb01OpponentEffectDrawPunish as
+                    | { untilTurnCount: number; count: number }
+                    | undefined;
+                if (!drawPunishState) return;
+                if (this.state.turnCount > drawPunishState.untilTurnCount) return;
+                const punishCount = Math.max(0, Number(drawPunishState.count || 0));
+                for (let i = 0; i < punishCount; i++) {
+                    this.dealDamage(player, 1);
+                }
+            });
+        }
     }
 
     public notifyItemsEquipped(
@@ -1842,7 +1858,7 @@ export class GameEngine {
             return;
         }
 
-        if (pending.actionType === 'GUARDIAN_BLOCK_COST') {
+        if (pending.actionType === 'GUARDIAN_BLOCK_COST' || pending.actionType === 'SB01_010_BLOCK_HAND_COST') {
             const selectedBlockerZoneIndex = pending.actionValue?.blockerZoneIndex;
             this.state.interactionMode = 'NORMAL';
             this.state.pendingEffect = null;
@@ -2163,17 +2179,19 @@ export class GameEngine {
         player: PlayerState,
         zone: UnitZoneState,
         reason: 'BATTLE' | 'EFFECT' | 'RULE',
+        killerCard?: Card,
     ): Array<{
         type:
         | 'TRASH_EQUIPPED_ITEM'
         | 'DISCARD_HAND_BY_HIT'
         | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
-        | 'BT03_083_TRASH_SELF_AND_RETURN';
+        | 'BT03_083_TRASH_SELF_AND_RETURN'
+        | 'SB01_020_DISCARD_HAND_PREVENT_DESTROY';
         sourceCard: Card;
         requiredHandCount?: number;
         description: string;
     }> {
-        return runCollectDestroyReplacements(this, player, zone, reason);
+        return runCollectDestroyReplacements(this, player, zone, reason, killerCard);
     }
 
     private beginDestroyReplacementPrompt(
@@ -2183,7 +2201,8 @@ export class GameEngine {
             | 'TRASH_EQUIPPED_ITEM'
             | 'DISCARD_HAND_BY_HIT'
             | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
-            | 'BT03_083_TRASH_SELF_AND_RETURN';
+            | 'BT03_083_TRASH_SELF_AND_RETURN'
+            | 'SB01_020_DISCARD_HAND_PREVENT_DESTROY';
             sourceCard: Card;
             requiredHandCount?: number;
             description: string;
@@ -2494,6 +2513,11 @@ export class GameEngine {
                                 } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
                                     const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
                                     value = equippedUnitCount * value;
+                                } else if (params.dynamic === 'DEFENDER_UNIT_COUNT_MULTIPLIER') {
+                                    const defenderUnitCount = source.owner.unitZones.filter(z =>
+                                        z.unit && this.hasKeywordInZone(z, '디펜더')
+                                    ).length;
+                                    value = defenderUnitCount * value;
                                 } else if (params.dynamic === 'OTHER_FRIENDLY_HIT_TOTAL_MULTIPLIER') {
                                     const excludeSelf = params.excludeSelf === true;
                                     const totalFriendlyHit = source.owner.unitZones.reduce((sum, unitZone) => {

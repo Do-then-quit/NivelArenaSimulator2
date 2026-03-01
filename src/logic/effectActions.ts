@@ -309,6 +309,916 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         return;
     }
 
+    if ((params as any).mode === 'SB01_001_ENTRY_PROMPT_SKILL_COST_DEBUFF') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+            if (!targetZone?.unit) return;
+            const skillCost = Math.max(0, Number((ctx.flags as any)?.SB01_001_TRASHED_SKILL_COST ?? (params as any).skillCost ?? 0));
+            if (skillCost <= 0) return;
+            targetZone.buffs.push({
+                id: ctx.machine.createRuntimeId('BUFF'),
+                sourceCard: ctx.sourceCard,
+                type: 'POWER',
+                value: -2000 * skillCost,
+                duration: 'TURN_END',
+            });
+            return;
+        }
+
+        const skills = ctx.player.skillZone
+            .map((card, skillZoneIndex) => ({ card, skillZoneIndex }))
+            .filter(({ card }) => card?.type === CardType.SKILL);
+        if (skills.length <= 0) return;
+
+        ctx.machine.state.revealedCards = skills.map(({ card, skillZoneIndex }) =>
+            createPromptOptionCard(
+                `SB01_001_SKILL_OPTION_${skillZoneIndex}_${card.id}`,
+                card.name,
+                card.text || `${card.name}를 트래시`,
+                card.imageUrl,
+            )
+        ) as any;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_001_SELECT_SKILL_ZONE_TO_TRASH',
+            actionValue: {
+                options: skills.map(({ skillZoneIndex }) => ({ skillZoneIndex })),
+            },
+            effectDescription: '트래시할 스킬을 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_002_ACTIVE_MAIN_BUFF_ATTACKERS_BY_DISCARDED_COST') {
+        const discardedCost = Math.max(0, Number(ctx.costPaymentCard?.cost || 0));
+        const friendlyAttackers = ctx.player.unitZones.filter((zone: any) => zone?.unit && zoneHasKeywordLike(zone, '어태커'));
+        if (friendlyAttackers.length <= 0) return;
+
+        const targets = friendlyAttackers.filter((zone: any) => Math.max(0, Number(zone.unit?.cost || 0)) <= discardedCost);
+        targets.forEach((zone: any) => {
+            zone.buffs.push({
+                id: ctx.machine.createRuntimeId('BUFF'),
+                sourceCard: ctx.sourceCard,
+                type: 'POWER',
+                value: discardedCost * 1000,
+                duration: 'TURN_END',
+            });
+            zone.buffs.push({
+                id: ctx.machine.createRuntimeId('BUFF'),
+                sourceCard: ctx.sourceCard,
+                type: 'HIT',
+                value: 1,
+                duration: 'TURN_END',
+            });
+        });
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_003_ATTACKER_BUFF_BY_DAMAGE_COUNT') {
+        if (!ctx.unitZone?.unit) return;
+        const value = Math.max(0, ctx.player.damage.length * 500);
+        if (value <= 0) return;
+        ctx.unitZone.buffs.push({
+            id: ctx.machine.createRuntimeId('BUFF'),
+            sourceCard: ctx.sourceCard,
+            type: 'POWER',
+            value,
+            duration: 'BATTLE_END',
+        });
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_003_ON_KILL_PROMPT_DISCARD_FOR_DAMAGE') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const selectedCards = (_targets || []).filter((card: any) => ctx.player.hand.includes(card));
+            if (selectedCards.length <= 0) return;
+            const trashedCards: any[] = [];
+            selectedCards.forEach((card: any) => {
+                const handIndex = ctx.player.hand.indexOf(card);
+                if (handIndex === -1) return;
+                const [removed] = ctx.player.hand.splice(handIndex, 1);
+                if (!removed) return;
+                ctx.player.trash.push(removed);
+                trashedCards.push(removed);
+            });
+            if (trashedCards.length > 0) {
+                ctx.machine.notifyHandTrashed(ctx.player, trashedCards, {
+                    flags: { handTrashByEffect: true },
+                });
+                ctx.machine.dealDamage(ctx.opponent, trashedCards.length);
+            }
+            return;
+        }
+
+        const hitMax = Math.max(0, Number(ctx.trashedUnit?.hit || 0));
+        if (hitMax <= 0 || ctx.player.hand.length <= 0) return;
+        const maxSelectable = Math.min(hitMax, ctx.player.hand.length);
+
+        const handSchema = {
+            scope: 'MY_HAND',
+            type: 'CARD',
+            count: maxSelectable,
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_003_SELECT_HAND_FOR_ON_KILL_DAMAGE',
+            actionValue: {
+                allowPartialSelection: true,
+                minSelection: 0,
+                maxSelection: maxSelectable,
+            },
+            effectDescription: '트래시할 패를 선택한다.',
+            validTargets: 'MY_HAND',
+            targetSchema: handSchema,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ON_KILL,
+            description: 'SB01-003 resolve optional discard damage',
+            targets: handSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_003_ON_KILL_PROMPT_DISCARD_FOR_DAMAGE',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_004_ACTIVE_DRAW_AND_PUNISH') {
+        const attackerCount = ctx.player.unitZones.filter((zone: any) => zone?.unit && zoneHasKeywordLike(zone, '어태커')).length;
+        if (attackerCount > 0) {
+            drawCard(ctx, { count: attackerCount, __sourceActivation: (params as any).__sourceActivation }, _targets);
+        }
+        const current = (ctx.player as any).sb01OpponentEffectDrawPunish as { untilTurnCount: number; count: number } | undefined;
+        const untilTurnCount = ctx.machine.state.turnCount + 1;
+        const previousCount = current && ctx.machine.state.turnCount <= current.untilTurnCount
+            ? Math.max(0, Number(current.count || 0))
+            : 0;
+        (ctx.player as any).sb01OpponentEffectDrawPunish = {
+            untilTurnCount: Math.max(untilTurnCount, Number(current?.untilTurnCount || 0)),
+            count: previousCount + 1,
+        };
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_005_ACTIVE_DRAW_MARK_AND_OPTIONAL_TRASH') {
+        const stage = (params as any).stage;
+        if (stage === 'MARK_TARGET') {
+            const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+            if (targetZone?.unit) {
+                targetZone.temporaryEffects.push({
+                    activation: ActivationCondition.EXIT,
+                    description: '엑시트 : 자신의 트래시 존에 있는 이 카드를 대미지 존에 놓는다.',
+                    action: {
+                        type: 'COMPLEX_ACTION',
+                        params: {
+                            mode: 'SB01_005_EXIT_MOVE_SKILL_FROM_TRASH_TO_DAMAGE',
+                            skillCardId: ctx.sourceCard.id,
+                        },
+                    },
+                } as any);
+            }
+
+            const attackerCount = ctx.player.unitZones.filter((zone: any) => zone?.unit && zoneHasKeywordLike(zone, '어태커')).length;
+            const inSkillZone = ctx.player.skillZone.includes(ctx.sourceCard);
+            if (attackerCount >= 2 && inSkillZone) {
+                const optionalEffect = {
+                    activation: ActivationCondition.ACTIVE,
+                    optional: true,
+                    description: '이 스킬을 트래시할 수 있다.',
+                    action: {
+                        type: 'COMPLEX_ACTION',
+                        params: {
+                            mode: 'SB01_005_TRASH_SELF_FROM_SKILL_ZONE',
+                        },
+                    },
+                } as any;
+                ctx.machine.effectManager.processEffect(optionalEffect, ctx);
+            }
+            return;
+        }
+
+        drawCard(ctx, { count: 1, __sourceActivation: (params as any).__sourceActivation }, _targets);
+        const targetSchema = {
+            scope: 'OPP_FIELD',
+            type: 'UNIT',
+            count: 1,
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_005_SELECT_OPP_UNIT_TO_MARK',
+            actionValue: {},
+            effectDescription: '효과를 부여할 상대 유닛을 선택한다.',
+            validTargets: 'OPP_UNITS',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE,
+            description: 'SB01-005 resolve target grant',
+            targets: targetSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_005_ACTIVE_DRAW_MARK_AND_OPTIONAL_TRASH',
+                    stage: 'MARK_TARGET',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_005_TRASH_SELF_FROM_SKILL_ZONE') {
+        const skillIndex = ctx.player.skillZone.indexOf(ctx.sourceCard);
+        const resolvedIndex = skillIndex !== -1
+            ? skillIndex
+            : ctx.player.skillZone.findIndex((card: any) => card?.id === ctx.sourceCard.id);
+        if (resolvedIndex === -1) return;
+        const [removed] = ctx.player.skillZone.splice(resolvedIndex, 1);
+        if (removed) {
+            ctx.player.trash.push(removed);
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_005_EXIT_MOVE_SKILL_FROM_TRASH_TO_DAMAGE') {
+        const skillCardId = (params as any).skillCardId || 'SB01-005';
+        const trashIndex = ctx.player.trash.findIndex((card: any) => card?.id === skillCardId);
+        if (trashIndex === -1) return;
+        const [removed] = ctx.player.trash.splice(trashIndex, 1);
+        if (removed) {
+            ctx.player.damage.push(removed);
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_006_ACTIVE_ATTACK_GRANT_BREAKTHROUGH_TO_LOW_COST') {
+        const targets = ((_targets || []).filter((zone: any) => zone?.unit) as UnitZoneState[]);
+        if (targets.length <= 0) return;
+        const granted = {
+            activation: ActivationCondition.ATTACKER,
+            description: '어태커 : 돌파',
+            action: { type: 'BREAKTHROUGH', params: { mode: 'ALL' } },
+            duration: 'TURN_END',
+        };
+        grantEffect(ctx, { effect: granted, duration: 'TURN_END' }, targets as any);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_007_EXIT_REVEAL_AND_DISCARD_TO_DEPLOY') {
+        if (ctx.player.deck.length <= 0) return;
+        const revealed = ctx.player.deck.pop();
+        if (!revealed) return;
+
+        const emptyZone = ctx.player.unitZones.find((zone: any) => !zone?.unit);
+        if (!emptyZone || revealed.type !== CardType.UNIT || ctx.player.hand.length <= 0) {
+            ctx.player.trash.push(revealed);
+            return;
+        }
+
+        const [discarded] = ctx.player.hand.splice(0, 1);
+        if (discarded) {
+            ctx.player.trash.push(discarded);
+            ctx.machine.notifyHandTrashed(ctx.player, [discarded], {
+                flags: { handTrashByEffect: true },
+            });
+        }
+
+        emptyZone.unit = revealed;
+        emptyZone.items = [];
+        emptyZone.buffs = [];
+        emptyZone.temporaryEffects = [];
+        emptyZone.hasAttacked = false;
+        emptyZone.attackCountThisTurn = 0;
+        emptyZone.extraAttackAllowance = 0;
+        emptyZone.isExhausted = false;
+        emptyZone.hasPlacedUnitThisTurn = false;
+        emptyZone.hasActivatedEffectThisTurn = false;
+        emptyZone.activatedEffectKeys = {};
+        (revealed as any).turnCostOverride = {
+            cost: 0,
+            turnCount: ctx.machine.state.turnCount,
+        };
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_008_EXIT_REDEPLOY_IF_EFFECT_TRASHED') {
+        if (ctx.trashReason !== 'EFFECT') return;
+        if (ctx.player.hand.length <= 0) return;
+        const emptyZone = ctx.player.unitZones.find((zone: any) => !zone?.unit);
+        if (!emptyZone) return;
+
+        const trashIndex = ctx.player.trash.indexOf(ctx.sourceCard);
+        if (trashIndex === -1) return;
+
+        const [discarded] = ctx.player.hand.splice(0, 1);
+        if (!discarded) return;
+        ctx.player.trash.push(discarded);
+        ctx.machine.notifyHandTrashed(ctx.player, [discarded], {
+            flags: { handTrashByEffect: true },
+        });
+
+        const [revived] = ctx.player.trash.splice(trashIndex, 1);
+        if (!revived) return;
+        emptyZone.unit = revived;
+        emptyZone.items = [];
+        emptyZone.buffs = [];
+        emptyZone.temporaryEffects = [];
+        emptyZone.hasAttacked = false;
+        emptyZone.attackCountThisTurn = 0;
+        emptyZone.extraAttackAllowance = 0;
+        emptyZone.isExhausted = false;
+        emptyZone.hasPlacedUnitThisTurn = false;
+        emptyZone.hasActivatedEffectThisTurn = false;
+        emptyZone.activatedEffectKeys = {};
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_011_EXIT_DRAW_BY_EFFECT_TRASHED_COUNT') {
+        if (ctx.machine.currentPlayer?.id !== ctx.player.id) return;
+        const drawCount = Math.max(0, ctx.machine.getEffectTrashedFriendlyUnitCount(ctx.player.id));
+        if (drawCount > 0) {
+            drawCard(ctx, { count: drawCount, __sourceActivation: (params as any).__sourceActivation }, _targets);
+        }
+        if (drawCount >= 3) {
+            damage(ctx, { value: 1, __sourceActivation: (params as any).__sourceActivation }, _targets);
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_013_ENTRY_ENABLE_ACTIVE_DAMAGE_BONUS') {
+        const current = (ctx.player as any).sb01ActiveDamageBonusUntilTurnEnd as
+            | { untilTurnCount: number; bonus: number }
+            | undefined;
+        const previousBonus = current && ctx.machine.state.turnCount <= current.untilTurnCount
+            ? Math.max(0, Number(current.bonus || 0))
+            : 0;
+        (ctx.player as any).sb01ActiveDamageBonusUntilTurnEnd = {
+            untilTurnCount: ctx.machine.state.turnCount,
+            bonus: previousBonus + 1,
+        };
+
+        const sourceZone = ctx.player.unitZones.find((zone: any) => zone?.unit === ctx.sourceCard);
+        const hasCost5Unit = ctx.player.hand.some((card: any) => card?.type === CardType.UNIT && Number(card.cost || 0) === 5);
+        if (!sourceZone || !hasCost5Unit) return;
+
+        const optionalEffect = {
+            activation: ActivationCondition.ENTRY,
+            optional: true,
+            description: '이 유닛을 트래시하고 5코스트 유닛으로 교체할 수 있다.',
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_013_PROMPT_SWAP_SELF_WITH_COST5',
+                },
+            },
+        } as any;
+        ctx.machine.effectManager.processEffect(optionalEffect, ctx);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_013_PROMPT_SWAP_SELF_WITH_COST5') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const selectedCard = (_targets || []).find((card: any) =>
+                ctx.player.hand.includes(card) && card.type === CardType.UNIT && Number(card.cost || 0) === 5
+            );
+            if (!selectedCard) return;
+
+            const sourceZone = ctx.player.unitZones.find((zone: any) => zone?.unit === ctx.sourceCard);
+            if (!sourceZone) return;
+            const sourceZoneIndex = ctx.player.unitZones.indexOf(sourceZone);
+            if (sourceZoneIndex < 0) return;
+
+            ctx.machine.destroyUnit(ctx.player, sourceZone, undefined, 'EFFECT');
+            const zoneAfterDestroy = ctx.player.unitZones[sourceZoneIndex];
+            if (!zoneAfterDestroy || zoneAfterDestroy.unit) return;
+
+            const handIndex = ctx.player.hand.indexOf(selectedCard);
+            if (handIndex === -1) return;
+            const [placed] = ctx.player.hand.splice(handIndex, 1);
+            if (!placed) return;
+
+            zoneAfterDestroy.unit = placed;
+            zoneAfterDestroy.items = [];
+            zoneAfterDestroy.buffs = [];
+            zoneAfterDestroy.temporaryEffects = [];
+            zoneAfterDestroy.hasAttacked = false;
+            zoneAfterDestroy.attackCountThisTurn = 0;
+            zoneAfterDestroy.extraAttackAllowance = 0;
+            zoneAfterDestroy.isExhausted = false;
+            zoneAfterDestroy.hasPlacedUnitThisTurn = false;
+            zoneAfterDestroy.hasActivatedEffectThisTurn = false;
+            zoneAfterDestroy.activatedEffectKeys = {};
+            (placed as any).turnCostOverride = {
+                cost: 3,
+                turnCount: ctx.machine.state.turnCount,
+            };
+            return;
+        }
+
+        const sourceZone = ctx.player.unitZones.find((zone: any) => zone?.unit === ctx.sourceCard);
+        if (!sourceZone) return;
+        const cost5Units = ctx.player.hand.filter((card: any) => card?.type === CardType.UNIT && Number(card.cost || 0) === 5);
+        if (cost5Units.length <= 0) return;
+
+        const handSchema = {
+            scope: 'MY_HAND',
+            type: 'CARD',
+            count: 1,
+            filters: [
+                { type: 'UNIT_TYPE', value: CardType.UNIT },
+                { type: 'COST_EQUAL', value: 5 },
+            ],
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_013_SELECT_COST5_UNIT_TO_SWAP',
+            actionValue: {},
+            effectDescription: '교체할 5코스트 유닛을 선택한다.',
+            validTargets: 'MY_HAND',
+            targetSchema: handSchema,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ENTRY,
+            description: 'SB01-013 resolve self swap',
+            targets: handSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_013_PROMPT_SWAP_SELF_WITH_COST5',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_014_ACTIVE_DEPLOY_LOW_COST_FROM_TRASH') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const selectedCard = (_targets || []).find((card: any) =>
+                ctx.player.trash.includes(card) && card.type === CardType.UNIT && Number(card.cost || 0) <= 2
+            );
+            if (!selectedCard) return;
+            const emptyZone = ctx.player.unitZones.find((zone: any) => !zone?.unit);
+            if (!emptyZone) return;
+
+            const trashIndex = ctx.player.trash.indexOf(selectedCard);
+            if (trashIndex === -1) return;
+            const [placed] = ctx.player.trash.splice(trashIndex, 1);
+            if (!placed) return;
+
+            emptyZone.unit = placed;
+            emptyZone.items = [];
+            emptyZone.buffs = [];
+            emptyZone.temporaryEffects = [];
+            emptyZone.hasAttacked = false;
+            emptyZone.attackCountThisTurn = 0;
+            emptyZone.extraAttackAllowance = 0;
+            emptyZone.isExhausted = false;
+            emptyZone.hasPlacedUnitThisTurn = false;
+            emptyZone.hasActivatedEffectThisTurn = false;
+            emptyZone.activatedEffectKeys = {};
+            emptyZone.temporaryEffects.push({
+                activation: ActivationCondition.EXIT,
+                description: '엑시트 : 자신의 스킬 존에서 〈페인 이터〉를 1장 골라 트래시한다.',
+                action: {
+                    type: 'COMPLEX_ACTION',
+                    params: {
+                        mode: 'SB01_014_EXIT_TRASH_PAIN_EATER_FROM_SKILL_ZONE',
+                    },
+                },
+                duration: 'TURN_END',
+            } as any);
+            return;
+        }
+
+        const candidates = ctx.player.trash.filter((card: any) => card.type === CardType.UNIT && Number(card.cost || 0) <= 2);
+        if (candidates.length <= 0) return;
+        if (!ctx.player.unitZones.some((zone: any) => !zone?.unit)) return;
+
+        const targetSchema = {
+            scope: 'MY_TRASH',
+            type: 'CARD',
+            count: 1,
+            filters: [
+                { type: 'UNIT_TYPE', value: CardType.UNIT },
+                { type: 'COST_LIMIT', value: 2 },
+            ],
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_014_SELECT_TRASH_UNIT_TO_DEPLOY',
+            actionValue: {},
+            effectDescription: '배치할 유닛을 선택한다.',
+            validTargets: 'MY_TRASH',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE,
+            description: 'SB01-014 resolve deploy from trash',
+            targets: targetSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_014_ACTIVE_DEPLOY_LOW_COST_FROM_TRASH',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_014_EXIT_TRASH_PAIN_EATER_FROM_SKILL_ZONE') {
+        const skillIndex = ctx.player.skillZone.findIndex((card: any) =>
+            card?.id?.startsWith('SB01-014') || String(card?.name || '').includes('페인 이터')
+        );
+        if (skillIndex === -1) return;
+        const [removed] = ctx.player.skillZone.splice(skillIndex, 1);
+        if (removed) {
+            ctx.player.trash.push(removed);
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_015_ACTIVE_TRASH_AND_REDEPLOY_SAME_NAME') {
+        const selectedZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!selectedZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, selectedZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+        const selectedUnit = selectedZone.unit;
+        if (Math.max(0, Number(selectedUnit.cost || 0)) > 5) return;
+
+        const laneIndex = ctx.player.unitZones.indexOf(selectedZone);
+        if (laneIndex < 0) return;
+        const unitName = selectedUnit.name;
+        const unitCost = Math.max(0, Number(selectedUnit.cost || 0));
+
+        ctx.machine.destroyUnit(ctx.player, selectedZone, undefined, 'EFFECT');
+
+        const reviveIndex = ctx.player.trash.findIndex((card: any) =>
+            card?.type === CardType.UNIT &&
+            card?.name === unitName &&
+            Math.max(0, Number(card?.cost || 0)) === unitCost
+        );
+        if (reviveIndex === -1) return;
+        const lane = ctx.player.unitZones[laneIndex];
+        if (!lane || lane.unit) return;
+        const [revived] = ctx.player.trash.splice(reviveIndex, 1);
+        if (!revived) return;
+        lane.unit = revived;
+        lane.items = [];
+        lane.buffs = [];
+        lane.temporaryEffects = [];
+        lane.hasAttacked = false;
+        lane.attackCountThisTurn = 0;
+        lane.extraAttackAllowance = 0;
+        lane.isExhausted = false;
+        lane.hasPlacedUnitThisTurn = false;
+        lane.hasActivatedEffectThisTurn = false;
+        lane.activatedEffectKeys = {};
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_017_DEFENDER_DISCARD_LOCK_ATTACKER_UNTIL_NEXT_OPP_TURN_END') {
+        const attackerZoneIndex = ctx.machine.state.pendingAttackerIndex;
+        if (typeof attackerZoneIndex !== 'number' || attackerZoneIndex < 0) return;
+        const attackerZone = ctx.opponent.unitZones[attackerZoneIndex];
+        if (!attackerZone?.unit) return;
+
+        attackerZone.temporaryEffects.push({
+            activation: ActivationCondition.PASSIVE,
+            description: '패시브 : 이 유닛은 공격할 수 없다.',
+            action: {
+                type: 'NONE',
+                params: {
+                    cannotAttackUntilTurnCount: ctx.machine.state.turnCount + 2,
+                },
+            },
+            duration: 'PERMANENT',
+        } as any);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_021_ENTRY_PROMPT_SELECT_ITEMS_AND_EQUIP') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const unitZones = ctx.player.unitZones.filter((zone: any) => zone?.unit);
+            if (unitZones.length <= 0) return;
+            const selectedCards = (_targets || []).filter((card: any) =>
+                card?.type === CardType.ITEM && (ctx.player.hand.includes(card) || ctx.player.trash.includes(card))
+            );
+            if (selectedCards.length <= 0) return;
+
+            const equippedByZone = new Map<UnitZoneState, any[]>();
+            selectedCards.slice(0, unitZones.length).forEach((card: any, idx: number) => {
+                let removed: any | null = null;
+                const handIndex = ctx.player.hand.indexOf(card);
+                if (handIndex !== -1) {
+                    [removed] = ctx.player.hand.splice(handIndex, 1);
+                } else {
+                    const trashIndex = ctx.player.trash.indexOf(card);
+                    if (trashIndex !== -1) {
+                        [removed] = ctx.player.trash.splice(trashIndex, 1);
+                    }
+                }
+                if (!removed) return;
+
+                const zone = unitZones[idx % unitZones.length];
+                zone.items.push(removed);
+                const existing = equippedByZone.get(zone) || [];
+                existing.push(removed);
+                equippedByZone.set(zone, existing);
+            });
+
+            equippedByZone.forEach((items, zone) => {
+                if (items.length > 0) {
+                    ctx.machine.notifyItemsEquipped(ctx.player, zone, items, {
+                        sourceActivation: (params as any).__sourceActivation,
+                        sourcePlayerId: ctx.player.id,
+                        sourceCardId: ctx.sourceCard.id,
+                    });
+                }
+            });
+            return;
+        }
+
+        const unitZones = ctx.player.unitZones.filter((zone: any) => zone?.unit);
+        if (unitZones.length <= 0) return;
+        const candidates = [...ctx.player.hand, ...ctx.player.trash].filter((card: any) => card?.type === CardType.ITEM);
+        if (candidates.length <= 0) return;
+
+        const maxCount = Math.min(unitZones.length, candidates.length);
+        ctx.machine.state.revealedCards = candidates;
+        const targetSchema = {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: maxCount,
+            filters: [{ type: 'UNIT_TYPE', value: CardType.ITEM }],
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_021_SELECT_ITEMS_TO_EQUIP',
+            actionValue: {
+                allowPartialSelection: true,
+                minSelection: 1,
+            },
+            effectDescription: '장착할 아이템을 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ENTRY,
+            description: 'SB01-021 resolve equip items',
+            targets: targetSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_021_ENTRY_PROMPT_SELECT_ITEMS_AND_EQUIP',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_023_ENTRY_DISCARD_UP_TO_TWO_THEN_DRAW') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const selectedCards = (_targets || []).filter((card: any) => ctx.player.hand.includes(card));
+            let itemCount = 0;
+            const trashedCards: any[] = [];
+            selectedCards.forEach((card: any) => {
+                const handIndex = ctx.player.hand.indexOf(card);
+                if (handIndex === -1) return;
+                const [removed] = ctx.player.hand.splice(handIndex, 1);
+                if (!removed) return;
+                ctx.player.trash.push(removed);
+                trashedCards.push(removed);
+                if (removed.type === CardType.ITEM) itemCount++;
+            });
+            if (trashedCards.length > 0) {
+                ctx.machine.notifyHandTrashed(ctx.player, trashedCards, {
+                    flags: { handTrashByEffect: true },
+                });
+            }
+            const drawCount = trashedCards.length;
+            if (drawCount > 0) {
+                drawCard(ctx, { count: drawCount, __sourceActivation: (params as any).__sourceActivation }, _targets);
+            }
+            if (itemCount >= 2) {
+                drawCard(ctx, { count: 1, __sourceActivation: (params as any).__sourceActivation }, _targets);
+            }
+            return;
+        }
+
+        const maxCount = Math.min(2, ctx.player.hand.length);
+        if (maxCount <= 0) return;
+        const handSchema = {
+            scope: 'MY_HAND',
+            type: 'CARD',
+            count: maxCount,
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_023_SELECT_HAND_TO_TRASH',
+            actionValue: {
+                allowPartialSelection: true,
+                minSelection: 0,
+            },
+            effectDescription: '트래시할 패를 최대 2장까지 선택한다.',
+            validTargets: 'MY_HAND',
+            targetSchema: handSchema,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ENTRY,
+            description: 'SB01-023 resolve hand discard and draw',
+            targets: handSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_023_ENTRY_DISCARD_UP_TO_TWO_THEN_DRAW',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_024_ACTIVE_MAIN_RECOVER_FROM_TRASH_BY_EQUIPPED_COUNT') {
+        const stage = (params as any).stage;
+        if (!ctx.unitZone?.unit) return;
+        const equippedCount = ctx.unitZone.items.length;
+        if (equippedCount <= 0) return;
+
+        if (stage === 'RESOLVE') {
+            const selectedCard = (_targets || []).find((card: any) =>
+                ctx.player.trash.includes(card) && Math.max(0, Number(card?.cost || 0)) <= equippedCount
+            );
+            if (!selectedCard) return;
+            const trashIndex = ctx.player.trash.indexOf(selectedCard);
+            if (trashIndex === -1) return;
+            const [removed] = ctx.player.trash.splice(trashIndex, 1);
+            if (removed) {
+                ctx.player.hand.push(removed);
+            }
+            return;
+        }
+
+        const targetSchema = {
+            scope: 'MY_TRASH',
+            type: 'CARD',
+            count: 1,
+            filters: [{ type: 'COST_LIMIT', value: equippedCount }],
+            selectMode: 'MANUAL',
+        } as const;
+        const candidates = TargetSelector.resolve(ctx.machine, targetSchema as any, ctx as any);
+        if (candidates.length <= 0) return;
+
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_024_SELECT_TRASH_CARD_TO_HAND',
+            actionValue: {},
+            effectDescription: '패로 가져올 카드를 선택한다.',
+            validTargets: 'MY_TRASH',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: 'SB01-024 resolve recover card',
+            targets: targetSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_024_ACTIVE_MAIN_RECOVER_FROM_TRASH_BY_EQUIPPED_COUNT',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'SB01_025_ACTIVE_DISCARD_ITEMS_AND_DRAW') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const selectedItems = (_targets || []).filter((card: any) => ctx.player.hand.includes(card) && card.type === CardType.ITEM);
+            if (selectedItems.length <= 0) return;
+            const trashedCards: any[] = [];
+            selectedItems.forEach((card: any) => {
+                const handIndex = ctx.player.hand.indexOf(card);
+                if (handIndex === -1) return;
+                const [removed] = ctx.player.hand.splice(handIndex, 1);
+                if (!removed) return;
+                ctx.player.trash.push(removed);
+                trashedCards.push(removed);
+            });
+            if (trashedCards.length > 0) {
+                ctx.machine.notifyHandTrashed(ctx.player, trashedCards, {
+                    flags: { handTrashByEffect: true },
+                });
+                drawCard(ctx, { count: trashedCards.length, __sourceActivation: (params as any).__sourceActivation }, _targets);
+            }
+            return;
+        }
+
+        const itemCardsInHand = ctx.player.hand.filter((card: any) => card.type === CardType.ITEM);
+        if (itemCardsInHand.length <= 0) return;
+        const handSchema = {
+            scope: 'MY_HAND',
+            type: 'CARD',
+            count: itemCardsInHand.length,
+            filters: [{ type: 'UNIT_TYPE', value: CardType.ITEM }],
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'SB01_025_SELECT_ITEMS_TO_TRASH',
+            actionValue: {
+                allowPartialSelection: true,
+                minSelection: 1,
+            },
+            effectDescription: '트래시할 아이템을 선택한다.',
+            validTargets: 'MY_HAND',
+            targetSchema: handSchema,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE,
+            description: 'SB01-025 resolve item discard draw',
+            targets: handSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'SB01_025_ACTIVE_DISCARD_ITEMS_AND_DRAW',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
     if ((params as any).mode === 'PROMPT_SELECT_SKILL_ZONE_CARD_FOR_ZERO_COST') {
         const costMax = typeof (params as any).costMax === 'number' ? Math.max(0, (params as any).costMax) : null;
         const skills = ctx.player.skillZone

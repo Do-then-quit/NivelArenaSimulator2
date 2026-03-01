@@ -16,8 +16,12 @@ export class RuleValidator {
         if (opponent) {
             const lockedLane = opponent.unitZones[zoneIndex];
             const lockCostMin = this.getPreventOpponentPlayUnitCostMin(engine, opponent, lockedLane);
+            const lockCostMax = this.getPreventOpponentPlayUnitCostMax(engine, opponent, lockedLane);
             if (typeof lockCostMin === 'number' && card.cost >= lockCostMin) {
                 return { valid: false, reason: `Lane lock: cannot place unit cost ${lockCostMin} or higher in this lane` };
+            }
+            if (typeof lockCostMax === 'number' && card.cost <= lockCostMax) {
+                return { valid: false, reason: `Lane lock: cannot place unit cost ${lockCostMax} or lower in this lane` };
             }
         }
 
@@ -334,6 +338,46 @@ export class RuleValidator {
 
         if (minValues.length === 0) return null;
         return Math.min(...minValues);
+    }
+
+    private static getPreventOpponentPlayUnitCostMax(engine: GameEngine, sourcePlayer: PlayerState, sourceZone: any): number | null {
+        if (!sourceZone) return null;
+        const sourceOpponent = engine.state.players.find(player => player.id !== sourcePlayer.id);
+        if (!sourceOpponent) return null;
+
+        const maxValues: number[] = [];
+        const evaluateEffectList = (sourceCard: any, effects: any[]) => {
+            if (!sourceCard || !Array.isArray(effects)) return;
+            effects.forEach((effect: any) => {
+                if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+                if (effect.action?.type !== 'NONE') return;
+                const maxCost = effect.action?.params?.preventOpponentPlayUnitCostMax;
+                if (typeof maxCost !== 'number') return;
+                const context: any = {
+                    player: sourcePlayer,
+                    opponent: sourceOpponent,
+                    sourceCard,
+                    unitZone: sourceZone,
+                    machine: engine,
+                };
+                if (!engine.effectManager.checkCondition(effect, context)) return;
+                maxValues.push(maxCost);
+            });
+        };
+
+        if (sourceZone.unit) {
+            evaluateEffectList(sourceZone.unit, sourceZone.unit.effects || []);
+        }
+        if (Array.isArray(sourceZone.items)) {
+            sourceZone.items.forEach((item: any) => evaluateEffectList(item, item?.effects || []));
+        }
+        if (Array.isArray(sourceZone.temporaryEffects)) {
+            const fallbackCard = sourceZone.unit || sourcePlayer.levelZone || null;
+            evaluateEffectList(fallbackCard, sourceZone.temporaryEffects);
+        }
+
+        if (maxValues.length === 0) return null;
+        return Math.max(...maxValues);
     }
 
     private static cardHasKeyword(card: any, keyword: string): boolean {

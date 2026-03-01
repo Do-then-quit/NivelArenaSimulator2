@@ -252,8 +252,11 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
         const requiredCount = targetSchema.count ?? 1;
 
         const shouldAllowConfirm = (candidateTargets: any[]): boolean => {
+            const minSelection = Math.max(0, Number(pending.actionValue?.minSelection ?? 0));
             if (pending.actionValue?.allowPartialSelection === true) {
-                return true;
+                if (selectedTargets.length >= minSelection) return true;
+                const remainingSelectableCount = candidateTargets.filter(target => !selectedTargets.includes(target)).length;
+                return selectedTargets.length + remainingSelectableCount < minSelection;
             }
             if (!needsConfirm) {
                 // Single-target manual selection can become impossible due state changes.

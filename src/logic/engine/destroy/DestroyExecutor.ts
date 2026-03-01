@@ -54,6 +54,86 @@ export function processPassiveGrantedExitEffects(
     });
 }
 
+function queuePassiveGrantedOnKillEffects(
+    engine: any,
+    killerOwner: PlayerState,
+    killerZone: UnitZoneState,
+    trashedUnit: Card,
+    trashedUnitOwner: PlayerState,
+    trashReason: DestroyReason,
+    killerCard: Card,
+    batchStep: number,
+) {
+    if (!killerZone?.unit) return;
+    const killerUnit = killerZone.unit;
+    const killerOpponent = engine.getOpponentOf(killerOwner);
+
+    const evaluateEffectList = (
+        sourceOwner: PlayerState,
+        sourceCard: Card,
+        effects: any[] | undefined,
+        sourceZone?: UnitZoneState,
+    ) => {
+        if (!sourceCard || !Array.isArray(effects) || effects.length <= 0) return;
+        const sourceOpponent = engine.getOpponentOf(sourceOwner);
+
+        effects.forEach((passive: any, passiveIndex: number) => {
+            if (!passive || passive.activation !== ActivationCondition.PASSIVE) return;
+            if (passive.action?.type !== 'GRANT_EFFECT') return;
+            const granted = passive.action?.params?.effect;
+            if (!granted || granted.activation !== ActivationCondition.ON_KILL) return;
+
+            const sourceContext: GameContext = {
+                player: sourceOwner,
+                opponent: sourceOpponent,
+                sourceCard,
+                unitZone: sourceZone,
+                machine: engine,
+                trashedUnit,
+                trashedUnitOwner,
+                trashReason,
+                destroyedBy: killerCard,
+            };
+            if (!engine.effectManager.checkCondition(passive, sourceContext)) return;
+            if (passive.targets && !TargetSelector.isValidTarget(engine, passive.targets, sourceContext, killerZone)) return;
+
+            const grantedContext: GameContext = {
+                sourceCard: killerUnit,
+                player: killerOwner,
+                opponent: killerOpponent,
+                unitZone: killerZone,
+                machine: engine,
+                trashedUnit,
+                trashedUnitOwner,
+                trashReason,
+                destroyedBy: killerCard,
+            };
+            engine.state.effectQueue.push({
+                effect: granted,
+                context: grantedContext,
+                id: engine.createRuntimeId(`GRANTED_ON_KILL_${passiveIndex}`),
+                creationTime: batchStep,
+                sourcePlayerId: killerOwner.id,
+            });
+        });
+    };
+
+    engine.state.players.forEach((sourceOwner: PlayerState) => {
+        sourceOwner.unitZones.forEach(sourceZone => {
+            if (sourceZone.unit) {
+                evaluateEffectList(sourceOwner, sourceZone.unit, sourceZone.unit.effects || [], sourceZone);
+                evaluateEffectList(sourceOwner, sourceZone.unit, sourceZone.temporaryEffects as any, sourceZone);
+            }
+            sourceZone.items.forEach(item => {
+                evaluateEffectList(sourceOwner, item, item.effects || [], sourceZone);
+            });
+        });
+        if (sourceOwner.levelZone) {
+            evaluateEffectList(sourceOwner, sourceOwner.levelZone, sourceOwner.levelZone.effects || [], undefined);
+        }
+    });
+}
+
 export function destroyUnit(
     engine: any,
     player: PlayerState,
@@ -170,6 +250,57 @@ export function destroyUnit(
                 }, { enqueueOnly: true, batchStep: trashedBatchStep });
             });
         });
+
+        // 4) Queue ON_KILL effects for battle/effect kills with a known killer source.
+        if ((reason === 'BATTLE' || reason === 'EFFECT') && killerCard) {
+            const killerOwner = engine.state.players.find((candidate: PlayerState) =>
+                candidate.unitZones.some((candidateZone: UnitZoneState) =>
+                    candidateZone.unit === killerCard || candidateZone.items.includes(killerCard)
+                )
+            );
+            if (killerOwner) {
+                const killerZone = killerOwner.unitZones.find((candidateZone: UnitZoneState) =>
+                    candidateZone.unit === killerCard || candidateZone.items.includes(killerCard)
+                );
+                if (killerZone?.unit) {
+                    const killBatchStep = engine.incrementAndGetGlobalStep();
+                    const killContextBase = {
+                        player: killerOwner,
+                        opponent: engine.getOpponentOf(killerOwner),
+                        unitZone: killerZone,
+                        machine: engine,
+                        trashedUnit: trashedUnit,
+                        trashedUnitOwner: player,
+                        trashReason: reason,
+                        destroyedBy: killerCard,
+                    } as any;
+
+                    engine.effectManager.processEffects(ActivationCondition.ON_KILL, {
+                        ...killContextBase,
+                        sourceCard: killerZone.unit,
+                    }, { enqueueOnly: true, batchStep: killBatchStep });
+
+                    killerZone.items.forEach((item: any) => {
+                        engine.effectManager.processEffects(ActivationCondition.ON_KILL, {
+                            ...killContextBase,
+                            sourceCard: item,
+                        }, { enqueueOnly: true, batchStep: killBatchStep });
+                    });
+
+                    queuePassiveGrantedOnKillEffects(
+                        engine,
+                        killerOwner,
+                        killerZone,
+                        trashedUnit,
+                        player,
+                        reason,
+                        killerCard,
+                        killBatchStep,
+                    );
+                    engine.sortEffectQueue();
+                }
+            }
+        }
 
         engine.effectManager.processQueue();
     } finally {
