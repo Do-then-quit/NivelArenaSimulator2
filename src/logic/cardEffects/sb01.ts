@@ -131,7 +131,6 @@ export const SB01_EFFECTS: Record<string, Effect[]> = {
         {
             activation: ActivationCondition.EXIT,
             description: '[엑시트] 덱 위 1장 공개. 패 1장을 트래시하면 공개된 유닛을 빈 유닛 존에 배치하고 0코스트가 된다. 나머지는 트래시.',
-            optional: true,
             action: {
                 type: 'COMPLEX_ACTION',
                 params: {

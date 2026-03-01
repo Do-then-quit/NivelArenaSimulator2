@@ -7,7 +7,9 @@ export function processPassiveGrantedExitEffects(
     destroyedOwner: PlayerState,
     destroyedZone: UnitZoneState,
     destroyedUnit: Card,
-    killerCard?: Card
+    killerCard?: Card,
+    trashReason: DestroyReason = 'EFFECT',
+    batchStep: number = engine.incrementAndGetGlobalStep(),
 ) {
     engine.state.players.forEach((sourceOwner: PlayerState) => {
         const sourceOpponent = sourceOwner === engine.state.players[0] ? engine.state.players[1] : engine.state.players[0];
@@ -21,7 +23,7 @@ export function processPassiveGrantedExitEffects(
 
         sources.forEach(source => {
             if (!source.card.effects) return;
-            source.card.effects.forEach(passive => {
+            source.card.effects.forEach((passive, passiveIndex) => {
                 if (passive.activation !== ActivationCondition.PASSIVE) return;
                 if (passive.action?.type !== 'GRANT_EFFECT') return;
 
@@ -33,7 +35,11 @@ export function processPassiveGrantedExitEffects(
                     opponent: sourceOpponent,
                     sourceCard: source.card,
                     unitZone: source.zone,
-                    machine: engine
+                    machine: engine,
+                    trashedUnit: destroyedUnit,
+                    trashedUnitOwner: destroyedOwner,
+                    trashReason,
+                    destroyedBy: killerCard,
                 };
 
                 if (!engine.effectManager.checkCondition(passive, sourceContext)) return;
@@ -45,10 +51,17 @@ export function processPassiveGrantedExitEffects(
                     sourceCard: destroyedUnit,
                     unitZone: destroyedZone,
                     machine: engine,
-                    destroyedBy: killerCard
+                    destroyedBy: killerCard,
+                    trashReason,
                 };
 
-                engine.effectManager.executeEffect(granted, grantedContext, [destroyedZone]);
+                engine.state.effectQueue.push({
+                    effect: granted,
+                    context: grantedContext,
+                    id: engine.createRuntimeId(`GRANTED_EXIT_${passiveIndex}`),
+                    creationTime: batchStep,
+                    sourcePlayerId: destroyedOwner.id,
+                });
             });
         });
     });
@@ -157,15 +170,16 @@ export function destroyUnit(
     engine.destroyInProgressKeys.add(destroyKey);
     try {
         const opponent = engine.getOpponentOf(player);
+        const exitBatchStep = engine.incrementAndGetGlobalStep();
 
-        // Apply passive "grant EXIT effect" auras before removing the unit from the zone.
-        engine.processPassiveGrantedExitEffects(player, zone, unit, killerCard);
+        // Evaluate passive "grant EXIT effect" auras while the unit is still on field,
+        // then queue them to resolve with this destruction batch.
+        engine.processPassiveGrantedExitEffects(player, zone, unit, killerCard, reason, exitBatchStep);
 
         // Remove from zone first to avoid recursive state inconsistencies while effects resolve.
         zone.unit = null;
 
-        // 1) Queue EXIT effects in a single batch.
-        const exitBatchStep = engine.incrementAndGetGlobalStep();
+        // 1) Queue unit/item EXIT effects in the same batch as granted EXIT effects.
         const equippedItemsSnapshot = [...zone.items];
         engine.effectManager.processEffects(ActivationCondition.EXIT, {
             sourceCard: unit,

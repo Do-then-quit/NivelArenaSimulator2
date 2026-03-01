@@ -1735,15 +1735,36 @@ export class GameEngine {
             return;
         }
 
+        const pendingSnapshot = this.state.pendingEffect;
         const runtime = this.getPendingRuntime();
         const effect = runtime?.effect;
         const context = runtime?.context;
+
+        const isSb01007DeployDecision =
+            pendingSnapshot?.actionType === 'COMPLEX_ACTION' &&
+            pendingSnapshot?.actionValue?.mode === 'SB01_007_EXIT_REVEAL_AND_DISCARD_TO_DEPLOY' &&
+            pendingSnapshot?.actionValue?.stage === 'SHOW_REVEALED_DECISION';
 
         // Reset Mode
         this.state.interactionMode = 'NORMAL';
         this.state.pendingEffect = null;
         this.clearPendingRuntime();
         this.assignInteractionOwner(this.getDefaultInteractionOwnerId());
+
+        if (!confirm && isSb01007DeployDecision) {
+            const sourcePlayer = this.getPlayerById(pendingSnapshot.sourcePlayerId);
+            const revealedCardRef = pendingSnapshot.actionValue?.revealedCardRef;
+            const revealedCardId = pendingSnapshot.actionValue?.revealedCardId;
+            const revealedCardFromState = this.state.revealedCards.find((card: any) =>
+                card === revealedCardRef ||
+                (revealedCardId && card?.id === revealedCardId),
+            );
+            const revealedCard = revealedCardFromState || revealedCardRef;
+            if (sourcePlayer && revealedCard) {
+                sourcePlayer.trash.push(revealedCard);
+            }
+            this.state.revealedCards = [];
+        }
 
         if (confirm && effect && context) {
             console.log("Optional Effect confirmed.");
@@ -2166,9 +2187,11 @@ export class GameEngine {
         destroyedOwner: PlayerState,
         destroyedZone: UnitZoneState,
         destroyedUnit: Card,
-        killerCard?: Card
+        killerCard?: Card,
+        trashReason: 'BATTLE' | 'EFFECT' | 'RULE' = 'EFFECT',
+        batchStep?: number,
     ) {
-        runProcessPassiveGrantedExitEffects(this, destroyedOwner, destroyedZone, destroyedUnit, killerCard);
+        runProcessPassiveGrantedExitEffects(this, destroyedOwner, destroyedZone, destroyedUnit, killerCard, trashReason, batchStep);
     }
 
     private isReplacementDestroyReason(reason: 'BATTLE' | 'EFFECT' | 'RULE'): boolean {

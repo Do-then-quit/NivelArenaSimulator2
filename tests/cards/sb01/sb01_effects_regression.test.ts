@@ -52,6 +52,117 @@ describe('SB01 Effects Regression', () => {
         });
     });
 
+    it('SB01-007 allows choosing not to deploy and trashes revealed card', () => {
+        const engine = createEngine(2010071);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('SB01-007');
+        p1.hand = [getCard('ST01-002')];
+        p1.deck = [getCard('ST11-006')];
+
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+
+        expect(engine.state.interactionMode).toBe('SELECT_OPTIONAL');
+        const skip = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === false);
+        expect(skip).toBeDefined();
+        if (skip) expect(engine.step(skip)).toBe(true);
+
+        expect(engine.state.revealedCards.length).toBe(0);
+        expect(p1.unitZones.some(zone => zone.unit?.id === 'ST11-006')).toBe(false);
+        expect(p1.trash.some(card => card.id === 'ST11-006')).toBe(true);
+        expect(p1.deck.filter(card => card.id === 'ST11-006').length).toBe(0);
+    });
+
+    it('SB01-007 optional selection opens before revealed-cards modal', () => {
+        const engine = createEngine(2010073);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('SB01-007');
+        p1.hand = [getCard('ST01-002')];
+        p1.deck = [getCard('ST11-006')];
+
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+
+        expect(engine.state.interactionMode).toBe('SELECT_OPTIONAL');
+        expect(engine.state.revealedCards).toHaveLength(0);
+    });
+
+    it('SB01-007 treats confirmed no-selection in revealed modal as decline', () => {
+        const engine = createEngine(2010074);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('SB01-007');
+        p1.hand = [getCard('ST01-002')];
+        p1.deck = [getCard('ST11-006')];
+
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+
+        const chooseDeploy = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(chooseDeploy).toBeDefined();
+        if (chooseDeploy) expect(engine.step(chooseDeploy)).toBe(true);
+
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        expect(engine.state.revealedCards.map(card => card.id)).toEqual(['ST11-006']);
+        const confirmNoSelection = findAction(engine, p1.id, 'CONFIRM_TARGETS');
+        expect(confirmNoSelection).toBeDefined();
+        if (confirmNoSelection) expect(engine.step(confirmNoSelection)).toBe(true);
+
+        expect(engine.state.revealedCards).toHaveLength(0);
+        expect(p1.unitZones.some(zone => zone.unit?.id === 'ST11-006')).toBe(false);
+        expect(p1.trash.some(card => card.id === 'ST11-006')).toBe(true);
+        expect(p1.hand.some(card => card.id === 'ST01-002')).toBe(true);
+    });
+
+    it('SB01-007 deploy path requires selected hand discard and selected empty lane', () => {
+        const engine = createEngine(2010072);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('SB01-007');
+        p1.unitZones[2].unit = getCard('ST11-006');
+        p1.hand = [getCard('ST01-002'), getCard('SB01-004')];
+        p1.deck = [getCard('ST11-006')];
+
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+
+        const chooseDeploy = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(chooseDeploy).toBeDefined();
+        if (chooseDeploy) expect(engine.step(chooseDeploy)).toBe(true);
+
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+        expect(engine.state.revealedCards.map(card => card.id)).toEqual(['ST11-006']);
+        const revealedCard = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET', (action: any) =>
+            engine.state.revealedCards[action.revealedIndex]?.id === 'ST11-006',
+        );
+        expect(revealedCard).toBeDefined();
+        if (revealedCard) expect(engine.step(revealedCard)).toBe(true);
+
+        const confirmDeploy = findAction(engine, p1.id, 'CONFIRM_TARGETS');
+        expect(confirmDeploy).toBeDefined();
+        if (confirmDeploy) expect(engine.step(confirmDeploy)).toBe(true);
+
+        const discard = findAction(engine, p1.id, 'SELECT_HAND_TARGET', (action: any) =>
+            p1.hand[action.handIndex]?.id === 'ST01-002',
+        );
+        expect(discard).toBeDefined();
+        if (discard) expect(engine.step(discard)).toBe(true);
+
+        const laneActions = engine.getLegalActions(p1.id).filter(action => action.type === 'SELECT_ZONE_TARGET') as any[];
+        expect(laneActions.length).toBeGreaterThan(0);
+        laneActions.forEach(action => {
+            expect(p1.unitZones[action.zoneIndex].unit).toBeNull();
+            expect(action.targetPlayerId).toBe(p1.id);
+        });
+
+        const chooseLane1 = laneActions.find(action => action.zoneIndex === 1);
+        expect(chooseLane1).toBeDefined();
+        if (chooseLane1) expect(engine.step(chooseLane1)).toBe(true);
+
+        expect(p1.trash.some(card => card.id === 'ST01-002')).toBe(true);
+        expect(p1.unitZones[1].unit?.id).toBe('ST11-006');
+        expect((p1.unitZones[1].unit as any)?.turnCostOverride?.cost).toBe(0);
+        expect((p1.unitZones[1].unit as any)?.turnCostOverride?.turnCount).toBe(engine.state.turnCount);
+    });
+
     it('SB01-009 lane lock blocks <=4 cost and allows >4 cost in that lane', () => {
         const engine = createEngine(201009);
         const p1 = engine.state.players[0];
@@ -69,6 +180,52 @@ describe('SB01 Effects Regression', () => {
 
         expect(canPlayLowInLockedLane).toBe(false);
         expect(canPlayHighInLockedLane).toBe(true);
+    });
+
+    it('SB01-008 grants effect-trash EXIT redeploy to friendly cost<=3 units', () => {
+        const engine = createEngine(201008);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('SB01-008');
+        p1.unitZones[1].unit = getCard('ST11-006');
+        p1.unitZones[2].unit = getCard('ST01-002');
+        p1.hand = [getCard('ST01-002')];
+
+        engine.destroyUnit(p1, p1.unitZones[1], undefined, 'EFFECT');
+
+        expect(engine.state.interactionMode).toBe('SELECT_OPTIONAL');
+        const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(confirm).toBeDefined();
+        if (confirm) expect(engine.step(confirm)).toBe(true);
+
+        expect(engine.state.interactionMode).toBe('SELECT_COST');
+        const pay = findAction(engine, p1.id, 'SELECT_COST_HAND');
+        expect(pay).toBeDefined();
+        if (pay) expect(engine.step(pay)).toBe(true);
+
+        expect(p1.unitZones[1].unit?.id).toBe('ST11-006');
+        expect(p1.trash.some(card => card.id === 'ST11-006')).toBe(false);
+        expect(p1.trash.some(card => card.id === 'ST01-002')).toBe(true);
+    });
+
+    it('SB01-008 granted EXIT does not trigger when trashed by battle', () => {
+        const engine = createEngine(2010081);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('SB01-008');
+        p1.unitZones[1].unit = getCard('ST11-006');
+        p1.unitZones[2].unit = getCard('ST01-002');
+        p1.hand = [getCard('ST01-002')];
+
+        engine.destroyUnit(p1, p1.unitZones[1], undefined, 'BATTLE');
+
+        expect(engine.state.interactionMode).toBe('NORMAL');
+        const hasOptional = engine
+            .getLegalActions(p1.id)
+            .some(action => action.type === 'RESOLVE_OPTIONAL');
+        expect(hasOptional).toBe(false);
+        expect(p1.unitZones[1].unit).toBeNull();
+        expect(p1.trash.some(card => card.id === 'ST11-006')).toBe(true);
     });
 
     it('SB01-010 forces block hand discard by hit difference', () => {
@@ -270,5 +427,40 @@ describe('SB01 Effects Regression', () => {
             .getLegalActions(p1.id)
             .some(action => action.type === 'CONFIRM_TARGETS');
         expect(canConfirmAfterSelection).toBe(true);
+    });
+
+    it('SB01-005 marked EXIT moves marked unit from its trash to its damage', () => {
+        const engine = createEngine(201005);
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        p1.hand = [getCard('SB01-005')];
+        p1.deck = [getCard('ST01-002')];
+        p1.unitZones[1].unit = getCard('ST10-005');
+        p1.unitZones[2].unit = getCard('SB01-002');
+        p2.unitZones[0].unit = getCard('ST11-006');
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+
+        engine.playSkill(0);
+        const pickOpp = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) =>
+            action.targetPlayerId === p2.id && action.zoneIndex === 0,
+        );
+        expect(pickOpp).toBeDefined();
+        if (pickOpp) expect(engine.step(pickOpp)).toBe(true);
+
+        if (engine.state.interactionMode === 'SELECT_OPTIONAL') {
+            const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+            expect(confirm).toBeDefined();
+            if (confirm) expect(engine.step(confirm)).toBe(true);
+        }
+
+        expect(p1.trash.some(card => card.id === 'SB01-005')).toBe(true);
+
+        engine.destroyUnit(p2, p2.unitZones[0], undefined, 'BATTLE');
+
+        expect(p2.trash.some(card => card.id === 'ST11-006')).toBe(false);
+        expect(p2.damage.some(card => card.id === 'ST11-006')).toBe(true);
     });
 });

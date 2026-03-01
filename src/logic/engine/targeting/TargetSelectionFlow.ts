@@ -81,7 +81,8 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
     const allowsEffectlessSelection =
         pending.actionType === 'GUARDIAN_BLOCK_UNIT_COST' ||
         pending.actionType === 'BT03_041_SELECT_EMPTY_ZONE_TO_REVIVE_SELF' ||
-        pending.actionType === 'BT03_067_SELECT_EMPTY_ZONE_TO_REVIVE_EQUIPPED_UNIT';
+        pending.actionType === 'BT03_067_SELECT_EMPTY_ZONE_TO_REVIVE_EQUIPPED_UNIT' ||
+        pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY';
     if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
     const targetPlayer = engine.getPlayerById(targetPlayerId);
     if (!targetPlayer) return;
@@ -194,6 +195,50 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         targetZone.hasPlacedUnitThisTurn = false;
         targetZone.hasActivatedEffectThisTurn = false;
         targetZone.activatedEffectKeys = {};
+
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        if (targetZone.unit) return;
+
+        const revealedCardRef = pending.actionValue?.revealedCardRef;
+        const revealedCardId = pending.actionValue?.revealedCardId;
+        const revealedCardFromState = engine.state.revealedCards.find((card: any) =>
+            card === revealedCardRef ||
+            (revealedCardId && card?.id === revealedCardId),
+        );
+        const revealedCard = revealedCardFromState || revealedCardRef;
+        if (!revealedCard || revealedCard.type !== 'UNIT') {
+            engine.state.revealedCards = [];
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        const inRevealedIndex = engine.state.revealedCards.indexOf(revealedCard);
+        if (inRevealedIndex !== -1) {
+            engine.state.revealedCards.splice(inRevealedIndex, 1);
+        }
+
+        targetZone.unit = revealedCard;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+        targetZone.hasAttacked = false;
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.isExhausted = false;
+        targetZone.hasPlacedUnitThisTurn = false;
+        targetZone.hasActivatedEffectThisTurn = false;
+        targetZone.activatedEffectKeys = {};
+        (revealedCard as any).turnCostOverride = {
+            cost: 0,
+            turnCount: engine.state.turnCount,
+        };
 
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
@@ -751,6 +796,16 @@ export function selectRevealedTarget(engine: any, index: number) {
     // Validate
     if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) {
         console.log("Invalid Revealed Target Selected.");
+        return;
+    }
+
+    if (pending.actionType === 'SB01_007_SELECT_REVEALED_DEPLOY_CARD') {
+        const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
+        if (selectedTargets.includes(card)) {
+            pending.selectedTargets = selectedTargets.filter((target: any) => target !== card);
+        } else {
+            pending.selectedTargets = [card];
+        }
         return;
     }
 
