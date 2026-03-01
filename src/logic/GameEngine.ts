@@ -1513,6 +1513,24 @@ export class GameEngine {
         zone.extraAttackAllowance = 0;
     }
 
+    public triggerEntryEffectsForPlacedUnit(player: PlayerState, zone: UnitZoneState) {
+        const placedUnit = zone.unit;
+        if (!placedUnit) return;
+
+        this.effectManager.processEffects(ActivationCondition.ENTRY, {
+            sourceCard: placedUnit,
+            player,
+            opponent: this.getOpponentOf(player),
+            unitZone: zone,
+            machine: this,
+        });
+
+        // ENTRY can start combat. If queue drained immediately, advance combat flow once.
+        if (this.state.combatStep !== 'NONE' && this.state.effectQueue.length === 0 && this.state.interactionMode === 'NORMAL') {
+            this.onQueueCompleted();
+        }
+    }
+
     playUnit(cardIndex: number, zoneIndex: number) {
         const validation = RuleValidator.canPlayUnit(this, this.currentPlayer, cardIndex, zoneIndex);
         if (!validation.valid) {
@@ -1543,20 +1561,7 @@ export class GameEngine {
         zone.attackCountThisTurn = 0;
         zone.extraAttackAllowance = 0;
 
-        // Trigger Entry Effects
-        this.effectManager.processEffects(ActivationCondition.ENTRY, {
-            sourceCard: card,
-            player: this.currentPlayer,
-            opponent: this.opponentPlayer,
-            unitZone: zone,
-            machine: this
-        });
-
-        // ENTRY effects can start combat (e.g., "엔트리: 조우 유닛이 있다면 공격").
-        // If queue drained in the same call, advance combat flow once so it does not stall at ATTACK_DECLARATION.
-        if (this.state.combatStep !== 'NONE' && this.state.effectQueue.length === 0 && this.state.interactionMode === 'NORMAL') {
-            this.onQueueCompleted();
-        }
+        this.triggerEntryEffectsForPlacedUnit(this.currentPlayer, zone);
     }
 
     playSkill(cardIndex: number) {

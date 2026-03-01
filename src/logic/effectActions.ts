@@ -849,6 +849,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         emptyZone.hasPlacedUnitThisTurn = false;
         emptyZone.hasActivatedEffectThisTurn = false;
         emptyZone.activatedEffectKeys = {};
+        ctx.machine.triggerEntryEffectsForPlacedUnit(ctx.player, emptyZone);
         return;
     }
 
@@ -932,6 +933,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 cost: 3,
                 turnCount: ctx.machine.state.turnCount,
             };
+            ctx.machine.triggerEntryEffectsForPlacedUnit(ctx.player, zoneAfterDestroy);
             return;
         }
 
@@ -1103,6 +1105,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         lane.hasPlacedUnitThisTurn = false;
         lane.hasActivatedEffectThisTurn = false;
         lane.activatedEffectKeys = {};
+        ctx.machine.triggerEntryEffectsForPlacedUnit(ctx.player, lane);
         return;
     }
 

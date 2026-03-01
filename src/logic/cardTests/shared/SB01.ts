@@ -464,6 +464,11 @@ const tests: UnifiedTestCase[] = [
                 getCard('ST01-002'),
                 getCard('ST01-002'),
                 getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
+                getCard('ST01-002'),
             ];
             p1.unitZones.forEach((zone: any) => {
                 zone.unit = null;

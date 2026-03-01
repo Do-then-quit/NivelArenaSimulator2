@@ -165,6 +165,7 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
             });
         }
 
+        engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
         return;
@@ -197,6 +198,7 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         targetZone.hasActivatedEffectThisTurn = false;
         targetZone.activatedEffectKeys = {};
 
+        engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
         return;
@@ -241,6 +243,7 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
             turnCount: engine.state.turnCount,
         };
 
+        engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
         return;
@@ -295,6 +298,7 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
             duration: 'TURN_END',
         } as any);
 
+        engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
         engine.handleEffectCompletion(context, pending);
         return;
     }

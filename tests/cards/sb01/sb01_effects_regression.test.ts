@@ -163,6 +163,49 @@ describe('SB01 Effects Regression', () => {
         expect((p1.unitZones[1].unit as any)?.turnCostOverride?.turnCount).toBe(engine.state.turnCount);
     });
 
+    it('SB01-007 deployment triggers ENTRY of the deployed unit', () => {
+        const engine = createEngine(2010075);
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('SB01-007');
+        p1.unitZones[2].unit = getCard('ST11-006');
+        p1.hand = [getCard('ST01-002'), getCard('SB01-004')];
+        p1.deck = [getCard('ST01-003'), getCard('ST11-006')];
+        const handBefore = p1.hand.length;
+
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+
+        const chooseDeploy = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (action: any) => action.confirm === true);
+        expect(chooseDeploy).toBeDefined();
+        if (chooseDeploy) expect(engine.step(chooseDeploy)).toBe(true);
+
+        const revealedCard = findAction(engine, p1.id, 'SELECT_REVEALED_TARGET', (action: any) =>
+            engine.state.revealedCards[action.revealedIndex]?.id === 'ST11-006',
+        );
+        expect(revealedCard).toBeDefined();
+        if (revealedCard) expect(engine.step(revealedCard)).toBe(true);
+
+        const confirmDeploy = findAction(engine, p1.id, 'CONFIRM_TARGETS');
+        expect(confirmDeploy).toBeDefined();
+        if (confirmDeploy) expect(engine.step(confirmDeploy)).toBe(true);
+
+        const discard = findAction(engine, p1.id, 'SELECT_HAND_TARGET', (action: any) =>
+            p1.hand[action.handIndex]?.id === 'ST01-002',
+        );
+        expect(discard).toBeDefined();
+        if (discard) expect(engine.step(discard)).toBe(true);
+
+        const chooseLane1 = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) =>
+            action.targetPlayerId === p1.id && action.zoneIndex === 1,
+        );
+        expect(chooseLane1).toBeDefined();
+        if (chooseLane1) expect(engine.step(chooseLane1)).toBe(true);
+
+        expect(p1.unitZones[1].unit?.id).toBe('ST11-006');
+        expect(p1.hand.length).toBe(handBefore);
+        expect(p1.hand.some(card => card.id === 'ST01-003')).toBe(true);
+    });
+
     it('SB01-009 lane lock blocks <=4 cost and allows >4 cost in that lane', () => {
         const engine = createEngine(201009);
         const p1 = engine.state.players[0];
