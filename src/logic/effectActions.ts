@@ -93,6 +93,14 @@ function createPromptOptionCard(id: string, name: string, text: string, imageUrl
     };
 }
 
+function getCardCost(machine: any, card: any): number {
+    if (!card) return 0;
+    if (typeof machine?.getCardCost === 'function') {
+        return machine.getCardCost(card);
+    }
+    return Math.max(0, Number(card.cost || 0));
+}
+
 function cardHasKeywordLike(card: any, keyword: string): boolean {
     if (!card || !keyword) return false;
     if (Array.isArray(card.keywords) && card.keywords.includes(keyword)) return true;
@@ -364,11 +372,11 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
     }
 
     if ((params as any).mode === 'SB01_002_ACTIVE_MAIN_BUFF_ATTACKERS_BY_DISCARDED_COST') {
-        const discardedCost = Math.max(0, Number(ctx.costPaymentCard?.cost || 0));
+        const discardedCost = getCardCost(ctx.machine, ctx.costPaymentCard);
         const friendlyAttackers = ctx.player.unitZones.filter((zone: any) => zone?.unit && zoneHasKeywordLike(zone, '어태커'));
         if (friendlyAttackers.length <= 0) return;
 
-        const targets = friendlyAttackers.filter((zone: any) => Math.max(0, Number(zone.unit?.cost || 0)) <= discardedCost);
+        const targets = friendlyAttackers.filter((zone: any) => getCardCost(ctx.machine, zone.unit) <= discardedCost);
         targets.forEach((zone: any) => {
             zone.buffs.push({
                 id: ctx.machine.createRuntimeId('BUFF'),
@@ -878,7 +886,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         };
 
         const sourceZone = ctx.player.unitZones.find((zone: any) => zone?.unit === ctx.sourceCard);
-        const hasCost5Unit = ctx.player.hand.some((card: any) => card?.type === CardType.UNIT && Number(card.cost || 0) === 5);
+        const hasCost5Unit = ctx.player.hand.some((card: any) => card?.type === CardType.UNIT && getCardCost(ctx.machine, card) === 5);
         if (!sourceZone || !hasCost5Unit) return;
 
         const optionalEffect = {
@@ -900,7 +908,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         const stage = (params as any).stage;
         if (stage === 'RESOLVE') {
             const selectedCard = (_targets || []).find((card: any) =>
-                ctx.player.hand.includes(card) && card.type === CardType.UNIT && Number(card.cost || 0) === 5
+                ctx.player.hand.includes(card) && card.type === CardType.UNIT && getCardCost(ctx.machine, card) === 5
             );
             if (!selectedCard) return;
 
@@ -939,7 +947,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
 
         const sourceZone = ctx.player.unitZones.find((zone: any) => zone?.unit === ctx.sourceCard);
         if (!sourceZone) return;
-        const cost5Units = ctx.player.hand.filter((card: any) => card?.type === CardType.UNIT && Number(card.cost || 0) === 5);
+        const cost5Units = ctx.player.hand.filter((card: any) => card?.type === CardType.UNIT && getCardCost(ctx.machine, card) === 5);
         if (cost5Units.length <= 0) return;
 
         const handSchema = {
@@ -984,7 +992,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         const stage = (params as any).stage;
         if (stage === 'RESOLVE') {
             const selectedCard = (_targets || []).find((card: any) =>
-                ctx.player.trash.includes(card) && card.type === CardType.UNIT && Number(card.cost || 0) <= 2
+                ctx.player.trash.includes(card) && card.type === CardType.UNIT && getCardCost(ctx.machine, card) <= 2
             );
             if (!selectedCard) return;
             if (!ctx.player.unitZones.some((zone: any) => !zone?.unit)) return;
@@ -1015,7 +1023,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             return;
         }
 
-        const candidates = ctx.player.trash.filter((card: any) => card.type === CardType.UNIT && Number(card.cost || 0) <= 2);
+        const candidates = ctx.player.trash.filter((card: any) => card.type === CardType.UNIT && getCardCost(ctx.machine, card) <= 2);
         if (candidates.length <= 0) return;
         if (!ctx.player.unitZones.some((zone: any) => !zone?.unit)) return;
 
@@ -1075,19 +1083,19 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         const owner = getOwnerOfZone(ctx.machine, selectedZone);
         if (!owner || owner.id !== ctx.player.id) return;
         const selectedUnit = selectedZone.unit;
-        if (Math.max(0, Number(selectedUnit.cost || 0)) > 5) return;
+        if (getCardCost(ctx.machine, selectedUnit) > 5) return;
 
         const laneIndex = ctx.player.unitZones.indexOf(selectedZone);
         if (laneIndex < 0) return;
         const unitName = selectedUnit.name;
-        const unitCost = Math.max(0, Number(selectedUnit.cost || 0));
+        const unitCost = getCardCost(ctx.machine, selectedUnit);
 
         ctx.machine.destroyUnit(ctx.player, selectedZone, undefined, 'EFFECT');
 
         const reviveIndex = ctx.player.trash.findIndex((card: any) =>
             card?.type === CardType.UNIT &&
             card?.name === unitName &&
-            Math.max(0, Number(card?.cost || 0)) === unitCost
+            getCardCost(ctx.machine, card) === unitCost
         );
         if (reviveIndex === -1) return;
         const lane = ctx.player.unitZones[laneIndex];
@@ -1294,7 +1302,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
 
         if (stage === 'RESOLVE') {
             const selectedCard = (_targets || []).find((card: any) =>
-                ctx.player.trash.includes(card) && Math.max(0, Number(card?.cost || 0)) <= equippedCount
+                ctx.player.trash.includes(card) && getCardCost(ctx.machine, card) <= equippedCount
             );
             if (!selectedCard) return;
             const trashIndex = ctx.player.trash.indexOf(selectedCard);
@@ -1414,7 +1422,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             .filter(({ card }) => {
                 if (card?.type !== CardType.SKILL) return false;
                 if (costMax === null) return true;
-                return (card.cost || 0) <= costMax;
+                return getCardCost(ctx.machine, card) <= costMax;
             });
 
         if (skills.length === 0) return;
@@ -1461,7 +1469,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             .filter(({ card }) => {
                 if (card?.type !== CardType.SKILL) return false;
                 if (costMax === null) return true;
-                return (card.cost || 0) <= costMax;
+                return getCardCost(ctx.machine, card) <= costMax;
             });
 
         if (skills.length === 0) return;
@@ -1555,7 +1563,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         const skillOptions = trashedCards.filter(card => {
             if (!card || card.type !== CardType.SKILL) return false;
             if (costMax === null) return true;
-            return (card.cost || 0) <= costMax;
+            return getCardCost(ctx.machine, card) <= costMax;
         });
 
         if (skillOptions.length === 0) return;
@@ -1592,7 +1600,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
 
         const encounterZone = ctx.opponent.unitZones[laneIndex];
         if (!encounterZone?.unit) return;
-        if ((encounterZone.unit.cost || 0) < 4) return;
+        if (getCardCost(ctx.machine, encounterZone.unit) < 4) return;
 
         returnUnitAndItemsToHand(ctx, {}, [encounterZone]);
         buffHit(ctx, { value: 1, mode: 'SET', duration: 'TURN_END' }, [ctx.unitZone]);
@@ -2390,7 +2398,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
     if ((params as any).mode === 'BT03_052_PROMPT_TRASH_COST3_SKILL_THEN_ENTRY_EFFECT') {
         const skills = ctx.player.skillZone
             .map((card, skillZoneIndex) => ({ card, skillZoneIndex }))
-            .filter(({ card }) => card?.type === CardType.SKILL && (card.cost || 0) === 3);
+            .filter(({ card }) => card?.type === CardType.SKILL && getCardCost(ctx.machine, card) === 3);
         if (skills.length === 0) return;
 
         ctx.machine.state.revealedCards = skills.map(({ card, skillZoneIndex }) =>
@@ -2532,7 +2540,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             const discardedCost = Number(ctx.flags?.BT03_057_DISCARDED_COST ?? -1);
             const discardedHit = Math.max(0, Number(ctx.flags?.BT03_057_DISCARDED_HIT ?? 0));
             const selectedMatch = (_targets || []).find((card: any) =>
-                ctx.opponent.hand.includes(card) && (card.cost || 0) === discardedCost
+                ctx.opponent.hand.includes(card) && getCardCost(ctx.machine, card) === discardedCost
             );
 
             if (selectedMatch) {
@@ -2567,13 +2575,13 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             flags: { handTrashByEffect: true },
         });
 
-        const discardedCost = discardedUnit.cost || 0;
+        const discardedCost = getCardCost(ctx.machine, discardedUnit);
         const discardedHit = Math.max(0, discardedUnit.hit || 0);
         ctx.flags = ctx.flags || {};
         ctx.flags.BT03_057_DISCARDED_COST = discardedCost;
         ctx.flags.BT03_057_DISCARDED_HIT = discardedHit;
 
-        const matchCandidates = ctx.opponent.hand.filter(card => (card.cost || 0) === discardedCost);
+        const matchCandidates = ctx.opponent.hand.filter(card => getCardCost(ctx.machine, card) === discardedCost);
         if (matchCandidates.length <= 0) {
             if (discardedHit > 0) {
                 ctx.machine.dealDamage(ctx.opponent, discardedHit);
@@ -2963,14 +2971,14 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 ctx.player.deck.unshift(...movedItems);
             }
 
-            const totalCost = movedItems.reduce((sum: number, card: any) => sum + Math.max(0, card?.cost || 0), 0);
+            const totalCost = movedItems.reduce((sum: number, card: any) => sum + getCardCost(ctx.machine, card), 0);
             if (!ctx.unitZone?.unit) return;
             const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
             if (laneIndex < 0) return;
             const encounterZone = ctx.opponent.unitZones[laneIndex];
             const encounterUnit = encounterZone?.unit;
             if (!encounterUnit) return;
-            if (totalCost >= Math.max(0, encounterUnit.cost || 0)) {
+            if (totalCost >= getCardCost(ctx.machine, encounterUnit)) {
                 ctx.machine.destroyUnit(ctx.opponent, encounterZone, undefined, 'EFFECT');
             }
             return;
@@ -3189,7 +3197,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 if (!targetZone?.unit) return;
                 const owner = getOwnerOfZone(ctx.machine, targetZone);
                 if (!owner || owner.id !== ctx.opponent.id) return;
-                const unitCost = Math.max(0, Number(targetZone.unit.cost || 0));
+                const unitCost = getCardCost(ctx.machine, targetZone.unit);
                 if (usedCost + unitCost > totalCostLimit) return;
                 usedCost += unitCost;
                 const unitBefore = targetZone.unit;

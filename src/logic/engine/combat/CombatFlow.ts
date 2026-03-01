@@ -906,7 +906,9 @@ export function getGuardianBarrierCost(_engine: any, zone: UnitZoneState): numbe
 
 export function isBlockPreventedByBreakthrough(engine: any, attackerZone: UnitZoneState, blockerZone: UnitZoneState): boolean {
     if (!blockerZone.unit) return true;
-    const blockerCost = blockerZone.unit.cost || 0;
+    const blockerCost = typeof engine.getCardCost === 'function'
+        ? engine.getCardCost(blockerZone.unit)
+        : Math.max(0, Number(blockerZone.unit.cost || 0));
 
     const checkRule = (params: any): boolean => {
         if (!params) return false;

@@ -127,7 +127,7 @@ export class TargetSelector {
                     case 'COST_LIMIT':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
-                            return unit && unit.cost <= filter.value;
+                            return unit && this.getCardCost(engine, unit) <= filter.value;
                         });
                         break;
                     case 'POWER_LIMIT':
@@ -168,34 +168,34 @@ export class TargetSelector {
                     case 'COST_MIN':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
-                            return unit && unit.cost >= filter.value;
+                            return unit && this.getCardCost(engine, unit) >= filter.value;
                         });
                         break;
                     case 'COST_LOWER_THAN_SKILL_ZONE_COUNT':
                         candidates = candidates.filter(c => {
                             const card = this.getCardFromTarget(c);
-                            return card && card.cost < context.player.skillZone.length;
+                            return card && this.getCardCost(engine, card) < context.player.skillZone.length;
                         });
                         break;
                     case 'COST_LIMIT_BY_LEADER_LEVEL':
                         candidates = candidates.filter(c => {
                             const card = this.getCardFromTarget(c);
-                            return card && card.cost <= context.player.leaderLevel;
+                            return card && this.getCardCost(engine, card) <= context.player.leaderLevel;
                         });
                         break;
                     case 'COST_EQUAL':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
-                            const expectedCost = this.resolveCostEqualExpectedCost(filter.value, context);
+                            const expectedCost = this.resolveCostEqualExpectedCost(engine, filter.value, context);
                             if (!unit || expectedCost === null) return false;
-                            return unit.cost === expectedCost;
+                            return this.getCardCost(engine, unit) === expectedCost;
                         });
                         break;
                     case 'COST_LOWER_THAN_COST_PAYMENT':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
                             if (!unit || !context.costPaymentCard) return false;
-                            return unit.cost < context.costPaymentCard.cost;
+                            return this.getCardCost(engine, unit) < this.getCardCost(engine, context.costPaymentCard);
                         });
                         break;
                     case 'COST_HIGHER_THAN_ENCOUNTER':
@@ -203,7 +203,7 @@ export class TargetSelector {
                             const unit = this.getUnitFromTarget(c);
                             if (!unit || !context.unitZone || !context.unitZone.unit) return false;
                             const encounterUnit = context.unitZone.unit;
-                            return unit.cost > encounterUnit.cost;
+                            return this.getCardCost(engine, unit) > this.getCardCost(engine, encounterUnit);
                         });
                         break;
                     case 'HAS_NAME':
@@ -242,8 +242,8 @@ export class TargetSelector {
                     case 'LOWEST_COST_ONLY': {
                         const costs = candidates
                             .map(c => this.getCardFromTarget(c))
-                            .filter((card): card is any => card !== null && typeof card.cost === 'number')
-                            .map(card => card.cost);
+                            .filter((card): card is any => card !== null)
+                            .map(card => this.getCardCost(engine, card));
                         if (costs.length === 0) {
                             candidates = [];
                             break;
@@ -251,7 +251,7 @@ export class TargetSelector {
                         const minCost = Math.min(...costs);
                         candidates = candidates.filter(c => {
                             const card = this.getCardFromTarget(c);
-                            return !!card && card.cost === minCost;
+                            return !!card && this.getCardCost(engine, card) === minCost;
                         });
                         break;
                     }
@@ -270,7 +270,7 @@ export class TargetSelector {
             if (schema.conditions.costMax !== undefined) {
                 candidates = candidates.filter(c => {
                     const unit = this.getUnitFromTarget(c);
-                    return unit && unit.cost <= schema.conditions!.costMax!;
+                    return unit && this.getCardCost(engine, unit) <= schema.conditions!.costMax!;
                 });
             }
         }
@@ -392,7 +392,7 @@ export class TargetSelector {
                             if (this.hasDynamicKeyword(unit, filter.value, zone)) return false;
                         }
                         break;
-                    case 'COST_LIMIT': if (!unit || unit.cost > filter.value) return false; break;
+                    case 'COST_LIMIT': if (!unit || this.getCardCost(engine, unit) > filter.value) return false; break;
                     case 'HIT_LIMIT':
                         if (target && typeof target === 'object' && 'unit' in target) {
                             const zoneTarget = target as UnitZoneState;
@@ -402,17 +402,17 @@ export class TargetSelector {
                         }
                         if (!unit || (unit.hit || 0) > filter.value) return false;
                         break;
-                    case 'COST_MIN': if (!unit || unit.cost < filter.value) return false; break;
+                    case 'COST_MIN': if (!unit || this.getCardCost(engine, unit) < filter.value) return false; break;
                     case 'COST_LOWER_THAN_SKILL_ZONE_COUNT':
                         {
                             const card = this.getCardFromTarget(target);
-                            if (!card || card.cost >= context.player.skillZone.length) return false;
+                            if (!card || this.getCardCost(engine, card) >= context.player.skillZone.length) return false;
                         }
                         break;
                     case 'COST_LIMIT_BY_LEADER_LEVEL':
                         {
                             const card = this.getCardFromTarget(target);
-                            if (!card || card.cost > context.player.leaderLevel) return false;
+                            if (!card || this.getCardCost(engine, card) > context.player.leaderLevel) return false;
                         }
                         break;
                     case 'POWER_LIMIT':
@@ -441,7 +441,7 @@ export class TargetSelector {
                         break;
                     case 'COST_LOWER_THAN_COST_PAYMENT':
                         if (!unit || !context.costPaymentCard) return false;
-                        if (unit.cost >= context.costPaymentCard.cost) return false;
+                        if (this.getCardCost(engine, unit) >= this.getCardCost(engine, context.costPaymentCard)) return false;
                         break;
                     case 'HAS_NAME':
                         if (!unit || !unit.name.includes(filter.value)) return false;
@@ -458,14 +458,14 @@ export class TargetSelector {
                         break;
                     case 'COST_EQUAL':
                         {
-                            const expectedCost = this.resolveCostEqualExpectedCost(filter.value, context);
+                            const expectedCost = this.resolveCostEqualExpectedCost(engine, filter.value, context);
                             if (!unit || expectedCost === null) return false;
-                            if (unit.cost !== expectedCost) return false;
+                            if (this.getCardCost(engine, unit) !== expectedCost) return false;
                         }
                         break;
                     case 'COST_HIGHER_THAN_ENCOUNTER':
                         if (!unit || !context.unitZone || !context.unitZone.unit) return false;
-                        if (unit.cost <= context.unitZone.unit.cost) return false;
+                        if (this.getCardCost(engine, unit) <= this.getCardCost(engine, context.unitZone.unit)) return false;
                         break;
                     case 'ITEM_COUNT_MIN':
                         if (!target || typeof target !== 'object' || !('items' in target)) return false;
@@ -489,12 +489,12 @@ export class TargetSelector {
                         const baseCandidates = this.resolve(engine, baseSchema, context);
                         const baseCosts = baseCandidates
                             .map(candidate => this.getCardFromTarget(candidate))
-                            .filter((card): card is any => card !== null && typeof card.cost === 'number')
-                            .map(card => card.cost);
+                            .filter((card): card is any => card !== null)
+                            .map(card => this.getCardCost(engine, card));
                         if (baseCosts.length === 0) return false;
                         const targetCard = this.getCardFromTarget(target);
                         if (!targetCard) return false;
-                        if (targetCard.cost !== Math.min(...baseCosts)) return false;
+                        if (this.getCardCost(engine, targetCard) !== Math.min(...baseCosts)) return false;
                         break;
                     }
                 }
@@ -504,7 +504,7 @@ export class TargetSelector {
         // 4. Legacy Conditions Check
         if (schema.conditions) {
             const unit = this.getUnitFromTarget(target);
-            if (schema.conditions.costMax !== undefined && (!unit || unit.cost > schema.conditions.costMax)) return false;
+            if (schema.conditions.costMax !== undefined && (!unit || this.getCardCost(engine, unit) > schema.conditions.costMax)) return false;
             if (schema.conditions.hasTrait && (!unit || !unit.traits?.includes(schema.conditions.hasTrait))) return false;
         }
 
@@ -683,9 +683,17 @@ export class TargetSelector {
         return false;
     }
 
-    private static resolveCostEqualExpectedCost(filterValue: any, context: GameContext): number | null {
-        const dynamicValue = filterValue ?? context.costPaymentCard?.cost;
+    private static resolveCostEqualExpectedCost(engine: GameEngine, filterValue: any, context: GameContext): number | null {
+        const dynamicValue = filterValue ?? (context.costPaymentCard ? this.getCardCost(engine, context.costPaymentCard) : null);
         if (typeof dynamicValue !== 'number') return null;
         return dynamicValue;
+    }
+
+    private static getCardCost(engine: GameEngine, card: any): number {
+        if (!card) return 0;
+        if (typeof (engine as any)?.getCardCost === 'function') {
+            return (engine as any).getCardCost(card);
+        }
+        return Math.max(0, Number(card.cost || 0));
     }
 }

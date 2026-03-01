@@ -2475,6 +2475,20 @@ export class GameEngine {
         return size;
     }
 
+    public getCardCost(card: Card | null | undefined): number {
+        if (!card) return 0;
+        const override = card.turnCostOverride;
+        if (
+            override &&
+            typeof override === 'object' &&
+            override.turnCount === this.state.turnCount &&
+            typeof override.cost === 'number'
+        ) {
+            return Math.max(0, override.cost);
+        }
+        return Math.max(0, Number(card.cost || 0));
+    }
+
     public getUnitPower(zone: UnitZoneState, _player: PlayerState): number {
         if (!zone.unit) return 0;
         let power = zone.unit.power || 0;

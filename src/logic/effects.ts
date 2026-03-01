@@ -350,9 +350,16 @@ export class EffectManager {
     public checkCondition(effect: Effect, context: GameContext): boolean {
         if (!effect.condition) return true;
         const { type, value, trashedUnitCostMin, friendlyOnly } = effect.condition;
+        const resolveCardCost = (card: any): number => {
+            if (!card) return 0;
+            if (typeof (context.machine as any)?.getCardCost === 'function') {
+                return (context.machine as any).getCardCost(card);
+            }
+            return Math.max(0, Number(card.cost || 0));
+        };
 
         if (trashedUnitCostMin !== undefined && context.trashedUnit) {
-            if (context.trashedUnit.cost < trashedUnitCostMin) return false;
+            if (resolveCardCost(context.trashedUnit) < trashedUnitCostMin) return false;
         }
 
         if (friendlyOnly && context.trashedUnitOwner) {
@@ -395,15 +402,15 @@ export class EffectManager {
                     // Before paying cost, allow the effect if there exists a valid hand candidate.
                     if (!(context as any).costPaid) {
                         return context.player.hand.some(
-                            card => card.type === CardType.UNIT && card.cost > encounterUnit.cost
+                            card => card.type === CardType.UNIT && resolveCardCost(card) > resolveCardCost(encounterUnit)
                         );
                     }
 
                     // After paying cost, validate the chosen cost card against the encounter cost.
-                    return !!context.costPaymentCard && context.costPaymentCard.cost > encounterUnit.cost;
+                    return !!context.costPaymentCard && resolveCardCost(context.costPaymentCard) > resolveCardCost(encounterUnit);
                 }
                 if (context.unitZone && context.unitZone.unit) {
-                    const cost = context.unitZone.unit.cost;
+                    const cost = resolveCardCost(context.unitZone.unit);
                     if (value.operator === 'GTE') return cost >= value.cost;
                     if (value.operator === 'LTE') return cost <= value.cost;
                 }
@@ -424,7 +431,7 @@ export class EffectManager {
                 const traitFilter = typeof value === 'object' ? value?.hasTrait : undefined;
                 const keywordFilter = typeof value === 'object' ? value?.hasKeyword : undefined;
                 const countedItems = allItems.filter(item => {
-                    if (costMin !== undefined && (item.cost || 0) < costMin) return false;
+                    if (costMin !== undefined && resolveCardCost(item) < costMin) return false;
                     if (traitFilter && !item.traits?.includes(traitFilter)) return false;
                     if (keywordFilter && !(item.keywords?.includes(keywordFilter) || item.effects?.some((effect: any) => (effect.description || '').includes(keywordFilter)))) return false;
                     return true;
@@ -598,16 +605,10 @@ export class EffectManager {
                 const playerSize = context.machine.getPlayerSize(context.player);
                 const getEffectiveCost = (card: any): number => {
                     if (!card) return 0;
-                    const override = card.turnCostOverride;
-                    if (
-                        override &&
-                        typeof override === 'object' &&
-                        override.turnCount === context.machine.state.turnCount &&
-                        typeof override.cost === 'number'
-                    ) {
-                        return Math.max(0, override.cost);
+                    if (typeof context.machine.getCardCost === 'function') {
+                        return context.machine.getCardCost(card);
                     }
-                    return Math.max(0, card.cost || 0);
+                    return resolveCardCost(card);
                 };
                 const fieldCost = context.player.unitZones.reduce((sum: number, zone: any) => {
                     const unitCost = zone.unit ? getEffectiveCost(zone.unit) : 0;
@@ -628,7 +629,7 @@ export class EffectManager {
                 const encounterZone = context.opponent.unitZones[laneIndex];
                 if (!encounterZone?.unit) return false;
                 const min = Math.max(0, Number(value ?? 0));
-                return (encounterZone.unit.cost || 0) >= min;
+                return resolveCardCost(encounterZone.unit) >= min;
             }
             default:
                 return true;

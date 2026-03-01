@@ -8,10 +8,13 @@ function getTargetCard(target: any): any | null {
     return null;
 }
 
-function getTargetCost(target: any): number {
+function getTargetCost(target: any, context: GameContext): number {
     const card = getTargetCard(target);
-    if (!card || typeof card.cost !== 'number') return 0;
-    return Math.max(0, card.cost);
+    if (!card) return 0;
+    if (typeof context.machine?.getCardCost === 'function') {
+        return context.machine.getCardCost(card);
+    }
+    return Math.max(0, Number(card.cost || 0));
 }
 
 function resolveTotalCostLimit(targetSchema: any, context: GameContext): number | null {
@@ -28,8 +31,8 @@ function canAddTargetWithinTotalCost(targetSchema: any, context: GameContext, se
     const limit = resolveTotalCostLimit(targetSchema, context);
     if (limit === null) return true;
     if (selectedTargets.includes(target)) return true;
-    const currentCost = selectedTargets.reduce((sum, item) => sum + getTargetCost(item), 0);
-    return currentCost + getTargetCost(target) <= limit;
+    const currentCost = selectedTargets.reduce((sum, item) => sum + getTargetCost(item, context), 0);
+    return currentCost + getTargetCost(target, context) <= limit;
 }
 
 function executeBt06FollowUpSubActions(engine: any, context: GameContext, subActions: any[]) {
@@ -262,7 +265,7 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
             : sourcePlayer.trash.findIndex((card: any) =>
                 card?.id === selectedCardId &&
                 card?.type === 'UNIT' &&
-                Math.max(0, Number(card?.cost || 0)) <= 2
+                engine.getCardCost(card) <= 2
             );
         if (trashIndex < 0) {
             engine.handleEffectCompletion(context, pending);
@@ -1002,7 +1005,7 @@ export function selectRevealedTarget(engine: any, index: number) {
         context.flags = context.flags || {};
         const contextFlagKey = pending.actionValue?.contextFlagKey || 'BT03_SKILL_ZONE_CARD_TRASHED';
         context.flags[contextFlagKey] = true;
-        context.flags.BT03_LAST_TRASHED_SKILL_COST = selectedSkill.cost || 0;
+        context.flags.BT03_LAST_TRASHED_SKILL_COST = engine.getCardCost(selectedSkill);
 
         executeBt06FollowUpSubActions(engine, context, pending.actionValue?.followUpSubActions || []);
 
@@ -1022,9 +1025,9 @@ export function selectRevealedTarget(engine: any, index: number) {
         if (!selectedSkill) return;
         sourcePlayer.trash.push(selectedSkill);
 
-        const selectedCost = selectedSkill.cost || 0;
+        const selectedCost = engine.getCardCost(selectedSkill);
         const lowerCostCandidates = sourcePlayer.trash.filter((targetCard: any) =>
-            targetCard && targetCard !== selectedSkill && (targetCard.cost || 0) < selectedCost
+            targetCard && targetCard !== selectedSkill && engine.getCardCost(targetCard) < selectedCost
         );
 
         if (lowerCostCandidates.length === 0) {
@@ -1238,7 +1241,7 @@ export function selectRevealedTarget(engine: any, index: number) {
         sourcePlayer.trash.push(trashedSkill);
 
         context.flags = context.flags || {};
-        context.flags.SB01_001_TRASHED_SKILL_COST = Math.max(0, Number(trashedSkill.cost || 0));
+        context.flags.SB01_001_TRASHED_SKILL_COST = engine.getCardCost(trashedSkill);
 
         const targetSchema = {
             scope: 'OPP_FIELD',
@@ -1249,7 +1252,7 @@ export function selectRevealedTarget(engine: any, index: number) {
 
         pending.actionType = 'SB01_001_SELECT_OPP_UNIT_FOR_DEBUFF';
         pending.actionValue = {
-            skillCost: Math.max(0, Number(trashedSkill.cost || 0)),
+            skillCost: engine.getCardCost(trashedSkill),
         };
         pending.effectDescription = '파워를 감소시킬 상대 유닛을 선택한다.';
         pending.validTargets = 'OPP_UNITS';

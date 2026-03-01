@@ -1,10 +1,18 @@
 import { ActionImplementation, CardType, UnitZoneState } from '../types';
 import { getOwnerOfZone } from './helpers';
 
+function getCardCost(machine: any, card: any): number {
+    if (!card) return 0;
+    if (typeof machine?.getCardCost === 'function') {
+        return machine.getCardCost(card);
+    }
+    return Math.max(0, Number(card.cost || 0));
+}
+
 export const destroyUnit: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(target => {
         if (target && target.unit) {
-            if (params.costMax !== undefined && (target.unit.cost || 0) > params.costMax) return;
+            if (params.costMax !== undefined && getCardCost(ctx.machine, target.unit) > params.costMax) return;
 
             const owner = getOwnerOfZone(ctx.machine, target);
             if (owner) {
@@ -75,8 +83,8 @@ export const plunder: ActionImplementation = (ctx, params, _targets) => {
 export const mutualDestruction: ActionImplementation = (ctx, _params, _targets) => {
     if (!ctx.destroyedBy) return;
 
-    const killerCost = ctx.destroyedBy.cost;
-    const myCost = ctx.unitZone?.unit?.cost ?? ctx.sourceCard?.cost;
+    const killerCost = getCardCost(ctx.machine, ctx.destroyedBy);
+    const myCost = getCardCost(ctx.machine, ctx.unitZone?.unit ?? ctx.sourceCard);
 
     if (myCost === undefined) return;
 
@@ -151,8 +159,9 @@ export const destroyEncounter: ActionImplementation = (ctx, params, targets) => 
         if (idx !== -1) {
             const oppZone = ctx.opponent.unitZones[idx];
             if (oppZone.unit) {
-                if (params.costMax !== undefined && (oppZone.unit.cost || 0) > params.costMax) {
-                    console.log(`Encounter unit ${oppZone.unit.name} cost ${oppZone.unit.cost} exceeds limit ${params.costMax}. Skipping.`);
+                const encounterCost = getCardCost(ctx.machine, oppZone.unit);
+                if (params.costMax !== undefined && encounterCost > params.costMax) {
+                    console.log(`Encounter unit ${oppZone.unit.name} cost ${encounterCost} exceeds limit ${params.costMax}. Skipping.`);
                     return;
                 }
 
@@ -165,8 +174,9 @@ export const destroyEncounter: ActionImplementation = (ctx, params, targets) => 
             if (oppIdx !== -1) {
                 const myZone = ctx.player.unitZones[oppIdx];
                 if (myZone.unit) {
-                    if (params.costMax !== undefined && (myZone.unit.cost || 0) > params.costMax) {
-                        console.log(`Encounter unit ${myZone.unit.name} cost ${myZone.unit.cost} exceeds limit ${params.costMax}. Skipping.`);
+                    const encounterCost = getCardCost(ctx.machine, myZone.unit);
+                    if (params.costMax !== undefined && encounterCost > params.costMax) {
+                        console.log(`Encounter unit ${myZone.unit.name} cost ${encounterCost} exceeds limit ${params.costMax}. Skipping.`);
                         return;
                     }
 

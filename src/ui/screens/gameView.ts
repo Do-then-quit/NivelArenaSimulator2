@@ -172,6 +172,14 @@ function escapeHtml(text: string): string {
         .replace(/'/g, '&#39;');
 }
 
+function resolveCardCostForDisplay(card: Card): number {
+    const engine = uiState.game as any;
+    if (engine && typeof engine.getCardCost === 'function') {
+        return engine.getCardCost(card);
+    }
+    return Math.max(0, Number(card?.cost || 0));
+}
+
 function formatPlaybackLogTime(createdAtMs: number): string {
     const d = new Date(createdAtMs);
     const hh = String(d.getHours()).padStart(2, '0');
@@ -654,7 +662,7 @@ function renderRevealedCardsModal() {
 
         let matchesFilter = true;
         if (isTakeAll && filter) {
-            if (filter.type === 'COST_LIMIT' && c.cost > filter.value) matchesFilter = false;
+            if (filter.type === 'COST_LIMIT' && resolveCardCostForDisplay(c) > filter.value) matchesFilter = false;
             if (filter.type === 'HAS_TRAIT' && !c.traits?.includes(filter.value)) matchesFilter = false;
         }
 
@@ -850,6 +858,7 @@ function renderPlayer(
         const zoneHasActivatableEffect = isInputOwnerPlayer && activatableEffectActions.some((action: any) => action.zoneIndex === i);
         const canAttackFromThisZone = isInputOwnerPlayer && attackActionZoneSet.has(i);
         const isSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(z);
+        const unitCost = z.unit ? resolveCardCostForDisplay(z.unit) : 0;
 
         return `
                     <div class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
@@ -876,7 +885,7 @@ function renderPlayer(
                                 ${showPassControl ? '<button class="pass-btn">Pass</button>' : ''}
                             </div>
                         ` : ''}
-                        ${z.unit ? `<div class="stats">${uiState.game!.getUnitPower(z, player)} / ${uiState.game!.getUnitHit(z, player)}</div>` : ''}
+                        ${z.unit ? `<div class="stats">C ${unitCost} | ${uiState.game!.getUnitPower(z, player)} / ${uiState.game!.getUnitHit(z, player)}</div>` : ''}
                     </div>
                 `;
     }).join('')}
@@ -895,11 +904,15 @@ function renderPlayer(
                     `}
                 </div>
                 <div class="skill-zone ${isInputOwnerPlayer && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
-                    ${player.skillZone.map((c: any, skillIndex: number) => `
+                    ${player.skillZone.map((c: any, skillIndex: number) => {
+        const skillCost = resolveCardCostForDisplay(c);
+        return `
                         <div class="skill-card-item" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${skillIndex}">
                             ${renderCard(c, true)}
+                            <div class="skill-cost">C ${skillCost}</div>
                         </div>
-                    `).join('')}
+                    `;
+    }).join('')}
                     ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
                 </div>
             </div>

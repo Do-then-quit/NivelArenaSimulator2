@@ -17,10 +17,13 @@ function getTargetCard(target: any): Card | null {
     return null;
 }
 
-function getTargetCost(target: any): number {
+function getTargetCost(target: any, context: GameContext): number {
     const card = getTargetCard(target);
-    if (!card || typeof card.cost !== 'number') return 0;
-    return Math.max(0, card.cost);
+    if (!card) return 0;
+    if (typeof context.machine?.getCardCost === 'function') {
+        return context.machine.getCardCost(card);
+    }
+    return Math.max(0, Number(card.cost || 0));
 }
 
 function resolveTotalCostLimit(targetSchema: any, context: GameContext): number | null {
@@ -37,8 +40,8 @@ function canAddTargetWithinTotalCost(targetSchema: any, selectedTargets: any[], 
     const limit = resolveTotalCostLimit(targetSchema, context);
     if (limit === null) return true;
     if (selectedTargets.includes(nextTarget)) return true;
-    const currentCost = selectedTargets.reduce((sum, target) => sum + getTargetCost(target), 0);
-    return currentCost + getTargetCost(nextTarget) <= limit;
+    const currentCost = selectedTargets.reduce((sum, target) => sum + getTargetCost(target, context), 0);
+    return currentCost + getTargetCost(nextTarget, context) <= limit;
 }
 
 export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAction[] {

@@ -10,6 +10,7 @@ export class RuleValidator {
 
         const card = player.hand[cardIndex];
         if (!card || card.type !== CardType.UNIT) return { valid: false, reason: "Card is not a unit" };
+        const cardCost = engine.getCardCost(card);
 
         const zone = player.unitZones[zoneIndex];
         const opponent = engine.state.players.find(p => p.id !== player.id);
@@ -17,10 +18,10 @@ export class RuleValidator {
             const lockedLane = opponent.unitZones[zoneIndex];
             const lockCostMin = this.getPreventOpponentPlayUnitCostMin(engine, opponent, lockedLane);
             const lockCostMax = this.getPreventOpponentPlayUnitCostMax(engine, opponent, lockedLane);
-            if (typeof lockCostMin === 'number' && card.cost >= lockCostMin) {
+            if (typeof lockCostMin === 'number' && cardCost >= lockCostMin) {
                 return { valid: false, reason: `Lane lock: cannot place unit cost ${lockCostMin} or higher in this lane` };
             }
-            if (typeof lockCostMax === 'number' && card.cost <= lockCostMax) {
+            if (typeof lockCostMax === 'number' && cardCost <= lockCostMax) {
                 return { valid: false, reason: `Lane lock: cannot place unit cost ${lockCostMax} or lower in this lane` };
             }
         }
@@ -31,20 +32,20 @@ export class RuleValidator {
         }
 
         // Logic check: 3.5.5 - Cannot place if existing unit has higher/equal cost (unless upgrading)
-        if (zone.unit && card.cost <= zone.unit.cost) {
+        if (zone.unit && cardCost <= engine.getCardCost(zone.unit)) {
             return { valid: false, reason: "Cost must be higher than existing unit to upgrade" };
         }
 
         let costToSubtract = 0;
         if (zone.unit) {
             // Upgrade rule
-            costToSubtract = zone.unit.cost + zone.items.reduce((sum, item) => sum + item.cost, 0);
+            costToSubtract = engine.getCardCost(zone.unit) + zone.items.reduce((sum, item) => sum + engine.getCardCost(item), 0);
         }
 
         const currentSize = engine.getPlayerSize(player);
         const currentFieldCost = this.calculateFieldCost(engine, player);
 
-        if (currentFieldCost - costToSubtract + card.cost > currentSize) {
+        if (currentFieldCost - costToSubtract + cardCost > currentSize) {
             return { valid: false, reason: "Cost exceeds Size limit" };
         }
 
@@ -55,6 +56,7 @@ export class RuleValidator {
         if (engine.state.phase !== Phase.MAIN) return { valid: false, reason: "Not in MAIN phase" };
         const card = player.hand[cardIndex];
         if (!card || card.type !== CardType.SKILL) return { valid: false, reason: "Card is not a skill" };
+        const cardCost = engine.getCardCost(card);
 
         const lockedSkillIds = (player as any).lockedSkillIdsUntilTurnEnd as Record<string, boolean> | undefined;
         if (lockedSkillIds?.[card.id]) {
@@ -64,8 +66,8 @@ export class RuleValidator {
         // Size Limit Check (Field Cost + Skill Cost must not exceed Size)
         const playerSize = engine.getPlayerSize(player);
         const currentFieldCost = this.calculateFieldCost(engine, player);
-        if (currentFieldCost + card.cost > playerSize) {
-            return { valid: false, reason: `Cost exceeds Size limit (Field: ${currentFieldCost}, Skill: ${card.cost}, Size: ${playerSize})` };
+        if (currentFieldCost + cardCost > playerSize) {
+            return { valid: false, reason: `Cost exceeds Size limit (Field: ${currentFieldCost}, Skill: ${cardCost}, Size: ${playerSize})` };
         }
 
         // Check if effect requires a specific card type for cost payment
@@ -90,6 +92,7 @@ export class RuleValidator {
 
         const card = player.hand[cardIndex];
         if (!card || card.type !== CardType.ITEM) return { valid: false, reason: "Card is not an item" };
+        const cardCost = engine.getCardCost(card);
 
         const zone = player.unitZones[zoneIndex];
         if (!zone.unit) return { valid: false, reason: "Target zone has no unit" };
@@ -137,7 +140,7 @@ export class RuleValidator {
         const currentSize = engine.getPlayerSize(player);
         const currentFieldCost = this.calculateFieldCost(engine, player);
 
-        if (currentFieldCost + card.cost > currentSize) {
+        if (currentFieldCost + cardCost > currentSize) {
             return { valid: false, reason: "Cost exceeds Size limit" };
         }
 
@@ -267,37 +270,11 @@ export class RuleValidator {
     private static calculateFieldCost(engine: GameEngine, player: PlayerState): number {
         let cost = 0;
         player.unitZones.forEach(z => {
-            if (z.unit) cost += z.unit.cost;
-            z.items.forEach(i => cost += this.getEffectiveItemCost(engine, i));
+            if (z.unit) cost += engine.getCardCost(z.unit);
+            z.items.forEach(i => cost += engine.getCardCost(i));
         });
-        player.skillZone.forEach(s => cost += this.getEffectiveSkillCost(engine, s));
+        player.skillZone.forEach(s => cost += engine.getCardCost(s));
         return cost;
-    }
-
-    private static getEffectiveItemCost(engine: GameEngine, itemCard: any): number {
-        const override = itemCard?.turnCostOverride;
-        if (
-            override &&
-            typeof override === 'object' &&
-            override.turnCount === engine.state.turnCount &&
-            typeof override.cost === 'number'
-        ) {
-            return Math.max(0, override.cost);
-        }
-        return itemCard?.cost || 0;
-    }
-
-    private static getEffectiveSkillCost(engine: GameEngine, skillCard: any): number {
-        const override = skillCard?.turnCostOverride;
-        if (
-            override &&
-            typeof override === 'object' &&
-            override.turnCount === engine.state.turnCount &&
-            typeof override.cost === 'number'
-        ) {
-            return Math.max(0, override.cost);
-        }
-        return skillCard?.cost || 0;
     }
 
     private static getPreventOpponentPlayUnitCostMin(engine: GameEngine, sourcePlayer: PlayerState, sourceZone: any): number | null {

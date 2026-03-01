@@ -313,6 +313,10 @@ export interface Card {
     imageUrl?: string;
     isAwakened?: boolean;
     effects?: Effect[];
+    turnCostOverride?: {
+        cost: number;
+        turnCount: number;
+    };
 }
 
 export interface UnitZoneState {

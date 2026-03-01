@@ -134,7 +134,7 @@ export const drawDynamic: ActionImplementation = (ctx, params, targets) => {
         count = selectedTargets.reduce((sum, target) => {
             if (!target || typeof target !== 'object' || !('items' in target)) return sum;
             const items = Array.isArray((target as UnitZoneState).items) ? (target as UnitZoneState).items : [];
-            const validItemCount = items.filter(item => (item.cost || 0) >= costMin).length;
+            const validItemCount = items.filter(item => ctx.machine.getCardCost(item) >= costMin).length;
             return sum + validItemCount;
         }, 0);
     }

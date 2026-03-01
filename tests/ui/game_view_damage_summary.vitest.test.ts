@@ -69,6 +69,11 @@ function createMockGame(selectionMode = false) {
         skillZone: [createCard('p2-skill-1', 'P2 Skill')],
     };
 
+    p1.unitZones[0].unit = createCard('p1-unit-1', 'P1 Unit');
+    p2.unitZones[0].unit = createCard('p2-unit-1', 'P2 Unit');
+    (p1.unitZones[0].unit as any).turnCostOverride = { cost: 0, turnCount: 1 };
+    (p1.skillZone[0] as any).turnCostOverride = { cost: 0, turnCount: 1 };
+
     const legalActions = selectionMode
         ? [{ type: 'SELECT_DAMAGE_TARGET', actorPlayerId: 'P1', targetPlayerId: 'P2', damageIndex: 0 }]
         : [];
@@ -103,8 +108,20 @@ function createMockGame(selectionMode = false) {
         currentPlayer: p1,
         opponentPlayer: p2,
         getLegalActions: () => legalActions,
-        getUnitPower: () => 0,
-        getUnitHit: () => 0,
+        getUnitPower: (zone: any) => zone.unit?.power ?? 0,
+        getUnitHit: (zone: any) => zone.unit?.hit ?? 0,
+        getCardCost: (card: any) => {
+            const override = card?.turnCostOverride;
+            if (
+                override &&
+                typeof override === 'object' &&
+                override.turnCount === 1 &&
+                typeof override.cost === 'number'
+            ) {
+                return Math.max(0, override.cost);
+            }
+            return Math.max(0, Number(card?.cost || 0));
+        },
         isPendingCardTarget: () => false,
     } as any;
 }
@@ -132,10 +149,18 @@ describe('game view damage zone summary', () => {
         const currentDamageCount = document.querySelector('.current .damage-zone.summary-mode .damage-count');
         const opponentDamageCount = document.querySelector('.opponent .damage-zone.summary-mode .damage-count');
         const skillCards = document.querySelectorAll('.skill-card-item');
+        const skillCosts = Array.from(document.querySelectorAll('.skill-card-item .skill-cost'));
+        const unitStats = Array.from(document.querySelectorAll('.unit-zone .stats'));
 
         expect(currentDamageCount?.textContent?.trim()).toBe('2');
         expect(opponentDamageCount?.textContent?.trim()).toBe('2');
         expect(skillCards.length).toBe(2);
+        expect(skillCosts.length).toBe(2);
+        expect(skillCosts.some(node => node.textContent?.trim() === 'C 0')).toBe(true);
+        expect(skillCosts.some(node => node.textContent?.trim() === 'C 1')).toBe(true);
+        expect(unitStats.length).toBe(2);
+        expect(unitStats.some(node => node.textContent?.includes('C 0 | 1000 / 1000'))).toBe(true);
+        expect(unitStats.some(node => node.textContent?.includes('C 1 | 1000 / 1000'))).toBe(true);
     });
 
     it('switches to damage card selection mode when damage targets are legal', async () => {
