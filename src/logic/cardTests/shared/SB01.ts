@@ -843,7 +843,7 @@ const tests: UnifiedTestCase[] = [
             const p1 = engine.state.players[0];
             const p2 = engine.state.players[1];
 
-            engine.destroyUnit(p1, p1.unitZones[0], p2.unitZones[0].unit, 'EFFECT');
+            engine.destroyUnit(p1, p1.unitZones[0], p2.unitZones[0].unit ?? undefined, 'EFFECT');
             const confirm = findAction(engine, p1.id, 'RESOLVE_OPTIONAL', (a: any) => a.confirm === true);
             if (confirm) engine.step(confirm);
             const pay = findAction(engine, p1.id, 'SELECT_COST_HAND');

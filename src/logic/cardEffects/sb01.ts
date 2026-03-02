@@ -1,4 +1,4 @@
-import { ActivationCondition, CardType, Effect } from '../types';
+import { ActivationCondition, Effect } from '../types';
 
 export const SB01_EFFECTS: Record<string, Effect[]> = {
     'SB01-001': [
