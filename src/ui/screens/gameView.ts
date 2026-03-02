@@ -22,6 +22,14 @@ const HAND_ZONE_HORIZONTAL_PADDING_PX = 28;
 const HAND_CARD_WIDTH_PX = 130;
 const HAND_CARD_MAX_GAP_PX = 8;
 const HAND_CARD_MIN_STEP_PX = 24;
+const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
+    'BT06_SELECT_SKILL_ZONE_CARD',
+    'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH',
+    'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH',
+    'BT03_052_SELECT_SKILL_ZONE_COST3_TO_TRASH',
+    'BT03_062_SELECT_SKILL_ZONE_TO_CAST',
+    'SB01_001_SELECT_SKILL_ZONE_TO_TRASH',
+]);
 
 let gameResizeRafId: number | null = null;
 let gameResizeListenerBound = false;
@@ -537,6 +545,21 @@ function renderOptionalEffectModal() {
     `;
 }
 
+function supportsHoverInput(): boolean {
+    if (typeof window === 'undefined') return true;
+    if (typeof window.matchMedia !== 'function') return true;
+    try {
+        return window.matchMedia('(hover: hover)').matches;
+    } catch {
+        return true;
+    }
+}
+
+function isSkillZonePromptSelectionAction(pending: PendingEffect | null | undefined): boolean {
+    if (!pending) return false;
+    return pending.validTargets === 'REVEALED' && SKILL_ZONE_PROMPT_ACTION_TYPES.has(pending.actionType);
+}
+
 function isSelectionModalTargetScope(scope: any): boolean {
     return scope === 'MY_TRASH' || scope === 'REVEALED';
 }
@@ -544,8 +567,9 @@ function isSelectionModalTargetScope(scope: any): boolean {
 function resolveSelectionModalKey(): string | null {
     if (!uiState.game) return null;
     if (uiState.game.state.interactionMode !== 'SELECT_TARGET') return null;
-    const pending = uiState.game.state.pendingEffect as any;
+    const pending = uiState.game.state.pendingEffect as PendingEffect | null;
     if (!pending || !isSelectionModalTargetScope(pending.validTargets)) return null;
+    if (isSkillZonePromptSelectionAction(pending)) return null;
     const sourceCardId = pending.sourceCard?.id || 'UNKNOWN';
     return `${pending.sourcePlayerId || 'UNKNOWN'}:${pending.actionType || 'UNKNOWN'}:${pending.validTargets}:${sourceCardId}`;
 }
@@ -631,8 +655,9 @@ function renderRevealedCardsModal() {
     if (isInteractionModalDelayed()) return '';
     if (uiState.selectionModalCollapsed) return '';
 
-    const pending = uiState.game.state.pendingEffect as any;
+    const pending = uiState.game.state.pendingEffect as PendingEffect | null;
     const isSelecting = uiState.game.state.interactionMode === 'SELECT_TARGET' && pending?.validTargets === 'REVEALED';
+    if (isSelecting && isSkillZonePromptSelectionAction(pending)) return '';
     const isTakeAll = pending?.actionType === 'TAKE_ALL_REVEALED';
     const filter = pending?.targetSchema?.filters?.[0];
     const actorPlayerId = uiState.game ? getActionOwnerPlayerId(uiState.game) : '';
@@ -796,6 +821,45 @@ function renderGameOverModal() {
     `;
 }
 
+function getSkillPromptSelectionStateForPlayer(playerId: string): {
+    candidateSkillIndexes: Set<number>;
+    selectedSkillIndexes: Set<number>;
+} {
+    const emptyState = {
+        candidateSkillIndexes: new Set<number>(),
+        selectedSkillIndexes: new Set<number>(),
+    };
+    if (!uiState.game) return emptyState;
+    if (uiState.game.state.interactionMode !== 'SELECT_TARGET') return emptyState;
+    const pending = uiState.game.state.pendingEffect as PendingEffect | null;
+    if (!isSkillZonePromptSelectionAction(pending)) return emptyState;
+    if (pending.sourcePlayerId !== playerId) return emptyState;
+
+    const options = Array.isArray((pending.actionValue as any)?.options)
+        ? (pending.actionValue as any).options
+        : [];
+    if (options.length === 0) return emptyState;
+
+    const revealedIndexToSkillIndex = new Map<number, number>();
+    options.forEach((option: any, revealedIndex: number) => {
+        const skillZoneIndex = Number(option?.skillZoneIndex);
+        if (!Number.isInteger(skillZoneIndex) || skillZoneIndex < 0) return;
+        revealedIndexToSkillIndex.set(revealedIndex, skillZoneIndex);
+        emptyState.candidateSkillIndexes.add(skillZoneIndex);
+    });
+
+    const selectedTargets = Array.isArray(pending.selectedTargets) ? pending.selectedTargets : [];
+    selectedTargets.forEach((selectedCard: Card) => {
+        const revealedIndex = uiState.game!.state.revealedCards.indexOf(selectedCard);
+        if (revealedIndex < 0) return;
+        const skillZoneIndex = revealedIndexToSkillIndex.get(revealedIndex);
+        if (typeof skillZoneIndex !== 'number') return;
+        emptyState.selectedSkillIndexes.add(skillZoneIndex);
+    });
+
+    return emptyState;
+}
+
 function renderPlayer(
     player: any,
     isOpponent: boolean,
@@ -805,6 +869,8 @@ function renderPlayer(
 ) {
     if (!uiState.game) return '';
     const localHumanCanInput = canLocalHumanInput();
+    const pending = uiState.game.state.pendingEffect as PendingEffect | null;
+    const targetCount = pending?.targetSchema?.count ?? 1;
     const hasPulseForZone = (zone: 'DECK' | 'DAMAGE') => uiState.playback.activePulseTargets
         .some(target => target.playerId === player.id && target.zone === zone);
     const deckPulseClass = hasPulseForZone('DECK') ? 'fx-pulse-zone fx-pulse-deck' : '';
@@ -826,9 +892,27 @@ function renderPlayer(
     const damageTargetActionsForPlayer = (legalActions || []).filter(
         (action: any) => action.type === 'SELECT_DAMAGE_TARGET' && action.targetPlayerId === player.id,
     );
-    const showDamageCardSelection =
+    const showDamageCardSelectionInline =
         uiState.game.state.interactionMode === 'SELECT_TARGET' &&
-        damageTargetActionsForPlayer.length > 0;
+        damageTargetActionsForPlayer.length > 0 &&
+        !supportsHoverInput();
+    const hasDamageSelectionCandidate =
+        uiState.game.state.interactionMode === 'SELECT_TARGET' && damageTargetActionsForPlayer.length > 0;
+    const hasTrashSelectionCandidate =
+        uiState.game.state.interactionMode === 'SELECT_TARGET' &&
+        (legalActions || []).some((action: any) => action.type === 'SELECT_TRASH_TARGET' && action.targetPlayerId === player.id);
+    const selectedDamageCount = Array.isArray(pending?.selectedTargets)
+        ? pending.selectedTargets.filter((target: any) => player.damage.includes(target)).length
+        : 0;
+    const selectedTrashCount = Array.isArray(pending?.selectedTargets)
+        ? pending.selectedTargets.filter((target: any) => player.trash.includes(target)).length
+        : 0;
+    const damageZoneSelectionClass = hasDamageSelectionCandidate ? 'selection-zone-candidate' : '';
+    const damageZoneSelectedClass = selectedDamageCount > 0 ? 'selection-zone-selected' : '';
+    const trashZoneSelectionClass = hasTrashSelectionCandidate ? 'selection-zone-candidate' : '';
+    const trashZoneSelectedClass = selectedTrashCount > 0 ? 'selection-zone-selected' : '';
+    const skillPromptState = getSkillPromptSelectionStateForPlayer(player.id);
+    const skillPromptTargetCount = skillPromptState.candidateSkillIndexes.size;
     const leaderHasActivatableEffect =
         isInputOwnerPlayer &&
         player.levelZone?.isAwakened === true &&
@@ -892,27 +976,31 @@ function renderPlayer(
             </div>
 
             <div class="bottom-center">
-                <div class="damage-zone ${showDamageCardSelection ? 'selection-mode' : 'summary-mode'} ${damagePulseClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
-                    ${showDamageCardSelection ? player.damage.map((c: any, damageIndex: number) => {
+                <div class="damage-zone ${showDamageCardSelectionInline ? 'selection-mode' : 'summary-mode'} ${damagePulseClass} ${damageZoneSelectionClass} ${damageZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
+                    ${showDamageCardSelectionInline ? player.damage.map((c: any, damageIndex: number) => {
         const isDamageSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(c);
         return `<div class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${damageIndex}">${renderCard(c, true)}</div>`;
     }).join('') : `
                         <div class="damage-summary ${player.damage.length === 0 ? 'empty' : ''}">
                             <div class="damage-count">${player.damage.length}</div>
                             <div class="damage-label">DAMAGE</div>
+                            ${hasDamageSelectionCandidate ? `<div class="selection-progress-badge">selected ${selectedDamageCount}/${targetCount === 0 ? 'all' : targetCount}</div>` : ''}
                         </div>
                     `}
                 </div>
                 <div class="skill-zone ${isInputOwnerPlayer && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
                     ${player.skillZone.map((c: any, skillIndex: number) => {
         const skillCost = resolveCardCostForDisplay(c);
+        const skillPromptCandidateClass = skillPromptState.candidateSkillIndexes.has(skillIndex) ? 'target-candidate' : '';
+        const skillPromptSelectedClass = skillPromptState.selectedSkillIndexes.has(skillIndex) ? 'selected-target' : '';
         return `
-                        <div class="skill-card-item" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${skillIndex}">
+                        <div class="skill-card-item ${skillPromptCandidateClass} ${skillPromptSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${skillIndex}">
                             ${renderCard(c, true)}
                             <div class="skill-cost">C ${skillCost}</div>
                         </div>
                     `;
     }).join('')}
+                    ${skillPromptTargetCount > 0 ? `<div class="selection-progress-badge">selected ${skillPromptState.selectedSkillIndexes.size}/${skillPromptTargetCount}</div>` : ''}
                     ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
                 </div>
             </div>
@@ -923,8 +1011,9 @@ function renderPlayer(
                 <div class="deck-count">${player.deck.length}</div>
                 <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
             </div>
-            <div class="trash-zone" data-player="${isOpponent ? 'opponent' : 'current'}">
+            <div class="trash-zone ${trashZoneSelectionClass} ${trashZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
                 ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
+                ${hasTrashSelectionCandidate ? `<div class="selection-progress-badge">selected ${selectedTrashCount}/${targetCount === 0 ? 'all' : targetCount}</div>` : ''}
             </div>
         </div>
       </div>
@@ -1012,6 +1101,14 @@ export function renderGame() {
         const currentCount = pending?.selectedTargets?.length || 0;
         const actorId = getActionOwnerPlayerId(uiState.game);
         const canConfirm = uiState.game.getLegalActions(actorId).some(action => action.type === 'CONFIRM_TARGETS');
+        const needsConfirm =
+            (pending?.targetSchema?.count ?? 1) !== 1 ||
+            pending?.targetSchema?.selectMode === 'ALL' ||
+            pending?.actionType === 'TAKE_ALL_REVEALED' ||
+            pending?.actionValue?.allowPartialSelection === true;
+        const selectionModeHint = needsConfirm
+            ? '선택 후 Confirm 버튼으로 확정합니다.'
+            : '카드를 클릭하면 즉시 적용됩니다.';
         const sacrificeHint = pending?.actionType === 'SACRIFICE_TO_BUFF'
             ? (currentCount === 0
                 ? 'Step 1/2: Select the unit to trash.'
@@ -1027,6 +1124,7 @@ export function renderGame() {
                     <span>SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
                     <button id="confirm-targets-btn" class="primary-btn small-btn-inline" ${canConfirm ? '' : 'disabled'}>Confirm</button>
                 </div>
+                <span class="game-interaction-sub">${selectionModeHint}</span>
                 ${sacrificeHint ? `<span class="game-interaction-sub">${sacrificeHint}</span>` : ''}
                 ${contextHtml}
             </div>

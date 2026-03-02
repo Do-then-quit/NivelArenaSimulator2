@@ -469,6 +469,7 @@ body.phase-theme-end {
     padding: 10px;
     gap: 8px;
     align-items: center;
+    position: relative;
 }
 
 .skill-card-item {
@@ -490,6 +491,13 @@ body.phase-theme-end {
     padding: 2px 7px;
     white-space: nowrap;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+.skill-zone .selection-progress-badge {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    margin-top: 0;
 }
 
 .opponent .skill-cost {
@@ -534,6 +542,14 @@ body.phase-theme-end {
     align-items: center;
     justify-content: center;
     position: relative;
+}
+
+.trash-zone .selection-progress-badge {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    transform: translateX(-50%);
+    margin-top: 0;
 }
 
 /* --- Card Styles --- */
@@ -1303,6 +1319,19 @@ body.phase-theme-end {
     z-index: 10;
 }
 
+.selection-zone-candidate {
+    box-shadow: inset 0 0 0 2px rgba(255, 235, 142, 0.5), 0 0 16px rgba(255, 214, 102, 0.28);
+    animation: pulse-gold 1.5s infinite;
+}
+
+.selection-zone-active {
+    box-shadow: inset 0 0 0 2px rgba(255, 244, 166, 0.82), 0 0 22px rgba(255, 226, 136, 0.42);
+}
+
+.selection-zone-selected {
+    box-shadow: inset 0 0 0 2px rgba(117, 232, 171, 0.62), 0 0 18px rgba(117, 232, 171, 0.35);
+}
+
 @keyframes pulse-blue {
     0% {
         box-shadow: 0 0 5px rgba(9, 132, 227, 0.4);
@@ -1357,6 +1386,22 @@ body.phase-theme-end {
 
     color: white;
 
+}
+
+.selection-progress-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 238, 164, 0.45);
+    background: rgba(16, 20, 31, 0.75);
+    color: #f8e7a5;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
 }
 
 
@@ -2476,11 +2521,34 @@ body.phase-theme-end {
     aspect-ratio: 0.714; /* 130/182 */
 }
 
+.trash-hover-card.overlay-card-selectable {
+    border: 2px solid rgba(255, 234, 167, 0.86);
+    border-radius: 10px;
+    box-shadow: 0 0 14px rgba(255, 234, 167, 0.42);
+}
+
+.trash-hover-card.overlay-card-selected {
+    border: 2px solid rgba(117, 232, 171, 0.95);
+    border-radius: 10px;
+    box-shadow: 0 0 18px rgba(117, 232, 171, 0.55);
+}
+
+.trash-hover-card.overlay-card-disabled {
+    opacity: 0.42;
+    filter: grayscale(0.85);
+    cursor: not-allowed;
+}
+
 .trash-hover-card:hover {
     transform: scale(1.1);
     z-index: 10;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     border-radius: 8px;
+}
+
+.trash-hover-card.overlay-card-disabled:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 .trash-hover-card .card {
@@ -2568,7 +2636,8 @@ body.phase-theme-end {
     .fx-toast-item,
     .fx-pulse-zone,
     .cost-candidate,
-    .target-candidate {
+    .target-candidate,
+    .selection-zone-candidate {
         animation: none !important;
     }
 }

@@ -163,7 +163,7 @@ describe('game view damage zone summary', () => {
         expect(unitStats.some(node => node.textContent?.includes('C 1 | 1000 / 1000'))).toBe(true);
     });
 
-    it('switches to damage card selection mode when damage targets are legal', async () => {
+    it('keeps summary damage zone and highlights candidate state when damage targets are legal', async () => {
         const { uiState, Screen } = await import('../../src/ui/appState');
         const { renderGame } = await import('../../src/ui/screens/gameView');
 
@@ -175,10 +175,11 @@ describe('game view damage zone summary', () => {
 
         renderGame();
 
-        const opponentSelectionZone = document.querySelector('.opponent .damage-zone.selection-mode');
-        const selectableDamageCards = document.querySelectorAll('.opponent .damage-zone.selection-mode .damage-card-item');
-
+        const opponentSelectionZone = document.querySelector('.opponent .damage-zone.summary-mode.selection-zone-candidate');
+        const selectableDamageCards = document.querySelectorAll('.opponent .damage-zone .damage-card-item');
+        const progressBadge = document.querySelector('.opponent .damage-zone .selection-progress-badge');
         expect(opponentSelectionZone).toBeTruthy();
-        expect(selectableDamageCards.length).toBe(2);
+        expect(selectableDamageCards.length).toBe(0);
+        expect(progressBadge?.textContent).toContain('selected 0/1');
     });
 });

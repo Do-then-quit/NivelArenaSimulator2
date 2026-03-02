@@ -8,6 +8,15 @@ import { dispatchEngineAction, reportGameOverToServer } from '../online/onlineMa
 import { getBottomPlayer, getTopPlayer, getUiPlayer, getUiPlayerRefForPlayerId, UiPlayerRef } from '../playerPerspective';
 import { setPlaybackSpeed, skipPlaybackQueue } from '../playbackOrchestrator';
 
+const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
+    'BT06_SELECT_SKILL_ZONE_CARD',
+    'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH',
+    'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH',
+    'BT03_052_SELECT_SKILL_ZONE_COST3_TO_TRASH',
+    'BT03_062_SELECT_SKILL_ZONE_TO_CAST',
+    'SB01_001_SELECT_SKILL_ZONE_TO_TRASH',
+]);
+
 export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, calculatedPower?: number, calculatedHit?: number) => string) {
     if (!uiState.game) return;
     const hasOnlineRoomSession = () => !!uiState.onlineSession.room && !!uiState.onlineSession.role;
@@ -23,6 +32,72 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     const getPlayerForPlayerAttr = (attr?: string) => getPlayerForUiRef(attr === 'opponent' ? 'opponent' : 'current');
     const getBottomUiPlayer = () => getBottomPlayer(uiState.game!);
     const getTopUiPlayer = () => getTopPlayer(uiState.game!);
+    const inSelectTargetMode = uiState.game.state.interactionMode === 'SELECT_TARGET' && localHumanCanInput;
+    const pendingSelectEffect = inSelectTargetMode ? (uiState.game.state.pendingEffect as any) : null;
+    const selectTargetActorId = inSelectTargetMode ? getActionOwnerPlayerId(uiState.game) : '';
+    const selectTargetLegalActions = inSelectTargetMode
+        ? uiState.game.getLegalActions(selectTargetActorId)
+        : [];
+    const zoneTargetActions = selectTargetLegalActions
+        .filter(action => action.type === 'SELECT_ZONE_TARGET') as Array<{ targetPlayerId: string; zoneIndex: number }>;
+    const handTargetActions = selectTargetLegalActions
+        .filter(action => action.type === 'SELECT_HAND_TARGET') as Array<{ targetPlayerId: string; handIndex: number }>;
+    const trashTargetActions = selectTargetLegalActions
+        .filter(action => action.type === 'SELECT_TRASH_TARGET') as Array<{ targetPlayerId: string; trashIndex: number }>;
+    const damageTargetActions = selectTargetLegalActions
+        .filter(action => action.type === 'SELECT_DAMAGE_TARGET') as Array<{ targetPlayerId: string; damageIndex: number }>;
+    const itemTargetActions = selectTargetLegalActions
+        .filter(action => action.type === 'SELECT_ITEM_TARGET') as Array<{ targetPlayerId: string; zoneIndex: number; itemIndex: number }>;
+    const revealedTargetActions = selectTargetLegalActions
+        .filter(action => action.type === 'SELECT_REVEALED_TARGET') as Array<{ revealedIndex: number }>;
+    const buildIndexedActionMap = (
+        actions: Array<{ targetPlayerId: string; index: number }>,
+    ): Map<string, Set<number>> => {
+        const map = new Map<string, Set<number>>();
+        actions.forEach(action => {
+            const set = map.get(action.targetPlayerId) ?? new Set<number>();
+            set.add(action.index);
+            map.set(action.targetPlayerId, set);
+        });
+        return map;
+    };
+    const trashTargetMapByPlayerId = buildIndexedActionMap(
+        trashTargetActions.map(action => ({ targetPlayerId: action.targetPlayerId, index: action.trashIndex })),
+    );
+    const damageTargetMapByPlayerId = buildIndexedActionMap(
+        damageTargetActions.map(action => ({ targetPlayerId: action.targetPlayerId, index: action.damageIndex })),
+    );
+    const resolveSelectedIndexesByPlayer = (
+        zoneAccessor: (player: any) => Card[],
+    ): Map<string, Set<number>> => {
+        const map = new Map<string, Set<number>>();
+        if (!pendingSelectEffect || !Array.isArray(pendingSelectEffect.selectedTargets)) return map;
+        uiState.game.state.players.forEach((player: any) => {
+            const zoneCards = zoneAccessor(player);
+            pendingSelectEffect.selectedTargets.forEach((target: Card) => {
+                const index = zoneCards.indexOf(target);
+                if (index < 0) return;
+                const set = map.get(player.id) ?? new Set<number>();
+                set.add(index);
+                map.set(player.id, set);
+            });
+        });
+        return map;
+    };
+    const selectedTrashIndexesByPlayerId = resolveSelectedIndexesByPlayer((player) => player.trash);
+    const selectedDamageIndexesByPlayerId = resolveSelectedIndexesByPlayer((player) => player.damage);
+    const skillPromptRevealedIndexBySkillKey = new Map<string, number>();
+    if (pendingSelectEffect && pendingSelectEffect.validTargets === 'REVEALED' && SKILL_ZONE_PROMPT_ACTION_TYPES.has(pendingSelectEffect.actionType)) {
+        const options = Array.isArray(pendingSelectEffect.actionValue?.options)
+            ? pendingSelectEffect.actionValue.options
+            : [];
+        options.forEach((option: any, revealedIndex: number) => {
+            const skillZoneIndex = Number(option?.skillZoneIndex);
+            if (!Number.isInteger(skillZoneIndex) || skillZoneIndex < 0) return;
+            const key = `${pendingSelectEffect.sourcePlayerId}:${skillZoneIndex}`;
+            skillPromptRevealedIndexBySkillKey.set(key, revealedIndex);
+        });
+    }
     document.getElementById('fx-log-toggle')?.addEventListener('click', () => {
         uiState.gameLogView.expanded = !uiState.gameLogView.expanded;
         uiState.gameLogView.manualOverride = true;
@@ -486,19 +561,16 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         }
     }
 
-    if (uiState.game.state.interactionMode === 'SELECT_TARGET' && localHumanCanInput) {
-        const pending = uiState.game.state.pendingEffect as any;
-        const actorId = getActionOwnerPlayerId(uiState.game);
-        const legalActions = uiState.game.getLegalActions(actorId);
-        const zoneTargetActions =
-            legalActions.filter(action => action.type === 'SELECT_ZONE_TARGET') as Array<{ targetPlayerId: string; zoneIndex: number }>;
-
+    if (inSelectTargetMode) {
+        const pending = pendingSelectEffect;
+        const actorId = selectTargetActorId;
         const validZoneKeySet = new Set(zoneTargetActions.map(action => `${action.targetPlayerId}:${action.zoneIndex}`));
 
         const units = document.querySelectorAll('.unit-zone');
         units.forEach(u => {
             const el = u as HTMLElement;
-            const zoneIndex = parseInt(el.dataset.index!);
+            const zoneIndex = parseInt(el.dataset.index || '-1', 10);
+            if (zoneIndex < 0) return;
             const targetPlayerId = getPlayerForPlayerAttr(el.dataset.player).id;
             const zoneKey = `${targetPlayerId}:${zoneIndex}`;
             const canSelectZone = zoneTargetActions.length > 0 && validZoneKeySet.has(zoneKey);
@@ -520,12 +592,11 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         });
 
         if (pending && pending.validTargets === 'MY_TRASH') {
-            const trashTargetActions =
-                legalActions.filter(action => action.type === 'SELECT_TRASH_TARGET') as Array<{ targetPlayerId: string; trashIndex: number }>;
             const validTrashKeys = new Set(trashTargetActions.map(action => `${action.targetPlayerId}:${action.trashIndex}`));
 
             document.querySelectorAll('.trash-card-item').forEach(item => {
-                const index = parseInt((item as HTMLElement).dataset.index!);
+                const index = parseInt((item as HTMLElement).dataset.index || '-1', 10);
+                if (index < 0) return;
                 const key = `${pending.sourcePlayerId}:${index}`;
                 if (trashTargetActions.length > 0 && !validTrashKeys.has(key)) return;
 
@@ -555,8 +626,6 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             });
         }
 
-        const handTargetActions =
-            legalActions.filter(action => action.type === 'SELECT_HAND_TARGET') as Array<{ targetPlayerId: string; handIndex: number }>;
         if (handTargetActions.length > 0) {
             const targetMap = new Map<string, Set<number>>();
             handTargetActions.forEach(action => {
@@ -573,8 +642,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
                 handCards.forEach(card => {
                     const el = card as HTMLElement;
-                    const index = parseInt(el.dataset.index!);
-                    if (!allowedIndexes.has(index)) return;
+                    const index = parseInt(el.dataset.index || '-1', 10);
+                    if (index < 0 || !allowedIndexes.has(index)) return;
 
                     el.style.cursor = 'crosshair';
                     el.style.boxShadow = '0 0 10px #ffeaa7';
@@ -597,8 +666,6 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             });
         }
 
-        const damageTargetActions =
-            legalActions.filter(action => action.type === 'SELECT_DAMAGE_TARGET') as Array<{ targetPlayerId: string; damageIndex: number }>;
         if (damageTargetActions.length > 0) {
             const targetMap = new Map<string, Set<number>>();
             damageTargetActions.forEach(action => {
@@ -613,8 +680,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                     : '.opponent .damage-zone .damage-card-item';
                 document.querySelectorAll(selector).forEach(item => {
                     const el = item as HTMLElement;
-                    const index = parseInt(el.dataset.index!);
-                    if (!allowedIndexes.has(index)) return;
+                    const index = parseInt(el.dataset.index || '-1', 10);
+                    if (index < 0 || !allowedIndexes.has(index)) return;
 
                     el.style.cursor = 'crosshair';
                     el.style.boxShadow = '0 0 10px #ffeaa7';
@@ -635,14 +702,13 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             });
         }
 
-        const itemTargetActions =
-            legalActions.filter(action => action.type === 'SELECT_ITEM_TARGET') as Array<{ targetPlayerId: string; zoneIndex: number; itemIndex: number }>;
         if (itemTargetActions.length > 0) {
             const validItemKeys = new Set(itemTargetActions.map(action => `${action.targetPlayerId}:${action.zoneIndex}:${action.itemIndex}`));
             document.querySelectorAll('.mini-item-card').forEach(item => {
                 const el = item as HTMLElement;
-                const zoneIndex = parseInt(el.dataset.zoneIndex || '-1');
-                const itemIndex = parseInt(el.dataset.itemIndex || '-1');
+                const zoneIndex = parseInt(el.dataset.zoneIndex || '-1', 10);
+                const itemIndex = parseInt(el.dataset.itemIndex || '-1', 10);
+                if (zoneIndex < 0 || itemIndex < 0) return;
                 const playerRef = getPlayerForPlayerAttr(el.dataset.player).id;
                 const key = `${playerRef}:${zoneIndex}:${itemIndex}`;
                 if (!validItemKeys.has(key)) return;
@@ -673,7 +739,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             if (pending && pending.validTargets === 'REVEALED') {
                 item.addEventListener('click', () => {
                     if (!canLocalHumanInput()) return;
-                    const index = parseInt((item as HTMLElement).dataset.index!);
+                    const index = parseInt((item as HTMLElement).dataset.index || '-1', 10);
+                    if (index < 0) return;
                     const card = uiState.game!.state.revealedCards[index];
                     dispatchEngineAction({
                         type: 'SELECT_REVEALED_TARGET',
@@ -686,12 +753,36 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             }
 
             item.addEventListener('mouseenter', (e) => {
-                const index = parseInt((item as HTMLElement).dataset.index!);
+                const index = parseInt((item as HTMLElement).dataset.index || '-1', 10);
+                if (index < 0) return;
                 const card = uiState.game!.state.revealedCards[index];
                 const mouseEvent = e as MouseEvent;
                 uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
             });
             item.addEventListener('mouseleave', () => uiState.hoverPreview.hide());
+        });
+
+        document.querySelectorAll('.skill-card-item').forEach((itemEl) => {
+            const el = itemEl as HTMLElement;
+            const skillIndex = parseInt(el.dataset.index || '-1', 10);
+            if (skillIndex < 0) return;
+            const player = getPlayerForPlayerAttr(el.dataset.player);
+            const skillPromptKey = `${player.id}:${skillIndex}`;
+            const revealedIndex = skillPromptRevealedIndexBySkillKey.get(skillPromptKey);
+            if (revealedIndex === undefined || !revealedTargetActions.some(action => action.revealedIndex === revealedIndex)) return;
+
+            el.style.cursor = 'crosshair';
+            el.addEventListener('click', () => {
+                if (!canLocalHumanInput()) return;
+                const selectedSkill = player.skillZone[skillIndex];
+                dispatchEngineAction({
+                    type: 'SELECT_REVEALED_TARGET',
+                    actorPlayerId: actorId,
+                    revealedIndex,
+                });
+                logAction(`[????좏깮] ?ㅽ궓 議? ${selectedSkill?.name ?? `index ${skillIndex}`}`);
+                uiState.render?.();
+            });
         });
 
         const onConfirmTargets = () => {
@@ -754,7 +845,26 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             const el = zone as HTMLElement;
             const isOpponent = el.dataset.player === 'opponent';
             const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
-            uiState.trashHoverOverlay!.show(player.trash, el, isOpponent, renderCardFn, 'Trash');
+            const selectableIndexes = trashTargetMapByPlayerId.get(player.id) ?? new Set<number>();
+            const selectedIndexes = selectedTrashIndexesByPlayerId.get(player.id) ?? new Set<number>();
+            const interactive = inSelectTargetMode && selectableIndexes.size > 0;
+            uiState.trashHoverOverlay!.show(player.trash, el, isOpponent, renderCardFn, 'Trash', {
+                interactive,
+                selectableIndexes,
+                selectedIndexes,
+                onCardSelect: (trashIndex: number) => {
+                    if (!inSelectTargetMode || !canLocalHumanInput()) return;
+                    const selectedCard = player.trash[trashIndex];
+                    dispatchEngineAction({
+                        type: 'SELECT_TRASH_TARGET',
+                        actorPlayerId: selectTargetActorId,
+                        targetPlayerId: player.id,
+                        trashIndex,
+                    });
+                    logAction(`[????좏깮] ?몃옒?? ${selectedCard?.name ?? `index ${trashIndex}`}`);
+                    uiState.render?.();
+                },
+            });
         });
 
         zone.addEventListener('mouseleave', () => {
@@ -766,10 +876,29 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         const zoneEl = zone as HTMLElement;
         const isOpponent = zoneEl.dataset.player === 'opponent' || zone.closest('.opponent') !== null;
         const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
+        const selectableIndexes = damageTargetMapByPlayerId.get(player.id) ?? new Set<number>();
+        const selectedIndexes = selectedDamageIndexesByPlayerId.get(player.id) ?? new Set<number>();
+        const interactive = inSelectTargetMode && selectableIndexes.size > 0;
 
         if (zoneEl.classList.contains('summary-mode')) {
             zoneEl.addEventListener('mouseenter', () => {
-                uiState.trashHoverOverlay!.show(player.damage, zoneEl, isOpponent, renderCardFn, 'Damage');
+                uiState.trashHoverOverlay!.show(player.damage, zoneEl, isOpponent, renderCardFn, 'Damage', {
+                    interactive,
+                    selectableIndexes,
+                    selectedIndexes,
+                    onCardSelect: (damageIndex: number) => {
+                        if (!inSelectTargetMode || !canLocalHumanInput()) return;
+                        const selectedCard = player.damage[damageIndex];
+                        dispatchEngineAction({
+                            type: 'SELECT_DAMAGE_TARGET',
+                            actorPlayerId: selectTargetActorId,
+                            targetPlayerId: player.id,
+                            damageIndex,
+                        });
+                        logAction(`[????좏깮] ?誘몄? 議? ${selectedCard?.name ?? `index ${damageIndex}`} (${getPlayerName(player.id)})`);
+                        uiState.render?.();
+                    },
+                });
             });
 
             zoneEl.addEventListener('mouseleave', () => {

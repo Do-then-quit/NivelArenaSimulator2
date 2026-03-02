@@ -2,12 +2,20 @@
 import { Card } from './logic/types';
 import { HoverPreview } from './HoverPreview';
 
+interface TrashHoverOverlayOptions {
+    interactive?: boolean;
+    selectableIndexes?: Set<number>;
+    selectedIndexes?: Set<number>;
+    onCardSelect?: (index: number) => void;
+}
+
 export class TrashHoverOverlay {
     private element: HTMLElement;
     private titleElement: HTMLElement;
     private gridElement: HTMLElement;
     private hoverPreview: HoverPreview;
     private hideTimeout: number | null = null;
+    private activeAnchorElement: HTMLElement | null = null;
 
     constructor(hoverPreview: HoverPreview) {
         this.hoverPreview = hoverPreview;
@@ -41,17 +49,22 @@ export class TrashHoverOverlay {
         isOpponent: boolean,
         renderCardFn: (c: Card, small: boolean, p?: number, h?: number) => string,
         zoneLabel: string = 'Trash',
+        options?: TrashHoverOverlayOptions,
     ) {
         this.cancelHide();
-
+        const interactive = options?.interactive === true;
+        const selectableIndexes = options?.selectableIndexes ?? new Set<number>();
+        const selectedIndexes = options?.selectedIndexes ?? new Set<number>();
+        const onCardSelect = options?.onCardSelect;
 
         this.titleElement.textContent = `${isOpponent ? 'Opponent' : 'Your'} ${zoneLabel} (${cards.length})`;
+        this.setActiveAnchor(anchorElement);
 
         if (cards.length === 0) {
             this.gridElement.innerHTML = '<div style="color: #666; font-style: italic; padding: 20px; grid-column: 1/-1; text-align: center;">Empty</div>';
         } else {
             this.gridElement.innerHTML = cards.map((c, i) => `
-                <div class="trash-hover-card" data-index="${i}">
+                <div class="trash-hover-card ${this.buildCardClass(i, interactive, selectableIndexes, selectedIndexes)}" data-index="${i}">
                     ${renderCardFn(c, true)}
                 </div>
             `).join('');
@@ -72,6 +85,14 @@ export class TrashHoverOverlay {
             el.addEventListener('mouseleave', () => {
                 this.hoverPreview.hide();
             });
+            if (interactive) {
+                el.addEventListener('click', () => {
+                    const index = parseInt((el as HTMLElement).dataset.index || '-1', 10);
+                    if (index < 0) return;
+                    if (selectableIndexes.size > 0 && !selectableIndexes.has(index)) return;
+                    onCardSelect?.(index);
+                });
+            }
         });
 
         this.element.classList.add('active');
@@ -82,6 +103,7 @@ export class TrashHoverOverlay {
 
         this.element.classList.remove('active');
         this.hoverPreview.hide();
+        this.clearActiveAnchor();
     }
 
     scheduleHide() {
@@ -120,5 +142,33 @@ export class TrashHoverOverlay {
         // Update styling
         this.element.style.top = `${top}px`;
         this.element.style.left = `${left}px`;
+    }
+
+    private buildCardClass(
+        index: number,
+        interactive: boolean,
+        selectableIndexes: Set<number>,
+        selectedIndexes: Set<number>,
+    ): string {
+        if (!interactive) return '';
+        const isSelected = selectedIndexes.has(index);
+        const isSelectable = selectableIndexes.size === 0 || selectableIndexes.has(index);
+        if (isSelected) return 'overlay-card-selected';
+        if (isSelectable) return 'overlay-card-selectable';
+        return 'overlay-card-disabled';
+    }
+
+    private setActiveAnchor(anchorElement: HTMLElement) {
+        if (this.activeAnchorElement && this.activeAnchorElement !== anchorElement) {
+            this.activeAnchorElement.classList.remove('selection-zone-active');
+        }
+        this.activeAnchorElement = anchorElement;
+        this.activeAnchorElement.classList.add('selection-zone-active');
+    }
+
+    private clearActiveAnchor() {
+        if (!this.activeAnchorElement) return;
+        this.activeAnchorElement.classList.remove('selection-zone-active');
+        this.activeAnchorElement = null;
     }
 }
