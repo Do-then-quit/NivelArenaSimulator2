@@ -833,6 +833,7 @@ function getSkillPromptSelectionStateForPlayer(playerId: string): {
     if (uiState.game.state.interactionMode !== 'SELECT_TARGET') return emptyState;
     const pending = uiState.game.state.pendingEffect as PendingEffect | null;
     if (!isSkillZonePromptSelectionAction(pending)) return emptyState;
+    if (!pending) return emptyState;
     if (pending.sourcePlayerId !== playerId) return emptyState;
 
     const options = Array.isArray((pending.actionValue as any)?.options)

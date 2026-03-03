@@ -18,7 +18,8 @@ const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
 ]);
 
 export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, calculatedPower?: number, calculatedHit?: number) => string) {
-    if (!uiState.game) return;
+    const game = uiState.game;
+    if (!game) return;
     const hasOnlineRoomSession = () => !!uiState.onlineSession.room && !!uiState.onlineSession.role;
     const localHumanCanInput = canLocalHumanInput();
     const logAction = (message: string, category: GameLogCategory = 'ACTION') => {
@@ -28,15 +29,15 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         return uiState.game?.state.players.find(player => player.id === playerId)?.name ?? playerId;
     };
     const getLaneLabel = (laneIndex: number) => `${laneIndex + 1}라인`;
-    const getPlayerForUiRef = (ref: UiPlayerRef) => getUiPlayer(uiState.game!, ref);
+    const getPlayerForUiRef = (ref: UiPlayerRef) => getUiPlayer(game, ref);
     const getPlayerForPlayerAttr = (attr?: string) => getPlayerForUiRef(attr === 'opponent' ? 'opponent' : 'current');
-    const getBottomUiPlayer = () => getBottomPlayer(uiState.game!);
-    const getTopUiPlayer = () => getTopPlayer(uiState.game!);
-    const inSelectTargetMode = uiState.game.state.interactionMode === 'SELECT_TARGET' && localHumanCanInput;
-    const pendingSelectEffect = inSelectTargetMode ? (uiState.game.state.pendingEffect as any) : null;
-    const selectTargetActorId = inSelectTargetMode ? getActionOwnerPlayerId(uiState.game) : '';
+    const getBottomUiPlayer = () => getBottomPlayer(game);
+    const getTopUiPlayer = () => getTopPlayer(game);
+    const inSelectTargetMode = game.state.interactionMode === 'SELECT_TARGET' && localHumanCanInput;
+    const pendingSelectEffect = inSelectTargetMode ? (game.state.pendingEffect as any) : null;
+    const selectTargetActorId = inSelectTargetMode ? getActionOwnerPlayerId(game) : '';
     const selectTargetLegalActions = inSelectTargetMode
-        ? uiState.game.getLegalActions(selectTargetActorId)
+        ? game.getLegalActions(selectTargetActorId)
         : [];
     const zoneTargetActions = selectTargetLegalActions
         .filter(action => action.type === 'SELECT_ZONE_TARGET') as Array<{ targetPlayerId: string; zoneIndex: number }>;
@@ -72,7 +73,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     ): Map<string, Set<number>> => {
         const map = new Map<string, Set<number>>();
         if (!pendingSelectEffect || !Array.isArray(pendingSelectEffect.selectedTargets)) return map;
-        uiState.game.state.players.forEach((player: any) => {
+        game.state.players.forEach((player: any) => {
             const zoneCards = zoneAccessor(player);
             pendingSelectEffect.selectedTargets.forEach((target: Card) => {
                 const index = zoneCards.indexOf(target);
@@ -187,8 +188,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         uiState.render?.();
     });
 
-    if (uiState.game.state.interactionMode === 'SELECT_MULLIGAN' && localHumanCanInput) {
-        const actorPlayerId = getActionOwnerPlayerId(uiState.game);
+    if (game.state.interactionMode === 'SELECT_MULLIGAN' && localHumanCanInput) {
+        const actorPlayerId = getActionOwnerPlayerId(game);
         document.getElementById('mulligan-keep-btn')?.addEventListener('click', () => {
             if (!canLocalHumanInput()) return;
             const ok = dispatchEngineAction({ type: 'RESOLVE_MULLIGAN', actorPlayerId, shouldMulligan: false });
@@ -523,9 +524,9 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         });
     });
 
-    if (uiState.game.state.interactionMode === 'SELECT_COST' && localHumanCanInput) {
-        const pending = uiState.game.state.pendingEffect as any;
-        const payerPlayer = uiState.game.state.players.find(player => player.id === pending?.sourcePlayerId);
+    if (game.state.interactionMode === 'SELECT_COST' && localHumanCanInput) {
+        const pending = game.state.pendingEffect as any;
+        const payerPlayer = game.state.players.find(player => player.id === pending?.sourcePlayerId);
         const costFilter = pending?.costCardTypeFilter;
         if (payerPlayer) {
             const handSelector = payerPlayer.id === getBottomUiPlayer().id
@@ -801,7 +802,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         uiState.render?.();
     });
 
-    if (uiState.game.state.interactionMode === 'SELECT_OPTIONAL' && localHumanCanInput) {
+    if (game.state.interactionMode === 'SELECT_OPTIONAL' && localHumanCanInput) {
         document.getElementById('opt-confirm')?.addEventListener('click', () => {
             if (!canLocalHumanInput()) return;
             const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
