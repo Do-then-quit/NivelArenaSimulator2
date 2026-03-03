@@ -288,6 +288,7 @@ export class GameEngine {
                 { unit: null, items: [], buffs: [], temporaryEffects: [], isExhausted: false, hasAttacked: false, hasPlacedUnitThisTurn: false, hasActivatedEffectThisTurn: false, activatedEffectKeys: {}, attackCountThisTurn: 0, extraAttackAllowance: 0 },
             ],
             skillZone: [],
+            lockedSkillTraitsUntilTurnEnd: {},
             lockedActivationsUntilTurnEnd: {},
             lockedActivationsUntilTurnCount: {},
         };
@@ -1400,6 +1401,7 @@ export class GameEngine {
 
         // Reset per-turn flags
         this.state.players.forEach(player => {
+            player.lockedSkillTraitsUntilTurnEnd = {};
             player.lockedActivationsUntilTurnEnd = {};
         });
 
@@ -2584,6 +2586,20 @@ export class GameEngine {
                                         return sum + Math.max(0, this.getUnitHit(unitZone, source.owner));
                                     }, 0);
                                     value = totalFriendlyHit * value;
+                                } else if (params.dynamic === 'OTHER_FRIENDLY_TRAIT_ANY_COUNT_MULTIPLIER') {
+                                    const excludeSelf = params.excludeSelf === true;
+                                    const traitValues = Array.isArray(params.traits)
+                                        ? params.traits.filter((trait: unknown): trait is string => typeof trait === 'string')
+                                        : (typeof params.trait === 'string' ? [params.trait] : []);
+                                    const matchingCount = source.owner.unitZones.reduce((sum, unitZone) => {
+                                        if (!unitZone.unit) return sum;
+                                        if (excludeSelf && source.zone && unitZone === source.zone) return sum;
+                                        if (traitValues.length <= 0) return sum;
+                                        const traitText = String(unitZone.unit.traits || '');
+                                        if (!traitValues.some(trait => traitText.includes(trait))) return sum;
+                                        return sum + 1;
+                                    }, 0);
+                                    value = matchingCount * value;
                                 }
                                 power += value;
                             }

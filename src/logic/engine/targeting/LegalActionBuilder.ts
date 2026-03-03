@@ -33,6 +33,10 @@ function resolveTotalCostLimit(targetSchema: any, context: GameContext): number 
         const add = typeof limit.add === 'number' ? limit.add : 0;
         return Math.max(0, context.player.hand.length + add);
     }
+    if (limit && typeof limit === 'object' && limit.type === 'MY_DAMAGE_COUNT') {
+        const add = typeof limit.add === 'number' ? limit.add : 0;
+        return Math.max(0, context.player.damage.length + add);
+    }
     return null;
 }
 

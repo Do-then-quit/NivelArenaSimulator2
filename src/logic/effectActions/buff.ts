@@ -1,6 +1,13 @@
 import { ActionImplementation, ActivationCondition, UnitZoneState } from '../types';
 import { getOwnerOfZone } from './helpers';
 
+function resolveOwnerTurnEndUntilTurnCount(ctx: any, target: any): number {
+    const owner = getOwnerOfZone(ctx.machine, target);
+    if (!owner) return ctx.machine.state.turnCount;
+    const isOwnersTurn = ctx.machine.currentPlayer?.id === owner.id;
+    return ctx.machine.state.turnCount + (isOwnersTurn ? 0 : 1);
+}
+
 export const buffPower: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(target => {
         if (target && target.unit) {
@@ -9,13 +16,20 @@ export const buffPower: ActionImplementation = (ctx, params, targets) => {
                 value = ctx.player.leaderLevel * value;
             }
 
+            const untilOwnerTurnEnd = params.untilOwnerTurnEnd === true;
+            const duration = untilOwnerTurnEnd ? 'PERMANENT' : (params.duration || 'TURN_END');
+            const untilTurnCount = untilOwnerTurnEnd
+                ? resolveOwnerTurnEndUntilTurnCount(ctx, target)
+                : undefined;
+
             target.buffs.push({
                 id: ctx.machine.createRuntimeId('BUFF'),
                 sourceCard: ctx.sourceCard,
                 type: 'POWER',
                 value,
                 mode: params.mode || 'ADD',
-                duration: params.duration || 'TURN_END'
+                duration,
+                ...(typeof untilTurnCount === 'number' ? { untilTurnCount } : {}),
             });
             console.log(`Buffed ${target.unit.name} to ${value} Power (Mode: ${params.mode || 'ADD'}).`);
         }

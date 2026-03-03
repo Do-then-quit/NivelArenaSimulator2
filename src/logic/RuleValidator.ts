@@ -62,6 +62,14 @@ export class RuleValidator {
         if (lockedSkillIds?.[card.id]) {
             return { valid: false, reason: "Skill is locked until end of turn" };
         }
+        const lockedSkillTraits = (player as any).lockedSkillTraitsUntilTurnEnd as Record<string, boolean> | undefined;
+        if (lockedSkillTraits) {
+            const cardTraits = String(card.traits || '');
+            const lockedTrait = Object.keys(lockedSkillTraits).find(trait => lockedSkillTraits[trait] && cardTraits.includes(trait));
+            if (lockedTrait) {
+                return { valid: false, reason: `Skill trait is locked until end of turn (${lockedTrait})` };
+            }
+        }
 
         // Size Limit Check (Field Cost + Skill Cost must not exceed Size)
         const playerSize = engine.getPlayerSize(player);

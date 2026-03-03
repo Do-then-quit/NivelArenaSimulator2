@@ -97,6 +97,8 @@ export type ActionType =
     | 'REVEAL_TOP_PICK_TO_HAND_THEN_ORDER_BOTTOM'
     | 'GRANT_EXTRA_ATTACK_THIS_TURN'
     | 'LOCK_SKILL_ID_UNTIL_TURN_END'
+    | 'SET_TARGET_COST_THIS_TURN'
+    | 'LOCK_SKILL_TRAIT_UNTIL_TURN_END'
     | 'AUTO_ATTACK_IF_ENCOUNTER';
 
 export type UiTraceEventType =
@@ -122,6 +124,7 @@ export interface TargetFilter {
     | 'POWER_MIN'
     | 'POWER_LIMIT'
     | 'COST_LOWER_THAN_COST_PAYMENT'
+    | 'COST_LOWER_THAN_TRASHED_UNIT'
     | 'COST_LOWER_THAN_SKILL_ZONE_COUNT'
     | 'COST_EQUAL'
     | 'COST_HIGHER_THAN_ENCOUNTER'
@@ -169,7 +172,7 @@ export interface TargetSchema {
         state?: 'EXHAUSTED' | 'READY';
     };
     selectMode: 'MANUAL' | 'RANDOM' | 'LOWEST_POWER' | 'HIGHEST_POWER' | 'ALL';
-    totalCostLimit?: number | { type: 'MY_HAND_COUNT'; add?: number }; // Total selected cost cap
+    totalCostLimit?: number | { type: 'MY_HAND_COUNT' | 'MY_DAMAGE_COUNT'; add?: number }; // Total selected cost cap
 }
 
 export interface EffectCondition {
@@ -354,6 +357,7 @@ export interface PlayerState {
     leaderLevel: number;
     unitZones: [UnitZoneState, UnitZoneState, UnitZoneState]; // 3 zones
     skillZone: Card[];
+    lockedSkillTraitsUntilTurnEnd: Record<string, boolean>;
     lockedActivationsUntilTurnEnd: Partial<Record<ActivationCondition, boolean>>;
     lockedActivationsUntilTurnCount: Partial<Record<ActivationCondition, number>>;
 }

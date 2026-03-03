@@ -10,6 +10,7 @@ import {
     drawThenDiscard,
     destroySelf,
     gainLevel,
+    lockSkillTraitUntilTurnEnd,
     lockSkillIdUntilTurnEnd,
     moveFromDamageToHand,
     moveFromHandToDamage,
@@ -17,6 +18,7 @@ import {
     moveFromTrashToDeckTop,
     noneAction,
     returnToHand,
+    setTargetCostThisTurn,
     trashSelf,
 } from './effectActions/core';
 import {
@@ -3485,6 +3487,236 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
         return;
     }
 
+    if ((params as any).mode === 'ST06_011_ATTACKER_OPTIONAL_DISCARD_FOR_TOTAL_POWER_DEBUFF') {
+        const stage = (params as any).stage;
+        const applyDebuffToStoredTarget = () => {
+            const targetPlayerId = String(ctx.flags?.ST06_011_TARGET_PLAYER_ID || '');
+            const targetZoneIndex = Number(ctx.flags?.ST06_011_TARGET_ZONE_INDEX ?? -1);
+            const targetPlayer = ctx.machine.getPlayerById(targetPlayerId);
+            if (!targetPlayer || targetZoneIndex < 0 || targetZoneIndex >= targetPlayer.unitZones.length) return;
+            const targetZone = targetPlayer.unitZones[targetZoneIndex];
+            if (!targetZone?.unit) return;
+
+            const totalFriendlyPower = ctx.player.unitZones.reduce((sum: number, zone: UnitZoneState) => {
+                if (!zone?.unit) return sum;
+                return sum + Math.max(0, ctx.machine.getUnitPower(zone, ctx.player));
+            }, 0);
+            if (totalFriendlyPower <= 0) return;
+
+            targetZone.buffs.push({
+                id: ctx.machine.createRuntimeId('BUFF'),
+                sourceCard: ctx.sourceCard,
+                type: 'POWER',
+                value: -totalFriendlyPower,
+                duration: (params as any).duration || 'TURN_END',
+            });
+        };
+
+        if (stage === 'PROMPT_DISCARD') {
+            const requiredCount = Math.max(0, Number(ctx.flags?.ST06_011_REQUIRED_DISCARD_COUNT ?? 0));
+            if (requiredCount <= 0) {
+                applyDebuffToStoredTarget();
+                return;
+            }
+            if (ctx.player.hand.length < requiredCount) return;
+
+            const handSelectionSchema = {
+                scope: 'MY_HAND',
+                type: 'CARD',
+                count: requiredCount,
+                selectMode: 'MANUAL',
+            } as const;
+            ctx.machine.state.interactionMode = 'SELECT_TARGET';
+            ctx.machine.state.pendingEffect = {
+                sourceCard: ctx.sourceCard,
+                sourcePlayerId: ctx.player.id,
+                controllerPlayerId: ctx.player.id,
+                actionType: 'ST06_011_SELECT_HAND_FOR_HIT_COST',
+                actionValue: { allowPartialSelection: false, requiredCount },
+                effectDescription: `패 ${requiredCount}장을 선택해 트래시한다.`,
+                validTargets: 'MY_HAND',
+                targetSchema: handSelectionSchema,
+                selectedTargets: [],
+            };
+            ctx.machine.setPendingRuntime(ctx, {
+                activation: ActivationCondition.ATTACKER,
+                description: 'ST06-011 resolve optional hit discard and debuff',
+                targets: handSelectionSchema as any,
+                action: {
+                    type: 'COMPLEX_ACTION',
+                    params: {
+                        mode: 'ST06_011_ATTACKER_OPTIONAL_DISCARD_FOR_TOTAL_POWER_DEBUFF',
+                        stage: 'RESOLVE_DISCARD_AND_APPLY',
+                    },
+                },
+                duration: 'TURN_END',
+                actionDurationOverride: 'TURN_END',
+            } as any);
+            ctx.machine.setInteractionOwner(ctx.player.id);
+            return;
+        }
+
+        if (stage === 'RESOLVE_DISCARD_AND_APPLY') {
+            const requiredCount = Math.max(0, Number(ctx.flags?.ST06_011_REQUIRED_DISCARD_COUNT ?? 0));
+            const selectedCards = (_targets || []).filter((card: any) => ctx.player.hand.includes(card));
+            if (requiredCount > 0 && selectedCards.length !== requiredCount) return;
+
+            const trashedCards: any[] = [];
+            selectedCards.forEach((card: any) => {
+                const handIndex = ctx.player.hand.indexOf(card);
+                if (handIndex === -1) return;
+                const [removed] = ctx.player.hand.splice(handIndex, 1);
+                if (!removed) return;
+                ctx.player.trash.push(removed);
+                trashedCards.push(removed);
+            });
+            if (trashedCards.length > 0) {
+                ctx.machine.notifyHandTrashed(ctx.player, trashedCards, {
+                    flags: { handTrashByEffect: true },
+                });
+            }
+
+            applyDebuffToStoredTarget();
+            return;
+        }
+
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const targetOwner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!targetOwner) return;
+        const targetZoneIndex = targetOwner.unitZones.indexOf(targetZone);
+        if (targetZoneIndex < 0) return;
+
+        const requiredCount = Math.max(0, ctx.machine.getUnitHit(targetZone, targetOwner));
+        if (requiredCount > 0 && ctx.player.hand.length < requiredCount) return;
+
+        ctx.flags = ctx.flags || {};
+        ctx.flags.ST06_011_TARGET_PLAYER_ID = targetOwner.id;
+        ctx.flags.ST06_011_TARGET_ZONE_INDEX = targetZoneIndex;
+        ctx.flags.ST06_011_REQUIRED_DISCARD_COUNT = requiredCount;
+
+        if (requiredCount <= 0) {
+            applyDebuffToStoredTarget();
+            return;
+        }
+
+        const optionalEffect = {
+            activation: ActivationCondition.ATTACKER,
+            description: `패 ${requiredCount}장을 트래시할 수 있다.`,
+            optional: true,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'ST06_011_ATTACKER_OPTIONAL_DISCARD_FOR_TOTAL_POWER_DEBUFF',
+                    stage: 'PROMPT_DISCARD',
+                },
+            },
+        } as any;
+        ctx.machine.effectManager.processEffect(optionalEffect, ctx as any);
+        return;
+    }
+
+    if ((params as any).mode === 'ST06_012_ACTIVE_MAIN_DISCARD_SKILLS_FOR_ENCOUNTER_DEBUFF') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const selectedSkills = (_targets || [])
+                .filter((card: any) => ctx.player.hand.includes(card) && card.type === CardType.SKILL)
+                .slice(0, 2);
+            if (selectedSkills.length <= 0) return;
+
+            let totalCost = 0;
+            const trashedCards: any[] = [];
+            selectedSkills.forEach((card: any) => {
+                const handIndex = ctx.player.hand.indexOf(card);
+                if (handIndex === -1) return;
+                const [removed] = ctx.player.hand.splice(handIndex, 1);
+                if (!removed) return;
+                ctx.player.trash.push(removed);
+                trashedCards.push(removed);
+                totalCost += getCardCost(ctx.machine, removed);
+            });
+            if (trashedCards.length > 0) {
+                ctx.machine.notifyHandTrashed(ctx.player, trashedCards, {
+                    flags: { handTrashByEffect: true },
+                });
+            }
+            if (totalCost <= 0) return;
+            if (!ctx.unitZone) return;
+
+            const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
+            if (laneIndex < 0) return;
+            const encounterZone = ctx.opponent.unitZones[laneIndex];
+            if (!encounterZone?.unit) return;
+
+            encounterZone.buffs.push({
+                id: ctx.machine.createRuntimeId('BUFF'),
+                sourceCard: ctx.sourceCard,
+                type: 'POWER',
+                value: -1000 * totalCost,
+                duration: (params as any).duration || 'TURN_END',
+            });
+            return;
+        }
+
+        const skillCardsInHand = ctx.player.hand.filter((card: any) => card?.type === CardType.SKILL);
+        if (skillCardsInHand.length <= 0) return;
+        const maxSelectable = Math.min(2, skillCardsInHand.length);
+        const handSelectionSchema = {
+            scope: 'MY_HAND',
+            type: 'CARD',
+            count: maxSelectable,
+            filters: [{ type: 'UNIT_TYPE', value: CardType.SKILL }],
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST06_012_SELECT_SKILLS_TO_TRASH',
+            actionValue: {
+                allowPartialSelection: true,
+                minSelection: 0,
+                maxSelection: maxSelectable,
+            },
+            effectDescription: '트래시할 스킬 카드를 최대 2장까지 선택한다.',
+            validTargets: 'MY_HAND',
+            targetSchema: handSelectionSchema,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: 'ST06-012 resolve skill discard and encounter debuff',
+            targets: handSelectionSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'ST06_012_ACTIVE_MAIN_DISCARD_SKILLS_FOR_ENCOUNTER_DEBUFF',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST06_015_DESTROY_IF_POWER_LEQ_MY_FIELD_SUM') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const targetOwner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!targetOwner) return;
+
+        const myFieldPowerTotal = ctx.player.unitZones.reduce((sum: number, zone: UnitZoneState) => {
+            if (!zone?.unit) return sum;
+            return sum + Math.max(0, ctx.machine.getUnitPower(zone, ctx.player));
+        }, 0);
+        const targetPower = ctx.machine.getUnitPower(targetZone, targetOwner);
+        if (targetPower <= myFieldPowerTotal) {
+            ctx.machine.destroyUnit(targetOwner, targetZone, undefined, 'EFFECT');
+        }
+        return;
+    }
+
     const subActions = (params as any).subActions;
     if (!Array.isArray(subActions)) return;
 
@@ -3547,6 +3779,8 @@ export const ActionRegistry: Record<string, ActionImplementation> = {
     'REVEAL_TOP_PICK_TO_HAND_THEN_ORDER_BOTTOM': revealTopPickToHandThenOrderBottom,
     'GRANT_EXTRA_ATTACK_THIS_TURN': grantExtraAttackThisTurn,
     'LOCK_SKILL_ID_UNTIL_TURN_END': lockSkillIdUntilTurnEnd,
+    'SET_TARGET_COST_THIS_TURN': setTargetCostThisTurn,
+    'LOCK_SKILL_TRAIT_UNTIL_TURN_END': lockSkillTraitUntilTurnEnd,
     'AUTO_ATTACK_IF_ENCOUNTER': autoAttackIfEncounter,
     'DAMAGE': damage,
     'DRAW_THEN_DISCARD': drawThenDiscard,

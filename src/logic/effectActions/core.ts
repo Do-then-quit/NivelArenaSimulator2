@@ -241,6 +241,42 @@ export const lockSkillIdUntilTurnEnd: ActionImplementation = (ctx, params) => {
     (targetPlayer as any).lockedSkillIdsUntilTurnEnd = lockMap;
 };
 
+export const lockSkillTraitUntilTurnEnd: ActionImplementation = (ctx, params) => {
+    const targetPlayer = params.target === 'OPPONENT' ? ctx.opponent : ctx.player;
+    const requestedTraits = Array.isArray(params.traits) ? params.traits : [params.trait];
+    const traits = requestedTraits
+        .filter((trait: unknown): trait is string => typeof trait === 'string')
+        .map((trait: string) => trait.trim())
+        .filter((trait: string) => trait.length > 0);
+    if (traits.length <= 0) return;
+
+    const lockMap = ((targetPlayer as any).lockedSkillTraitsUntilTurnEnd || {}) as Record<string, boolean>;
+    traits.forEach((trait: string) => {
+        lockMap[trait] = true;
+    });
+    (targetPlayer as any).lockedSkillTraitsUntilTurnEnd = lockMap;
+};
+
+export const setTargetCostThisTurn: ActionImplementation = (ctx, params, targets) => {
+    const cost = Math.max(0, Number(params.cost ?? 0));
+    const turnCount = ctx.machine.state.turnCount;
+    targets.forEach(target => {
+        if (target && typeof target === 'object' && 'unit' in target && target.unit) {
+            target.unit.turnCostOverride = {
+                cost,
+                turnCount,
+            };
+            return;
+        }
+        if (target && typeof target === 'object' && 'type' in target) {
+            (target as any).turnCostOverride = {
+                cost,
+                turnCount,
+            };
+        }
+    });
+};
+
 export const autoAttackIfEncounter: ActionImplementation = (ctx) => {
     if (!ctx.unitZone || !ctx.unitZone.unit) return;
     const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
