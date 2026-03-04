@@ -264,6 +264,7 @@ function render() {
     uiState.hoverPreview.hide();
     uiState.trashHoverOverlay?.hide();
     document.body.classList.toggle('game-screen', uiState.currentScreen === Screen.GAME);
+    document.body.classList.toggle('deck-builder-screen', uiState.currentScreen === Screen.DECK_BUILDER);
 
     if (uiState.currentScreen === Screen.GAME && uiState.game) {
         uiState.gameLogFeed.startConsoleCapture(() => (

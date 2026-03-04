@@ -1867,16 +1867,28 @@ body.phase-theme-end {
 }
 
 /* --- Deck Builder UI --- */
+body.deck-builder-screen {
+    overflow: hidden;
+}
+
+body.deck-builder-screen #app {
+    height: 100dvh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
+}
+
 .deck-builder {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 40px);
+    height: 100%;
+    min-height: 0;
     gap: 12px;
 }
 
 .deck-builder-header {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
     gap: 12px;
     background: rgba(45, 45, 65, 0.4);
@@ -1888,13 +1900,23 @@ body.phase-theme-end {
 .deck-builder-header h1 {
     margin: 0;
     font-size: 1.2rem;
+    letter-spacing: 0.4px;
+}
+
+.db-mobile-header-actions,
+.db-mobile-tabs,
+.db-mobile-sheet,
+.db-sheet-backdrop,
+.db-mobile-sticky-actions {
+    display: none;
 }
 
 .db-main {
     display: grid;
-    grid-template-columns: 240px 1fr 330px;
+    grid-template-columns: 240px 1fr minmax(320px, 360px);
     gap: 16px;
-    flex-grow: 1;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -1906,6 +1928,16 @@ body.phase-theme-end {
     flex-direction: column;
     gap: 15px;
     overflow-y: auto;
+}
+
+.db-sidebar h2 {
+    font-size: 1.1rem;
+    margin: 0;
+    color: #4a9eff;
+}
+
+.db-new-deck-btn {
+    margin-top: 4px;
 }
 
 .db-library {
@@ -1931,6 +1963,11 @@ body.phase-theme-end {
     color: white;
     padding: 10px;
     border-radius: 8px;
+}
+
+#db-search {
+    flex: 1;
+    min-width: 200px;
 }
 
 .db-card-grid {
@@ -2014,6 +2051,17 @@ body.phase-theme-end {
     pointer-events: none;
 }
 
+.db-library-empty,
+.db-deck-empty,
+.no-decks {
+    color: #9fb2d9;
+    font-size: 0.86rem;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .db-current-deck {
     background: rgba(25, 27, 40, 0.6);
     border-radius: 20px;
@@ -2057,10 +2105,93 @@ body.phase-theme-end {
     border-left: 3px solid #d63031;
 }
 
+.db-leader-slot {
+    min-height: 72px;
+}
+
+.leader-preview {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.24);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.db-leader-preview-card {
+    width: 54px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 0;
+    background: #000;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.db-deck-item-mini {
+    width: 100%;
+    aspect-ratio: 370 / 515;
+}
+
+.db-deck-item-mini .card-image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    background: #000;
+}
+
+.leader-preview-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.leader-label {
+    color: #9bb9f0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.leader-name {
+    color: #eff4ff;
+    font-weight: 700;
+    font-size: 0.88rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.remove-leader-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 120, 120, 0.55);
+    background: rgba(155, 32, 32, 0.28);
+    color: #ffd3d3;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.leader-empty {
+    color: #95a8ce;
+    font-size: 0.85rem;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px dashed rgba(135, 163, 212, 0.35);
+}
+
 .db-deck-list {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 8px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
 }
 
 .deck-list-item {
@@ -2068,26 +2199,71 @@ body.phase-theme-end {
     justify-content: space-between;
     align-items: center;
     background: rgba(0, 0, 0, 0.2);
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
     font-size: 0.9rem;
+    gap: 10px;
 }
 
-.remove-btn {
-    background: #ff7675;
+.deck-list-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     border: none;
-    color: white;
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
+    background: transparent;
+    color: #f4f7ff;
+    font: inherit;
+    min-width: 0;
     cursor: pointer;
-    font-weight: bold;
+    padding: 0;
+    text-align: left;
 }
 
-.db-sidebar h2 {
-    font-size: 1.1rem;
-    margin: 0;
-    color: #4a9eff;
+.deck-list-card .db-deck-item-mini {
+    width: 42px;
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    flex-shrink: 0;
+}
+
+.deck-list-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.82rem;
+}
+
+.deck-list-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.deck-qty-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: #f7faff;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.deck-qty-count {
+    min-width: 18px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: #d4ddf4;
+}
+
+.db-deck-name-input {
+    min-width: 0;
 }
 
 .db-saved-list {
@@ -2146,6 +2322,256 @@ body.phase-theme-end {
     border-radius: 8px;
     width: 100%;
     min-width: 0;
+}
+
+@media (max-width: 1200px) and (orientation: portrait) {
+    body.deck-builder-screen {
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
+    body.deck-builder-screen #app {
+        padding: calc(env(safe-area-inset-top, 0px) + 8px) 8px calc(env(safe-area-inset-bottom, 0px) + 8px);
+    }
+
+    .deck-builder.mobile-portrait {
+        gap: 8px;
+    }
+
+    .deck-builder.mobile-portrait .deck-builder-header {
+        padding: 8px 10px;
+        border-radius: 12px;
+    }
+
+    .deck-builder.mobile-portrait .deck-builder-header h1 {
+        font-size: 0.96rem;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-header-actions {
+        display: inline-flex;
+        gap: 6px;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        padding: 4px 0;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-tabs button {
+        border-radius: 10px;
+        min-height: 34px;
+        border-color: rgba(130, 181, 255, 0.28);
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-tabs button.active {
+        background: rgba(74, 158, 255, 0.25);
+        border-color: rgba(125, 196, 255, 0.68);
+        color: #e9f4ff;
+    }
+
+    .deck-builder.mobile-portrait .db-main {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        min-height: 0;
+    }
+
+    .deck-builder.mobile-portrait .db-sidebar {
+        display: none;
+    }
+
+    .deck-builder.mobile-portrait .db-library,
+    .deck-builder.mobile-portrait .db-current-deck {
+        border-radius: 12px;
+        padding: 10px;
+        min-height: 0;
+    }
+
+    .deck-builder.mobile-portrait .mobile-panel-hidden {
+        display: none;
+    }
+
+    .deck-builder.mobile-portrait .mobile-panel-active {
+        display: flex;
+    }
+
+    .deck-builder.mobile-portrait .db-controls {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        margin-bottom: 10px;
+        background: rgba(16, 20, 30, 0.92);
+        border-radius: 10px;
+        padding: 8px;
+        backdrop-filter: blur(6px);
+    }
+
+    .deck-builder.mobile-portrait .db-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        padding-right: 0;
+    }
+
+    .deck-builder.mobile-portrait .db-card-title {
+        font-size: 0.72rem;
+        min-height: 1.95em;
+    }
+
+    .deck-builder.mobile-portrait .db-current-deck-header {
+        grid-template-columns: 1fr;
+    }
+
+    .deck-builder.mobile-portrait .db-current-deck-count {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: rgba(16, 20, 30, 0.9);
+        border-radius: 8px;
+        padding: 6px 8px;
+    }
+
+    .deck-builder.mobile-portrait .validation-warnings {
+        position: sticky;
+        top: 38px;
+        z-index: 2;
+        background: rgba(16, 20, 30, 0.9);
+        border-radius: 8px;
+        padding: 6px 8px;
+    }
+
+    .deck-builder.mobile-portrait .leader-preview {
+        padding: 8px;
+    }
+
+    .deck-builder.mobile-portrait .deck-list-item {
+        padding: 7px 8px;
+    }
+
+    .deck-builder.mobile-portrait .deck-list-card .db-deck-item-mini {
+        width: 38px;
+    }
+
+    .deck-builder.mobile-portrait .deck-list-name {
+        font-size: 0.78rem;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-sticky-actions {
+        display: flex;
+        justify-content: stretch;
+        position: sticky;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
+        padding: 10px 0 calc(env(safe-area-inset-bottom, 0px) + 2px);
+        background: linear-gradient(to top, rgba(16, 20, 30, 0.96) 45%, rgba(16, 20, 30, 0));
+        margin-top: auto;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-sticky-actions .primary-btn {
+        width: 100%;
+        min-height: 44px;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        letter-spacing: 0.4px;
+    }
+
+    .deck-builder.mobile-portrait .db-sheet-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.56);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 140ms ease;
+        z-index: 3990;
+    }
+
+    .deck-builder.mobile-portrait .db-sheet-backdrop.open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-sheet {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: min(64vh, 520px);
+        padding: 12px 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
+        border-top-left-radius: 14px;
+        border-top-right-radius: 14px;
+        border: 1px solid rgba(127, 197, 255, 0.28);
+        border-bottom: none;
+        background: rgba(14, 18, 30, 0.98);
+        box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.55);
+        transform: translateY(108%);
+        transition: transform 160ms ease;
+        z-index: 4000;
+        overflow-y: auto;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-sheet.open {
+        transform: translateY(0);
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-sheet-header h3 {
+        margin: 0;
+        font-size: 0.94rem;
+        color: #e3ecff;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-filter-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-filter-controls label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.8rem;
+        color: #bccbe8;
+    }
+
+    .deck-builder.mobile-portrait .db-mobile-filter-controls select {
+        background: rgba(0, 0, 0, 0.34);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: #eff5ff;
+        border-radius: 8px;
+        padding: 9px 10px;
+    }
+
+    .deck-builder.mobile-portrait .db-card-item,
+    .deck-builder.mobile-portrait .db-card-mini,
+    .deck-builder.mobile-portrait .db-card-mini .card-image,
+    .deck-builder.mobile-portrait .deck-list-card,
+    .deck-builder.mobile-portrait .db-deck-item-mini,
+    .deck-builder.mobile-portrait .db-deck-item-mini .card-image,
+    .deck-builder.mobile-portrait .db-leader-preview-card,
+    .deck-builder.mobile-portrait .db-leader-preview-card .card-image {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .deck-builder.mobile-portrait .db-card-mini .card-image,
+    .deck-builder.mobile-portrait .db-deck-item-mini .card-image,
+    .deck-builder.mobile-portrait .db-leader-preview-card .card-image {
+        -webkit-user-drag: none;
+    }
 }
 
 /* --- Setup Screen --- */

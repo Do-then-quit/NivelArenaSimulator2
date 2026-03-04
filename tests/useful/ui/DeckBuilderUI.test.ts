@@ -100,7 +100,8 @@ describe('DeckBuilderUI', () => {
         leaderItem.click();
 
         const leaderSlot = container.querySelector('#db-leader-slot') as HTMLElement;
-        expect(leaderSlot.textContent).toContain('LEADER: Fire Leader');
+        expect(leaderSlot.textContent).toContain('LEADER');
+        expect(leaderSlot.textContent).toContain('Fire Leader');
     });
 
     it('filters cards by selected attribute', () => {
