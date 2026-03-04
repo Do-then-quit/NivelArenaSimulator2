@@ -1,5 +1,5 @@
 import { DebugManager } from '../../logic/DebugManager';
-import { Card, EngineAction } from '../../logic/types';
+import { Card, CardType, EngineAction } from '../../logic/types';
 import { DUMMY_CARDS } from '../../logic/CardDatabase';
 import { DeckPersistence } from '../../logic/DeckPersistence';
 import { GameEngine } from '../../logic/GameEngine';
@@ -24,6 +24,8 @@ import {
 const ONLINE_LABEL = 'ONLINE ROOM';
 
 const cardById = new Map<string, Card>(DUMMY_CARDS.map(card => [card.id, card]));
+const fallbackLeaderCardTemplate = DUMMY_CARDS.find(card => card.type === CardType.LEADER) ?? null;
+const fallbackDeckCardTemplate = DUMMY_CARDS.find(card => card.type !== CardType.LEADER) ?? null;
 
 let onlineClient: OnlineClient | null = null;
 let pendingMessages: ClientToServerMessage[] = [];
@@ -36,7 +38,15 @@ let localSelectedDeckId: string | null = null;
 
 function getOnlineWsUrl(): string {
     const configured = (import.meta as any).env?.VITE_ONLINE_WS_URL as string | undefined;
-    return configured || 'ws://localhost:8787';
+    if (configured) return configured;
+
+    if (typeof window !== 'undefined') {
+        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const host = window.location.hostname || 'localhost';
+        return `${protocol}://${host}:8787`;
+    }
+
+    return 'ws://localhost:8787';
 }
 
 function sanitizePlayerName(name: string): string {
@@ -131,26 +141,24 @@ function flushPendingMessages(): void {
     });
 }
 
-function isDeckSubmissionValid(deck: DeckSubmission): boolean {
-    if (!deck.leaderId) return false;
-    if (deck.cardIds.length !== 40) return false;
-    return true;
-}
-
 function cloneCard(card: Card): Card {
     return JSON.parse(JSON.stringify(card));
 }
 
 function hydrateDeckSubmission(deck: DeckSubmission): { deckCards: Card[]; leader: Card } | null {
-    if (!isDeckSubmissionValid(deck)) return null;
-    const leaderTemplate = cardById.get(deck.leaderId);
+    const leaderTemplate = cardById.get(deck.leaderId) ?? fallbackLeaderCardTemplate;
     if (!leaderTemplate) return null;
 
     const deckCards: Card[] = [];
     for (const cardId of deck.cardIds) {
         const template = cardById.get(cardId);
-        if (!template) return null;
+        if (!template) continue;
         deckCards.push(cloneCard(template));
+    }
+
+    // Keep online matches startable even with incomplete deck submissions.
+    if (deckCards.length === 0 && fallbackDeckCardTemplate) {
+        deckCards.push(cloneCard(fallbackDeckCardTemplate));
     }
 
     return {
@@ -529,11 +537,11 @@ function handleServerMessage(message: ServerToClientMessage): void {
 
 function buildDeckSubmission(deckId: string): DeckSubmission | null {
     const saved = DeckPersistence.getDeck(deckId);
-    if (!saved || !saved.leaderId) return null;
+    if (!saved) return null;
     return {
         deckId: saved.id,
         deckName: saved.name,
-        leaderId: saved.leaderId,
+        leaderId: saved.leaderId ?? '',
         cardIds: [...saved.cardIds],
         revision: localDeckRevision,
     };
@@ -580,7 +588,7 @@ export function submitDeckSelection(deckId: string): boolean {
     localDeckRevision += 1;
     localSelectedDeckId = deckId;
     const deck = buildDeckSubmission(deckId);
-    if (!deck || !isDeckSubmissionValid(deck)) {
+    if (!deck) {
         return false;
     }
     queueOrSend({

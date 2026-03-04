@@ -107,12 +107,6 @@ function getRoomOfClient(client: ClientSession): RoomState | null {
     return rooms.get(client.roomCode) ?? null;
 }
 
-function deckIsValid(deck: DeckSubmission | null): deck is DeckSubmission {
-    if (!deck) return false;
-    if (!deck.leaderId) return false;
-    return deck.cardIds.length === 40;
-}
-
 function getPlayerBySlot(room: RoomState, slot: PlayerSlot): RoomPlayerState | null {
     for (const player of room.players.values()) {
         if (player.slot === slot) return player;
@@ -123,7 +117,7 @@ function getPlayerBySlot(room: RoomState, slot: PlayerSlot): RoomPlayerState | n
 function maybeAuthorizeMatchStart(room: RoomState): void {
     if (room.phase !== 'LOBBY') return;
     if (room.players.size !== 2) return;
-    const allReady = [...room.players.values()].every(player => player.ready && deckIsValid(player.deck));
+    const allReady = [...room.players.values()].every(player => player.ready);
     if (!allReady) return;
 
     const host = room.players.get(room.hostClientId);
@@ -284,11 +278,6 @@ function handleReady(client: ClientSession, ready: boolean): void {
 
     const player = room.players.get(client.id);
     if (!player) return;
-
-    if (ready && !deckIsValid(player.deck)) {
-        send(client.socket, { type: 'ROOM_ERROR', code: 'DECK_INVALID', message: 'Submit a valid deck first.' });
-        return;
-    }
 
     player.ready = ready;
     broadcastRoomState(room);

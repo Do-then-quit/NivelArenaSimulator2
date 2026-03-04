@@ -133,7 +133,16 @@ function renderLobbyPanel() {
     const localReady = localPlayer?.ready ?? false;
     const roomPlayers = [...room.players].sort((a, b) => a.slot.localeCompare(b.slot));
     const inGame = room.phase === 'IN_GAME';
-    const canReady = !!localPlayer?.deckSummary && isDeckSummaryValid(localPlayer.deckSummary) && !inGame;
+    const localDeckSummary = localPlayer?.deckSummary ?? null;
+    const localDeckValid = isDeckSummaryValid(localDeckSummary);
+    const canReady = !!localPlayer && !inGame;
+    const warningText = inGame
+        ? 'Ready state is locked while match is in progress.'
+        : !localDeckSummary
+            ? 'No deck submitted yet. You can still Ready, but submit a deck for stable match behavior.'
+            : !localDeckValid
+                ? 'Submitted deck is invalid (not 40 cards or missing leader). Match still starts, but behavior may be unstable.'
+                : '';
 
     uiState.app.innerHTML = `
         <div class="setup-screen">
@@ -170,7 +179,7 @@ function renderLobbyPanel() {
                         <button id="online-ready-btn" class="primary-btn" ${canReady ? '' : 'disabled'}>${localReady ? 'Unready' : 'Ready'}</button>
                         <button id="online-leave-room-btn" class="secondary-btn">Leave Room</button>
                     </div>
-                    ${!canReady ? '<p style="margin-top: 10px; color:#f6e58d;">Ready requires a valid submitted deck (40 cards + leader) and lobby phase.</p>' : ''}
+                    ${warningText ? `<p style="margin-top: 10px; color:#f6e58d;">${warningText}</p>` : ''}
                     ${uiState.onlineSession.pendingRequestId ? `<p style="margin-top:10px; color:#74b9ff;">Waiting commit: ${uiState.onlineSession.pendingRequestId}</p>` : ''}
                 </div>
             </div>
@@ -186,7 +195,7 @@ function renderLobbyPanel() {
         }
         const ok = submitDeckSelection(deckId);
         if (!ok) {
-            alert('Deck must contain exactly 40 cards and a leader.');
+            alert('Failed to submit selected deck.');
         }
     });
 
