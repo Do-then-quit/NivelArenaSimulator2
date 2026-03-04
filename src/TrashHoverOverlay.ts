@@ -162,9 +162,9 @@ export class TrashHoverOverlay {
                 stopLongPress(true);
             });
             el.addEventListener('pointercancel', () => stopLongPress(false));
-            el.addEventListener('contextmenu', (event: MouseEvent) => {
+            el.addEventListener('contextmenu', (event: Event) => {
                 if (this.supportsMouseHoverPreview) return;
-                event.preventDefault();
+                (event as MouseEvent).preventDefault();
             });
             if (interactive) {
                 el.addEventListener('click', () => {

@@ -81,7 +81,6 @@ function escapeHtml(value: string): string {
 
 export class DeckBuilderUI {
     private logic: DeckBuilderLogic;
-    private readonly allCards: Card[];
     private readonly cardsById: Map<string, Card>;
     private container: HTMLElement;
     private hoverPreview: HoverPreview;
@@ -106,7 +105,6 @@ export class DeckBuilderUI {
         onBack: () => void,
     ) {
         this.logic = new DeckBuilderLogic(cards);
-        this.allCards = cards;
         this.cardsById = new Map(cards.map(card => [card.id, card]));
         this.container = container;
         this.hoverPreview = hoverPreview;
