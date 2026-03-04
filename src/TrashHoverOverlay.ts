@@ -17,11 +17,20 @@ export class TrashHoverOverlay {
     private titleElement: HTMLElement;
     private gridElement: HTMLElement;
     private hoverPreview: HoverPreview;
+    private supportsMouseHoverPreview: boolean;
     private hideTimeout: number | null = null;
     private activeAnchorElement: HTMLElement | null = null;
 
     constructor(hoverPreview: HoverPreview) {
         this.hoverPreview = hoverPreview;
+        this.supportsMouseHoverPreview = (() => {
+            if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true;
+            try {
+                return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+            } catch {
+                return true;
+            }
+        })();
 
         this.element = document.createElement('div');
         this.element.className = 'trash-hover-overlay';
@@ -98,18 +107,20 @@ export class TrashHoverOverlay {
                 activePointerId = null;
             };
 
-            el.addEventListener('mouseenter', (e) => {
-                const index = parseInt((el as HTMLElement).dataset.index!);
-                this.hoverPreview.show(cards[index], (e as MouseEvent).clientX, (e as MouseEvent).clientY);
-            });
-            el.addEventListener('mousemove', (e) => {
-                const mouseEvent = e as MouseEvent;
-                const index = parseInt((el as HTMLElement).dataset.index!);
-                this.hoverPreview.show(cards[index], mouseEvent.clientX, mouseEvent.clientY);
-            });
-            el.addEventListener('mouseleave', () => {
-                this.hoverPreview.hide();
-            });
+            if (this.supportsMouseHoverPreview) {
+                el.addEventListener('mouseenter', (e) => {
+                    const index = parseInt((el as HTMLElement).dataset.index!);
+                    this.hoverPreview.show(cards[index], (e as MouseEvent).clientX, (e as MouseEvent).clientY);
+                });
+                el.addEventListener('mousemove', (e) => {
+                    const mouseEvent = e as MouseEvent;
+                    const index = parseInt((el as HTMLElement).dataset.index!);
+                    this.hoverPreview.show(cards[index], mouseEvent.clientX, mouseEvent.clientY);
+                });
+                el.addEventListener('mouseleave', () => {
+                    this.hoverPreview.hide();
+                });
+            }
             el.addEventListener('pointerdown', (event: Event) => {
                 const e = event as PointerEvent;
                 if (e.pointerType === 'mouse') return;
@@ -151,6 +162,10 @@ export class TrashHoverOverlay {
                 stopLongPress(true);
             });
             el.addEventListener('pointercancel', () => stopLongPress(false));
+            el.addEventListener('contextmenu', (event: MouseEvent) => {
+                if (this.supportsMouseHoverPreview) return;
+                event.preventDefault();
+            });
             if (interactive) {
                 el.addEventListener('click', () => {
                     if (suppressNextClick) {

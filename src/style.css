@@ -376,6 +376,11 @@ body.phase-theme-end {
     box-shadow: 0 0 16px rgba(120, 207, 255, 0.55);
 }
 
+.skill-zone.mobile-play-target {
+    border-color: rgba(120, 207, 255, 0.95);
+    box-shadow: 0 0 16px rgba(120, 207, 255, 0.45);
+}
+
 .attached-items {
     position: absolute;
     bottom: -15px;
@@ -405,6 +410,8 @@ body.phase-theme-end {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    pointer-events: none;
+    -webkit-user-drag: none;
 }
 
 /* Damage & Skill Area (2, 4) */
@@ -2523,6 +2530,46 @@ body.phase-theme-end {
     font-size: 0.72rem;
     padding: 7px 9px;
     backdrop-filter: blur(6px);
+}
+
+.game-container.mobile-portrait .card,
+.game-container.mobile-portrait .card-in-hand,
+.game-container.mobile-portrait .unit-zone,
+.game-container.mobile-portrait .mini-item-card,
+.game-container.mobile-portrait .skill-card-item,
+.game-container.mobile-portrait .revealed-card-item,
+.game-container.mobile-portrait .damage-card-item,
+.game-container.mobile-portrait .trash-card-item,
+.game-container.mobile-portrait .card-image,
+.game-container.mobile-portrait .preview-image {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.game-container.mobile-portrait .card-image,
+.game-container.mobile-portrait .preview-image {
+    -webkit-user-drag: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .damage-zone,
+    .damage-card-item,
+    .skill-zone,
+    .skill-card-item,
+    .trash-zone,
+    .trash-card-item,
+    .revealed-card-item,
+    .selection-modal-overlay .card,
+    .selection-modal-overlay .card-image,
+    .mini-item-card,
+    .mini-item-card img,
+    .trash-hover-card,
+    .trash-hover-card .card-image {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
 }
 
 .mobile-floating-actions {

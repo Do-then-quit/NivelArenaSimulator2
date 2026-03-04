@@ -194,7 +194,7 @@ describe('game bindings mobile touch play', () => {
         dispatchSpy.mockRestore();
     });
 
-    it('plays skill immediately on tap in mobile portrait mode', async () => {
+    it('plays skill after tap-selecting hand card and tapping skill zone in mobile portrait mode', async () => {
         const { uiState, Screen } = await import('../../src/ui/appState');
         const { renderGame } = await import('../../src/ui/screens/gameView');
         const controller = await import('../../src/ui/online/onlineMatchController');
@@ -214,6 +214,8 @@ describe('game bindings mobile touch play', () => {
 
         renderGame();
         (document.querySelector('.hand-zone .card-in-hand[data-index="0"]') as HTMLElement).click();
+        expect(dispatchSpy).not.toHaveBeenCalled();
+        (document.querySelector('.current .drop-zone-skill') as HTMLElement).click();
 
         expect(dispatchSpy).toHaveBeenCalledWith({ type: 'PLAY_SKILL', actorPlayerId: 'P1', handIndex: 0 });
         dispatchSpy.mockRestore();

@@ -19,10 +19,57 @@ const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
 
 const TOUCH_LONG_PRESS_MS = 350;
 const TOUCH_LONG_PRESS_MOVE_THRESHOLD_PX = 16;
+const MOBILE_CONTEXT_MENU_BLOCK_SELECTORS = [
+    '.card-in-hand',
+    '.damage-zone',
+    '.damage-card-item',
+    '.skill-zone',
+    '.skill-card-item',
+    '.trash-zone',
+    '.trash-card-item',
+    '.revealed-card-item',
+    '.selection-modal-overlay',
+    '.selection-modal-overlay .card',
+    '.selection-modal-overlay .card-image',
+    '.mini-item-card',
+    '.mini-item-card img',
+    '.trash-hover-card',
+    '.trash-hover-overlay',
+];
+let touchContextMenuGuardBound = false;
+
+function supportsHoverAndFinePointer(): boolean {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true;
+    try {
+        return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    } catch {
+        return true;
+    }
+}
+
+function shouldBlockMobileCardContextMenu(target: EventTarget | null): boolean {
+    const el = target as HTMLElement | null;
+    if (!el) return false;
+    return MOBILE_CONTEXT_MENU_BLOCK_SELECTORS.some((selector) => el.closest(selector));
+}
+
+function ensureTouchContextMenuGuard() {
+    if (touchContextMenuGuardBound) return;
+    document.addEventListener('contextmenu', (event) => {
+        if (uiState.currentScreen !== Screen.GAME || !uiState.game) return;
+        const isMobilePortrait = uiState.app.querySelector('.game-container.mobile-portrait') !== null;
+        if (!isMobilePortrait) return;
+        if (supportsHoverAndFinePointer()) return;
+        if (!shouldBlockMobileCardContextMenu(event.target)) return;
+        event.preventDefault();
+    }, true);
+    touchContextMenuGuardBound = true;
+}
 
 export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, calculatedPower?: number, calculatedHit?: number) => string) {
     const game = uiState.game;
     if (!game) return;
+    ensureTouchContextMenuGuard();
     const hasOnlineRoomSession = () => !!uiState.onlineSession.room && !!uiState.onlineSession.role;
     const localHumanCanInput = canLocalHumanInput();
     const logAction = (message: string, category: GameLogCategory = 'ACTION') => {
@@ -37,6 +84,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     const getBottomUiPlayer = () => getBottomPlayer(game);
     const getTopUiPlayer = () => getTopPlayer(game);
     const isMobilePortraitLayout = uiState.app.querySelector('.game-container.mobile-portrait') !== null;
+    const supportsMouseHoverPreview = supportsHoverAndFinePointer();
     const isMobileTapPlayMode = () => {
         if (!uiState.game || !isMobilePortraitLayout) return false;
         if (uiState.replaySession) return false;
@@ -82,11 +130,15 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     const applyMobileTapPlayableHighlights = () => {
         const handCards = document.querySelectorAll('.hand-zone .card-in-hand');
         const zones = document.querySelectorAll('.drop-zone');
+        const skillZones = document.querySelectorAll('.drop-zone-skill');
 
         handCards.forEach((cardEl) => {
             (cardEl as HTMLElement).classList.remove('mobile-tap-playable', 'mobile-selected');
         });
         zones.forEach((zoneEl) => {
+            (zoneEl as HTMLElement).classList.remove('mobile-play-target');
+        });
+        skillZones.forEach((zoneEl) => {
             (zoneEl as HTMLElement).classList.remove('mobile-play-target');
         });
 
@@ -123,6 +175,14 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
         const selectedCardElement = document.querySelector(`.hand-zone .card-in-hand[data-index="${selectedHandIndex}"]`) as HTMLElement | null;
         selectedCardElement?.classList.add('mobile-selected');
+
+        if (selectedCard.type === CardType.SKILL) {
+            if (!skillHandIndexes.has(selectedHandIndex)) return;
+            skillZones.forEach((zoneEl) => {
+                (zoneEl as HTMLElement).classList.add('mobile-play-target');
+            });
+            return;
+        }
 
         if (selectedCard.type !== CardType.UNIT && selectedCard.type !== CardType.ITEM) return;
         const targetZoneSet = selectedCard.type === CardType.UNIT
@@ -167,6 +227,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
             el.addEventListener('pointerdown', (event: PointerEvent) => {
                 if (event.pointerType === 'mouse') return;
+                const eventTarget = event.target as HTMLElement | null;
+                if (el.classList.contains('unit-zone') && eventTarget?.closest('.mini-item-card')) return;
                 const card = resolveCard(el);
                 if (!card) return;
 
@@ -183,6 +245,8 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
             el.addEventListener('pointermove', (event: PointerEvent) => {
                 if (pointerId === null || event.pointerId !== pointerId || event.pointerType === 'mouse') return;
+                const eventTarget = event.target as HTMLElement | null;
+                if (el.classList.contains('unit-zone') && eventTarget?.closest('.mini-item-card')) return;
                 if (!longPressActive) {
                     const movedX = event.clientX - originX;
                     const movedY = event.clientY - originY;
@@ -213,6 +277,10 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 event.preventDefault();
                 event.stopPropagation();
             }, true);
+            el.addEventListener('contextmenu', (event: MouseEvent) => {
+                if (supportsMouseHoverPreview) return;
+                event.preventDefault();
+            });
         }
     };
     const inSelectTargetMode = game.state.interactionMode === 'SELECT_TARGET' && localHumanCanInput;
@@ -429,23 +497,12 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             const handCard = localPlayer.hand[handIndex];
             if (!handCard) return;
 
-            const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
             const legalActions = getLegalPlayActions();
             const { unitTargetsByHandIndex, itemTargetsByHandIndex, skillHandIndexes } = getPlayableActionBuckets(legalActions);
             const canPlayAsUnit = unitTargetsByHandIndex.has(handIndex);
             const canPlayAsItem = itemTargetsByHandIndex.has(handIndex);
             const canPlayAsSkill = skillHandIndexes.has(handIndex);
             if (!canPlayAsUnit && !canPlayAsItem && !canPlayAsSkill) return;
-
-            if (handCard.type === CardType.SKILL && canPlayAsSkill) {
-                const ok = dispatchEngineAction({ type: 'PLAY_SKILL', actorPlayerId, handIndex });
-                if (!ok) return;
-                logAction(`[플레이] 스킬 ${handCard.name}`);
-                clearMobileTapSelection();
-                uiState.render?.();
-                e.stopPropagation();
-                return;
-            }
 
             if (uiState.mobileGameView.selectedHandIndex === handIndex) {
                 clearMobileTapSelection();
@@ -456,33 +513,35 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             e.stopPropagation();
         });
 
-        card.addEventListener('mouseenter', (e) => {
-            const el = card as HTMLElement;
-            const isRevealed = el.dataset.handRevealed === '1';
-            if (!isRevealed) return;
-            const index = parseInt((card as HTMLElement).dataset.index!);
-            const isOpponent = card.closest('.opponent-hand-zone') !== null;
-            const player = isOpponent ? getTopUiPlayer() : getBottomUiPlayer();
-            const cardObj = player.hand[index];
-            const mouseEvent = e as MouseEvent;
-            uiState.hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
-        });
+        if (supportsMouseHoverPreview) {
+            card.addEventListener('mouseenter', (e) => {
+                const el = card as HTMLElement;
+                const isRevealed = el.dataset.handRevealed === '1';
+                if (!isRevealed) return;
+                const index = parseInt((card as HTMLElement).dataset.index!);
+                const isOpponent = card.closest('.opponent-hand-zone') !== null;
+                const player = isOpponent ? getTopUiPlayer() : getBottomUiPlayer();
+                const cardObj = player.hand[index];
+                const mouseEvent = e as MouseEvent;
+                uiState.hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
+            });
 
-        card.addEventListener('mousemove', (e) => {
-            const el = card as HTMLElement;
-            const isRevealed = el.dataset.handRevealed === '1';
-            if (!isRevealed) return;
-            const mouseEvent = e as MouseEvent;
-            const index = parseInt((card as HTMLElement).dataset.index!);
-            const isOpponent = card.closest('.opponent-hand-zone') !== null;
-            const player = isOpponent ? getTopUiPlayer() : getBottomUiPlayer();
-            const cardObj = player.hand[index];
-            uiState.hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
-        });
+            card.addEventListener('mousemove', (e) => {
+                const el = card as HTMLElement;
+                const isRevealed = el.dataset.handRevealed === '1';
+                if (!isRevealed) return;
+                const mouseEvent = e as MouseEvent;
+                const index = parseInt((card as HTMLElement).dataset.index!);
+                const isOpponent = card.closest('.opponent-hand-zone') !== null;
+                const player = isOpponent ? getTopUiPlayer() : getBottomUiPlayer();
+                const cardObj = player.hand[index];
+                uiState.hoverPreview.show(cardObj, mouseEvent.clientX, mouseEvent.clientY);
+            });
 
-        card.addEventListener('mouseleave', () => {
-            uiState.hoverPreview.hide();
-        });
+            card.addEventListener('mouseleave', () => {
+                uiState.hoverPreview.hide();
+            });
+        }
     });
 
     const dropZones = document.querySelectorAll('.drop-zone');
@@ -632,6 +691,29 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 }
             }
         });
+
+        zone.addEventListener('click', (e) => {
+            if (!isMobileTapPlayMode()) return;
+            if (!canLocalHumanInput()) return;
+
+            const selectedHandIndex = uiState.mobileGameView.selectedHandIndex;
+            if (selectedHandIndex === null) return;
+            const localPlayer = getBottomUiPlayer();
+            const selectedCard = localPlayer.hand[selectedHandIndex];
+            if (!selectedCard || selectedCard.type !== CardType.SKILL) return;
+
+            const legalSkillAction = getLegalPlayActions().find((action: any) =>
+                action.type === 'PLAY_SKILL' && action.handIndex === selectedHandIndex,
+            ) as EngineAction | undefined;
+            if (!legalSkillAction) return;
+
+            const ok = dispatchEngineAction(legalSkillAction);
+            if (!ok) return;
+            logAction(`[플레이] 스킬 ${selectedCard.name}`);
+            clearMobileTapSelection();
+            uiState.render?.();
+            e.stopPropagation();
+        });
     });
 
     uiState.app.querySelector('.battle-fit-viewport')?.addEventListener('click', (e) => {
@@ -641,6 +723,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         if (!target) return;
         if (target.closest('.hand-zone .card-in-hand')) return;
         if (target.closest('.drop-zone')) return;
+        if (target.closest('.drop-zone-skill')) return;
         clearMobileTapSelection();
         uiState.render?.();
     });
@@ -658,6 +741,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
     const unitZones = document.querySelectorAll('.unit-zone');
     unitZones.forEach(zone => {
+        if (!supportsMouseHoverPreview) return;
         zone.addEventListener('mouseenter', (e) => {
             const el = zone as HTMLElement;
             const index = parseInt(el.dataset.index!);
@@ -693,6 +777,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     });
 
     document.querySelectorAll('.mini-item-card').forEach((itemEl) => {
+        if (!supportsMouseHoverPreview) return;
         itemEl.addEventListener('mouseenter', (e) => {
             const card = getMiniItemCardFromElement(itemEl as HTMLElement);
             if (!card) return;
@@ -907,14 +992,16 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                     uiState.render?.();
                 });
 
-                item.addEventListener('mouseenter', (e) => {
-                    const sourcePlayer = uiState.game!.state.players.find(p => p.id === pending.sourcePlayerId);
-                    if (!sourcePlayer) return;
-                    const card = sourcePlayer.trash[index];
-                    const mouseEvent = e as MouseEvent;
-                    uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
-                });
-                item.addEventListener('mouseleave', () => uiState.hoverPreview.hide());
+                if (supportsMouseHoverPreview) {
+                    item.addEventListener('mouseenter', (e) => {
+                        const sourcePlayer = uiState.game!.state.players.find(p => p.id === pending.sourcePlayerId);
+                        if (!sourcePlayer) return;
+                        const card = sourcePlayer.trash[index];
+                        const mouseEvent = e as MouseEvent;
+                        uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+                    });
+                    item.addEventListener('mouseleave', () => uiState.hoverPreview.hide());
+                }
             });
         }
 
@@ -1044,14 +1131,16 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 });
             }
 
-            item.addEventListener('mouseenter', (e) => {
-                const index = parseInt((item as HTMLElement).dataset.index || '-1', 10);
-                if (index < 0) return;
-                const card = uiState.game!.state.revealedCards[index];
-                const mouseEvent = e as MouseEvent;
-                uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
-            });
-            item.addEventListener('mouseleave', () => uiState.hoverPreview.hide());
+            if (supportsMouseHoverPreview) {
+                item.addEventListener('mouseenter', (e) => {
+                    const index = parseInt((item as HTMLElement).dataset.index || '-1', 10);
+                    if (index < 0) return;
+                    const card = uiState.game!.state.revealedCards[index];
+                    const mouseEvent = e as MouseEvent;
+                    uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+                });
+                item.addEventListener('mouseleave', () => uiState.hoverPreview.hide());
+            }
         });
 
         document.querySelectorAll('.skill-card-item').forEach((itemEl) => {
@@ -1111,6 +1200,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     }
 
     document.querySelectorAll('.leader-slot .card').forEach(card => {
+        if (!supportsMouseHoverPreview) return;
         card.addEventListener('mouseenter', (e) => {
             const isOpponent = card.closest('.opponent') !== null;
             const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
@@ -1202,6 +1292,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         zone.querySelectorAll('.damage-card-item').forEach(cardEl => {
             const index = parseInt((cardEl as HTMLElement).dataset.index || '-1');
             if (index < 0) return;
+            if (!supportsMouseHoverPreview) return;
             cardEl.addEventListener('mouseenter', (e) => {
                 const card = player.damage[index];
                 if (card) {
@@ -1231,19 +1322,21 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         const card = player.skillZone[index];
         if (!card) return;
 
-        el.addEventListener('mouseenter', (e) => {
-            const mouseEvent = e as MouseEvent;
-            uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
-        });
+        if (supportsMouseHoverPreview) {
+            el.addEventListener('mouseenter', (e) => {
+                const mouseEvent = e as MouseEvent;
+                uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+            });
 
-        el.addEventListener('mousemove', (e) => {
-            const mouseEvent = e as MouseEvent;
-            uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
-        });
+            el.addEventListener('mousemove', (e) => {
+                const mouseEvent = e as MouseEvent;
+                uiState.hoverPreview.show(card, mouseEvent.clientX, mouseEvent.clientY);
+            });
 
-        el.addEventListener('mouseleave', () => {
-            uiState.hoverPreview.hide();
-        });
+            el.addEventListener('mouseleave', () => {
+                uiState.hoverPreview.hide();
+            });
+        }
     });
 
     bindTouchLongPressPreview(
