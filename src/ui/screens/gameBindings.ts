@@ -1,4 +1,4 @@
-import { Card, CardType, EngineAction } from '../../logic/types';
+import { Card, CardType, EngineAction, Phase } from '../../logic/types';
 import { RuleValidator } from '../../logic/RuleValidator';
 import { PlaybackSpeed, uiState, Screen } from '../appState';
 import { canLocalHumanInput, getActionOwnerPlayerId } from '../gameLoop';
@@ -17,6 +17,9 @@ const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
     'SB01_001_SELECT_SKILL_ZONE_TO_TRASH',
 ]);
 
+const TOUCH_LONG_PRESS_MS = 350;
+const TOUCH_LONG_PRESS_MOVE_THRESHOLD_PX = 16;
+
 export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, calculatedPower?: number, calculatedHit?: number) => string) {
     const game = uiState.game;
     if (!game) return;
@@ -33,6 +36,185 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     const getPlayerForPlayerAttr = (attr?: string) => getPlayerForUiRef(attr === 'opponent' ? 'opponent' : 'current');
     const getBottomUiPlayer = () => getBottomPlayer(game);
     const getTopUiPlayer = () => getTopPlayer(game);
+    const isMobilePortraitLayout = uiState.app.querySelector('.game-container.mobile-portrait') !== null;
+    const isMobileTapPlayMode = () => {
+        if (!uiState.game || !isMobilePortraitLayout) return false;
+        if (uiState.replaySession) return false;
+        if (!canLocalHumanInput()) return false;
+        if (uiState.game.state.phase !== Phase.MAIN) return false;
+        return uiState.game.state.interactionMode === 'NORMAL';
+    };
+    const getLegalPlayActions = () => {
+        if (!uiState.game) return [];
+        const actorPlayerId = getActionOwnerPlayerId(uiState.game);
+        return uiState.game.getLegalActions(actorPlayerId);
+    };
+    const getPlayableActionBuckets = (legalActions: any[]) => {
+        const unitTargetsByHandIndex = new Map<number, Set<number>>();
+        const itemTargetsByHandIndex = new Map<number, Set<number>>();
+        const skillHandIndexes = new Set<number>();
+
+        legalActions.forEach((action: any) => {
+            if (action.type === 'PLAY_UNIT' && Number.isInteger(action.handIndex) && Number.isInteger(action.zoneIndex)) {
+                const nextSet = unitTargetsByHandIndex.get(action.handIndex) ?? new Set<number>();
+                nextSet.add(action.zoneIndex);
+                unitTargetsByHandIndex.set(action.handIndex, nextSet);
+            }
+            if (action.type === 'PLAY_ITEM' && Number.isInteger(action.handIndex) && Number.isInteger(action.zoneIndex)) {
+                const nextSet = itemTargetsByHandIndex.get(action.handIndex) ?? new Set<number>();
+                nextSet.add(action.zoneIndex);
+                itemTargetsByHandIndex.set(action.handIndex, nextSet);
+            }
+            if (action.type === 'PLAY_SKILL' && Number.isInteger(action.handIndex)) {
+                skillHandIndexes.add(action.handIndex);
+            }
+        });
+
+        return {
+            unitTargetsByHandIndex,
+            itemTargetsByHandIndex,
+            skillHandIndexes,
+        };
+    };
+    const clearMobileTapSelection = () => {
+        uiState.mobileGameView.selectedHandIndex = null;
+    };
+    const applyMobileTapPlayableHighlights = () => {
+        const handCards = document.querySelectorAll('.hand-zone .card-in-hand');
+        const zones = document.querySelectorAll('.drop-zone');
+
+        handCards.forEach((cardEl) => {
+            (cardEl as HTMLElement).classList.remove('mobile-tap-playable', 'mobile-selected');
+        });
+        zones.forEach((zoneEl) => {
+            (zoneEl as HTMLElement).classList.remove('mobile-play-target');
+        });
+
+        if (!isMobileTapPlayMode()) {
+            clearMobileTapSelection();
+            return;
+        }
+
+        const localPlayer = getBottomUiPlayer();
+        const legalActions = getLegalPlayActions();
+        const { unitTargetsByHandIndex, itemTargetsByHandIndex, skillHandIndexes } = getPlayableActionBuckets(legalActions);
+        const playableHandIndexSet = new Set<number>([
+            ...unitTargetsByHandIndex.keys(),
+            ...itemTargetsByHandIndex.keys(),
+            ...skillHandIndexes.values(),
+        ]);
+
+        handCards.forEach((cardEl) => {
+            const el = cardEl as HTMLElement;
+            const handIndex = parseInt(el.dataset.index || '-1', 10);
+            if (handIndex < 0) return;
+            if (playableHandIndexSet.has(handIndex)) {
+                el.classList.add('mobile-tap-playable');
+            }
+        });
+
+        const selectedHandIndex = uiState.mobileGameView.selectedHandIndex;
+        if (selectedHandIndex === null) return;
+        const selectedCard = localPlayer.hand[selectedHandIndex];
+        if (!selectedCard || !playableHandIndexSet.has(selectedHandIndex)) {
+            clearMobileTapSelection();
+            return;
+        }
+
+        const selectedCardElement = document.querySelector(`.hand-zone .card-in-hand[data-index="${selectedHandIndex}"]`) as HTMLElement | null;
+        selectedCardElement?.classList.add('mobile-selected');
+
+        if (selectedCard.type !== CardType.UNIT && selectedCard.type !== CardType.ITEM) return;
+        const targetZoneSet = selectedCard.type === CardType.UNIT
+            ? unitTargetsByHandIndex.get(selectedHandIndex) ?? new Set<number>()
+            : itemTargetsByHandIndex.get(selectedHandIndex) ?? new Set<number>();
+
+        zones.forEach((zoneEl) => {
+            const el = zoneEl as HTMLElement;
+            const zoneIndex = parseInt(el.dataset.index || '-1', 10);
+            if (targetZoneSet.has(zoneIndex)) {
+                el.classList.add('mobile-play-target');
+            }
+        });
+    };
+    const bindTouchLongPressPreview = (elements: Iterable<HTMLElement>, resolveCard: (el: HTMLElement) => Card | null) => {
+        const suppressClickElements = new WeakSet<HTMLElement>();
+        for (const el of elements) {
+            let pressTimer: number | null = null;
+            let longPressActive = false;
+            let pointerId: number | null = null;
+            let originX = 0;
+            let originY = 0;
+
+            const clearPressTimer = () => {
+                if (pressTimer !== null) {
+                    window.clearTimeout(pressTimer);
+                    pressTimer = null;
+                }
+            };
+
+            const cancelLongPress = (consumeClick: boolean) => {
+                clearPressTimer();
+                if (longPressActive) {
+                    uiState.hoverPreview.hide();
+                    if (consumeClick) {
+                        suppressClickElements.add(el);
+                    }
+                }
+                longPressActive = false;
+                pointerId = null;
+            };
+
+            el.addEventListener('pointerdown', (event: PointerEvent) => {
+                if (event.pointerType === 'mouse') return;
+                const card = resolveCard(el);
+                if (!card) return;
+
+                pointerId = event.pointerId;
+                originX = event.clientX;
+                originY = event.clientY;
+                longPressActive = false;
+                clearPressTimer();
+                pressTimer = window.setTimeout(() => {
+                    longPressActive = true;
+                    uiState.hoverPreview.show(card, originX, originY);
+                }, TOUCH_LONG_PRESS_MS);
+            });
+
+            el.addEventListener('pointermove', (event: PointerEvent) => {
+                if (pointerId === null || event.pointerId !== pointerId || event.pointerType === 'mouse') return;
+                if (!longPressActive) {
+                    const movedX = event.clientX - originX;
+                    const movedY = event.clientY - originY;
+                    if (Math.hypot(movedX, movedY) > TOUCH_LONG_PRESS_MOVE_THRESHOLD_PX) {
+                        cancelLongPress(false);
+                    }
+                    return;
+                }
+
+                const card = resolveCard(el);
+                if (!card) return;
+                uiState.hoverPreview.show(card, event.clientX, event.clientY);
+            });
+
+            el.addEventListener('pointerup', (event: PointerEvent) => {
+                if (pointerId === null || event.pointerId !== pointerId || event.pointerType === 'mouse') return;
+                cancelLongPress(true);
+            });
+            el.addEventListener('pointercancel', () => cancelLongPress(false));
+            el.addEventListener('pointerleave', () => {
+                if (longPressActive) {
+                    uiState.hoverPreview.hide();
+                }
+            });
+            el.addEventListener('click', (event: MouseEvent) => {
+                if (!suppressClickElements.has(el)) return;
+                suppressClickElements.delete(el);
+                event.preventDefault();
+                event.stopPropagation();
+            }, true);
+        }
+    };
     const inSelectTargetMode = game.state.interactionMode === 'SELECT_TARGET' && localHumanCanInput;
     const pendingSelectEffect = inSelectTargetMode ? (game.state.pendingEffect as any) : null;
     const selectTargetActorId = inSelectTargetMode ? getActionOwnerPlayerId(game) : '';
@@ -105,6 +287,17 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         uiState.gameLogView.autoCollapsed = false;
         uiState.render?.();
     });
+    const closeMobileLogSheet = () => {
+        if (!uiState.mobileGameView.logSheetOpen) return;
+        uiState.mobileGameView.logSheetOpen = false;
+        uiState.render?.();
+    };
+    document.getElementById('mobile-log-fab')?.addEventListener('click', () => {
+        uiState.mobileGameView.logSheetOpen = true;
+        uiState.render?.();
+    });
+    document.getElementById('mobile-log-sheet-close')?.addEventListener('click', closeMobileLogSheet);
+    document.getElementById('mobile-log-sheet-backdrop')?.addEventListener('click', closeMobileLogSheet);
 
     document.querySelectorAll('[data-playback-speed]').forEach(button => {
         button.addEventListener('click', () => {
@@ -183,6 +376,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
         const ok = dispatchEngineAction({ type: 'NEXT_PHASE', actorPlayerId });
         if (!ok) return;
+        clearMobileTapSelection();
         const afterPhase = uiState.game!.state.phase;
         logAction(`[?섎룞] NEXT_PHASE: ${beforePhase} -> ${afterPhase}`);
         uiState.render?.();
@@ -222,6 +416,44 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             uiState.draggedCardIndex = null;
             uiState.hoverPreview.setSuppressed(false);
             document.querySelectorAll('.zone').forEach(z => z.classList.remove('valid-target', 'invalid-target'));
+        });
+
+        card.addEventListener('click', (e) => {
+            if (!isMobileTapPlayMode()) return;
+            if (!canLocalHumanInput()) return;
+            if (card.closest('.opponent-hand-zone')) return;
+
+            const handIndex = parseInt((card as HTMLElement).dataset.index || '-1', 10);
+            if (handIndex < 0) return;
+            const localPlayer = getBottomUiPlayer();
+            const handCard = localPlayer.hand[handIndex];
+            if (!handCard) return;
+
+            const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
+            const legalActions = getLegalPlayActions();
+            const { unitTargetsByHandIndex, itemTargetsByHandIndex, skillHandIndexes } = getPlayableActionBuckets(legalActions);
+            const canPlayAsUnit = unitTargetsByHandIndex.has(handIndex);
+            const canPlayAsItem = itemTargetsByHandIndex.has(handIndex);
+            const canPlayAsSkill = skillHandIndexes.has(handIndex);
+            if (!canPlayAsUnit && !canPlayAsItem && !canPlayAsSkill) return;
+
+            if (handCard.type === CardType.SKILL && canPlayAsSkill) {
+                const ok = dispatchEngineAction({ type: 'PLAY_SKILL', actorPlayerId, handIndex });
+                if (!ok) return;
+                logAction(`[플레이] 스킬 ${handCard.name}`);
+                clearMobileTapSelection();
+                uiState.render?.();
+                e.stopPropagation();
+                return;
+            }
+
+            if (uiState.mobileGameView.selectedHandIndex === handIndex) {
+                clearMobileTapSelection();
+            } else {
+                uiState.mobileGameView.selectedHandIndex = handIndex;
+            }
+            uiState.render?.();
+            e.stopPropagation();
         });
 
         card.addEventListener('mouseenter', (e) => {
@@ -311,6 +543,54 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 }
             }
         });
+
+        zone.addEventListener('click', (e) => {
+            if (!isMobileTapPlayMode()) return;
+            if (!canLocalHumanInput()) return;
+
+            const selectedHandIndex = uiState.mobileGameView.selectedHandIndex;
+            if (selectedHandIndex === null) return;
+            const zoneIndex = parseInt((zone as HTMLElement).dataset.index || '-1', 10);
+            if (zoneIndex < 0) return;
+
+            const localPlayer = getBottomUiPlayer();
+            const card = localPlayer.hand[selectedHandIndex];
+            if (!card) {
+                clearMobileTapSelection();
+                uiState.render?.();
+                return;
+            }
+
+            const legalActions = getLegalPlayActions();
+            let ok = false;
+            if (card.type === CardType.UNIT) {
+                const legalUnitAction = legalActions.find((action: any) =>
+                    action.type === 'PLAY_UNIT'
+                    && action.handIndex === selectedHandIndex
+                    && action.zoneIndex === zoneIndex,
+                ) as EngineAction | undefined;
+                if (!legalUnitAction) return;
+                ok = dispatchEngineAction(legalUnitAction);
+                if (ok) {
+                    logAction(`[플레이] 유닛 ${card.name} -> ${getLaneLabel(zoneIndex)}`);
+                }
+            } else if (card.type === CardType.ITEM) {
+                const legalItemAction = legalActions.find((action: any) =>
+                    action.type === 'PLAY_ITEM'
+                    && action.handIndex === selectedHandIndex
+                    && action.zoneIndex === zoneIndex,
+                ) as EngineAction | undefined;
+                if (!legalItemAction) return;
+                ok = dispatchEngineAction(legalItemAction);
+                if (ok) {
+                    logAction(`[플레이] 아이템 ${card.name} -> ${getLaneLabel(zoneIndex)}`);
+                }
+            }
+            if (!ok) return;
+            clearMobileTapSelection();
+            uiState.render?.();
+            e.stopPropagation();
+        });
     });
 
     const skillZones = document.querySelectorAll('.drop-zone-skill');
@@ -352,6 +632,17 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 }
             }
         });
+    });
+
+    uiState.app.querySelector('.battle-fit-viewport')?.addEventListener('click', (e) => {
+        if (!isMobileTapPlayMode()) return;
+        if (uiState.mobileGameView.selectedHandIndex === null) return;
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+        if (target.closest('.hand-zone .card-in-hand')) return;
+        if (target.closest('.drop-zone')) return;
+        clearMobileTapSelection();
+        uiState.render?.();
     });
 
     const getMiniItemCardFromElement = (miniItemEl: HTMLElement): Card | null => {
@@ -954,4 +1245,77 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             uiState.hoverPreview.hide();
         });
     });
+
+    bindTouchLongPressPreview(
+        Array.from(document.querySelectorAll('.card-in-hand')) as HTMLElement[],
+        (el) => {
+            const handIndex = parseInt(el.dataset.index || '-1', 10);
+            if (handIndex < 0) return null;
+            const isRevealed = el.dataset.handRevealed === '1';
+            if (!isRevealed) return null;
+            const isOpponent = el.closest('.opponent-hand-zone') !== null;
+            const player = isOpponent ? getTopUiPlayer() : getBottomUiPlayer();
+            return player.hand[handIndex] ?? null;
+        },
+    );
+    bindTouchLongPressPreview(
+        Array.from(document.querySelectorAll('.unit-zone')) as HTMLElement[],
+        (el) => {
+            const zoneIndex = parseInt(el.dataset.index || '-1', 10);
+            if (zoneIndex < 0) return null;
+            const player = getPlayerForPlayerAttr(el.dataset.player);
+            return player.unitZones[zoneIndex]?.unit ?? null;
+        },
+    );
+    bindTouchLongPressPreview(
+        Array.from(document.querySelectorAll('.mini-item-card')) as HTMLElement[],
+        (el) => getMiniItemCardFromElement(el),
+    );
+    bindTouchLongPressPreview(
+        Array.from(document.querySelectorAll('.skill-card-item')) as HTMLElement[],
+        (el) => {
+            const skillIndex = parseInt(el.dataset.index || '-1', 10);
+            if (skillIndex < 0) return null;
+            const player = getPlayerForPlayerAttr(el.dataset.player);
+            return player.skillZone[skillIndex] ?? null;
+        },
+    );
+    bindTouchLongPressPreview(
+        Array.from(document.querySelectorAll('.revealed-card-item')) as HTMLElement[],
+        (el) => {
+            const revealedIndex = parseInt(el.dataset.index || '-1', 10);
+            if (revealedIndex < 0) return null;
+            return uiState.game?.state.revealedCards[revealedIndex] ?? null;
+        },
+    );
+    bindTouchLongPressPreview(
+        Array.from(document.querySelectorAll('.trash-card-item')) as HTMLElement[],
+        (el) => {
+            const trashIndex = parseInt(el.dataset.index || '-1', 10);
+            if (trashIndex < 0) return null;
+            if (game.state.interactionMode !== 'SELECT_TARGET') return null;
+            const pending = game.state.pendingEffect as any;
+            const sourcePlayer = game.state.players.find(player => player.id === pending?.sourcePlayerId);
+            return sourcePlayer?.trash[trashIndex] ?? null;
+        },
+    );
+    bindTouchLongPressPreview(
+        Array.from(document.querySelectorAll('.damage-card-item')) as HTMLElement[],
+        (el) => {
+            const damageIndex = parseInt(el.dataset.index || '-1', 10);
+            if (damageIndex < 0) return null;
+            const player = getPlayerForPlayerAttr(el.dataset.player);
+            return player.damage[damageIndex] ?? null;
+        },
+    );
+    bindTouchLongPressPreview(
+        Array.from(document.querySelectorAll('.leader-slot .card')) as HTMLElement[],
+        (el) => {
+            const isOpponent = el.closest('.opponent') !== null;
+            const player = getPlayerForUiRef(isOpponent ? 'opponent' : 'current');
+            return player.levelZone ?? null;
+        },
+    );
+
+    applyMobileTapPlayableHighlights();
 }

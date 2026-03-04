@@ -123,6 +123,11 @@ export interface PlaybackState {
     activePulseTargets: PlaybackPulseTarget[];
 }
 
+export interface MobileGameViewState {
+    logSheetOpen: boolean;
+    selectedHandIndex: number | null;
+}
+
 export const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
     label: 'HUMAN vs HUMAN',
     player1Control: 'HUMAN',
@@ -209,6 +214,10 @@ export const uiState = {
     draggedCardIndex: null as number | null,
     selectionModalCollapsed: false,
     selectionModalKey: null as string | null,
+    mobileGameView: {
+        logSheetOpen: false,
+        selectedHandIndex: null,
+    } as MobileGameViewState,
 
     // callbacks wired by main orchestrator
     render: null as (() => void) | null,

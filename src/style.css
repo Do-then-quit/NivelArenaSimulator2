@@ -371,6 +371,11 @@ body.phase-theme-end {
     background: rgba(76, 175, 80, 0.1);
 }
 
+.unit-zone.mobile-play-target {
+    border-color: rgba(120, 207, 255, 0.95);
+    box-shadow: 0 0 16px rgba(120, 207, 255, 0.55);
+}
+
 .attached-items {
     position: absolute;
     bottom: -15px;
@@ -784,6 +789,15 @@ body.phase-theme-end {
     position: relative;
     flex-shrink: 0;
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card-in-hand.mobile-tap-playable .card {
+    box-shadow: 0 0 0 2px rgba(128, 196, 255, 0.62), 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+.card-in-hand.mobile-selected .card {
+    transform: translateY(-12px);
+    box-shadow: 0 0 0 2px rgba(255, 234, 167, 0.95), 0 14px 26px rgba(0, 0, 0, 0.58);
 }
 
 .card-in-hand:hover {
@@ -2425,6 +2439,196 @@ body.phase-theme-end {
 
     .game-log-body {
         max-height: 32vh;
+    }
+}
+
+.game-container.mobile-portrait {
+    height: 100dvh;
+    min-height: 100dvh;
+    gap: 8px;
+    padding: calc(env(safe-area-inset-top, 0px) + 4px) 6px calc(env(safe-area-inset-bottom, 0px) + 84px);
+    overflow: hidden;
+}
+
+.game-container.mobile-portrait .game-layout-root {
+    display: block;
+    flex: 1;
+    min-height: 0;
+}
+
+.game-container.mobile-portrait .battle-fit-viewport {
+    height: 100%;
+    min-height: 0;
+    padding: 6px;
+}
+
+.game-container.mobile-portrait .battle-fit-content {
+    width: fit-content !important;
+    transform: scale(var(--battle-scale)) !important;
+}
+
+.game-container.mobile-portrait .game-side-rail {
+    display: none !important;
+}
+
+.mobile-floating-menu {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    left: 8px;
+    z-index: 3660;
+    pointer-events: none;
+}
+
+.mobile-menu-fab {
+    pointer-events: auto;
+    min-width: 72px;
+    min-height: 38px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.46);
+}
+
+.mobile-interaction-overlay {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    left: 90px;
+    right: 8px;
+    z-index: 3640;
+    pointer-events: none;
+}
+
+.mobile-interaction-overlay .game-interaction-banner {
+    margin: 0;
+    pointer-events: auto;
+    font-size: 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(8px);
+}
+
+.game-container.mobile-portrait > .fx-toast-stack {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 56px);
+    left: 8px;
+    right: 8px;
+    z-index: 3580;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.game-container.mobile-portrait > .fx-toast-stack .fx-toast-item {
+    width: fit-content;
+    max-width: min(92vw, 420px);
+    font-size: 0.72rem;
+    padding: 7px 9px;
+    backdrop-filter: blur(6px);
+}
+
+.mobile-floating-actions {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    z-index: 3600;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    pointer-events: none;
+    padding: 0 10px;
+}
+
+.mobile-fab {
+    pointer-events: auto;
+    min-width: 86px;
+    min-height: 42px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    letter-spacing: 0.4px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.45);
+}
+
+.mobile-next-phase-fab {
+    min-width: 96px;
+}
+
+.mobile-log-sheet-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms ease;
+    z-index: 3790;
+}
+
+.mobile-log-sheet-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.mobile-log-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: min(56vh, 460px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    border: 1px solid rgba(127, 197, 255, 0.28);
+    border-bottom: none;
+    background: rgba(14, 18, 30, 0.97);
+    box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.55);
+    transform: translateY(110%);
+    transition: transform 160ms ease;
+    padding: 10px;
+    z-index: 3800;
+}
+
+.mobile-log-sheet.open {
+    transform: translateY(0);
+}
+
+.mobile-log-sheet-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.mobile-log-sheet-title {
+    color: #f6d56b;
+    font-size: 0.86rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+}
+
+.mobile-log-sheet .game-log-panel {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    min-height: 0;
+    height: 100%;
+    max-height: none;
+    flex: 1;
+}
+
+.mobile-log-sheet .game-log-body {
+    max-height: none;
+}
+
+@media (max-width: 1200px) and (orientation: portrait) {
+    body.game-screen {
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
+    body.game-screen #app {
+        height: 100dvh;
+        overflow: hidden;
     }
 }
 

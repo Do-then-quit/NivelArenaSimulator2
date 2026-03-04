@@ -17,6 +17,7 @@ import { attachListeners } from './gameBindings';
 const MIN_BATTLE_SCALE = 0.58;
 const AUTO_LOG_COLLAPSE_HEIGHT_THRESHOLD = 980;
 const AUTO_LOG_COLLAPSE_WIDTH_THRESHOLD = 1680;
+const MOBILE_PORTRAIT_WIDTH_THRESHOLD = 1200;
 const BATTLE_BOARD_WIDTH_PX = 760;
 const HAND_ZONE_HORIZONTAL_PADDING_PX = 28;
 const HAND_CARD_WIDTH_PX = 130;
@@ -33,6 +34,7 @@ const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
 
 let gameResizeRafId: number | null = null;
 let gameResizeListenerBound = false;
+let boundVisualViewport: VisualViewport | null = null;
 
 export interface BattleScaleInput {
     naturalWidth: number;
@@ -68,10 +70,39 @@ export function shouldAutoCollapseLog(input: AutoCollapseLogInput): boolean {
     return input.viewportWidth < widthThreshold || input.viewportHeight < heightThreshold;
 }
 
+export interface MobilePortraitLayoutInput {
+    viewportWidth: number;
+    viewportHeight: number;
+    widthThreshold?: number;
+}
+
+export function shouldUseMobilePortraitLayout(input: MobilePortraitLayoutInput): boolean {
+    const widthThreshold = input.widthThreshold ?? MOBILE_PORTRAIT_WIDTH_THRESHOLD;
+    const hasValidViewport = input.viewportWidth > 0 && input.viewportHeight > 0;
+    if (!hasValidViewport) return false;
+    const isPortrait = input.viewportHeight > input.viewportWidth;
+    return isPortrait && input.viewportWidth <= widthThreshold;
+}
+
+function getViewportMetrics(): { width: number; height: number } {
+    const viewport = window.visualViewport;
+    if (viewport && viewport.width > 0 && viewport.height > 0) {
+        return {
+            width: Math.round(viewport.width),
+            height: Math.round(viewport.height),
+        };
+    }
+    return {
+        width: window.innerWidth,
+        height: window.innerHeight,
+    };
+}
+
 function applyAutoLogCollapsePolicy(): boolean {
+    const viewport = getViewportMetrics();
     const autoCollapsed = shouldAutoCollapseLog({
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
+        viewportWidth: viewport.width,
+        viewportHeight: viewport.height,
     });
     const previousExpanded = uiState.gameLogView.expanded;
 
@@ -146,9 +177,23 @@ function handleGameResize() {
 }
 
 function ensureGameResizeListener() {
-    if (gameResizeListenerBound) return;
-    window.addEventListener('resize', handleGameResize);
-    gameResizeListenerBound = true;
+    if (!gameResizeListenerBound) {
+        window.addEventListener('resize', handleGameResize);
+        window.addEventListener('orientationchange', handleGameResize);
+        window.addEventListener('scroll', handleGameResize, { passive: true });
+        gameResizeListenerBound = true;
+    }
+
+    const viewport = window.visualViewport;
+    if (viewport && viewport !== boundVisualViewport) {
+        if (boundVisualViewport) {
+            boundVisualViewport.removeEventListener('resize', handleGameResize);
+            boundVisualViewport.removeEventListener('scroll', handleGameResize);
+        }
+        viewport.addEventListener('resize', handleGameResize);
+        viewport.addEventListener('scroll', handleGameResize);
+        boundVisualViewport = viewport;
+    }
 }
 
 function isVerificationGame(): boolean {
@@ -356,6 +401,49 @@ function renderPlaybackControls(): string {
             `).join('')}
             <button id="playback-skip-btn" class="secondary-btn small-btn">Skip (Space)</button>
         </div>
+    `;
+}
+
+function renderMobileFloatingMenuButton(inOnlineMatch: boolean): string {
+    return `
+        <div class="mobile-floating-menu">
+            <button id="db-back-to-menu" class="secondary-btn game-menu-btn mobile-menu-fab">${inOnlineMatch ? 'Room' : 'Menu'}</button>
+        </div>
+    `;
+}
+
+function renderMobileInteractionOverlay(interactionBannerHtml: string): string {
+    if (!interactionBannerHtml) return '';
+    return `
+        <div class="mobile-interaction-overlay">
+            ${interactionBannerHtml}
+        </div>
+    `;
+}
+
+function renderMobileFloatingActions(localHumanCanInput: boolean): string {
+    const nextPhaseDisabled = uiState.game?.state.phase === Phase.BLOCK
+        || uiState.game?.state.interactionMode !== 'NORMAL'
+        || !localHumanCanInput;
+    return `
+        <div class="mobile-floating-actions">
+            <button id="mobile-log-fab" class="secondary-btn mobile-fab">로그</button>
+            ${uiState.replaySession ? '' : `<button id="next-phase" class="primary-btn mobile-fab mobile-next-phase-fab" ${nextPhaseDisabled ? 'disabled' : ''}>Next</button>`}
+        </div>
+    `;
+}
+
+function renderMobileLogSheet(): string {
+    const open = uiState.mobileGameView.logSheetOpen;
+    return `
+        <div id="mobile-log-sheet-backdrop" class="mobile-log-sheet-backdrop ${open ? 'open' : ''}"></div>
+        <aside class="mobile-log-sheet ${open ? 'open' : ''}">
+            <div class="mobile-log-sheet-header">
+                <div class="mobile-log-sheet-title">효과 로그</div>
+                <button id="mobile-log-sheet-close" class="secondary-btn small-btn">닫기</button>
+            </div>
+            ${renderPlaybackLogPanel()}
+        </aside>
     `;
 }
 
@@ -1071,8 +1159,25 @@ export function renderGame() {
         : 'N/A';
     const verificationGame = isVerificationGame();
     const inOnlineMatch = uiState.onlineSession.room?.phase === 'IN_GAME';
+    const viewport = getViewportMetrics();
+    const isMobilePortraitLayout = shouldUseMobilePortraitLayout({
+        viewportWidth: viewport.width,
+        viewportHeight: viewport.height,
+    });
+    if (!isMobilePortraitLayout) {
+        uiState.mobileGameView.logSheetOpen = false;
+        uiState.mobileGameView.selectedHandIndex = null;
+    }
 
     const isMainPhase = uiState.game.state.phase === Phase.MAIN;
+    const mobileTapPlayEnabled = isMobilePortraitLayout
+        && !uiState.replaySession
+        && localHumanCanInput
+        && isMainPhase
+        && uiState.game.state.interactionMode === 'NORMAL';
+    if (!mobileTapPlayEnabled) {
+        uiState.mobileGameView.selectedHandIndex = null;
+    }
     const computeHandStepPx = (cardCount: number): number => {
         const maxStep = HAND_CARD_WIDTH_PX + HAND_CARD_MAX_GAP_PX;
         if (cardCount <= 1) return maxStep;
@@ -1152,8 +1257,11 @@ export function renderGame() {
     }
 
     uiState.app.innerHTML = `
-    <div class="game-container" style="--fx-beat-ms:${speedVars.beatMs}ms; --fx-pulse-ms:${speedVars.pulseMs}ms;">
+    <div class="game-container ${isMobilePortraitLayout ? 'mobile-portrait' : ''}" style="--fx-beat-ms:${speedVars.beatMs}ms; --fx-pulse-ms:${speedVars.pulseMs}ms;">
       ${verificationGame ? renderVerificationSessionPanel() : ''}
+      ${isMobilePortraitLayout ? renderMobileFloatingMenuButton(inOnlineMatch) : ''}
+      ${isMobilePortraitLayout ? renderMobileInteractionOverlay(interactionBannerHtml) : ''}
+      ${isMobilePortraitLayout ? renderPlaybackToasts() : ''}
       <div class="game-layout-root">
         <div class="battle-fit-viewport">
           <div class="battle-fit-content" style="--battle-scale: 1;">
@@ -1195,6 +1303,7 @@ export function renderGame() {
           </div>
         </div>
 
+        ${isMobilePortraitLayout ? '' : `
         <aside class="game-side-rail">
           <div class="game-top-bar">
             <button id="db-back-to-menu" class="secondary-btn game-menu-btn">${inOnlineMatch ? 'Room' : 'Menu'}</button>
@@ -1216,8 +1325,11 @@ export function renderGame() {
             ${renderGameControlButtons(localHumanCanInput)}
           </div>
         </aside>
+        `}
       </div>
 
+      ${isMobilePortraitLayout ? renderMobileFloatingActions(localHumanCanInput) : ''}
+      ${isMobilePortraitLayout ? renderMobileLogSheet() : ''}
       ${renderOptionalEffectModal()}
       ${renderMulliganModal()}
       ${renderTrashModal()}

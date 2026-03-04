@@ -43,6 +43,8 @@ function startGame(
     uiState.replaySession = null;
     uiState.verificationSession = null;
     uiState.verificationPanelCollapsed = false;
+    uiState.mobileGameView.logSheetOpen = false;
+    uiState.mobileGameView.selectedHandIndex = null;
     uiState.activeMatchConfig = controlConfig;
     uiState.activeMatchViewConfig = {
         ...getDefaultViewConfig(controlConfig),
@@ -114,6 +116,8 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     uiState.playback.activePulseTargets = [];
     uiState.game = engine;
     uiState.verificationPanelCollapsed = false;
+    uiState.mobileGameView.logSheetOpen = false;
+    uiState.mobileGameView.selectedHandIndex = null;
     uiState.verificationSession = {
         orderedTestIds: resolvedOrderedTestIds,
         currentIndex,
@@ -274,6 +278,8 @@ function render() {
         clearAutoPhaseAdvanceTimer();
         clearPlaybackRuntimeState();
         applyPhaseThemeClass(null);
+        uiState.mobileGameView.logSheetOpen = false;
+        uiState.mobileGameView.selectedHandIndex = null;
     }
 
     if (uiState.currentScreen === Screen.MENU) {

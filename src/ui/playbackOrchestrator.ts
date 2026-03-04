@@ -48,11 +48,12 @@ function getPlayerName(playerId: string | undefined): string {
 
 function appendToast(message: string, durationMs: number): void {
     const now = Date.now();
+    const minToastLifetimeMs = 2400;
     const toast: PlaybackToast = {
         id: `ptoast_${now.toString(36)}_${Math.floor(Math.random() * 1_000_000).toString(36)}`,
         message,
         createdAtMs: now,
-        expiresAtMs: now + Math.max(900, durationMs * 2),
+        expiresAtMs: now + Math.max(minToastLifetimeMs, durationMs * 3),
     };
     uiState.playback.toasts.push(toast);
     if (uiState.playback.toasts.length > 5) {

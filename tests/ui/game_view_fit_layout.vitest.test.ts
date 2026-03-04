@@ -150,6 +150,14 @@ describe('game view fit layout', () => {
         expect(shouldAutoCollapseLog({ viewportWidth: 1536, viewportHeight: 860 })).toBe(true);
     });
 
+    it('detects portrait mobile layout for phone/tablet widths up to 1200', async () => {
+        const { shouldUseMobilePortraitLayout } = await import('../../src/ui/screens/gameView');
+        expect(shouldUseMobilePortraitLayout({ viewportWidth: 390, viewportHeight: 844 })).toBe(true);
+        expect(shouldUseMobilePortraitLayout({ viewportWidth: 900, viewportHeight: 1280 })).toBe(true);
+        expect(shouldUseMobilePortraitLayout({ viewportWidth: 1280, viewportHeight: 900 })).toBe(false);
+        expect(shouldUseMobilePortraitLayout({ viewportWidth: 900, viewportHeight: 700 })).toBe(false);
+    });
+
     it('auto-collapses log on small viewport and sets battle scale style', async () => {
         setViewport(1536, 860);
         const { uiState, Screen } = await import('../../src/ui/appState');

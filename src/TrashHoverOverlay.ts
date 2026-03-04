@@ -9,6 +9,9 @@ interface TrashHoverOverlayOptions {
     onCardSelect?: (index: number) => void;
 }
 
+const TOUCH_LONG_PRESS_MS = 350;
+const TOUCH_LONG_PRESS_MOVE_THRESHOLD_PX = 16;
+
 export class TrashHoverOverlay {
     private element: HTMLElement;
     private titleElement: HTMLElement;
@@ -73,6 +76,28 @@ export class TrashHoverOverlay {
         // Attach hover listeners to new cards
         const cardElements = this.gridElement.querySelectorAll('.trash-hover-card');
         cardElements.forEach((el) => {
+            let pressTimer: number | null = null;
+            let longPressActive = false;
+            let activePointerId: number | null = null;
+            let originX = 0;
+            let originY = 0;
+            let suppressNextClick = false;
+
+            const clearPressTimer = () => {
+                if (pressTimer === null) return;
+                window.clearTimeout(pressTimer);
+                pressTimer = null;
+            };
+            const stopLongPress = (consumeClick: boolean) => {
+                clearPressTimer();
+                if (longPressActive) {
+                    this.hoverPreview.hide();
+                    suppressNextClick = consumeClick;
+                }
+                longPressActive = false;
+                activePointerId = null;
+            };
+
             el.addEventListener('mouseenter', (e) => {
                 const index = parseInt((el as HTMLElement).dataset.index!);
                 this.hoverPreview.show(cards[index], (e as MouseEvent).clientX, (e as MouseEvent).clientY);
@@ -85,12 +110,61 @@ export class TrashHoverOverlay {
             el.addEventListener('mouseleave', () => {
                 this.hoverPreview.hide();
             });
+            el.addEventListener('pointerdown', (event: Event) => {
+                const e = event as PointerEvent;
+                if (e.pointerType === 'mouse') return;
+                const index = parseInt((el as HTMLElement).dataset.index || '-1', 10);
+                if (index < 0) return;
+                const card = cards[index];
+                if (!card) return;
+                activePointerId = e.pointerId;
+                originX = e.clientX;
+                originY = e.clientY;
+                suppressNextClick = false;
+                longPressActive = false;
+                clearPressTimer();
+                pressTimer = window.setTimeout(() => {
+                    longPressActive = true;
+                    this.hoverPreview.show(card, originX, originY);
+                }, TOUCH_LONG_PRESS_MS);
+            });
+            el.addEventListener('pointermove', (event: Event) => {
+                const e = event as PointerEvent;
+                if (activePointerId === null || e.pointerId !== activePointerId || e.pointerType === 'mouse') return;
+                if (!longPressActive) {
+                    const movedX = e.clientX - originX;
+                    const movedY = e.clientY - originY;
+                    if (Math.hypot(movedX, movedY) > TOUCH_LONG_PRESS_MOVE_THRESHOLD_PX) {
+                        stopLongPress(false);
+                    }
+                    return;
+                }
+                const index = parseInt((el as HTMLElement).dataset.index || '-1', 10);
+                if (index < 0) return;
+                const card = cards[index];
+                if (!card) return;
+                this.hoverPreview.show(card, e.clientX, e.clientY);
+            });
+            el.addEventListener('pointerup', (event: Event) => {
+                const e = event as PointerEvent;
+                if (activePointerId === null || e.pointerId !== activePointerId || e.pointerType === 'mouse') return;
+                stopLongPress(true);
+            });
+            el.addEventListener('pointercancel', () => stopLongPress(false));
             if (interactive) {
                 el.addEventListener('click', () => {
+                    if (suppressNextClick) {
+                        suppressNextClick = false;
+                        return;
+                    }
                     const index = parseInt((el as HTMLElement).dataset.index || '-1', 10);
                     if (index < 0) return;
                     if (selectableIndexes.size > 0 && !selectableIndexes.has(index)) return;
                     onCardSelect?.(index);
+                });
+            } else {
+                el.addEventListener('click', () => {
+                    suppressNextClick = false;
                 });
             }
         });
