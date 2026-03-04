@@ -429,28 +429,76 @@ body.phase-theme-end {
     display: flex;
     padding: 10px;
     gap: 8px;
-    overflow-x: auto;
+    overflow: hidden;
+    position: relative;
 }
 
 .damage-zone.summary-mode {
-    justify-content: center;
-    align-items: center;
+    justify-content: flex-start;
+    align-items: stretch;
     overflow: hidden;
     cursor: pointer;
 }
 
 .damage-zone.selection-mode {
     align-items: center;
+    overflow-x: auto;
 }
 
 .damage-summary {
     width: 100%;
     height: 100%;
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.damage-card-strip {
+    --damage-card-width: 70px;
+    --damage-step: 54px;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.damage-card-item {
+    position: relative;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.damage-summary .damage-card-strip .damage-card-item + .damage-card-item {
+    margin-left: calc((var(--damage-card-width) - var(--damage-step)) * -1);
+}
+
+.damage-card-item .card {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.damage-card-empty {
+    color: rgba(255, 255, 255, 0.22);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.9px;
+    padding-left: 6px;
+}
+
+.damage-summary-meta {
+    width: 76px;
+    flex-shrink: 0;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 4px;
+}
+
+.damage-summary-meta .selection-progress-badge {
+    margin-top: 2px;
 }
 
 .damage-count {

@@ -23,6 +23,10 @@ const HAND_ZONE_HORIZONTAL_PADDING_PX = 28;
 const HAND_CARD_WIDTH_PX = 130;
 const HAND_CARD_MAX_GAP_PX = 8;
 const HAND_CARD_MIN_STEP_PX = 24;
+const DAMAGE_CARD_WIDTH_PX = 70;
+const DAMAGE_STACK_VISIBLE_WIDTH_PX = 220;
+const DAMAGE_CARD_MAX_STEP_PX = 54;
+const DAMAGE_CARD_MIN_STEP_PX = 16;
 const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
     'BT06_SELECT_SKILL_ZONE_CARD',
     'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH',
@@ -82,6 +86,13 @@ export function shouldUseMobilePortraitLayout(input: MobilePortraitLayoutInput):
     if (!hasValidViewport) return false;
     const isPortrait = input.viewportHeight > input.viewportWidth;
     return isPortrait && input.viewportWidth <= widthThreshold;
+}
+
+function computeDamageStackStep(cardCount: number): number {
+    if (cardCount <= 1) return DAMAGE_CARD_WIDTH_PX;
+    const idealStep = (DAMAGE_STACK_VISIBLE_WIDTH_PX - DAMAGE_CARD_WIDTH_PX) / (cardCount - 1);
+    if (!Number.isFinite(idealStep) || idealStep <= 0) return DAMAGE_CARD_MIN_STEP_PX;
+    return Math.max(DAMAGE_CARD_MIN_STEP_PX, Math.min(DAMAGE_CARD_MAX_STEP_PX, idealStep));
 }
 
 function getViewportMetrics(): { width: number; height: number } {
@@ -998,6 +1009,11 @@ function renderPlayer(
         : 0;
     const damageZoneSelectionClass = hasDamageSelectionCandidate ? 'selection-zone-candidate' : '';
     const damageZoneSelectedClass = selectedDamageCount > 0 ? 'selection-zone-selected' : '';
+    const damageStackStep = computeDamageStackStep(player.damage.length);
+    const damageCardsMarkup = player.damage.map((c: Card, damageIndex: number) => {
+        const isDamageSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(c);
+        return `<div class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${damageIndex}">${renderCard(c, true)}</div>`;
+    }).join('');
     const trashZoneSelectionClass = hasTrashSelectionCandidate ? 'selection-zone-candidate' : '';
     const trashZoneSelectedClass = selectedTrashCount > 0 ? 'selection-zone-selected' : '';
     const skillPromptState = getSkillPromptSelectionStateForPlayer(player.id);
@@ -1066,14 +1082,16 @@ function renderPlayer(
 
             <div class="bottom-center">
                 <div class="damage-zone ${showDamageCardSelectionInline ? 'selection-mode' : 'summary-mode'} ${damagePulseClass} ${damageZoneSelectionClass} ${damageZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
-                    ${showDamageCardSelectionInline ? player.damage.map((c: any, damageIndex: number) => {
-        const isDamageSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(c);
-        return `<div class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${damageIndex}">${renderCard(c, true)}</div>`;
-    }).join('') : `
+                    ${showDamageCardSelectionInline ? damageCardsMarkup : `
                         <div class="damage-summary ${player.damage.length === 0 ? 'empty' : ''}">
-                            <div class="damage-count">${player.damage.length}</div>
-                            <div class="damage-label">DAMAGE</div>
-                            ${hasDamageSelectionCandidate ? `<div class="selection-progress-badge">selected ${selectedDamageCount}/${targetCount === 0 ? 'all' : targetCount}</div>` : ''}
+                            <div class="damage-card-strip" style="--damage-step:${damageStackStep}px;">
+                                ${damageCardsMarkup || '<div class="damage-card-empty">EMPTY</div>'}
+                            </div>
+                            <div class="damage-summary-meta">
+                                <div class="damage-count">${player.damage.length}</div>
+                                <div class="damage-label">DAMAGE</div>
+                                ${hasDamageSelectionCandidate ? `<div class="selection-progress-badge">selected ${selectedDamageCount}/${targetCount === 0 ? 'all' : targetCount}</div>` : ''}
+                            </div>
                         </div>
                     `}
                 </div>

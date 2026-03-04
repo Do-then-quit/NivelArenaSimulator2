@@ -148,12 +148,16 @@ describe('game view damage zone summary', () => {
 
         const currentDamageCount = document.querySelector('.current .damage-zone.summary-mode .damage-count');
         const opponentDamageCount = document.querySelector('.opponent .damage-zone.summary-mode .damage-count');
+        const damageCards = document.querySelectorAll('.damage-zone.summary-mode .damage-card-item');
+        const damageCardStrip = document.querySelector('.current .damage-zone.summary-mode .damage-card-strip') as HTMLElement | null;
         const skillCards = document.querySelectorAll('.skill-card-item');
         const skillCosts = Array.from(document.querySelectorAll('.skill-card-item .skill-cost'));
         const unitStats = Array.from(document.querySelectorAll('.unit-zone .stats'));
 
         expect(currentDamageCount?.textContent?.trim()).toBe('2');
         expect(opponentDamageCount?.textContent?.trim()).toBe('2');
+        expect(damageCards.length).toBe(4);
+        expect(damageCardStrip?.style.getPropertyValue('--damage-step')).not.toBe('');
         expect(skillCards.length).toBe(2);
         expect(skillCosts.length).toBe(2);
         expect(skillCosts.some(node => node.textContent?.trim() === 'C 0')).toBe(true);
@@ -179,7 +183,7 @@ describe('game view damage zone summary', () => {
         const selectableDamageCards = document.querySelectorAll('.opponent .damage-zone .damage-card-item');
         const progressBadge = document.querySelector('.opponent .damage-zone .selection-progress-badge');
         expect(opponentSelectionZone).toBeTruthy();
-        expect(selectableDamageCards.length).toBe(0);
+        expect(selectableDamageCards.length).toBe(2);
         expect(progressBadge?.textContent).toContain('selected 0/1');
     });
 });
