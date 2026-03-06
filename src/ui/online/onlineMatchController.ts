@@ -10,6 +10,7 @@ import {
 } from '../appState';
 import { clearAutoPhaseAdvanceTimer, clearBotStepTimer } from '../gameLoop';
 import { clearPlaybackLogHistory, clearPlaybackRuntimeState, stepEngineActionWithPlayback } from '../playbackOrchestrator';
+import { resetCardMotionRegistry } from '../playbackMotion';
 import { OnlineClient } from './OnlineClient';
 import { computeStateHash } from './hash';
 import {
@@ -254,6 +255,7 @@ function setupLocalOnlineGame(
     clearBotStepTimer();
     clearAutoPhaseAdvanceTimer();
     clearPlaybackRuntimeState();
+    resetCardMotionRegistry();
     clearPlaybackLogHistory();
     uiState.gameLogFeed.clear();
     uiState.replaySession = null;
@@ -268,6 +270,7 @@ function setupLocalOnlineGame(
     uiState.playback.toasts = [];
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
+    uiState.playback.activeMotionBeatId = null;
 
     const engine = new GameEngine(
         'Player 1',

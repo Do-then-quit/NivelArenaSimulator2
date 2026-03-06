@@ -186,4 +186,28 @@ describe('game view damage zone summary', () => {
         expect(selectableDamageCards.length).toBe(2);
         expect(progressBadge?.textContent).toContain('selected 0/1');
     });
+
+    it('adds motion anchor attributes to hand, deck, damage, and revealed cards', async () => {
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = createMockGame(false);
+        uiState.game.state.revealedCards = [createCard('rv-1', 'Revealed Card')];
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.expanded = true;
+        uiState.gameLogView.autoCollapsed = false;
+
+        renderGame();
+
+        const currentHandZone = document.querySelector('.hand-zone[data-motion-zone="HAND"][data-player-id="P1"]');
+        const currentDeckZone = document.querySelector('.current .deck-zone[data-motion-zone="DECK"][data-player-id="P1"]');
+        const currentDamageCard = document.querySelector('.current .damage-card-item[data-card-motion-key]');
+        const revealedCard = document.querySelector('.revealed-card-item[data-card-motion-key]');
+
+        expect(currentHandZone).toBeTruthy();
+        expect(currentDeckZone).toBeTruthy();
+        expect(currentDamageCard?.getAttribute('data-motion-anchor-key')).toMatch(/^card:/);
+        expect(revealedCard?.getAttribute('data-motion-zone')).toBe('REVEALED');
+    });
 });

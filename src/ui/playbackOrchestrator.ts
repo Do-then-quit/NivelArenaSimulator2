@@ -1,14 +1,37 @@
 import { EngineAction, GameState, UiTraceEvent, UiTraceEventType } from '../logic/types';
 import { GameEngine } from '../logic/GameEngine';
 import { PlaybackSpeed, PlaybackToast, Screen, uiState } from './appState';
+import {
+    CardLocatorSnapshot,
+    CardMoveRecord,
+    CardMotionBeat,
+    MotionRectSnapshot,
+    captureCardLocators,
+    clearPlaybackMotionOverlay,
+    diffCardLocators,
+    getLocatorAnchorKeys,
+    isHandVisibleToViewer,
+    playCardMotionBeat,
+    snapshotMotionAnchorRects,
+} from './playbackMotion';
+import { persistPlaybackPrefs } from './playbackPrefs';
+
+export type PlaybackBeatEventType = UiTraceEventType | 'CARD_MOTION';
 
 export interface PlaybackBeat {
     id: string;
-    eventType: UiTraceEventType;
+    eventType: PlaybackBeatEventType;
     durationMs: number;
     modalGateMs: number;
     toastMessage?: string;
     pulseTargets: Array<{ playerId: string; zone: 'HAND' | 'DECK' | 'DAMAGE' }>;
+    motion?: CardMotionBeat;
+}
+
+export interface PlaybackBeatBuildOptions {
+    beforeLocators?: CardLocatorSnapshot;
+    afterLocators?: CardLocatorSnapshot;
+    beforeAnchorRects?: MotionRectSnapshot;
 }
 
 const MODAL_DELAY_INTERACTION_MODES = new Set<GameState['interactionMode']>([
@@ -20,6 +43,11 @@ const MODAL_DELAY_INTERACTION_MODES = new Set<GameState['interactionMode']>([
 interface PlaybackTiming {
     beatMs: number;
     modalGateMs: number;
+}
+
+interface PlaybackCapture {
+    beforeLocators: CardLocatorSnapshot;
+    beforeAnchorRects: MotionRectSnapshot;
 }
 
 const PLAYBACK_TIMING_BY_SPEED: Record<PlaybackSpeed, PlaybackTiming> = {
@@ -130,19 +158,197 @@ function buildPulseTargets(event: UiTraceEvent): Array<{ playerId: string; zone:
     return [];
 }
 
-export function buildPlaybackBeats(events: UiTraceEvent[], speed: PlaybackSpeed): PlaybackBeat[] {
+function createEventBeat(
+    event: UiTraceEvent,
+    timing: PlaybackTiming,
+    overrides: Partial<PlaybackBeat> = {},
+): PlaybackBeat {
+    const toastMessage = overrides.toastMessage === undefined
+        ? buildToastMessage(event) ?? undefined
+        : overrides.toastMessage;
+    return {
+        id: nextBeatId(),
+        eventType: event.type,
+        durationMs: timing.beatMs,
+        modalGateMs: event.type === 'INTERACTION_OPENED' ? timing.modalGateMs : 0,
+        toastMessage,
+        pulseTargets: buildPulseTargets(event),
+        ...overrides,
+    };
+}
+
+function resolveSourceRect(anchorKeys: string[], beforeAnchorRects: MotionRectSnapshot | undefined) {
+    if (!beforeAnchorRects) return null;
+    for (const key of anchorKeys) {
+        const rect = beforeAnchorRects.get(key);
+        if (rect) return rect;
+    }
+    return null;
+}
+
+function createMotionBeat(
+    motionType: CardMotionBeat['motionType'],
+    move: CardMoveRecord,
+    sourceFace: CardMotionBeat['sourceFace'],
+    flipToFront: boolean,
+    beforeAnchorRects: MotionRectSnapshot | undefined,
+): CardMotionBeat {
+    const sourceAnchorKeys = getLocatorAnchorKeys(move.source);
+    return {
+        id: nextBeatId(),
+        motionType,
+        motionKey: move.source.motionKey,
+        card: move.card,
+        source: move.source,
+        target: move.target,
+        sourceFace,
+        flipToFront,
+        sourceRect: resolveSourceRect(sourceAnchorKeys, beforeAnchorRects),
+        sourceAnchorKeys,
+        targetAnchorKeys: getLocatorAnchorKeys(move.target),
+    };
+}
+
+function groupMovesByPlayer(
+    moves: CardMoveRecord[],
+    fromZone: CardMoveRecord['source']['zone'],
+    toZone: CardMoveRecord['target']['zone'],
+): Map<string, CardMoveRecord[]> {
+    const grouped = new Map<string, CardMoveRecord[]>();
+    moves
+        .filter(move => move.source.zone === fromZone && move.target.zone === toZone && !!move.target.playerId)
+        .sort((left, right) => {
+            if (left.source.playerId !== right.source.playerId) {
+                return String(left.source.playerId).localeCompare(String(right.source.playerId));
+            }
+            return right.source.slotIndex - left.source.slotIndex;
+        })
+        .forEach((move) => {
+            const key = move.target.playerId!;
+            const next = grouped.get(key) ?? [];
+            next.push(move);
+            grouped.set(key, next);
+        });
+    return grouped;
+}
+
+function takeMoves(groupedMoves: Map<string, CardMoveRecord[]>, playerId: string | undefined, count: number): CardMoveRecord[] {
+    if (!playerId) return [];
+    const queue = groupedMoves.get(playerId);
+    if (!queue || queue.length === 0) return [];
+    return queue.splice(0, Math.max(0, count));
+}
+
+function sortRevealMoves(moves: CardMoveRecord[], direction: 'ENTER' | 'EXIT'): CardMoveRecord[] {
+    return moves
+        .filter(move => direction === 'ENTER'
+            ? move.target.zone === 'REVEALED' && move.source.zone !== 'REVEALED'
+            : move.source.zone === 'REVEALED' && move.target.zone !== 'REVEALED')
+        .sort((left, right) => {
+            if (direction === 'ENTER') {
+                return left.target.slotIndex - right.target.slotIndex;
+            }
+            return left.source.slotIndex - right.source.slotIndex;
+        });
+}
+
+function buildRevealEntryMotion(move: CardMoveRecord, beforeAnchorRects: MotionRectSnapshot | undefined): CardMotionBeat {
+    if (move.source.zone === 'DECK') {
+        return createMotionBeat('REVEAL_ENTER', move, 'BACK', true, beforeAnchorRects);
+    }
+    if (move.source.zone === 'HAND') {
+        const visible = isHandVisibleToViewer(move.source.playerId);
+        return createMotionBeat('REVEAL_ENTER', move, visible ? 'FRONT' : 'BACK', !visible, beforeAnchorRects);
+    }
+    return createMotionBeat('REVEAL_ENTER', move, 'FRONT', false, beforeAnchorRects);
+}
+
+function buildRevealExitMotion(move: CardMoveRecord, beforeAnchorRects: MotionRectSnapshot | undefined): CardMotionBeat {
+    return createMotionBeat('REVEAL_EXIT', move, 'FRONT', false, beforeAnchorRects);
+}
+
+export function buildPlaybackBeats(
+    events: UiTraceEvent[],
+    speed: PlaybackSpeed,
+    options: PlaybackBeatBuildOptions = {},
+): PlaybackBeat[] {
     const timing = getTiming(speed);
-    return events.map((event) => {
-        const toastMessage = buildToastMessage(event);
-        const beat: PlaybackBeat = {
+    const beats: PlaybackBeat[] = [];
+    const movedCards = options.beforeLocators && options.afterLocators
+        ? diffCardLocators(options.beforeLocators, options.afterLocators)
+        : [];
+    const drawMovesByPlayer = groupMovesByPlayer(movedCards, 'DECK', 'HAND');
+    const damageMovesByPlayer = groupMovesByPlayer(movedCards, 'DECK', 'DAMAGE');
+    const revealEntryMoves = sortRevealMoves(movedCards, 'ENTER');
+    const revealExitMoves = sortRevealMoves(movedCards, 'EXIT');
+
+    let revealEntryInserted = false;
+    const insertRevealEntryBeats = () => {
+        if (revealEntryInserted || revealEntryMoves.length === 0) return;
+        revealEntryInserted = true;
+        revealEntryMoves.forEach((move) => {
+            beats.push({
+                id: nextBeatId(),
+                eventType: 'CARD_MOTION',
+                durationMs: timing.beatMs,
+                modalGateMs: timing.modalGateMs,
+                pulseTargets: [],
+                motion: buildRevealEntryMotion(move, options.beforeAnchorRects),
+            });
+        });
+    };
+
+    events.forEach((event) => {
+        if (event.type === 'INTERACTION_OPENED') {
+            insertRevealEntryBeats();
+        }
+
+        if (event.type === 'CARDS_DRAWN') {
+            const assignedMoves = takeMoves(drawMovesByPlayer, event.sourcePlayerId, event.count ?? 0);
+            if (assignedMoves.length > 0) {
+                assignedMoves.forEach((move, index) => {
+                    beats.push(createEventBeat(event, timing, {
+                        toastMessage: index === 0 ? buildToastMessage(event) ?? undefined : undefined,
+                        motion: createMotionBeat('DRAW', move, 'BACK', false, options.beforeAnchorRects),
+                    }));
+                });
+                return;
+            }
+        }
+
+        if (event.type === 'DAMAGE_CARD_REVEALED') {
+            const [assignedMove] = takeMoves(damageMovesByPlayer, event.targetPlayerId, 1);
+            beats.push(createEventBeat(event, timing, assignedMove
+                ? {
+                    motion: createMotionBeat('DAMAGE_REVEAL', assignedMove, 'BACK', true, options.beforeAnchorRects),
+                }
+                : undefined));
+            return;
+        }
+
+        beats.push(createEventBeat(event, timing));
+    });
+
+    insertRevealEntryBeats();
+
+    revealExitMoves.forEach((move) => {
+        beats.push({
             id: nextBeatId(),
-            eventType: event.type,
+            eventType: 'CARD_MOTION',
             durationMs: timing.beatMs,
-            modalGateMs: event.type === 'INTERACTION_OPENED' ? timing.modalGateMs : 0,
-            toastMessage: toastMessage ?? undefined,
-            pulseTargets: buildPulseTargets(event),
-        };
-        return beat;
+            modalGateMs: 0,
+            pulseTargets: [],
+            motion: buildRevealExitMotion(move, options.beforeAnchorRects),
+        });
+    });
+
+    return beats;
+}
+
+function playMotionIfNeeded(beat: PlaybackBeat): void {
+    if (!beat.motion || !uiState.playback.animationEnabled) return;
+    window.requestAnimationFrame(() => {
+        playCardMotionBeat(beat.motion!, beat.durationMs);
     });
 }
 
@@ -155,11 +361,13 @@ function runNextBeat(): void {
     if (!beat) {
         uiState.playback.queueBusy = false;
         uiState.playback.activePulseTargets = [];
+        uiState.playback.activeMotionBeatId = null;
         uiState.render?.();
         return;
     }
 
     uiState.playback.queueBusy = true;
+    uiState.playback.activeMotionBeatId = beat.motion?.id ?? null;
     if (beat.modalGateMs > 0) {
         uiState.playback.modalGateUntilMs = Math.max(uiState.playback.modalGateUntilMs, Date.now() + beat.modalGateMs);
     }
@@ -169,10 +377,12 @@ function runNextBeat(): void {
     }
     uiState.playback.activePulseTargets = beat.pulseTargets;
     uiState.render?.();
+    playMotionIfNeeded(beat);
 
     activeBeatTimer = window.setTimeout(() => {
         activeBeatTimer = null;
         uiState.playback.activePulseTargets = [];
+        uiState.playback.activeMotionBeatId = null;
         pruneExpiredToasts();
         if (beatQueue.length === 0) {
             uiState.playback.queueBusy = false;
@@ -182,9 +392,28 @@ function runNextBeat(): void {
     }, beat.durationMs);
 }
 
+function flushPlaybackBeatsImmediately(beats: PlaybackBeat[]): void {
+    beats.forEach((beat) => {
+        if (beat.toastMessage) {
+            appendToast(beat.toastMessage, 0);
+            appendPlaybackLog(beat.toastMessage);
+        }
+    });
+    uiState.playback.queueBusy = false;
+    uiState.playback.modalGateUntilMs = 0;
+    uiState.playback.activePulseTargets = [];
+    uiState.playback.activeMotionBeatId = null;
+    clearPlaybackMotionOverlay();
+    uiState.render?.();
+}
+
 export function enqueuePlaybackBeats(beats: PlaybackBeat[]): void {
     if (beats.length === 0) return;
     if (!uiState.playback.enabled) return;
+    if (!uiState.playback.animationEnabled) {
+        flushPlaybackBeatsImmediately(beats);
+        return;
+    }
     beatQueue.push(...beats);
     runNextBeat();
 }
@@ -198,26 +427,67 @@ function shouldPlaybackRunNow(): boolean {
     return true;
 }
 
-export function consumeEngineUiTraceEvents(engine: GameEngine): PlaybackBeat[] {
+function beginPlaybackCapture(engine: GameEngine): PlaybackCapture | null {
+    if (!shouldPlaybackRunNow()) return null;
+    if (uiState.game !== engine) return null;
+    return {
+        beforeLocators: captureCardLocators(engine),
+        beforeAnchorRects: snapshotMotionAnchorRects(),
+    };
+}
+
+function finalizePlaybackCapture(engine: GameEngine, capture: PlaybackCapture | null): PlaybackBeat[] {
     if (typeof (engine as any).drainUiTraceEvents !== 'function') return [];
     const events = engine.drainUiTraceEvents();
     if (events.length === 0) return [];
     if (!shouldPlaybackRunNow()) return [];
-    const beats = buildPlaybackBeats(events, uiState.playback.speed);
+    const beats = buildPlaybackBeats(events, uiState.playback.speed, {
+        beforeLocators: capture?.beforeLocators,
+        afterLocators: capture ? captureCardLocators(engine) : undefined,
+        beforeAnchorRects: capture?.beforeAnchorRects,
+    });
     enqueuePlaybackBeats(beats);
     return beats;
 }
 
-export function stepEngineActionWithPlayback(engine: GameEngine, action: EngineAction): boolean {
-    const ok = engine.step(action);
-    if (ok) {
-        consumeEngineUiTraceEvents(engine);
+export function consumeEngineUiTraceEvents(engine: GameEngine): PlaybackBeat[] {
+    return finalizePlaybackCapture(engine, null);
+}
+
+export function runEngineMutationWithPlayback<T>(
+    engine: GameEngine,
+    mutate: () => T,
+    didMutate: (result: T) => boolean = () => true,
+): T {
+    const capture = beginPlaybackCapture(engine);
+    const result = mutate();
+    if (didMutate(result)) {
+        finalizePlaybackCapture(engine, capture);
     }
-    return ok;
+    return result;
+}
+
+export function stepEngineActionWithPlayback(engine: GameEngine, action: EngineAction): boolean {
+    return runEngineMutationWithPlayback(engine, () => engine.step(action), (ok) => ok === true);
 }
 
 export function setPlaybackSpeed(speed: PlaybackSpeed): void {
     uiState.playback.speed = speed;
+    persistPlaybackPrefs({
+        animationEnabled: uiState.playback.animationEnabled,
+        speed,
+    });
+}
+
+export function setPlaybackAnimationEnabled(enabled: boolean): void {
+    uiState.playback.animationEnabled = enabled;
+    persistPlaybackPrefs({
+        animationEnabled: enabled,
+        speed: uiState.playback.speed,
+    });
+    if (!enabled) {
+        skipPlaybackQueue();
+    }
 }
 
 export function isPlaybackQueueBusy(): boolean {
@@ -225,9 +495,8 @@ export function isPlaybackQueueBusy(): boolean {
 }
 
 export function skipPlaybackQueue(): boolean {
-    const hadPending = activeBeatTimer !== null || beatQueue.length > 0;
-    if (!hadPending) return false;
-
+    const hadPending = activeBeatTimer !== null || beatQueue.length > 0 || uiState.playback.activeMotionBeatId !== null;
+    clearPlaybackMotionOverlay();
     if (activeBeatTimer !== null) {
         window.clearTimeout(activeBeatTimer);
         activeBeatTimer = null;
@@ -236,9 +505,10 @@ export function skipPlaybackQueue(): boolean {
     uiState.playback.queueBusy = false;
     uiState.playback.modalGateUntilMs = 0;
     uiState.playback.activePulseTargets = [];
+    uiState.playback.activeMotionBeatId = null;
     uiState.playback.toasts = [];
     uiState.render?.();
-    return true;
+    return hadPending;
 }
 
 export function clearPlaybackRuntimeState(): void {
@@ -251,6 +521,8 @@ export function clearPlaybackRuntimeState(): void {
     uiState.playback.modalGateUntilMs = 0;
     uiState.playback.toasts = [];
     uiState.playback.activePulseTargets = [];
+    uiState.playback.activeMotionBeatId = null;
+    clearPlaybackMotionOverlay();
 }
 
 export function clearPlaybackLogHistory(): void {
@@ -259,5 +531,6 @@ export function clearPlaybackLogHistory(): void {
 
 export function shouldDelayInteractionModal(interactionMode: GameState['interactionMode']): boolean {
     if (!MODAL_DELAY_INTERACTION_MODES.has(interactionMode)) return false;
+    if (!uiState.playback.animationEnabled) return false;
     return Date.now() < uiState.playback.modalGateUntilMs;
 }

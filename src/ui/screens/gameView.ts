@@ -1,5 +1,6 @@
 import { Phase, Card, GameState, PendingEffect } from '../../logic/types';
 import { PHASE_THEME_CLASSES, Screen, uiState } from '../appState';
+import { escapeHtml, renderCard, renderHiddenHandCard } from '../cardMarkup';
 import {
     canLocalHumanInput,
     clearAutoPhaseAdvanceTimer,
@@ -11,6 +12,7 @@ import {
     shouldRevealHandForPlayer,
 } from '../gameLoop';
 import { shouldDelayInteractionModal } from '../playbackOrchestrator';
+import { buildCardAnchorKey, buildZoneAnchorKey, getCardMotionKey } from '../playbackMotion';
 import { getBottomPlayer, getTopPlayer } from '../playerPerspective';
 import { attachListeners } from './gameBindings';
 
@@ -227,13 +229,38 @@ export function applyPhaseThemeClass(phase: Phase | null) {
     document.body.classList.add(phaseClassMap[phase]);
 }
 
-function escapeHtml(text: string): string {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+function buildDataAttributes(attributes: Record<string, string | number | undefined>): string {
+    return Object.entries(attributes)
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => ` ${key}="${escapeHtml(String(value))}"`)
+        .join('');
+}
+
+function buildZoneAnchorAttributes(
+    zone: 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'SKILL' | 'REVEALED',
+    playerId?: string,
+): string {
+    return buildDataAttributes({
+        'data-motion-zone': zone,
+        'data-player-id': playerId,
+        'data-motion-anchor-key': buildZoneAnchorKey(zone, playerId),
+    });
+}
+
+function buildCardAnchorAttributes(
+    card: Card,
+    zone: 'HAND' | 'DAMAGE' | 'SKILL' | 'REVEALED' | 'TRASH',
+    playerId: string | undefined,
+    slotIndex: number,
+): string {
+    const motionKey = getCardMotionKey(card);
+    return buildDataAttributes({
+        'data-player-id': playerId,
+        'data-motion-zone': zone,
+        'data-slot-index': slotIndex,
+        'data-card-motion-key': motionKey,
+        'data-motion-anchor-key': buildCardAnchorKey(motionKey),
+    });
 }
 
 function resolveCardCostForDisplay(card: Card): number {
@@ -410,6 +437,12 @@ function renderPlaybackControls(): string {
                     ${option.label}
                 </button>
             `).join('')}
+            <button
+                id="playback-animation-toggle-btn"
+                class="secondary-btn small-btn ${uiState.playback.animationEnabled ? 'active' : ''}"
+            >
+                Anim ${uiState.playback.animationEnabled ? 'On' : 'Off'}
+            </button>
             <button id="playback-skip-btn" class="secondary-btn small-btn">Skip (Space)</button>
         </div>
     `;
@@ -780,7 +813,7 @@ function renderRevealedCardsModal() {
                 <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
                     ${selectionGuide}
                 </p>
-                <div class="trash-grid">
+                <div class="trash-grid"${buildZoneAnchorAttributes('REVEALED')}>
                     ${uiState.game.state.revealedCards.map((c, i) => {
         const isSelected = isSelecting && !isTakeAll && pending.selectedTargets?.includes(c);
 
@@ -791,7 +824,12 @@ function renderRevealedCardsModal() {
         }
 
         return `
-                        <div class="revealed-card-item ${isSelected ? 'selected-target' : ''} ${!matchesFilter ? 'grayscale' : ''}" data-index="${i}" style="${isSelecting && !isTakeAll ? 'cursor: pointer;' : ''}">
+                        <div
+                            class="revealed-card-item ${isSelected ? 'selected-target' : ''} ${!matchesFilter ? 'grayscale' : ''}"
+                            data-index="${i}"
+                            ${buildCardAnchorAttributes(c, 'REVEALED', undefined, i)}
+                            style="${isSelecting && !isTakeAll ? 'cursor: pointer;' : ''}"
+                        >
                             ${renderCard(c)}
                         </div>
                     `;
@@ -1012,7 +1050,16 @@ function renderPlayer(
     const damageStackStep = computeDamageStackStep(player.damage.length);
     const damageCardsMarkup = player.damage.map((c: Card, damageIndex: number) => {
         const isDamageSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(c);
-        return `<div class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${damageIndex}">${renderCard(c, true)}</div>`;
+        return `
+            <div
+                class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}"
+                data-player="${isOpponent ? 'opponent' : 'current'}"
+                data-index="${damageIndex}"
+                ${buildCardAnchorAttributes(c, 'DAMAGE', player.id, damageIndex)}
+            >
+                ${renderCard(c, true)}
+            </div>
+        `;
     }).join('');
     const trashZoneSelectionClass = hasTrashSelectionCandidate ? 'selection-zone-candidate' : '';
     const trashZoneSelectedClass = selectedTrashCount > 0 ? 'selection-zone-selected' : '';
@@ -1023,7 +1070,7 @@ function renderPlayer(
         player.levelZone?.isAwakened === true &&
         activatableEffectActions.some((action: any) => action.sourceType === 'LEADER');
     return `
-      <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
+      <div class="player-area ${isOpponent ? 'opponent' : 'current'}" data-player-id="${player.id}">
         <div class="level-zone">
             <div class="leader-slot">
                 ${player.levelZone ? renderCard(player.levelZone, true) : ''}
@@ -1081,7 +1128,11 @@ function renderPlayer(
             </div>
 
             <div class="bottom-center">
-                <div class="damage-zone ${showDamageCardSelectionInline ? 'selection-mode' : 'summary-mode'} ${damagePulseClass} ${damageZoneSelectionClass} ${damageZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
+                <div
+                    class="damage-zone ${showDamageCardSelectionInline ? 'selection-mode' : 'summary-mode'} ${damagePulseClass} ${damageZoneSelectionClass} ${damageZoneSelectedClass}"
+                    data-player="${isOpponent ? 'opponent' : 'current'}"
+                    ${buildZoneAnchorAttributes('DAMAGE', player.id)}
+                >
                     ${showDamageCardSelectionInline ? damageCardsMarkup : `
                         <div class="damage-summary ${player.damage.length === 0 ? 'empty' : ''}">
                             <div class="damage-card-strip" style="--damage-step:${damageStackStep}px;">
@@ -1095,13 +1146,21 @@ function renderPlayer(
                         </div>
                     `}
                 </div>
-                <div class="skill-zone ${isInputOwnerPlayer && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
+                <div
+                    class="skill-zone ${isInputOwnerPlayer && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}"
+                    ${buildZoneAnchorAttributes('SKILL', player.id)}
+                >
                     ${player.skillZone.map((c: any, skillIndex: number) => {
         const skillCost = resolveCardCostForDisplay(c);
         const skillPromptCandidateClass = skillPromptState.candidateSkillIndexes.has(skillIndex) ? 'target-candidate' : '';
         const skillPromptSelectedClass = skillPromptState.selectedSkillIndexes.has(skillIndex) ? 'selected-target' : '';
         return `
-                        <div class="skill-card-item ${skillPromptCandidateClass} ${skillPromptSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${skillIndex}">
+                        <div
+                            class="skill-card-item ${skillPromptCandidateClass} ${skillPromptSelectedClass}"
+                            data-player="${isOpponent ? 'opponent' : 'current'}"
+                            data-index="${skillIndex}"
+                            ${buildCardAnchorAttributes(c, 'SKILL', player.id, skillIndex)}
+                        >
                             ${renderCard(c, true)}
                             <div class="skill-cost">C ${skillCost}</div>
                         </div>
@@ -1114,46 +1173,31 @@ function renderPlayer(
         </div>
 
         <div class="field-right">
-            <div class="deck-zone ${deckPulseClass}">
+            <div class="deck-zone ${deckPulseClass}" ${buildZoneAnchorAttributes('DECK', player.id)}>
                 <div class="deck-count">${player.deck.length}</div>
                 <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
             </div>
-            <div class="trash-zone ${trashZoneSelectionClass} ${trashZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
-                ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
+            <div
+                class="trash-zone ${trashZoneSelectionClass} ${trashZoneSelectedClass}"
+                data-player="${isOpponent ? 'opponent' : 'current'}"
+                ${buildZoneAnchorAttributes('TRASH', player.id)}
+            >
+                ${player.trash.length > 0 ? renderCard(
+        player.trash[player.trash.length - 1],
+        true,
+        undefined,
+        undefined,
+        {
+            dataAttributes: {
+                'data-card-motion-key': getCardMotionKey(player.trash[player.trash.length - 1]),
+                'data-motion-anchor-key': buildCardAnchorKey(getCardMotionKey(player.trash[player.trash.length - 1])),
+            },
+        },
+    ) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
                 ${hasTrashSelectionCandidate ? `<div class="selection-progress-badge">selected ${selectedTrashCount}/${targetCount === 0 ? 'all' : targetCount}</div>` : ''}
             </div>
         </div>
       </div>
-    `;
-}
-
-export function renderCard(card: Card, isSmall: boolean = false, _calculatedPower?: number, _calculatedHit?: number) {
-    const attributeClass = (card.attribute || 'NONE').toString().toLowerCase();
-    const safeName = escapeHtml(card.name || card.id || 'Unknown');
-    const safeId = escapeHtml(card.id || '');
-    const safeText = escapeHtml(card.text || '');
-
-    return `
-        <div class="card ${attributeClass} ${isSmall ? 'small-card' : ''} ${card.isAwakened ? 'awakened' : ''} ${card.imageUrl ? '' : 'card-text-fallback'}">
-            ${card.imageUrl
-            ? `<img src="${card.imageUrl}" class="card-image" alt="${safeName}">`
-            : `
-                <div class="card-fallback">
-                    <div class="card-fallback-id">${safeId}</div>
-                    <div class="card-fallback-name">${safeName}</div>
-                    ${safeText ? `<div class="card-fallback-text">${safeText}</div>` : ''}
-                </div>
-            `}
-        </div>
-    `;
-}
-
-export function renderHiddenHandCard(isSmall: boolean = false) {
-    return `
-        <div class="card card-back ${isSmall ? 'small-card' : ''}">
-            <div class="card-back-pattern"></div>
-            <div class="card-back-label">HIDDEN</div>
-        </div>
     `;
 }
 
@@ -1283,14 +1327,19 @@ export function renderGame() {
       <div class="game-layout-root">
         <div class="battle-fit-viewport">
           <div class="battle-fit-content" style="--battle-scale: 1;">
-            <div class="opponent-hand-zone fan-layout ${topHandPulseClass}" style="--hand-step:${topHandStepPx}px;">
+            <div class="opponent-hand-zone fan-layout ${topHandPulseClass}" style="--hand-step:${topHandStepPx}px;" ${buildZoneAnchorAttributes('HAND', topPlayer.id)}>
                 ${topPlayer.hand.map((c, i) => {
         const pending = uiState.game!.state.pendingEffect as any;
         const isTargetCandidate = uiState.game!.state.interactionMode === 'SELECT_TARGET' &&
             pending &&
             uiState.game!.isPendingCardTarget(c);
         return `
-                  <div class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealTopPlayerHand ? '' : 'concealed-hand'}" data-index="${i}" data-hand-revealed="${revealTopPlayerHand ? '1' : '0'}">
+                  <div
+                      class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealTopPlayerHand ? '' : 'concealed-hand'}"
+                      data-index="${i}"
+                      data-hand-revealed="${revealTopPlayerHand ? '1' : '0'}"
+                      ${buildCardAnchorAttributes(c, 'HAND', topPlayer.id, i)}
+                  >
                       ${revealTopPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
                   </div>
               `;
@@ -1303,7 +1352,7 @@ export function renderGame() {
 
             ${renderPlayer(bottomPlayer, false, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
 
-            <div class="hand-zone fan-layout ${bottomHandPulseClass}" style="--hand-step:${bottomHandStepPx}px;">
+            <div class="hand-zone fan-layout ${bottomHandPulseClass}" style="--hand-step:${bottomHandStepPx}px;" ${buildZoneAnchorAttributes('HAND', bottomPlayer.id)}>
                 ${bottomPlayer.hand.map((c, i) => {
         const isCostCandidate = uiState.game!.state.interactionMode === 'SELECT_COST';
         const pending = uiState.game!.state.pendingEffect as any;
@@ -1312,7 +1361,13 @@ export function renderGame() {
             uiState.game!.isPendingCardTarget(c);
 
         return `
-                  <div class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealBottomPlayerHand ? '' : 'concealed-hand'}" draggable="${isMainPhase && uiState.game!.state.interactionMode === 'NORMAL' && localHumanCanInput}" data-index="${i}" data-hand-revealed="${revealBottomPlayerHand ? '1' : '0'}">
+                  <div
+                      class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealBottomPlayerHand ? '' : 'concealed-hand'}"
+                      draggable="${isMainPhase && uiState.game!.state.interactionMode === 'NORMAL' && localHumanCanInput}"
+                      data-index="${i}"
+                      data-hand-revealed="${revealBottomPlayerHand ? '1' : '0'}"
+                      ${buildCardAnchorAttributes(c, 'HAND', bottomPlayer.id, i)}
+                  >
                       ${revealBottomPlayerHand ? renderCard(c) : renderHiddenHandCard(false)}
                   </div>
               `;

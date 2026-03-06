@@ -8,6 +8,20 @@ import {
     skipPlaybackQueue,
 } from '../../src/ui/playbackOrchestrator';
 import { UiTraceEvent } from '../../src/logic/types';
+import { CardMotionBeat } from '../../src/ui/playbackMotion';
+
+function createCard(id: string, name: string) {
+    return {
+        id,
+        name,
+        type: 'UNIT',
+        attribute: 'FIRE',
+        cost: 1,
+        power: 1000,
+        hit: 1000,
+        text: '',
+    } as any;
+}
 
 describe('playback orchestrator', () => {
     beforeEach(() => {
@@ -16,6 +30,7 @@ describe('playback orchestrator', () => {
         document.body.innerHTML = '<div id="app"></div>';
         clearPlaybackRuntimeState();
         uiState.playback.enabled = true;
+        uiState.playback.animationEnabled = true;
         uiState.playback.speed = 'NORMAL';
         uiState.playback.toasts = [];
         uiState.playback.logEntries = [];
@@ -71,6 +86,97 @@ describe('playback orchestrator', () => {
         expect(fastBeats[0].modalGateMs).toBe(120);
     });
 
+    it('splits a multi-card draw into sequential deck-to-hand motion beats', () => {
+        const firstDrawn = createCard('draw-1', 'First Draw');
+        const secondDrawn = createCard('draw-2', 'Second Draw');
+        const event: UiTraceEvent = {
+            id: 'draw_evt',
+            type: 'CARDS_DRAWN',
+            createdAtMs: Date.now(),
+            turnCount: 1,
+            phase: 'DRAW' as any,
+            sourcePlayerId: 'P1',
+            count: 2,
+        };
+        const beforeLocators = new Map<any, any>([
+            [firstDrawn, { playerId: 'P1', zone: 'DECK', slotIndex: 4, motionKey: 'mk_draw_1' }],
+            [secondDrawn, { playerId: 'P1', zone: 'DECK', slotIndex: 3, motionKey: 'mk_draw_2' }],
+        ]);
+        const afterLocators = new Map<any, any>([
+            [firstDrawn, { playerId: 'P1', zone: 'HAND', slotIndex: 5, motionKey: 'mk_draw_1' }],
+            [secondDrawn, { playerId: 'P1', zone: 'HAND', slotIndex: 6, motionKey: 'mk_draw_2' }],
+        ]);
+
+        const beats = buildPlaybackBeats([event], 'NORMAL', { beforeLocators, afterLocators });
+
+        expect(beats).toHaveLength(2);
+        expect(beats[0].motion?.motionType).toBe('DRAW');
+        expect(beats[1].motion?.motionType).toBe('DRAW');
+        expect(beats[0].motion?.card).toBe(firstDrawn);
+        expect(beats[1].motion?.card).toBe(secondDrawn);
+        expect(beats[0].toastMessage).toContain('2장 드로우');
+        expect(beats[1].toastMessage).toBeUndefined();
+    });
+
+    it('keeps damage reveal motion ahead of the trigger beat', () => {
+        const revealedCard = createCard('damage-1', 'Trigger Unit');
+        const events: UiTraceEvent[] = [
+            {
+                id: 'damage_evt',
+                type: 'DAMAGE_CARD_REVEALED',
+                createdAtMs: Date.now(),
+                turnCount: 2,
+                phase: 'ATTACK' as any,
+                targetPlayerId: 'P2',
+                sourceCardName: 'Trigger Unit',
+            },
+            {
+                id: 'trigger_evt',
+                type: 'DAMAGE_TRIGGER_ACTIVATED',
+                createdAtMs: Date.now(),
+                turnCount: 2,
+                phase: 'ATTACK' as any,
+                targetPlayerId: 'P2',
+                sourceCardName: 'Trigger Unit',
+            },
+        ];
+        const beforeLocators = new Map<any, any>([
+            [revealedCard, { playerId: 'P2', zone: 'DECK', slotIndex: 6, motionKey: 'mk_damage_1' }],
+        ]);
+        const afterLocators = new Map<any, any>([
+            [revealedCard, { playerId: 'P2', zone: 'DAMAGE', slotIndex: 0, motionKey: 'mk_damage_1' }],
+        ]);
+
+        const beats = buildPlaybackBeats(events, 'NORMAL', { beforeLocators, afterLocators });
+
+        expect(beats).toHaveLength(2);
+        expect(beats[0].eventType).toBe('DAMAGE_CARD_REVEALED');
+        expect(beats[0].motion?.motionType).toBe('DAMAGE_REVEAL');
+        expect(beats[0].motion?.flipToFront).toBe(true);
+        expect(beats[1].eventType).toBe('DAMAGE_TRIGGER_ACTIVATED');
+        expect(beats[1].motion).toBeUndefined();
+    });
+
+    it('creates reveal entry and exit beats from locator diffs', () => {
+        const entering = createCard('reveal-enter', 'Reveal Enter');
+        const leaving = createCard('reveal-exit', 'Reveal Exit');
+        const beforeLocators = new Map<any, any>([
+            [entering, { playerId: 'P1', zone: 'DECK', slotIndex: 5, motionKey: 'mk_reveal_enter' }],
+            [leaving, { zone: 'REVEALED', slotIndex: 0, motionKey: 'mk_reveal_exit' }],
+        ]);
+        const afterLocators = new Map<any, any>([
+            [entering, { zone: 'REVEALED', slotIndex: 0, motionKey: 'mk_reveal_enter' }],
+            [leaving, { playerId: 'P1', zone: 'HAND', slotIndex: 4, motionKey: 'mk_reveal_exit' }],
+        ]);
+
+        const beats = buildPlaybackBeats([], 'NORMAL', { beforeLocators, afterLocators });
+
+        expect(beats).toHaveLength(2);
+        expect(beats[0].eventType).toBe('CARD_MOTION');
+        expect(beats[0].motion?.motionType).toBe('REVEAL_ENTER');
+        expect(beats[1].motion?.motionType).toBe('REVEAL_EXIT');
+    });
+
     it('flushes remaining beats on skip', () => {
         const beats: PlaybackBeat[] = [
             {
@@ -100,5 +206,38 @@ describe('playback orchestrator', () => {
         expect(uiState.playback.queueBusy).toBe(false);
         expect(uiState.playback.toasts).toHaveLength(0);
         expect(uiState.playback.logEntries.length).toBeGreaterThan(0);
+    });
+
+    it('flushes beats immediately when animation is disabled', () => {
+        const card = createCard('motion-card', 'Motion Card');
+        const motion: CardMotionBeat = {
+            id: 'motion_beat',
+            motionType: 'DRAW',
+            motionKey: 'mk_motion',
+            card,
+            source: { playerId: 'P1', zone: 'DECK', slotIndex: 5, motionKey: 'mk_motion' },
+            target: { playerId: 'P1', zone: 'HAND', slotIndex: 0, motionKey: 'mk_motion' },
+            sourceFace: 'BACK',
+            flipToFront: false,
+            sourceRect: null,
+            sourceAnchorKeys: ['zone:P1:DECK'],
+            targetAnchorKeys: ['zone:P1:HAND'],
+        };
+        uiState.playback.animationEnabled = false;
+
+        enqueuePlaybackBeats([{
+            id: 'flush_beat',
+            eventType: 'CARD_MOTION',
+            durationMs: 320,
+            modalGateMs: 220,
+            toastMessage: 'motion toast',
+            pulseTargets: [],
+            motion,
+        }]);
+
+        expect(uiState.playback.queueBusy).toBe(false);
+        expect(uiState.playback.modalGateUntilMs).toBe(0);
+        expect(uiState.playback.logEntries.map(entry => entry.message)).toContain('motion toast');
+        expect(uiState.playback.toasts).toHaveLength(1);
     });
 });

@@ -2,7 +2,7 @@ import { GameEngine } from '../logic/GameEngine';
 import { canAutoAdvancePhase } from '../logic/AutoPhaseAdvance';
 import { uiState, MatchControlConfig, MatchViewConfig, Screen } from './appState';
 import { EngineAction } from '../logic/types';
-import { consumeEngineUiTraceEvents, isPlaybackQueueBusy, stepEngineActionWithPlayback } from './playbackOrchestrator';
+import { isPlaybackQueueBusy, runEngineMutationWithPlayback, stepEngineActionWithPlayback } from './playbackOrchestrator';
 
 function formatActionForLog(action: EngineAction): string {
     switch (action.type) {
@@ -185,8 +185,9 @@ export function scheduleAutoPhaseAdvance(delayMs: number = 80) {
         if (!uiState.game || uiState.currentScreen !== Screen.GAME || uiState.game.state.winner || uiState.replaySession) return;
         if (!shouldAutoAdvancePhase(uiState.game)) return;
         const beforePhase = uiState.game.state.phase;
-        uiState.game.nextPhase();
-        consumeEngineUiTraceEvents(uiState.game);
+        runEngineMutationWithPlayback(uiState.game, () => {
+            uiState.game!.nextPhase();
+        });
         const afterPhase = uiState.game.state.phase;
         uiState.gameLogFeed.pushUiLog(
             `[Auto] NEXT_PHASE: ${beforePhase} -> ${afterPhase}`,

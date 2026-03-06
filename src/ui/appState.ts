@@ -15,6 +15,7 @@ import {
 } from '../logic/ai/BotVsBotReplay';
 import { createGameLogFeed, GameLogCategory } from './gameLogFeed';
 import { OnlineSessionState } from '../shared/onlineProtocol';
+import { loadPlaybackPrefs } from './playbackPrefs';
 
 export enum Screen {
     MENU,
@@ -114,6 +115,7 @@ export interface PlaybackPulseTarget {
 
 export interface PlaybackState {
     enabled: boolean;
+    animationEnabled: boolean;
     speed: PlaybackSpeed;
     queueBusy: boolean;
     modalGateUntilMs: number;
@@ -121,7 +123,10 @@ export interface PlaybackState {
     logEntries: PlaybackLogEntry[];
     maxLogEntries: number;
     activePulseTargets: PlaybackPulseTarget[];
+    activeMotionBeatId: string | null;
 }
+
+const initialPlaybackPrefs = loadPlaybackPrefs();
 
 export interface MobileGameViewState {
     logSheetOpen: boolean;
@@ -192,13 +197,15 @@ export const uiState = {
     } as GameLogViewState,
     playback: {
         enabled: false,
-        speed: 'NORMAL',
+        animationEnabled: initialPlaybackPrefs.animationEnabled,
+        speed: initialPlaybackPrefs.speed,
         queueBusy: false,
         modalGateUntilMs: 0,
         toasts: [],
         logEntries: [],
         maxLogEntries: 500,
         activePulseTargets: [],
+        activeMotionBeatId: null,
     } as PlaybackState,
     onlineSession: {
         connected: false,

@@ -6,7 +6,7 @@ import { restartReplayFromBeginning, stepReplayForward } from './replaySetup';
 import { GameLogCategory } from '../gameLogFeed';
 import { dispatchEngineAction, reportGameOverToServer } from '../online/onlineMatchController';
 import { getBottomPlayer, getTopPlayer, getUiPlayer, getUiPlayerRefForPlayerId, UiPlayerRef } from '../playerPerspective';
-import { setPlaybackSpeed, skipPlaybackQueue } from '../playbackOrchestrator';
+import { setPlaybackAnimationEnabled, setPlaybackSpeed, skipPlaybackQueue } from '../playbackOrchestrator';
 
 const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
     'BT06_SELECT_SKILL_ZONE_CARD',
@@ -374,6 +374,11 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             setPlaybackSpeed(speed);
             uiState.render?.();
         });
+    });
+
+    document.getElementById('playback-animation-toggle-btn')?.addEventListener('click', () => {
+        setPlaybackAnimationEnabled(!uiState.playback.animationEnabled);
+        uiState.render?.();
     });
 
     document.getElementById('playback-skip-btn')?.addEventListener('click', () => {

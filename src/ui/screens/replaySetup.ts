@@ -17,6 +17,7 @@ import { DebugManager } from '../../logic/DebugManager';
 import { uiState, Screen } from '../appState';
 import { clearBotStepTimer } from '../gameLoop';
 import { clearPlaybackLogHistory, clearPlaybackRuntimeState } from '../playbackOrchestrator';
+import { resetCardMotionRegistry } from '../playbackMotion';
 
 function parsePositiveInt(value: string, fallback: number): number {
     const parsed = Number.parseInt(value, 10);
@@ -273,6 +274,8 @@ function initializeReplaySession(
     uiState.playback.toasts = [];
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
+    uiState.playback.activeMotionBeatId = null;
+    resetCardMotionRegistry();
     uiState.game = playbackEngine;
 
     (window as any).debug = new DebugManager(playbackEngine, uiState.render!);

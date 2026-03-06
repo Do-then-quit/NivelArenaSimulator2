@@ -126,6 +126,7 @@ describe('game view modal delay during playback', () => {
         uiState.gameLogView.expanded = true;
         uiState.gameLogView.autoCollapsed = false;
         uiState.playback.enabled = true;
+        uiState.playback.animationEnabled = true;
         uiState.playback.queueBusy = true;
         uiState.playback.modalGateUntilMs = Date.now() + 1000;
 
@@ -140,5 +141,26 @@ describe('game view modal delay during playback', () => {
 
         expect(document.querySelector('#opt-confirm')).toBeTruthy();
         expect(document.querySelector('#opt-skip')).toBeTruthy();
+    });
+
+    it('shows optional modal immediately when animation playback is disabled', async () => {
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = createModalDelayMockGame();
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.expanded = true;
+        uiState.gameLogView.autoCollapsed = false;
+        uiState.playback.enabled = true;
+        uiState.playback.animationEnabled = false;
+        uiState.playback.queueBusy = true;
+        uiState.playback.modalGateUntilMs = Date.now() + 1000;
+
+        renderGame();
+
+        expect(document.querySelector('#opt-confirm')).toBeTruthy();
+        expect(document.querySelector('#opt-skip')).toBeTruthy();
+        expect(document.querySelector('.fx-processing-banner')).toBeNull();
     });
 });

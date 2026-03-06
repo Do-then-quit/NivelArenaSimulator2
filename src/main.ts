@@ -24,6 +24,7 @@ import { renderMenu, renderDeckBuilder, renderSetup } from './ui/screens/menu';
 import { renderOnlineRoom } from './ui/screens/onlineRoom';
 import { renderBotReplaySetup } from './ui/screens/replaySetup';
 import { clearPlaybackLogHistory, clearPlaybackRuntimeState } from './ui/playbackOrchestrator';
+import { resetCardMotionRegistry } from './ui/playbackMotion';
 
 function startGame(
     deck1: Card[],
@@ -35,6 +36,7 @@ function startGame(
 ) {
     clearBotStepTimer();
     clearPlaybackRuntimeState();
+    resetCardMotionRegistry();
     clearPlaybackLogHistory();
     uiState.gameLogFeed.clear();
     uiState.gameLogView.manualOverride = false;
@@ -56,6 +58,7 @@ function startGame(
     uiState.playback.toasts = [];
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
+    uiState.playback.activeMotionBeatId = null;
     uiState.game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2, {
         enableMulligan: true,
         enableUiTrace: uiState.playback.enabled,
@@ -98,6 +101,7 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     const { engine, instructions } = uiState.cardTester.setupScenario(testId);
     clearBotStepTimer();
     clearPlaybackRuntimeState();
+    resetCardMotionRegistry();
     clearPlaybackLogHistory();
     uiState.gameLogFeed.clear();
     uiState.gameLogView.manualOverride = false;
@@ -114,6 +118,7 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     uiState.playback.toasts = [];
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
+    uiState.playback.activeMotionBeatId = null;
     uiState.game = engine;
     uiState.verificationPanelCollapsed = false;
     uiState.mobileGameView.logSheetOpen = false;
