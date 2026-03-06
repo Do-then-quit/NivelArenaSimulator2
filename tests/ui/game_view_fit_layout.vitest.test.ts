@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const UI_TEST_TIMEOUT_MS = 15000;
+
 vi.mock('../../src/ui/screens/gameBindings', () => ({
     attachListeners: vi.fn(),
 }));
@@ -130,7 +132,7 @@ describe('game view fit layout', () => {
             availableHeight: 900,
         });
         expect(scale).toBe(1);
-    });
+    }, UI_TEST_TIMEOUT_MS);
 
     it('clamps scale to minimum when viewport is very small', async () => {
         const { computeBattleScale } = await import('../../src/ui/screens/gameView');

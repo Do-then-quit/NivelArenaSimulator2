@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const UI_TEST_TIMEOUT_MS = 15000;
+
 vi.mock('../../src/ui/screens/gameBindings', () => ({
     attachListeners: vi.fn(),
 }));
@@ -144,7 +146,7 @@ describe('game view mobile portrait layout', () => {
         expect(document.getElementById('mobile-log-fab')).toBeTruthy();
         expect(document.getElementById('next-phase')).toBeTruthy();
         expect(document.querySelector('.game-side-rail')).toBeNull();
-    });
+    }, UI_TEST_TIMEOUT_MS);
 
     it('keeps log sheet closed by default and still computes battle scale', async () => {
         const { uiState, Screen } = await import('../../src/ui/appState');

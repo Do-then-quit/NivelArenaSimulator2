@@ -205,6 +205,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             let pointerId: number | null = null;
             let originX = 0;
             let originY = 0;
+            let detachActivePointerListeners: (() => void) | null = null;
 
             const clearPressTimer = () => {
                 if (pressTimer !== null) {
@@ -212,9 +213,49 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                     pressTimer = null;
                 }
             };
+            const releasePointerCapture = () => {
+                if (pointerId === null || typeof el.releasePointerCapture !== 'function') return;
+                try {
+                    el.releasePointerCapture(pointerId);
+                } catch {
+                    // Ignore browsers that reject release after pointer cancellation.
+                }
+            };
+            const detachPointerListeners = () => {
+                if (!detachActivePointerListeners) return;
+                detachActivePointerListeners();
+                detachActivePointerListeners = null;
+            };
+            const bindPointerReleaseListeners = () => {
+                if (detachActivePointerListeners) return;
+                const handlePointerUp = (event: Event) => {
+                    const e = event as PointerEvent;
+                    if (pointerId === null || e.pointerId !== pointerId || e.pointerType === 'mouse') return;
+                    cancelLongPress(true);
+                };
+                const handlePointerCancel = (event: Event) => {
+                    const e = event as PointerEvent;
+                    if (pointerId === null || e.pointerId !== pointerId || e.pointerType === 'mouse') return;
+                    cancelLongPress(false);
+                };
+                const handleWindowBlur = () => {
+                    if (pointerId === null) return;
+                    cancelLongPress(false);
+                };
+                window.addEventListener('pointerup', handlePointerUp, true);
+                window.addEventListener('pointercancel', handlePointerCancel, true);
+                window.addEventListener('blur', handleWindowBlur, true);
+                detachActivePointerListeners = () => {
+                    window.removeEventListener('pointerup', handlePointerUp, true);
+                    window.removeEventListener('pointercancel', handlePointerCancel, true);
+                    window.removeEventListener('blur', handleWindowBlur, true);
+                };
+            };
 
             const cancelLongPress = (consumeClick: boolean) => {
                 clearPressTimer();
+                releasePointerCapture();
+                detachPointerListeners();
                 if (longPressActive) {
                     uiState.hoverPreview.hide();
                     if (consumeClick) {
@@ -237,6 +278,14 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 originY = event.clientY;
                 longPressActive = false;
                 clearPressTimer();
+                bindPointerReleaseListeners();
+                if (typeof el.setPointerCapture === 'function') {
+                    try {
+                        el.setPointerCapture(event.pointerId);
+                    } catch {
+                        // Ignore if pointer capture is unavailable in the current environment.
+                    }
+                }
                 pressTimer = window.setTimeout(() => {
                     longPressActive = true;
                     uiState.hoverPreview.show(card, originX, originY);
@@ -794,8 +843,21 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
         itemEl.addEventListener('mouseleave', (e) => {
             const related = (e as MouseEvent).relatedTarget as HTMLElement | null;
-            if (related?.closest('.unit-zone')) {
+            if (related?.closest('.mini-item-card')) {
                 return;
+            }
+            const unitZone = related?.closest('.unit-zone') as HTMLElement | null;
+            if (unitZone) {
+                const zoneIndex = parseInt(unitZone.dataset.index || '-1', 10);
+                if (zoneIndex >= 0) {
+                    const player = getPlayerForPlayerAttr(unitZone.dataset.player);
+                    const unit = player.unitZones[zoneIndex]?.unit ?? null;
+                    if (unit) {
+                        const mouseEvent = e as MouseEvent;
+                        uiState.hoverPreview.show(unit, mouseEvent.clientX, mouseEvent.clientY);
+                        return;
+                    }
+                }
             }
             uiState.hoverPreview.hide();
         });

@@ -19,7 +19,7 @@ import {
     getDefaultViewConfig,
 } from './ui/gameLoop';
 import { handleGameHotkeys, handleVerificationHotkeys } from './ui/hotkeys';
-import { applyPhaseThemeClass, renderGame } from './ui/screens/gameView';
+import { applyPhaseThemeClass, renderCard, renderGame } from './ui/screens/gameView';
 import { renderMenu, renderDeckBuilder, renderSetup } from './ui/screens/menu';
 import { renderOnlineRoom } from './ui/screens/onlineRoom';
 import { renderBotReplaySetup } from './ui/screens/replaySetup';
@@ -260,6 +260,36 @@ function renderTestScreen() {
     });
 }
 
+function getCurrentScreenLabel(): string {
+    return Screen[uiState.currentScreen] ?? String(uiState.currentScreen);
+}
+
+function getPreviewQaState() {
+    return {
+        screen: getCurrentScreenLabel(),
+        hoverPreview: uiState.hoverPreview.getDebugState(),
+        trashOverlay: uiState.trashHoverOverlay?.getDebugState() ?? null,
+        game: uiState.game
+            ? {
+                phase: uiState.game.state.phase,
+                interactionMode: uiState.game.state.interactionMode,
+                interactionOwnerPlayerId: uiState.game.state.interactionOwnerPlayerId,
+                turnCount: uiState.game.state.turnCount,
+                currentPlayerId: uiState.game.currentPlayer.id,
+                players: uiState.game.state.players.map((player) => ({
+                    id: player.id,
+                    name: player.name,
+                    handCount: player.hand.length,
+                    trashCount: player.trash.length,
+                    damageCount: player.damage.length,
+                    skillCount: player.skillZone.length,
+                    unitCount: player.unitZones.filter(zone => !!zone.unit).length,
+                })),
+            }
+            : null,
+    };
+}
+
 function render() {
     uiState.hoverPreview.hide();
     uiState.trashHoverOverlay?.hide();
@@ -308,5 +338,66 @@ uiState.returnToVerificationScreen = returnToVerificationScreen;
 
 window.addEventListener('keydown', handleVerificationHotkeys);
 window.addEventListener('keydown', handleGameHotkeys);
+
+(window as any).__naPreviewDebug = {
+    getState: () => getPreviewQaState(),
+    hideAll: () => {
+        uiState.hoverPreview.hide();
+        uiState.trashHoverOverlay?.hide();
+    },
+    getFixtureStats: () => ({
+        overlaySelectCount: (window as any).__naPreviewOverlaySelectCount ?? 0,
+        lastSelectedOverlayIndex: (window as any).__naPreviewLastSelectedOverlayIndex ?? null,
+    }),
+    showOverlayFixture: (options?: {
+        anchorSelector?: string;
+        zoneLabel?: string;
+        interactive?: boolean;
+        selectableIndexes?: number[];
+        hideOnSelect?: boolean;
+        cards?: Array<Partial<Card>>;
+    }) => {
+        if (uiState.currentScreen !== Screen.GAME || !uiState.trashHoverOverlay) return false;
+        const sourceCard = uiState.game?.state.players[0]?.hand[0] ?? uiState.game?.state.players[0]?.levelZone;
+        const anchor = document.querySelector(options?.anchorSelector ?? '.current .damage-zone') as HTMLElement | null;
+        if (!sourceCard || !anchor) return false;
+
+        const cards = (options?.cards?.length ?? 0) > 0
+            ? options!.cards!.map((card, index) => ({
+                ...sourceCard,
+                ...card,
+                id: card.id ?? `qa-overlay-${index}`,
+                name: card.name ?? `QA Overlay ${index + 1}`,
+            }))
+            : [{
+                ...sourceCard,
+                id: 'qa-overlay-0',
+                name: 'QA Overlay 1',
+            }];
+
+        (window as any).__naPreviewOverlaySelectCount = 0;
+        (window as any).__naPreviewLastSelectedOverlayIndex = null;
+
+        uiState.trashHoverOverlay.show(cards, anchor, false, renderCard, options?.zoneLabel ?? 'QA Overlay', {
+            interactive: options?.interactive === true,
+            selectableIndexes: new Set(options?.selectableIndexes ?? cards.map((_, index) => index)),
+            onCardSelect: (index: number) => {
+                (window as any).__naPreviewOverlaySelectCount = ((window as any).__naPreviewOverlaySelectCount ?? 0) + 1;
+                (window as any).__naPreviewLastSelectedOverlayIndex = index;
+                if (options?.hideOnSelect !== false) {
+                    uiState.hoverPreview.hide();
+                    uiState.trashHoverOverlay?.hide();
+                }
+            },
+        });
+        return true;
+    },
+};
+(window as any).render_game_to_text = () => JSON.stringify(getPreviewQaState());
+(window as any).advanceTime = (ms: number = 0) => new Promise((resolve) => {
+    window.setTimeout(() => {
+        resolve((window as any).render_game_to_text());
+    }, ms);
+});
 
 render();

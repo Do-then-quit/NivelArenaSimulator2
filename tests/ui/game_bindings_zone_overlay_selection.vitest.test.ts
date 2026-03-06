@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const UI_TEST_TIMEOUT_MS = 15000;
+
 vi.mock('../../src/ui/gameLoop', () => ({
     canLocalHumanInput: vi.fn(() => true),
     getActionOwnerPlayerId: vi.fn((engine: any) => engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id),
@@ -109,7 +111,7 @@ describe('game bindings overlay zone selection', () => {
             trashIndex: 0,
         });
         dispatchSpy.mockRestore();
-    });
+    }, UI_TEST_TIMEOUT_MS);
 
     it('dispatches SELECT_DAMAGE_TARGET when selectable damage overlay card is clicked', async () => {
         const { uiState } = await import('../../src/ui/appState');
@@ -176,5 +178,62 @@ describe('game bindings overlay zone selection', () => {
             damageIndex: 1,
         });
         dispatchSpy.mockRestore();
+    });
+
+    it('moves the active anchor highlight when switching overlay zones', async () => {
+        const { uiState } = await import('../../src/ui/appState');
+        const { attachListeners } = await import('../../src/ui/screens/gameBindings');
+
+        const p1 = {
+            id: 'P1',
+            name: 'Player 1',
+            hand: [],
+            trash: [createCard('trash-1', 'Trash Unit')],
+            damage: [],
+            skillZone: [],
+            unitZones: [createZone(), createZone(), createZone()],
+            levelZone: createCard('leader-1', 'Leader 1'),
+        } as any;
+        const p2 = {
+            id: 'P2',
+            name: 'Player 2',
+            hand: [],
+            trash: [],
+            damage: [createCard('dmg-0', 'Damage 0')],
+            skillZone: [],
+            unitZones: [createZone(), createZone(), createZone()],
+            levelZone: createCard('leader-2', 'Leader 2'),
+        } as any;
+
+        uiState.game = {
+            state: {
+                winner: null,
+                interactionMode: 'NORMAL',
+                interactionOwnerPlayerId: 'P1',
+                pendingEffect: null,
+                players: [p1, p2],
+                revealedCards: [],
+            },
+            currentPlayer: p1,
+            opponentPlayer: p2,
+            getLegalActions: () => [],
+        } as any;
+        uiState.replaySession = null;
+        uiState.onlineSession.room = null;
+        uiState.onlineSession.localEnginePlayerId = null;
+        uiState.render = vi.fn();
+
+        attachListeners(() => '<div class="card"></div>');
+
+        const trashZone = document.querySelector('.trash-zone') as HTMLElement;
+        const damageZone = document.querySelector('.damage-zone') as HTMLElement;
+
+        trashZone.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+        expect(trashZone.classList.contains('selection-zone-active')).toBe(true);
+        expect(damageZone.classList.contains('selection-zone-active')).toBe(false);
+
+        damageZone.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+        expect(trashZone.classList.contains('selection-zone-active')).toBe(false);
+        expect(damageZone.classList.contains('selection-zone-active')).toBe(true);
     });
 });

@@ -1,0 +1,351 @@
+{
+  "targetUrl": "http://127.0.0.1:5173",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "errors": [],
+  "scenarios": [
+    {
+      "scenario": "mobile-tap-no-preview",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": null,
+          "top": null
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "",
+          "cardCount": 0,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_8rb04l",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_8rb04l",
+          "players": [
+            {
+              "id": "PLAYER_1_8rb04l",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            },
+            {
+              "id": "PLAYER_2_88n90q",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": false,
+        "overlayCardCount": 0,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\mobile-tap-no-preview.png"
+    },
+    {
+      "scenario": "mobile-long-press-hand-show",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": true,
+          "cardName": "엠마",
+          "cardId": "ST01-009_QP1_1772791082081_27",
+          "left": 66,
+          "top": 149
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "",
+          "cardCount": 0,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_8rb04l",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_8rb04l",
+          "players": [
+            {
+              "id": "PLAYER_1_8rb04l",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            },
+            {
+              "id": "PLAYER_2_88n90q",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "block",
+        "overlayActive": false,
+        "overlayCardCount": 0,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\mobile-long-press-hand-show.png"
+    },
+    {
+      "scenario": "mobile-outside-release-hide",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 66,
+          "top": 149
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "",
+          "cardCount": 0,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_8rb04l",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_8rb04l",
+          "players": [
+            {
+              "id": "PLAYER_1_8rb04l",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            },
+            {
+              "id": "PLAYER_2_88n90q",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": false,
+        "overlayCardCount": 0,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\mobile-outside-release-hide.png"
+    },
+    {
+      "scenario": "mobile-mini-item-long-press",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": true,
+          "cardName": "QA Item",
+          "cardId": "QA-ITEM-001",
+          "left": 116,
+          "top": 10
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "",
+          "cardCount": 0,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_8rb04l",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_8rb04l",
+          "players": [
+            {
+              "id": "PLAYER_1_8rb04l",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_88n90q",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "block",
+        "overlayActive": false,
+        "overlayCardCount": 0,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\mobile-mini-item-long-press.png"
+    },
+    {
+      "scenario": "mobile-overlay-card-long-press",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": true,
+          "cardName": "QA Overlay Touch 1",
+          "cardId": "qa-overlay-touch-1",
+          "left": 91,
+          "top": 10
+        },
+        "trashOverlay": {
+          "active": true,
+          "title": "Your QA Overlay (1)",
+          "cardCount": 1,
+          "anchorPlayer": "current",
+          "anchorClasses": "damage-zone summary-mode selection-zone-active"
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_8rb04l",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_8rb04l",
+          "players": [
+            {
+              "id": "PLAYER_1_8rb04l",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_88n90q",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "block",
+        "overlayActive": true,
+        "overlayCardCount": 1,
+        "activeAnchors": [
+          {
+            "className": "damage-zone summary-mode selection-zone-active",
+            "player": "current",
+            "text": "EMPTY\n                            \n                            \n                "
+          }
+        ]
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\mobile-overlay-card-long-press.png"
+    },
+    {
+      "scenario": "mobile-overlay-card-click-suppression",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 91,
+          "top": 10
+        },
+        "trashOverlay": {
+          "active": true,
+          "title": "Your QA Overlay (1)",
+          "cardCount": 1,
+          "anchorPlayer": "current",
+          "anchorClasses": "damage-zone summary-mode selection-zone-active"
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_8rb04l",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_8rb04l",
+          "players": [
+            {
+              "id": "PLAYER_1_8rb04l",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_88n90q",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": true,
+        "overlayCardCount": 1,
+        "activeAnchors": [
+          {
+            "className": "damage-zone summary-mode selection-zone-active",
+            "player": "current",
+            "text": "EMPTY\n                            \n                            \n                "
+          }
+        ]
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\mobile-overlay-card-click-suppression.png",
+      "fixtureStats": {
+        "overlaySelectCount": 1,
+        "lastSelectedOverlayIndex": 0
+      },
+      "contextMenuPrevented": true
+    }
+  ]
+}

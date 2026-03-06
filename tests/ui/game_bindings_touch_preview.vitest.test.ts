@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const UI_TEST_TIMEOUT_MS = 15000;
+
 function createCard(id: string, name: string, type: 'UNIT' | 'ITEM' | 'SKILL' = 'UNIT') {
     return {
         id,
@@ -118,7 +120,7 @@ function setHoverCapability(canHover: boolean) {
 }
 
 function dispatchPointerEvent(
-    target: Element,
+    target: EventTarget,
     type: 'pointerdown' | 'pointermove' | 'pointerup' | 'pointercancel',
     extras: Record<string, unknown>,
 ) {
@@ -168,6 +170,32 @@ describe('game bindings mobile long-press preview', () => {
         expect(tooltip.style.display).toBe('block');
 
         dispatchPointerEvent(card, 'pointerup', { pointerId: 1, pointerType: 'touch', clientX: 120, clientY: 240 });
+        expect(tooltip.style.display).toBe('none');
+    }, UI_TEST_TIMEOUT_MS);
+
+    it('hides preview when touch release happens outside the original card', async () => {
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = createMockGame({ handType: 'UNIT', legalActions: [] });
+        uiState.replaySession = null;
+        uiState.onlineSession.room = null;
+        uiState.onlineSession.localEnginePlayerId = null;
+        uiState.mobileGameView.selectedHandIndex = null;
+        uiState.mobileGameView.logSheetOpen = false;
+        uiState.render = () => renderGame();
+
+        renderGame();
+
+        const card = document.querySelector('.hand-zone .card-in-hand[data-index="0"]') as HTMLElement;
+        const tooltip = document.querySelector('.hover-preview-tooltip') as HTMLElement;
+
+        dispatchPointerEvent(card, 'pointerdown', { pointerId: 3, pointerType: 'touch', clientX: 120, clientY: 240 });
+        vi.advanceTimersByTime(360);
+        expect(tooltip.style.display).toBe('block');
+
+        dispatchPointerEvent(window, 'pointerup', { pointerId: 3, pointerType: 'touch', clientX: 480, clientY: 620 });
         expect(tooltip.style.display).toBe('none');
     });
 
@@ -237,6 +265,51 @@ describe('game bindings mobile long-press preview', () => {
         expect(tooltip.textContent).toContain('Attached Weapon');
 
         dispatchPointerEvent(miniItem, 'pointerup', { pointerId: 9, pointerType: 'touch', clientX: 160, clientY: 360 });
+        expect(tooltip.style.display).toBe('none');
+    });
+
+    it('hides hover preview on viewport resize and restores unit preview after leaving an item', async () => {
+        setHoverCapability(true);
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        const game = createMockGame({ handType: 'UNIT', legalActions: [] });
+        const equippedUnit = createCard('unit-2', 'Frontline Unit', 'UNIT');
+        const attachedItem = createCard('item-2', 'Frontline Item', 'ITEM');
+        game.state.players[0].unitZones[0].unit = equippedUnit;
+        game.state.players[0].unitZones[0].items = [attachedItem];
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = game;
+        uiState.replaySession = null;
+        uiState.onlineSession.room = null;
+        uiState.onlineSession.localEnginePlayerId = null;
+        uiState.mobileGameView.selectedHandIndex = null;
+        uiState.mobileGameView.logSheetOpen = false;
+        uiState.render = () => renderGame();
+
+        renderGame();
+
+        const zone = document.querySelector('.current .unit-zone[data-index="0"]') as HTMLElement;
+        const miniItem = document.querySelector('.current .mini-item-card') as HTMLElement;
+        const tooltip = document.querySelector('.hover-preview-tooltip') as HTMLElement;
+
+        zone.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, clientX: 140, clientY: 320 }));
+        expect(tooltip.textContent).toContain('Frontline Unit');
+
+        miniItem.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, clientX: 160, clientY: 350 }));
+        expect(tooltip.textContent).toContain('Frontline Item');
+
+        miniItem.dispatchEvent(new MouseEvent('mouseleave', {
+            bubbles: true,
+            cancelable: true,
+            clientX: 150,
+            clientY: 330,
+            relatedTarget: zone,
+        }));
+        expect(tooltip.textContent).toContain('Frontline Unit');
+
+        window.dispatchEvent(new Event('resize'));
         expect(tooltip.style.display).toBe('none');
     });
 

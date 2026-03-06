@@ -13,6 +13,9 @@ const TOUCH_LONG_PRESS_MS = 350;
 const TOUCH_LONG_PRESS_MOVE_THRESHOLD_PX = 16;
 
 export class TrashHoverOverlay {
+    private static instances = new Set<TrashHoverOverlay>();
+    private static globalDismissBound = false;
+    private static boundVisualViewport: VisualViewport | null = null;
     private element: HTMLElement;
     private titleElement: HTMLElement;
     private gridElement: HTMLElement;
@@ -44,6 +47,8 @@ export class TrashHoverOverlay {
         this.element.appendChild(this.gridElement);
 
         document.body.appendChild(this.element);
+        TrashHoverOverlay.instances.add(this);
+        TrashHoverOverlay.ensureGlobalDismissHandlers();
 
         // Events to keep it open
         this.element.addEventListener('mouseenter', () => {
@@ -63,7 +68,9 @@ export class TrashHoverOverlay {
         zoneLabel: string = 'Trash',
         options?: TrashHoverOverlayOptions,
     ) {
+        TrashHoverOverlay.ensureGlobalDismissHandlers();
         this.cancelHide();
+        this.hoverPreview.hide();
         const interactive = options?.interactive === true;
         const selectableIndexes = options?.selectableIndexes ?? new Set<number>();
         const selectedIndexes = options?.selectedIndexes ?? new Set<number>();
@@ -91,14 +98,55 @@ export class TrashHoverOverlay {
             let originX = 0;
             let originY = 0;
             let suppressNextClick = false;
+            let detachActivePointerListeners: (() => void) | null = null;
 
             const clearPressTimer = () => {
                 if (pressTimer === null) return;
                 window.clearTimeout(pressTimer);
                 pressTimer = null;
             };
+            const releasePointerCapture = () => {
+                if (activePointerId === null || typeof (el as HTMLElement).releasePointerCapture !== 'function') return;
+                try {
+                    (el as HTMLElement).releasePointerCapture(activePointerId);
+                } catch {
+                    // Ignore browsers that reject release after pointer cancellation.
+                }
+            };
+            const detachPointerListeners = () => {
+                if (!detachActivePointerListeners) return;
+                detachActivePointerListeners();
+                detachActivePointerListeners = null;
+            };
+            const bindPointerReleaseListeners = () => {
+                if (detachActivePointerListeners) return;
+                const handlePointerUp = (event: Event) => {
+                    const e = event as PointerEvent;
+                    if (activePointerId === null || e.pointerId !== activePointerId || e.pointerType === 'mouse') return;
+                    stopLongPress(true);
+                };
+                const handlePointerCancel = (event: Event) => {
+                    const e = event as PointerEvent;
+                    if (activePointerId === null || e.pointerId !== activePointerId || e.pointerType === 'mouse') return;
+                    stopLongPress(false);
+                };
+                const handleWindowBlur = () => {
+                    if (activePointerId === null) return;
+                    stopLongPress(false);
+                };
+                window.addEventListener('pointerup', handlePointerUp, true);
+                window.addEventListener('pointercancel', handlePointerCancel, true);
+                window.addEventListener('blur', handleWindowBlur, true);
+                detachActivePointerListeners = () => {
+                    window.removeEventListener('pointerup', handlePointerUp, true);
+                    window.removeEventListener('pointercancel', handlePointerCancel, true);
+                    window.removeEventListener('blur', handleWindowBlur, true);
+                };
+            };
             const stopLongPress = (consumeClick: boolean) => {
                 clearPressTimer();
+                releasePointerCapture();
+                detachPointerListeners();
                 if (longPressActive) {
                     this.hoverPreview.hide();
                     suppressNextClick = consumeClick;
@@ -134,6 +182,14 @@ export class TrashHoverOverlay {
                 suppressNextClick = false;
                 longPressActive = false;
                 clearPressTimer();
+                bindPointerReleaseListeners();
+                if (typeof (el as HTMLElement).setPointerCapture === 'function') {
+                    try {
+                        (el as HTMLElement).setPointerCapture(e.pointerId);
+                    } catch {
+                        // Ignore if pointer capture is unavailable in the current environment.
+                    }
+                }
                 pressTimer = window.setTimeout(() => {
                     longPressActive = true;
                     this.hoverPreview.show(card, originX, originY);
@@ -189,7 +245,7 @@ export class TrashHoverOverlay {
     }
 
     hide() {
-
+        this.cancelHide();
         this.element.classList.remove('active');
         this.hoverPreview.hide();
         this.clearActiveAnchor();
@@ -259,5 +315,50 @@ export class TrashHoverOverlay {
         if (!this.activeAnchorElement) return;
         this.activeAnchorElement.classList.remove('selection-zone-active');
         this.activeAnchorElement = null;
+    }
+
+    isActive(): boolean {
+        return this.element.classList.contains('active');
+    }
+
+    getDebugState() {
+        return {
+            active: this.isActive(),
+            title: this.titleElement.textContent ?? '',
+            cardCount: this.gridElement.querySelectorAll('.trash-hover-card').length,
+            anchorPlayer: this.activeAnchorElement?.dataset.player ?? null,
+            anchorClasses: this.activeAnchorElement?.className ?? null,
+        };
+    }
+
+    private static ensureGlobalDismissHandlers() {
+        if (typeof window === 'undefined' || typeof document === 'undefined') return;
+        const hideAll = () => {
+            TrashHoverOverlay.instances.forEach((overlay) => overlay.hide());
+        };
+
+        if (!TrashHoverOverlay.globalDismissBound) {
+            window.addEventListener('blur', hideAll);
+            window.addEventListener('resize', hideAll);
+            window.addEventListener('orientationchange', hideAll);
+            window.addEventListener('scroll', hideAll, { passive: true });
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState !== 'visible') {
+                    hideAll();
+                }
+            });
+            TrashHoverOverlay.globalDismissBound = true;
+        }
+
+        const viewport = window.visualViewport;
+        if (viewport && viewport !== TrashHoverOverlay.boundVisualViewport) {
+            if (TrashHoverOverlay.boundVisualViewport) {
+                TrashHoverOverlay.boundVisualViewport.removeEventListener('resize', hideAll);
+                TrashHoverOverlay.boundVisualViewport.removeEventListener('scroll', hideAll);
+            }
+            viewport.addEventListener('resize', hideAll);
+            viewport.addEventListener('scroll', hideAll);
+            TrashHoverOverlay.boundVisualViewport = viewport;
+        }
     }
 }

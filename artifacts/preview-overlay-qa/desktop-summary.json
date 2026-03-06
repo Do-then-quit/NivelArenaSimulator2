@@ -1,0 +1,484 @@
+{
+  "targetUrl": "http://127.0.0.1:5173",
+  "viewport": {
+    "width": 1600,
+    "height": 900
+  },
+  "errors": [],
+  "scenarios": [
+    {
+      "scenario": "desktop-hand-hover-show",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": true,
+          "cardName": "라피",
+          "cardId": "ST01-011_QP1_1772791068132_25",
+          "left": 423,
+          "top": 327
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "",
+          "cardCount": 0,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_30rl76",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_30rl76",
+          "players": [
+            {
+              "id": "PLAYER_1_30rl76",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            },
+            {
+              "id": "PLAYER_2_k0b58m",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "block",
+        "overlayActive": false,
+        "overlayCardCount": 0,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-hand-hover.png"
+    },
+    {
+      "scenario": "desktop-hand-hover-hide",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 423,
+          "top": 327
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "",
+          "cardCount": 0,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_30rl76",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_30rl76",
+          "players": [
+            {
+              "id": "PLAYER_1_30rl76",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            },
+            {
+              "id": "PLAYER_2_k0b58m",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": false,
+        "overlayCardCount": 0,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-hand-hover-hide.png"
+    },
+    {
+      "scenario": "desktop-unit-item-transition",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": true,
+          "cardName": "QA Unit",
+          "cardId": "QA-UNIT-001",
+          "left": 494,
+          "top": 42
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "",
+          "cardCount": 0,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_30rl76",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_30rl76",
+          "players": [
+            {
+              "id": "PLAYER_1_30rl76",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_k0b58m",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "block",
+        "overlayActive": false,
+        "overlayCardCount": 0,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-unit-item-transition.png"
+    },
+    {
+      "scenario": "desktop-overlay-hold-open",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 494,
+          "top": 42
+        },
+        "trashOverlay": {
+          "active": true,
+          "title": "Your Trash (1)",
+          "cardCount": 1,
+          "anchorPlayer": "current",
+          "anchorClasses": "trash-zone selection-zone-active"
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_30rl76",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_30rl76",
+          "players": [
+            {
+              "id": "PLAYER_1_30rl76",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 1,
+              "damageCount": 1,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_k0b58m",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": true,
+        "overlayCardCount": 1,
+        "activeAnchors": [
+          {
+            "className": "trash-zone selection-zone-active",
+            "player": "current",
+            "text": ""
+          }
+        ]
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-overlay-hold-open.png"
+    },
+    {
+      "scenario": "desktop-overlay-anchor-switch",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 494,
+          "top": 42
+        },
+        "trashOverlay": {
+          "active": true,
+          "title": "Your Damage (1)",
+          "cardCount": 1,
+          "anchorPlayer": "current",
+          "anchorClasses": "damage-zone summary-mode selection-zone-active"
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_30rl76",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_30rl76",
+          "players": [
+            {
+              "id": "PLAYER_1_30rl76",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 1,
+              "damageCount": 1,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_k0b58m",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": true,
+        "overlayCardCount": 1,
+        "activeAnchors": [
+          {
+            "className": "damage-zone summary-mode selection-zone-active",
+            "player": "current",
+            "text": "1\n                                DAMAGE"
+          }
+        ]
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-overlay-anchor-switch.png",
+      "trashStillActive": false,
+      "damageActive": true
+    },
+    {
+      "scenario": "desktop-resize-dismiss",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 423,
+          "top": 327
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "Your Damage (1)",
+          "cardCount": 1,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_30rl76",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_30rl76",
+          "players": [
+            {
+              "id": "PLAYER_1_30rl76",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 1,
+              "damageCount": 1,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_k0b58m",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": false,
+        "overlayCardCount": 1,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-resize-dismiss.png"
+    },
+    {
+      "scenario": "desktop-exploratory-wiggle-clear",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 494,
+          "top": 89
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "Your Damage (1)",
+          "cardCount": 1,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_30rl76",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_30rl76",
+          "players": [
+            {
+              "id": "PLAYER_1_30rl76",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 1,
+              "damageCount": 1,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_k0b58m",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": false,
+        "overlayCardCount": 1,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-exploratory-wiggle-clear.png"
+    },
+    {
+      "scenario": "desktop-exploratory-overlay-clear",
+      "state": {
+        "screen": "GAME",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 494,
+          "top": 89
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "Your Trash (1)",
+          "cardCount": 1,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": {
+          "phase": "MAIN",
+          "interactionMode": "NORMAL",
+          "interactionOwnerPlayerId": "PLAYER_1_30rl76",
+          "turnCount": 1,
+          "currentPlayerId": "PLAYER_1_30rl76",
+          "players": [
+            {
+              "id": "PLAYER_1_30rl76",
+              "name": "Player 1",
+              "handCount": 5,
+              "trashCount": 1,
+              "damageCount": 1,
+              "skillCount": 0,
+              "unitCount": 1
+            },
+            {
+              "id": "PLAYER_2_k0b58m",
+              "name": "Player 2",
+              "handCount": 5,
+              "trashCount": 0,
+              "damageCount": 0,
+              "skillCount": 0,
+              "unitCount": 0
+            }
+          ]
+        }
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": false,
+        "overlayCardCount": 1,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-exploratory-overlay-clear.png"
+    },
+    {
+      "scenario": "desktop-screen-transition-dismiss",
+      "state": {
+        "screen": "MENU",
+        "hoverPreview": {
+          "visible": false,
+          "cardName": null,
+          "cardId": null,
+          "left": 423,
+          "top": 327
+        },
+        "trashOverlay": {
+          "active": false,
+          "title": "Your Trash (1)",
+          "cardCount": 1,
+          "anchorPlayer": null,
+          "anchorClasses": null
+        },
+        "game": null
+      },
+      "dom": {
+        "tooltipDisplay": "none",
+        "overlayActive": false,
+        "overlayCardCount": 1,
+        "activeAnchors": []
+      },
+      "screenshot": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\preview-overlay-qa\\desktop-screen-transition-dismiss.png"
+    }
+  ]
+}

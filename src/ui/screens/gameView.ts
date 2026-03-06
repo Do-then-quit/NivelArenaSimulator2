@@ -171,6 +171,8 @@ function bindBattleAssetLoadReflow() {
 
 function handleGameResize() {
     if (uiState.currentScreen !== Screen.GAME || !uiState.game) return;
+    uiState.hoverPreview.hide();
+    uiState.trashHoverOverlay?.hide();
 
     if (gameResizeRafId !== null) {
         window.cancelAnimationFrame(gameResizeRafId);

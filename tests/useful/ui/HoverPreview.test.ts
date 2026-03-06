@@ -76,4 +76,19 @@ describe('HoverPreview', () => {
         expect(tooltip.innerHTML).toContain('<span class="keyword">[Penetration]</span>');
         expect(tooltip.innerHTML).toContain('<span class="keyword">[Dualist]</span>');
     });
+
+    it('should hide the tooltip on global dismiss events', () => {
+        hoverPreview.show(dummyCard, 100, 200);
+        const tooltip = document.querySelector('.hover-preview-tooltip') as HTMLElement;
+        expect(tooltip.style.display).toBe('block');
+
+        window.dispatchEvent(new Event('resize'));
+        expect(tooltip.style.display).toBe('none');
+
+        hoverPreview.show(dummyCard, 120, 240);
+        expect(tooltip.style.display).toBe('block');
+
+        window.dispatchEvent(new Event('blur'));
+        expect(tooltip.style.display).toBe('none');
+    });
 });
