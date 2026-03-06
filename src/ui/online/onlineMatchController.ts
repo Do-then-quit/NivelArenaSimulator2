@@ -8,7 +8,6 @@ import {
     Screen,
     uiState,
 } from '../appState';
-import { clearAutoPhaseAdvanceTimer, clearBotStepTimer } from '../gameLoop';
 import { clearPlaybackLogHistory, clearPlaybackRuntimeState, stepEngineActionWithPlayback } from '../playbackOrchestrator';
 import { resetCardMotionRegistry } from '../playbackMotion';
 import { OnlineClient } from './OnlineClient';
@@ -36,6 +35,21 @@ let lastAppliedCommitSeq = 0;
 let currentPlayerIdBySlot: Record<PlayerSlot, string> | null = null;
 let localDeckRevision = 0;
 let localSelectedDeckId: string | null = null;
+
+function clearBotStepTimer() {
+    if (uiState.botStepTimer !== null) {
+        window.clearTimeout(uiState.botStepTimer);
+        uiState.botStepTimer = null;
+    }
+}
+
+function clearAutoPhaseAdvanceTimer() {
+    if (uiState.autoPhaseAdvanceTimer !== null) {
+        window.clearTimeout(uiState.autoPhaseAdvanceTimer);
+        uiState.autoPhaseAdvanceTimer = null;
+        uiState.playback.pendingAutoPhaseActorId = null;
+    }
+}
 
 function getOnlineWsUrl(): string {
     const configured = (import.meta as any).env?.VITE_ONLINE_WS_URL as string | undefined;

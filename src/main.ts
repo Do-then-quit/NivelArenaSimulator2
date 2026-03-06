@@ -23,7 +23,7 @@ import { applyPhaseThemeClass, renderGame } from './ui/screens/gameView';
 import { renderMenu, renderDeckBuilder, renderSetup } from './ui/screens/menu';
 import { renderOnlineRoom } from './ui/screens/onlineRoom';
 import { renderBotReplaySetup } from './ui/screens/replaySetup';
-import { clearPlaybackLogHistory, clearPlaybackRuntimeState } from './ui/playbackOrchestrator';
+import { clearPlaybackLogHistory, clearPlaybackRuntimeState, enqueuePlaybackBeats } from './ui/playbackOrchestrator';
 import { resetCardMotionRegistry } from './ui/playbackMotion';
 
 function startGame(
@@ -310,6 +310,15 @@ uiState.startGame = startGame;
 uiState.startVerificationScenario = startVerificationScenario;
 uiState.goToNextVerificationTest = goToNextVerificationTest;
 uiState.returnToVerificationScreen = returnToVerificationScreen;
+
+(window as any).__NA_TEST__ = {
+    uiState,
+    Screen,
+    render,
+    startGame,
+    startVerificationScenario,
+    enqueuePlaybackBeats,
+};
 
 window.addEventListener('keydown', handleVerificationHotkeys);
 window.addEventListener('keydown', handleGameHotkeys);

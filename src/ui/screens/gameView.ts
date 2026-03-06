@@ -12,7 +12,17 @@ import {
     shouldRevealHandForPlayer,
 } from '../gameLoop';
 import { shouldDelayInteractionModal } from '../playbackOrchestrator';
-import { buildCardAnchorKey, buildZoneAnchorKey, getCardMotionKey } from '../playbackMotion';
+import {
+    buildActionButtonAnchorKey,
+    buildCardAnchorKey,
+    buildLeaderSlotAnchorKey,
+    buildPhaseStatusAnchorKey,
+    buildPlayerAreaAnchorKey,
+    buildSelectionTrayAnchorKey,
+    buildUnitZoneActionAnchorKey,
+    buildZoneAnchorKey,
+    getCardMotionKey,
+} from '../playbackMotion';
 import { getBottomPlayer, getTopPlayer } from '../playerPerspective';
 import { attachListeners } from './gameBindings';
 
@@ -236,6 +246,13 @@ function buildDataAttributes(attributes: Record<string, string | number | undefi
         .join('');
 }
 
+function buildActionAnchorAttributes(anchorKey: string, testId?: string): string {
+    return buildDataAttributes({
+        'data-action-anchor-key': anchorKey,
+        'data-testid': testId,
+    });
+}
+
 function buildZoneAnchorAttributes(
     zone: 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'SKILL' | 'REVEALED',
     playerId?: string,
@@ -261,6 +278,16 @@ function buildCardAnchorAttributes(
         'data-card-motion-key': motionKey,
         'data-motion-anchor-key': buildCardAnchorKey(motionKey),
     });
+}
+
+function getSelectedTargetOrderIndex(target: unknown, pending: PendingEffect | null | undefined): number {
+    if (!pending || !Array.isArray(pending.selectedTargets)) return -1;
+    return pending.selectedTargets.indexOf(target as any);
+}
+
+function renderSelectionOrderBadge(orderIndex: number): string {
+    if (orderIndex < 0) return '';
+    return `<div class="selection-order-badge">${orderIndex + 1}</div>`;
 }
 
 function resolveCardCostForDisplay(card: Card): number {
@@ -360,7 +387,16 @@ function getReplayTerminationLabel(reason: string): string {
 
 function renderGameControlButtons(localHumanCanInput: boolean): string {
     if (!uiState.replaySession || !uiState.game) {
-        return `<button id="next-phase" class="primary-btn" ${uiState.game?.state.phase === Phase.BLOCK || uiState.game?.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}>Next Phase</button>`;
+        return `
+            <button
+                id="next-phase"
+                class="primary-btn ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''}"
+                ${buildActionAnchorAttributes(buildActionButtonAnchorKey('next-phase'), 'next-phase-btn')}
+                ${uiState.game?.state.phase === Phase.BLOCK || uiState.game?.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}
+            >
+                Next Phase
+            </button>
+        `;
     }
 
     const replay = uiState.replaySession;
@@ -472,7 +508,16 @@ function renderMobileFloatingActions(localHumanCanInput: boolean): string {
     return `
         <div class="mobile-floating-actions">
             <button id="mobile-log-fab" class="secondary-btn mobile-fab">로그</button>
-            ${uiState.replaySession ? '' : `<button id="next-phase" class="primary-btn mobile-fab mobile-next-phase-fab" ${nextPhaseDisabled ? 'disabled' : ''}>Next</button>`}
+            ${uiState.replaySession ? '' : `
+                <button
+                    id="next-phase"
+                    class="primary-btn mobile-fab mobile-next-phase-fab ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''}"
+                    ${buildActionAnchorAttributes(buildActionButtonAnchorKey('next-phase'), 'next-phase-btn-mobile')}
+                    ${nextPhaseDisabled ? 'disabled' : ''}
+                >
+                    Next
+                </button>
+            `}
         </div>
     `;
 }
@@ -738,10 +783,10 @@ function renderSelectionModalToggle() {
 function renderTrashModal() {
     if (!uiState.game) return '';
     if (uiState.game.state.interactionMode !== 'SELECT_TARGET') return '';
-    if (isInteractionModalDelayed()) return '';
     if (uiState.selectionModalCollapsed) return '';
     const pending = uiState.game.state.pendingEffect as any;
     if (!pending || pending.validTargets !== 'MY_TRASH') return '';
+    const preparing = isInteractionModalDelayed();
 
     const sourcePlayer = uiState.game.state.players.find(p => p.id === pending.sourcePlayerId);
     if (!sourcePlayer) return '';
@@ -753,8 +798,8 @@ function renderTrashModal() {
     const showConfirm = targetCount > 1 || pending?.targetSchema?.selectMode === 'ALL' || pending?.actionValue?.allowPartialSelection === true;
 
     return `
-        <div class="modal-overlay selection-modal-overlay">
-            <div class="trash-modal">
+        <div class="modal-overlay selection-modal-overlay ${preparing ? 'is-preparing' : ''}" data-testid="trash-selection-modal">
+            <div class="trash-modal" ${buildActionAnchorAttributes(buildSelectionTrayAnchorKey('trash', sourcePlayer.id), 'trash-selection-tray')}>
                 <h3>Select a card from Trash</h3>
                 ${showConfirm ? `
                     <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
@@ -764,18 +809,25 @@ function renderTrashModal() {
                 <div class="trash-grid">
                     ${trash.map((c, i) => {
         const isSelected = pending.selectedTargets?.includes(c);
+        const orderIndex = getSelectedTargetOrderIndex(c, pending);
         return `
-                        <div class="trash-card-item ${isSelected ? 'selected-target' : ''}" data-index="${i}">
+                        <div
+                            class="trash-card-item ${isSelected ? 'selected-target' : ''}"
+                            data-index="${i}"
+                            ${buildCardAnchorAttributes(c, 'TRASH', sourcePlayer.id, i)}
+                        >
                             ${renderCard(c)}
+                            ${renderSelectionOrderBadge(orderIndex)}
                         </div>
                     `;
     }).join('')}
                 </div>
                 ${showConfirm ? `
                     <div class="modal-actions">
-                        <button id="confirm-targets-modal-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                        <button id="confirm-targets-modal-btn" class="primary-btn" ${preparing || !canConfirm ? 'disabled' : ''}>Confirm</button>
                     </div>
                 ` : ''}
+                ${preparing ? '<div class="selection-modal-processing-copy">효과 처리 중... 잠시 후 선택할 수 있습니다.</div>' : ''}
             </div>
         </div>
     `;
@@ -784,8 +836,8 @@ function renderTrashModal() {
 function renderRevealedCardsModal() {
     if (!uiState.game) return '';
     if (uiState.game.state.revealedCards.length === 0) return '';
-    if (isInteractionModalDelayed()) return '';
     if (uiState.selectionModalCollapsed) return '';
+    const preparing = isInteractionModalDelayed();
 
     const pending = uiState.game.state.pendingEffect as PendingEffect | null;
     const isSelecting = uiState.game.state.interactionMode === 'SELECT_TARGET' && pending?.validTargets === 'REVEALED';
@@ -807,8 +859,8 @@ function renderRevealedCardsModal() {
                 : 'Select a card to add to hand';
 
     return `
-        <div class="modal-overlay selection-modal-overlay">
-            <div class="trash-modal">
+        <div class="modal-overlay selection-modal-overlay ${preparing ? 'is-preparing' : ''}" data-testid="revealed-selection-modal">
+            <div class="trash-modal" ${buildActionAnchorAttributes(buildSelectionTrayAnchorKey('revealed'), 'revealed-selection-tray')}>
                 <h3>Revealed Cards</h3>
                 <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
                     ${selectionGuide}
@@ -816,6 +868,7 @@ function renderRevealedCardsModal() {
                 <div class="trash-grid"${buildZoneAnchorAttributes('REVEALED')}>
                     ${uiState.game.state.revealedCards.map((c, i) => {
         const isSelected = isSelecting && !isTakeAll && pending.selectedTargets?.includes(c);
+        const orderIndex = getSelectedTargetOrderIndex(c, pending);
 
         let matchesFilter = true;
         if (isTakeAll && filter) {
@@ -831,15 +884,17 @@ function renderRevealedCardsModal() {
                             style="${isSelecting && !isTakeAll ? 'cursor: pointer;' : ''}"
                         >
                             ${renderCard(c)}
+                            ${renderSelectionOrderBadge(orderIndex)}
                         </div>
                     `;
     }).join('')}
                 </div>
                 ${isSelecting ? `
                     <div class="modal-actions">
-                        <button id="confirm-targets-modal-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                        <button id="confirm-targets-modal-btn" class="primary-btn" ${preparing || !canConfirm ? 'disabled' : ''}>Confirm</button>
                     </div>
                 ` : ''}
+                ${preparing ? '<div class="selection-modal-processing-copy">효과 처리 중... 잠시 후 선택할 수 있습니다.</div>' : ''}
             </div>
         </div>
     `;
@@ -1050,6 +1105,7 @@ function renderPlayer(
     const damageStackStep = computeDamageStackStep(player.damage.length);
     const damageCardsMarkup = player.damage.map((c: Card, damageIndex: number) => {
         const isDamageSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(c);
+        const orderIndex = getSelectedTargetOrderIndex(c, pending);
         return `
             <div
                 class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}"
@@ -1058,6 +1114,7 @@ function renderPlayer(
                 ${buildCardAnchorAttributes(c, 'DAMAGE', player.id, damageIndex)}
             >
                 ${renderCard(c, true)}
+                ${renderSelectionOrderBadge(orderIndex)}
             </div>
         `;
     }).join('');
@@ -1070,11 +1127,22 @@ function renderPlayer(
         player.levelZone?.isAwakened === true &&
         activatableEffectActions.some((action: any) => action.sourceType === 'LEADER');
     return `
-      <div class="player-area ${isOpponent ? 'opponent' : 'current'}" data-player-id="${player.id}">
+      <div
+        class="player-area ${isOpponent ? 'opponent' : 'current'}"
+        data-player-id="${player.id}"
+        ${buildActionAnchorAttributes(buildPlayerAreaAnchorKey(player.id), `player-area-${player.id}`)}
+      >
         <div class="level-zone">
-            <div class="leader-slot">
+            <div class="leader-slot" ${buildActionAnchorAttributes(buildLeaderSlotAnchorKey(player.id), `leader-slot-${player.id}`)}>
                 ${player.levelZone ? renderCard(player.levelZone, true) : ''}
-                ${isInputOwnerPlayer && localHumanCanInput && leaderHasActivatableEffect ? '<button class="leader-active-btn">Active</button>' : ''}
+                ${isInputOwnerPlayer && localHumanCanInput && leaderHasActivatableEffect ? `
+                    <button
+                        class="leader-active-btn"
+                        ${buildActionAnchorAttributes(buildActionButtonAnchorKey('leader-activate', player.id), `leader-active-btn-${player.id}`)}
+                    >
+                        Active
+                    </button>
+                ` : ''}
             </div>
 
             ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
@@ -1094,31 +1162,69 @@ function renderPlayer(
         const zoneHasActivatableEffect = isInputOwnerPlayer && activatableEffectActions.some((action: any) => action.zoneIndex === i);
         const canAttackFromThisZone = isInputOwnerPlayer && attackActionZoneSet.has(i);
         const isSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(z);
+        const orderIndex = getSelectedTargetOrderIndex(z, pending);
         const unitCost = z.unit ? resolveCardCostForDisplay(z.unit) : 0;
 
         return `
-                    <div class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
+                    <div
+                        class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}"
+                        data-player="${isOpponent ? 'opponent' : 'current'}"
+                        data-index="${i}"
+                        ${buildActionAnchorAttributes(buildUnitZoneActionAnchorKey(player.id, i), `unit-zone-${player.id}-${i}`)}
+                    >
                         ${z.unit ? renderCard(z.unit, false, uiState.game!.getUnitPower(z, player), uiState.game!.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
+                        ${renderSelectionOrderBadge(orderIndex)}
 
                         ${z.items.length > 0 ? `
                             <div class="attached-items">
                                 ${z.items.map((item: Card, itemIndex: number) => {
             const isItemSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(item);
+            const itemOrderIndex = getSelectedTargetOrderIndex(item, pending);
             return `
                                     <div class="mini-item-card ${isItemSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-zone-index="${i}" data-item-index="${itemIndex}">
                                         <img src="${item.imageUrl}" alt="${item.name}">
+                                        ${renderSelectionOrderBadge(itemOrderIndex)}
                                     </div>
                                 `;
         }).join('')}
                             </div>
                         ` : ''}
 
-                        ${z.unit && isInputOwnerPlayer && localHumanCanInput && canAttackFromThisZone ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${isInputOwnerPlayer && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">Active</button>' : ''}
+                        ${z.unit && isInputOwnerPlayer && localHumanCanInput && canAttackFromThisZone ? `
+                            <button
+                                class="attack-btn"
+                                ${buildActionAnchorAttributes(buildActionButtonAnchorKey('attack', player.id, i), `attack-btn-${player.id}-${i}`)}
+                            >
+                                Attack
+                            </button>
+                        ` : ''}
+                        ${isInputOwnerPlayer && localHumanCanInput && zoneHasActivatableEffect ? `
+                            <button
+                                class="active-btn"
+                                ${buildActionAnchorAttributes(buildActionButtonAnchorKey('activate', player.id, i), `active-btn-${player.id}-${i}`)}
+                            >
+                                Active
+                            </button>
+                        ` : ''}
                         ${(canBlockWithThisZone || showPassControl) && localHumanCanInput ? `
                             <div class="block-controls">
-                                ${canBlockWithThisZone ? `<button class="block-btn" data-blocker-zone-index="${i}">Block</button>` : ''}
-                                ${showPassControl ? '<button class="pass-btn">Pass</button>' : ''}
+                                ${canBlockWithThisZone ? `
+                                    <button
+                                        class="block-btn"
+                                        data-blocker-zone-index="${i}"
+                                        ${buildActionAnchorAttributes(buildActionButtonAnchorKey('block', player.id, i), `block-btn-${player.id}-${i}`)}
+                                    >
+                                        Block
+                                    </button>
+                                ` : ''}
+                                ${showPassControl ? `
+                                    <button
+                                        class="pass-btn"
+                                        ${buildActionAnchorAttributes(buildActionButtonAnchorKey('pass', player.id, i), `pass-btn-${player.id}-${i}`)}
+                                    >
+                                        Pass
+                                    </button>
+                                ` : ''}
                             </div>
                         ` : ''}
                         ${z.unit ? `<div class="stats">C ${unitCost} | ${uiState.game!.getUnitPower(z, player)} / ${uiState.game!.getUnitHit(z, player)}</div>` : ''}
@@ -1163,6 +1269,7 @@ function renderPlayer(
                         >
                             ${renderCard(c, true)}
                             <div class="skill-cost">C ${skillCost}</div>
+                            ${renderSelectionOrderBadge(getSelectedTargetOrderIndex(c, pending))}
                         </div>
                     `;
     }).join('')}
@@ -1181,6 +1288,7 @@ function renderPlayer(
                 class="trash-zone ${trashZoneSelectionClass} ${trashZoneSelectedClass}"
                 data-player="${isOpponent ? 'opponent' : 'current'}"
                 ${buildZoneAnchorAttributes('TRASH', player.id)}
+                ${buildActionAnchorAttributes(buildSelectionTrayAnchorKey('trash', player.id), `trash-zone-${player.id}`)}
             >
                 ${player.trash.length > 0 ? renderCard(
         player.trash[player.trash.length - 1],
@@ -1388,11 +1496,18 @@ export function renderGame() {
           <div class="game-controls">
             <div class="status-bar">
               <div class="status-item"><span>Turn</span> <strong>${uiState.game.state.turnCount}</strong></div>
-              <div class="status-item"><span>Phase</span> <strong>${uiState.game.state.phase}</strong></div>
+              <div
+                class="status-item ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''}"
+                ${buildActionAnchorAttributes(buildPhaseStatusAnchorKey(), 'phase-status')}
+              >
+                <span>Phase</span>
+                <strong>${uiState.game.state.phase}</strong>
+              </div>
               <div class="status-item"><span>Active</span> <strong>${uiState.game.currentPlayer.name}</strong></div>
               <div class="status-item"><span>Mode</span> <strong>${uiState.activeMatchConfig.label}</strong></div>
               <div class="status-item"><span>Bot Hand</span> <strong>${uiState.activeMatchViewConfig.revealBotHand ? 'Shown' : 'Hidden'}</strong></div>
               <div class="status-item"><span>Input</span> <strong>${inputOwner?.name ?? 'N/A'} (${inputOwnerControl})</strong></div>
+              ${uiState.playback.pendingAutoPhaseActorId ? `<div class="status-item auto-phase-indicator" data-testid="auto-phase-indicator"><span>Auto</span> <strong>${getPlayerName(uiState.playback.pendingAutoPhaseActorId)}</strong></div>` : ''}
             </div>
             ${renderPlaybackControls()}
             ${renderGameControlButtons(localHumanCanInput)}

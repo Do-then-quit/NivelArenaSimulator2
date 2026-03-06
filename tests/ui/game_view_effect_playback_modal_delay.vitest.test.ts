@@ -108,6 +108,42 @@ function createModalDelayMockGame() {
     } as any;
 }
 
+function createRevealedSelectionMockGame() {
+    const game = createModalDelayMockGame();
+    const revealedCard = {
+        id: 'RV1',
+        name: 'Revealed Unit',
+        type: 'UNIT',
+        attribute: 'FIRE',
+        cost: 1,
+        power: 1000,
+        hit: 1000,
+        text: '',
+    };
+
+    game.state.interactionMode = 'SELECT_TARGET';
+    game.state.pendingEffect = {
+        sourceCard: game.state.players[0].levelZone,
+        sourcePlayerId: 'P1',
+        actionType: 'TAKE_ALL_REVEALED',
+        actionValue: {},
+        validTargets: 'REVEALED',
+        selectedTargets: [],
+        targetSchema: {
+            scope: 'REVEALED',
+            type: 'CARD',
+            count: 1,
+            selectMode: 'MANUAL',
+        },
+    };
+    game.state.revealedCards = [revealedCard];
+    game.getLegalActions = () => [
+        { type: 'SELECT_REVEALED_TARGET', actorPlayerId: 'P1', revealedIndex: 0 },
+        { type: 'CONFIRM_TARGETS', actorPlayerId: 'P1' },
+    ];
+    return game;
+}
+
 describe('game view modal delay during playback', () => {
     beforeEach(() => {
         vi.resetModules();
@@ -162,5 +198,28 @@ describe('game view modal delay during playback', () => {
         expect(document.querySelector('#opt-confirm')).toBeTruthy();
         expect(document.querySelector('#opt-skip')).toBeTruthy();
         expect(document.querySelector('.fx-processing-banner')).toBeNull();
+    });
+
+    it('renders revealed selection modal in preparing state during modal gate', async () => {
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = createRevealedSelectionMockGame();
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.expanded = true;
+        uiState.gameLogView.autoCollapsed = false;
+        uiState.playback.enabled = true;
+        uiState.playback.animationEnabled = true;
+        uiState.playback.queueBusy = true;
+        uiState.playback.modalGateUntilMs = Date.now() + 1000;
+
+        renderGame();
+
+        const modal = document.querySelector('[data-testid="revealed-selection-modal"]');
+        expect(modal).toBeTruthy();
+        expect(modal?.className).toContain('is-preparing');
+        expect(document.querySelector('[data-testid="revealed-selection-tray"]')).toBeTruthy();
+        expect((document.getElementById('confirm-targets-modal-btn') as HTMLButtonElement | null)?.disabled).toBe(true);
     });
 });

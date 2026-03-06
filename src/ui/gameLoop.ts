@@ -2,7 +2,8 @@ import { GameEngine } from '../logic/GameEngine';
 import { canAutoAdvancePhase } from '../logic/AutoPhaseAdvance';
 import { uiState, MatchControlConfig, MatchViewConfig, Screen } from './appState';
 import { EngineAction } from '../logic/types';
-import { isPlaybackQueueBusy, runEngineMutationWithPlayback, stepEngineActionWithPlayback } from './playbackOrchestrator';
+import { isPlaybackQueueBusy, stepEngineActionWithPlayback } from './playbackOrchestrator';
+import { dispatchEngineAction } from './online/onlineMatchController';
 
 function formatActionForLog(action: EngineAction): string {
     switch (action.type) {
@@ -55,6 +56,7 @@ export function clearAutoPhaseAdvanceTimer() {
         window.clearTimeout(uiState.autoPhaseAdvanceTimer);
         uiState.autoPhaseAdvanceTimer = null;
     }
+    uiState.playback.pendingAutoPhaseActorId = null;
 }
 
 export function getActionOwnerPlayerId(engine: GameEngine): string {
@@ -104,15 +106,21 @@ export function canLocalHumanInput(): boolean {
 }
 
 export function shouldAutoAdvancePhase(engine: GameEngine): boolean {
-    if (isOnlineRoomInGame()) return false;
     if (isPlaybackQueueBusy()) return false;
+    if (uiState.currentScreen !== Screen.GAME || uiState.replaySession || engine.state.winner) return false;
     const actorId = getActionOwnerPlayerId(engine);
     const hasNextPhaseAction = engine.getLegalActions(actorId).some(action => action.type === 'NEXT_PHASE');
+    const isOnlineMatch = isOnlineRoomInGame();
+
+    if (isOnlineMatch) {
+        if (uiState.onlineSession.role !== 'HOST') return false;
+        if (uiState.onlineSession.pendingRequestId) return false;
+    }
 
     return canAutoAdvancePhase({
         phase: engine.state.phase,
         interactionMode: engine.state.interactionMode,
-        isLocalHumanInput: canLocalHumanInput(),
+        isLocalHumanInput: isOnlineMatch ? true : canLocalHumanInput(),
         hasNextPhaseAction,
     });
 }
@@ -176,18 +184,24 @@ export function scheduleBotStep(delayMs: number = 220) {
 export function scheduleAutoPhaseAdvance(delayMs: number = 80) {
     clearAutoPhaseAdvanceTimer();
 
-    if (isOnlineRoomInGame()) return;
     if (!uiState.game || uiState.currentScreen !== Screen.GAME || uiState.game.state.winner || uiState.replaySession) return;
     if (!shouldAutoAdvancePhase(uiState.game)) return;
+    const actorPlayerId = getActionOwnerPlayerId(uiState.game);
+    uiState.playback.pendingAutoPhaseActorId = actorPlayerId;
+    uiState.render?.();
 
     uiState.autoPhaseAdvanceTimer = window.setTimeout(() => {
         uiState.autoPhaseAdvanceTimer = null;
+        uiState.playback.pendingAutoPhaseActorId = null;
         if (!uiState.game || uiState.currentScreen !== Screen.GAME || uiState.game.state.winner || uiState.replaySession) return;
         if (!shouldAutoAdvancePhase(uiState.game)) return;
+        const currentActorId = getActionOwnerPlayerId(uiState.game);
         const beforePhase = uiState.game.state.phase;
-        runEngineMutationWithPlayback(uiState.game, () => {
-            uiState.game!.nextPhase();
-        });
+        const ok = dispatchEngineAction({ type: 'NEXT_PHASE', actorPlayerId: currentActorId });
+        if (!ok) {
+            uiState.render?.();
+            return;
+        }
         const afterPhase = uiState.game.state.phase;
         uiState.gameLogFeed.pushUiLog(
             `[Auto] NEXT_PHASE: ${beforePhase} -> ${afterPhase}`,

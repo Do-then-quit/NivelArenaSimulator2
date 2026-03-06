@@ -1345,6 +1345,10 @@ body.phase-theme-end {
     font-weight: bold;
 }
 
+.fx-action-anchor-pressed {
+    animation: fx-action-anchor-press 220ms ease-out;
+}
+
 .active-btn {
     position: absolute;
     top: 5px;
@@ -1471,6 +1475,65 @@ body.phase-theme-end {
     font-weight: 700;
     letter-spacing: 0.3px;
     white-space: nowrap;
+}
+
+.selection-order-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    min-width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(255, 241, 178, 0.95);
+    color: #171923;
+    font-size: 0.68rem;
+    font-weight: 800;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+    z-index: 18;
+}
+
+.damage-card-item,
+.trash-card-item,
+.revealed-card-item,
+.skill-card-item,
+.mini-item-card {
+    position: relative;
+}
+
+.auto-phase-pending {
+    box-shadow: 0 0 0 2px rgba(255, 230, 148, 0.5), 0 0 18px rgba(255, 212, 90, 0.24);
+}
+
+.auto-phase-indicator strong {
+    color: #ffe8a3;
+}
+
+.fx-focus-source {
+    box-shadow: 0 0 0 2px rgba(116, 192, 252, 0.95), 0 0 24px rgba(116, 192, 252, 0.35) !important;
+}
+
+.fx-focus-target {
+    box-shadow: inset 0 0 0 2px rgba(255, 234, 151, 0.92), 0 0 26px rgba(255, 220, 120, 0.4) !important;
+}
+
+.fx-focus-selected {
+    box-shadow: inset 0 0 0 2px rgba(141, 240, 192, 0.96), 0 0 26px rgba(117, 232, 171, 0.42) !important;
+}
+
+.fx-action-source {
+    box-shadow: 0 0 0 2px rgba(116, 192, 252, 0.95), 0 0 28px rgba(116, 192, 252, 0.42) !important;
+}
+
+.fx-action-target {
+    box-shadow: inset 0 0 0 2px rgba(255, 224, 138, 0.94), 0 0 30px rgba(255, 224, 138, 0.42) !important;
+}
+
+.fx-action-emphasis {
+    filter: brightness(1.08) saturate(1.06);
 }
 
 
@@ -1704,6 +1767,32 @@ body.phase-theme-end {
 .selection-modal-overlay {
     background: rgba(0, 0, 0, 0.35);
     backdrop-filter: none;
+}
+
+.selection-modal-overlay.is-preparing {
+    background: rgba(6, 10, 16, 0.54);
+}
+
+.selection-modal-overlay.is-preparing .trash-modal {
+    border-color: rgba(255, 217, 102, 0.72);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 217, 102, 0.24);
+}
+
+.selection-modal-overlay.is-preparing .trash-grid {
+    opacity: 0.9;
+}
+
+.selection-modal-overlay.is-preparing .trash-card-item,
+.selection-modal-overlay.is-preparing .revealed-card-item {
+    cursor: default !important;
+}
+
+.selection-modal-processing-copy {
+    margin-top: 18px;
+    text-align: center;
+    color: #ffe8a3;
+    font-size: 0.82rem;
+    font-weight: 700;
 }
 
 .trash-modal {
@@ -3305,11 +3394,22 @@ body.deck-builder-screen #app {
     gap: 6px;
 }
 
-.fx-motion-layer {
+.fx-overlay-root {
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 3400;
+}
+
+.fx-motion-layer {
+    position: absolute;
+    inset: 0;
+}
+
+.fx-action-layer,
+.fx-interaction-layer {
+    position: absolute;
+    inset: 0;
 }
 
 .fx-motion-card-shell {
@@ -3362,6 +3462,92 @@ body.deck-builder-screen #app {
     animation: fx-toast-in 120ms ease-out;
 }
 
+.fx-action-shell,
+.fx-interaction-shell {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 120ms ease-out;
+}
+
+.fx-action-shell.is-active,
+.fx-interaction-shell.is-active {
+    opacity: 1;
+}
+
+.fx-action-ring {
+    position: fixed;
+    border-radius: 14px;
+    border: 2px solid rgba(255, 243, 186, 0.92);
+    box-shadow: 0 0 0 1px rgba(10, 12, 18, 0.18), 0 0 18px rgba(255, 220, 120, 0.24);
+    animation: fx-action-ring-pulse var(--fx-beat-ms, 320ms) ease-out;
+}
+
+.fx-action-ring.is-source {
+    border-color: rgba(116, 192, 252, 0.95);
+    box-shadow: 0 0 0 1px rgba(10, 12, 18, 0.18), 0 0 22px rgba(116, 192, 252, 0.28);
+}
+
+.fx-action-ring.is-target {
+    border-color: rgba(255, 214, 102, 0.95);
+}
+
+.fx-action-ring.is-emphasis {
+    border-style: dashed;
+}
+
+.fx-action-shell.is-block .fx-action-ring.is-target {
+    border-color: rgba(126, 245, 180, 0.95);
+}
+
+.fx-action-shell.is-activate .fx-action-ring.is-source {
+    border-color: rgba(137, 207, 255, 0.95);
+}
+
+.fx-action-shell.is-pass .fx-action-ring.is-source,
+.fx-action-shell.is-next_phase .fx-action-ring.is-source {
+    border-color: rgba(255, 233, 173, 0.95);
+}
+
+.fx-action-trail {
+    position: fixed;
+    height: 4px;
+    transform-origin: 0 50%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(116, 192, 252, 0.88), rgba(255, 220, 120, 0.92));
+    box-shadow: 0 0 18px rgba(116, 192, 252, 0.24);
+    animation: fx-action-trail-pulse var(--fx-beat-ms, 320ms) ease-out;
+}
+
+.fx-action-shell.is-block .fx-action-trail {
+    background: linear-gradient(90deg, rgba(126, 245, 180, 0.88), rgba(232, 255, 169, 0.9));
+}
+
+.fx-action-shell.is-pass .fx-action-trail,
+.fx-action-shell.is-next_phase .fx-action-trail {
+    background: linear-gradient(90deg, rgba(255, 234, 151, 0.82), rgba(255, 247, 207, 0.92));
+}
+
+.fx-action-badge,
+.fx-interaction-badge {
+    position: fixed;
+    transform: translateX(-50%);
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 234, 151, 0.58);
+    background: rgba(13, 17, 27, 0.92);
+    color: #fff3c4;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
+}
+
+.fx-interaction-badge {
+    border-color: rgba(116, 192, 252, 0.52);
+    color: #e3f2ff;
+}
+
 .fx-pulse-zone {
     animation: fx-zone-pulse var(--fx-pulse-ms, 420ms) ease-out;
 }
@@ -3390,6 +3576,45 @@ body.deck-builder-screen #app {
     }
 }
 
+@keyframes fx-action-anchor-press {
+    0% {
+        transform: scale(1);
+    }
+    35% {
+        transform: scale(0.94);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes fx-action-ring-pulse {
+    from {
+        opacity: 0.35;
+        transform: scale(0.96);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+    to {
+        opacity: 0;
+        transform: scale(1.08);
+    }
+}
+
+@keyframes fx-action-trail-pulse {
+    from {
+        opacity: 0;
+    }
+    30% {
+        opacity: 0.9;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
 @keyframes fx-toast-in {
     from {
         opacity: 0;
@@ -3404,6 +3629,10 @@ body.deck-builder-screen #app {
 @media (prefers-reduced-motion: reduce) {
     .fx-motion-card-shell,
     .fx-motion-card-body,
+    .fx-action-shell,
+    .fx-interaction-shell,
+    .fx-action-ring,
+    .fx-action-trail,
     .fx-toast-item,
     .fx-pulse-zone,
     .cost-candidate,

@@ -6,6 +6,7 @@ import { restartReplayFromBeginning, stepReplayForward } from './replaySetup';
 import { GameLogCategory } from '../gameLogFeed';
 import { dispatchEngineAction, reportGameOverToServer } from '../online/onlineMatchController';
 import { getBottomPlayer, getTopPlayer, getUiPlayer, getUiPlayerRefForPlayerId, UiPlayerRef } from '../playerPerspective';
+import { triggerActionAnchorPress } from '../playbackMotion';
 import { setPlaybackAnimationEnabled, setPlaybackSpeed, skipPlaybackQueue } from '../playbackOrchestrator';
 
 const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
@@ -126,6 +127,12 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     };
     const clearMobileTapSelection = () => {
         uiState.mobileGameView.selectedHandIndex = null;
+    };
+    const pulseActionAnchor = (target: EventTarget | null) => {
+        const element = (target as HTMLElement | null)?.closest<HTMLElement>('[data-action-anchor-key]');
+        const anchorKey = element?.dataset.actionAnchorKey;
+        if (!anchorKey) return;
+        triggerActionAnchorPress(anchorKey);
     };
     const applyMobileTapPlayableHighlights = () => {
         const handCards = document.querySelectorAll('.hand-zone .card-in-hand');
@@ -445,6 +452,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
 
     document.getElementById('next-phase')?.addEventListener('click', () => {
         if (!canLocalHumanInput()) return;
+        pulseActionAnchor(document.getElementById('next-phase'));
         const beforePhase = uiState.game!.state.phase;
         const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
         const ok = dispatchEngineAction({ type: 'NEXT_PHASE', actorPlayerId });
@@ -810,6 +818,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
+            pulseActionAnchor(e.target);
             const zoneEl = btn.closest('.unit-zone') as HTMLElement;
             const zoneIndex = parseInt(zoneEl.dataset.index!);
             const player = getPlayerForPlayerAttr(zoneEl.dataset.player);
@@ -827,6 +836,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
+            pulseActionAnchor(e.target);
             const blockerZoneIndexRaw = (btn as HTMLElement).dataset.blockerZoneIndex;
             const blockerZoneIndex = blockerZoneIndexRaw !== undefined ? parseInt(blockerZoneIndexRaw, 10) : undefined;
             const zoneEl = btn.closest('.unit-zone') as HTMLElement | null;
@@ -854,6 +864,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
+            pulseActionAnchor(e.target);
             const actorPlayerId = getActionOwnerPlayerId(uiState.game!);
             dispatchEngineAction({ type: 'RESOLVE_BLOCK', actorPlayerId, shouldBlock: false });
             logAction('[諛⑹뼱] ?⑥뒪');
@@ -865,6 +876,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
+            pulseActionAnchor(e.target);
             const zoneEl = btn.closest('.unit-zone') as HTMLElement;
             const zoneIndex = parseInt(zoneEl.dataset.index!);
             const player = getPlayerForPlayerAttr(zoneEl.dataset.player);
@@ -889,6 +901,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
+            pulseActionAnchor(e.target);
             const actorId = getActionOwnerPlayerId(uiState.game!);
             const leaderAction = uiState.game!
                 .getLegalActions(actorId)

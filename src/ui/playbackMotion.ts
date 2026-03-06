@@ -6,6 +6,8 @@ import { renderCard, renderHiddenHandCard } from './cardMarkup';
 export type CardMotionZone = 'DECK' | 'HAND' | 'DAMAGE' | 'TRASH' | 'SKILL' | 'REVEALED';
 export type CardMotionType = 'DRAW' | 'DAMAGE_REVEAL' | 'REVEAL_ENTER' | 'REVEAL_EXIT';
 export type CardMotionFace = 'BACK' | 'FRONT';
+export type ActionFxKind = 'ATTACK' | 'BLOCK' | 'ACTIVATE' | 'PASS' | 'NEXT_PHASE';
+export type ActionAnchorKey = string;
 
 export interface CardLocator {
     playerId?: string;
@@ -45,6 +47,26 @@ export interface CardMotionBeat {
     targetAnchorKeys: string[];
 }
 
+export interface ActionFxBeat {
+    id: string;
+    kind: ActionFxKind;
+    label: string;
+    sourceAnchorKeys: string[];
+    targetAnchorKeys: string[];
+    emphasisAnchorKeys: string[];
+    sourceRect: MotionRect | null;
+    targetRect: MotionRect | null;
+}
+
+export interface InteractionFocusBeat {
+    id: string;
+    label: string;
+    sourceAnchorKeys: string[];
+    targetAnchorKeys: string[];
+    selectedAnchorKeys: string[];
+    sourceRect: MotionRect | null;
+}
+
 let motionKeyCounter = 0;
 let motionKeyRegistry = new WeakMap<object, string>();
 
@@ -74,6 +96,38 @@ export function buildZoneAnchorKey(zone: CardMotionZone, playerId?: string): str
     return `zone:${playerId ?? 'shared'}:${zone}`;
 }
 
+export function buildActionAnchorKey(...parts: Array<string | number | undefined | null>): ActionAnchorKey {
+    return `action:${parts.filter((part) => part !== undefined && part !== null && `${part}`.length > 0).join(':')}`;
+}
+
+export function buildPlayerAreaAnchorKey(playerId: string): ActionAnchorKey {
+    return buildActionAnchorKey('player-area', playerId);
+}
+
+export function buildLeaderSlotAnchorKey(playerId: string): ActionAnchorKey {
+    return buildActionAnchorKey('leader-slot', playerId);
+}
+
+export function buildUnitZoneActionAnchorKey(playerId: string, zoneIndex: number): ActionAnchorKey {
+    return buildActionAnchorKey('unit-zone', playerId, zoneIndex);
+}
+
+export function buildActionButtonAnchorKey(
+    kind: 'attack' | 'block' | 'pass' | 'activate' | 'leader-activate' | 'next-phase',
+    playerId?: string,
+    zoneIndex?: number,
+): ActionAnchorKey {
+    return buildActionAnchorKey('button', kind, playerId, zoneIndex);
+}
+
+export function buildPhaseStatusAnchorKey(): ActionAnchorKey {
+    return buildActionAnchorKey('status', 'phase');
+}
+
+export function buildSelectionTrayAnchorKey(kind: 'revealed' | 'trash', playerId?: string): ActionAnchorKey {
+    return buildActionAnchorKey('selection-tray', kind, playerId);
+}
+
 export function getLocatorAnchorKeys(locator: CardLocator): string[] {
     return [
         buildCardAnchorKey(locator.motionKey),
@@ -90,15 +144,59 @@ function rectToSnapshot(rect: DOMRect): MotionRect {
     };
 }
 
+function queryAnchorElement(anchorKey: string): HTMLElement | null {
+    return document.querySelector<HTMLElement>(
+        `[data-motion-anchor-key="${anchorKey}"], [data-action-anchor-key="${anchorKey}"]`,
+    );
+}
+
+function queryAnchorRect(anchorKeys: string[]): MotionRect | null {
+    for (const key of anchorKeys) {
+        const element = queryAnchorElement(key);
+        if (!element) continue;
+        const rect = element.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) continue;
+        return rectToSnapshot(rect);
+    }
+    return null;
+}
+
+function queryAnchorElements(anchorKeys: string[]): HTMLElement[] {
+    const elements: HTMLElement[] = [];
+    const seen = new Set<HTMLElement>();
+    anchorKeys.forEach((key) => {
+        const element = queryAnchorElement(key);
+        if (!element || seen.has(element)) return;
+        seen.add(element);
+        elements.push(element);
+    });
+    return elements;
+}
+
+function snapshotActionAnchorRects(root: ParentNode = document): MotionRectSnapshot {
+    const snapshot: MotionRectSnapshot = new Map();
+    const elements = root.querySelectorAll<HTMLElement>('[data-action-anchor-key]');
+    elements.forEach((element) => {
+        const key = element.dataset.actionAnchorKey;
+        if (!key) return;
+        const rect = element.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+        snapshot.set(key, rectToSnapshot(rect));
+    });
+    return snapshot;
+}
+
 export function snapshotMotionAnchorRects(root: ParentNode = document): MotionRectSnapshot {
     const snapshot: MotionRectSnapshot = new Map();
-    const elements = root.querySelectorAll<HTMLElement>('[data-motion-anchor-key]');
-    elements.forEach((element) => {
+    root.querySelectorAll<HTMLElement>('[data-motion-anchor-key]').forEach((element) => {
         const key = element.dataset.motionAnchorKey;
         if (!key) return;
         const rect = element.getBoundingClientRect();
         if (rect.width <= 0 || rect.height <= 0) return;
         snapshot.set(key, rectToSnapshot(rect));
+    });
+    snapshotActionAnchorRects(root).forEach((rect, key) => {
+        snapshot.set(key, rect);
     });
     return snapshot;
 }
@@ -156,28 +254,47 @@ export function isHandVisibleToViewer(playerId: string | undefined): boolean {
     return !isBotControlledPlayerForView(playerId);
 }
 
-function queryAnchorRect(anchorKeys: string[]): MotionRect | null {
-    for (const key of anchorKeys) {
-        const element = document.querySelector<HTMLElement>(`[data-motion-anchor-key="${key}"]`);
-        if (!element) continue;
-        const rect = element.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0) continue;
-        return rectToSnapshot(rect);
-    }
-    return null;
+function buildRingMarkup(rect: MotionRect, roleClass: string): string {
+    return `
+        <div
+            class="fx-action-ring ${roleClass}"
+            style="left:${rect.left}px; top:${rect.top}px; width:${rect.width}px; height:${rect.height}px;"
+        ></div>
+    `;
+}
+
+function buildTrailMarkup(sourceRect: MotionRect, targetRect: MotionRect): string {
+    const sourceX = sourceRect.left + sourceRect.width / 2;
+    const sourceY = sourceRect.top + sourceRect.height / 2;
+    const targetX = targetRect.left + targetRect.width / 2;
+    const targetY = targetRect.top + targetRect.height / 2;
+    const dx = targetX - sourceX;
+    const dy = targetY - sourceY;
+    const length = Math.sqrt((dx * dx) + (dy * dy));
+    const angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+    return `
+        <div
+            class="fx-action-trail"
+            style="left:${sourceX}px; top:${sourceY}px; width:${length}px; transform:rotate(${angleDeg}deg);"
+        ></div>
+    `;
 }
 
 class PlaybackMotionOverlayController {
-    private layer: HTMLElement | null = null;
+    private root: HTMLElement | null = null;
+    private motionLayer: HTMLElement | null = null;
+    private actionLayer: HTMLElement | null = null;
+    private focusLayer: HTMLElement | null = null;
     private cleanupTimerIds: number[] = [];
+    private classCleanups: Array<() => void> = [];
 
-    play(beat: CardMotionBeat, durationMs: number): boolean {
+    playCardMotion(beat: CardMotionBeat, durationMs: number): boolean {
         const sourceRect = beat.sourceRect ?? queryAnchorRect(beat.sourceAnchorKeys);
         const targetRect = queryAnchorRect(beat.targetAnchorKeys);
         if (!sourceRect || !targetRect) return false;
         if (sourceRect.width <= 0 || sourceRect.height <= 0 || targetRect.width <= 0 || targetRect.height <= 0) return false;
 
-        const layer = this.ensureLayer();
+        const layer = this.ensureMotionLayer();
         const shell = document.createElement('div');
         shell.className = 'fx-motion-card-shell';
         shell.style.left = `${sourceRect.left}px`;
@@ -221,20 +338,165 @@ class PlaybackMotionOverlayController {
         return true;
     }
 
+    playActionFx(beat: ActionFxBeat, durationMs: number): boolean {
+        const sourceRect = beat.sourceRect ?? queryAnchorRect(beat.sourceAnchorKeys);
+        const targetRect = beat.targetRect ?? queryAnchorRect(beat.targetAnchorKeys);
+        const emphasisRects = beat.emphasisAnchorKeys
+            .map((key) => queryAnchorRect([key]))
+            .filter((rect): rect is MotionRect => rect !== null);
+        const sourceElements = queryAnchorElements(beat.sourceAnchorKeys);
+        const targetElements = queryAnchorElements(beat.targetAnchorKeys);
+        const emphasisElements = queryAnchorElements(beat.emphasisAnchorKeys);
+        if (!sourceRect && !targetRect && emphasisRects.length === 0) return false;
+
+        const layer = this.ensureActionLayer();
+        const shell = document.createElement('div');
+        shell.className = `fx-action-shell is-${beat.kind.toLowerCase()}`;
+        const anchorRect = sourceRect ?? targetRect ?? emphasisRects[0];
+        shell.innerHTML = `
+            ${sourceRect ? buildRingMarkup(sourceRect, 'is-source') : ''}
+            ${targetRect ? buildRingMarkup(targetRect, 'is-target') : ''}
+            ${sourceRect && targetRect ? buildTrailMarkup(sourceRect, targetRect) : ''}
+            ${emphasisRects.map((rect) => buildRingMarkup(rect, 'is-emphasis')).join('')}
+            <div class="fx-action-badge" style="left:${anchorRect.left + (anchorRect.width / 2)}px; top:${anchorRect.top - 18}px;">
+                ${beat.label}
+            </div>
+        `;
+        layer.appendChild(shell);
+
+        sourceElements.forEach((element) => {
+            element.classList.add('fx-action-source');
+            this.classCleanups.push(() => element.classList.remove('fx-action-source'));
+        });
+        targetElements.forEach((element) => {
+            element.classList.add('fx-action-target');
+            this.classCleanups.push(() => element.classList.remove('fx-action-target'));
+        });
+        emphasisElements.forEach((element) => {
+            element.classList.add('fx-action-emphasis');
+            this.classCleanups.push(() => element.classList.remove('fx-action-emphasis'));
+        });
+
+        window.requestAnimationFrame(() => {
+            shell.classList.add('is-active');
+        });
+
+        const cleanupTimer = window.setTimeout(() => {
+            shell.remove();
+        }, Math.max(80, durationMs + 80));
+        this.cleanupTimerIds.push(cleanupTimer);
+        return true;
+    }
+
+    playInteractionFocus(beat: InteractionFocusBeat, durationMs: number): boolean {
+        const sourceRect = beat.sourceRect ?? queryAnchorRect(beat.sourceAnchorKeys);
+        const targetRects = beat.targetAnchorKeys
+            .map((key) => queryAnchorRect([key]))
+            .filter((rect): rect is MotionRect => rect !== null);
+        const sourceElements = queryAnchorElements(beat.sourceAnchorKeys);
+        const targetElements = queryAnchorElements(beat.targetAnchorKeys);
+        const selectedElements = queryAnchorElements(beat.selectedAnchorKeys);
+        if (!sourceRect && targetRects.length === 0 && sourceElements.length === 0 && targetElements.length === 0) return false;
+
+        const layer = this.ensureFocusLayer();
+        const shell = document.createElement('div');
+        shell.className = 'fx-interaction-shell';
+        const anchorRect = sourceRect ?? targetRects[0];
+        shell.innerHTML = `
+            ${sourceRect ? buildRingMarkup(sourceRect, 'is-source') : ''}
+            ${targetRects.map((rect) => buildRingMarkup(rect, 'is-target')).join('')}
+            <div class="fx-interaction-badge" style="left:${anchorRect.left + (anchorRect.width / 2)}px; top:${anchorRect.top - 18}px;">
+                ${beat.label}
+            </div>
+        `;
+        layer.appendChild(shell);
+
+        document.body.classList.add('fx-interaction-focus-active');
+        this.classCleanups.push(() => document.body.classList.remove('fx-interaction-focus-active'));
+
+        sourceElements.forEach((element) => {
+            element.classList.add('fx-focus-source');
+            this.classCleanups.push(() => element.classList.remove('fx-focus-source'));
+        });
+        targetElements.forEach((element) => {
+            element.classList.add('fx-focus-target');
+            this.classCleanups.push(() => element.classList.remove('fx-focus-target'));
+        });
+        selectedElements.forEach((element) => {
+            element.classList.add('fx-focus-selected');
+            this.classCleanups.push(() => element.classList.remove('fx-focus-selected'));
+        });
+
+        window.requestAnimationFrame(() => {
+            shell.classList.add('is-active');
+        });
+
+        const cleanupTimer = window.setTimeout(() => {
+            shell.remove();
+            this.flushClassCleanups();
+        }, Math.max(80, durationMs + 80));
+        this.cleanupTimerIds.push(cleanupTimer);
+        return true;
+    }
+
+    pulseActionAnchor(anchorKey: ActionAnchorKey, durationMs: number = 220): boolean {
+        const element = queryAnchorElement(anchorKey);
+        if (!element) return false;
+        element.classList.add('fx-action-anchor-pressed');
+        const cleanupTimer = window.setTimeout(() => {
+            element.classList.remove('fx-action-anchor-pressed');
+        }, Math.max(120, durationMs));
+        this.cleanupTimerIds.push(cleanupTimer);
+        return true;
+    }
+
     clear(): void {
         this.cleanupTimerIds.forEach((timerId) => window.clearTimeout(timerId));
         this.cleanupTimerIds = [];
-        if (this.layer) {
-            this.layer.innerHTML = '';
-        }
+        this.flushClassCleanups();
+        if (this.motionLayer) this.motionLayer.innerHTML = '';
+        if (this.actionLayer) this.actionLayer.innerHTML = '';
+        if (this.focusLayer) this.focusLayer.innerHTML = '';
     }
 
-    private ensureLayer(): HTMLElement {
-        if (this.layer) return this.layer;
+    private flushClassCleanups(): void {
+        this.classCleanups.forEach((cleanup) => cleanup());
+        this.classCleanups = [];
+    }
+
+    private ensureRoot(): HTMLElement {
+        if (this.root) return this.root;
+        const root = document.createElement('div');
+        root.className = 'fx-overlay-root';
+        document.body.appendChild(root);
+        this.root = root;
+        return root;
+    }
+
+    private ensureMotionLayer(): HTMLElement {
+        if (this.motionLayer) return this.motionLayer;
         const layer = document.createElement('div');
         layer.className = 'fx-motion-layer';
-        document.body.appendChild(layer);
-        this.layer = layer;
+        this.ensureRoot().appendChild(layer);
+        this.motionLayer = layer;
+        return layer;
+    }
+
+    private ensureActionLayer(): HTMLElement {
+        if (this.actionLayer) return this.actionLayer;
+        const layer = document.createElement('div');
+        layer.className = 'fx-action-layer';
+        this.ensureRoot().appendChild(layer);
+        this.actionLayer = layer;
+        return layer;
+    }
+
+    private ensureFocusLayer(): HTMLElement {
+        if (this.focusLayer) return this.focusLayer;
+        const layer = document.createElement('div');
+        layer.className = 'fx-interaction-layer';
+        this.ensureRoot().appendChild(layer);
+        this.focusLayer = layer;
         return layer;
     }
 }
@@ -242,7 +504,19 @@ class PlaybackMotionOverlayController {
 const playbackMotionOverlayController = new PlaybackMotionOverlayController();
 
 export function playCardMotionBeat(beat: CardMotionBeat, durationMs: number): boolean {
-    return playbackMotionOverlayController.play(beat, durationMs);
+    return playbackMotionOverlayController.playCardMotion(beat, durationMs);
+}
+
+export function playActionFxBeat(beat: ActionFxBeat, durationMs: number): boolean {
+    return playbackMotionOverlayController.playActionFx(beat, durationMs);
+}
+
+export function playInteractionFocusBeat(beat: InteractionFocusBeat, durationMs: number): boolean {
+    return playbackMotionOverlayController.playInteractionFocus(beat, durationMs);
+}
+
+export function triggerActionAnchorPress(anchorKey: ActionAnchorKey, durationMs: number = 220): boolean {
+    return playbackMotionOverlayController.pulseActionAnchor(anchorKey, durationMs);
 }
 
 export function clearPlaybackMotionOverlay(): void {

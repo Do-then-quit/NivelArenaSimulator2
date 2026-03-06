@@ -8,7 +8,7 @@ import {
     skipPlaybackQueue,
 } from '../../src/ui/playbackOrchestrator';
 import { UiTraceEvent } from '../../src/logic/types';
-import { CardMotionBeat } from '../../src/ui/playbackMotion';
+import { buildPlayerAreaAnchorKey, CardMotionBeat } from '../../src/ui/playbackMotion';
 
 function createCard(id: string, name: string) {
     return {
@@ -155,6 +155,132 @@ describe('playback orchestrator', () => {
         expect(beats[0].motion?.flipToFront).toBe(true);
         expect(beats[1].eventType).toBe('DAMAGE_TRIGGER_ACTIVATED');
         expect(beats[1].motion).toBeUndefined();
+    });
+
+    it('prepends action fx beats before follow-up playback events', () => {
+        const drawEvent: UiTraceEvent = {
+            id: 'draw_evt',
+            type: 'CARDS_DRAWN',
+            createdAtMs: Date.now(),
+            turnCount: 1,
+            phase: 'DRAW' as any,
+            sourcePlayerId: 'P1',
+            count: 1,
+        };
+        const drawnCard = createCard('draw-action-1', 'After Phase Draw');
+        const beforeLocators = new Map<any, any>([
+            [drawnCard, { playerId: 'P1', zone: 'DECK', slotIndex: 5, motionKey: 'mk_after_phase_draw' }],
+        ]);
+        const afterLocators = new Map<any, any>([
+            [drawnCard, { playerId: 'P1', zone: 'HAND', slotIndex: 0, motionKey: 'mk_after_phase_draw' }],
+        ]);
+
+        const beats = buildPlaybackBeats([drawEvent], 'NORMAL', {
+            action: { type: 'NEXT_PHASE', actorPlayerId: 'P1' },
+            beforeLocators,
+            afterLocators,
+            afterState: {
+                players: [
+                    { id: 'P1', name: 'Player 1', unitZones: [{}, {}, {}] },
+                    { id: 'P2', name: 'Player 2', unitZones: [{}, {}, {}] },
+                ],
+                phase: 'DRAW',
+                turnPlayerIndex: 0,
+                interactionMode: 'NORMAL',
+                interactionOwnerPlayerId: null,
+                pendingAttackerIndex: null,
+                pendingBlockerZoneIndex: null,
+                winner: null,
+                currentPlayer: undefined,
+            } as any,
+        });
+
+        expect(beats[0].eventType).toBe('ACTION_FX');
+        expect(beats[0].actionFx?.kind).toBe('NEXT_PHASE');
+        expect(beats[1].eventType).toBe('CARDS_DRAWN');
+        expect(beats[1].motion?.motionType).toBe('DRAW');
+    });
+
+    it('builds interaction focus without leaking hidden opponent hand targets', () => {
+        const hiddenCard = createCard('opp-hand-1', 'Hidden Hand');
+        const events: UiTraceEvent[] = [{
+            id: 'interaction_evt',
+            type: 'INTERACTION_OPENED',
+            createdAtMs: Date.now(),
+            turnCount: 2,
+            phase: 'MAIN' as any,
+            interactionMode: 'SELECT_TARGET',
+        }];
+        const afterLocators = new Map<any, any>([
+            [hiddenCard, { playerId: 'P2', zone: 'HAND', slotIndex: 0, motionKey: 'mk_hidden_1' }],
+        ]);
+
+        uiState.activeMatchViewConfig.revealBotHand = false;
+        uiState.onlineSession.room = {
+            roomCode: '123456',
+            phase: 'IN_GAME',
+            hostClientId: 'host',
+            players: [],
+            matchSessionId: 'session-1',
+        } as any;
+        uiState.onlineSession.localEnginePlayerId = 'P1';
+
+        const beats = buildPlaybackBeats(events, 'NORMAL', {
+            afterLocators,
+            afterState: {
+                players: [
+                    {
+                        id: 'P1',
+                        name: 'Player 1',
+                        levelZone: null,
+                        unitZones: [{ unit: null, items: [] }, { unit: null, items: [] }, { unit: null, items: [] }],
+                        hand: [],
+                        trash: [],
+                        damage: [],
+                    },
+                    {
+                        id: 'P2',
+                        name: 'Player 2',
+                        levelZone: null,
+                        unitZones: [{ unit: null, items: [] }, { unit: null, items: [] }, { unit: null, items: [] }],
+                        hand: [hiddenCard],
+                        trash: [],
+                        damage: [],
+                    },
+                ],
+                phase: 'MAIN',
+                turnPlayerIndex: 0,
+                interactionMode: 'SELECT_TARGET',
+                interactionOwnerPlayerId: 'P1',
+                pendingAttackerIndex: null,
+                pendingBlockerZoneIndex: null,
+                pendingEffect: {
+                    sourceCard: createCard('src-1', 'Source'),
+                    sourcePlayerId: 'P1',
+                    actionType: 'SELECT',
+                    actionValue: {},
+                    validTargets: 'OPP_HAND',
+                    selectedTargets: [],
+                },
+                revealedCards: [],
+            } as any,
+            legalActions: [
+                {
+                    type: 'SELECT_HAND_TARGET',
+                    actorPlayerId: 'P1',
+                    targetPlayerId: 'P2',
+                    handIndex: 0,
+                },
+            ],
+        });
+
+        expect(beats[0].eventType).toBe('INTERACTION_FOCUS');
+        expect(beats[0].interactionFocus?.targetAnchorKeys).toEqual([buildPlayerAreaAnchorKey('P2')]);
+        expect(beats[1].eventType).toBe('INTERACTION_OPENED');
+
+        uiState.onlineSession.room = null;
+        uiState.onlineSession.localEnginePlayerId = null;
+        uiState.activeMatchViewConfig.revealBotHand = true;
     });
 
     it('creates reveal entry and exit beats from locator diffs', () => {

@@ -124,6 +124,9 @@ export interface PlaybackState {
     maxLogEntries: number;
     activePulseTargets: PlaybackPulseTarget[];
     activeMotionBeatId: string | null;
+    activeActionBeatId: string | null;
+    activeInteractionBeatId: string | null;
+    pendingAutoPhaseActorId: string | null;
 }
 
 const initialPlaybackPrefs = loadPlaybackPrefs();
@@ -206,6 +209,9 @@ export const uiState = {
         maxLogEntries: 500,
         activePulseTargets: [],
         activeMotionBeatId: null,
+        activeActionBeatId: null,
+        activeInteractionBeatId: null,
+        pendingAutoPhaseActorId: null,
     } as PlaybackState,
     onlineSession: {
         connected: false,
