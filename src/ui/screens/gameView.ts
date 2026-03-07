@@ -308,7 +308,7 @@ function renderVerificationSessionPanel(): string {
             </div>
             <div class="verification-session-meta">
                 <strong>${currentOrder} / ${totalTests}</strong>
-                <span>${uiState.verificationSession.currentTestId}</span>
+                <span>${uiState.verificationSession.currentTestLabel}</span>
                 ${hasNextTest ? '' : '<span class="verification-session-last">Last test in this run</span>'}
             </div>
             <div class="verification-session-instructions">${safeInstructions}</div>
@@ -1018,16 +1018,17 @@ function renderPlayer(
     const trashZoneSelectedClass = selectedTrashCount > 0 ? 'selection-zone-selected' : '';
     const skillPromptState = getSkillPromptSelectionStateForPlayer(player.id);
     const skillPromptTargetCount = skillPromptState.candidateSkillIndexes.size;
-    const leaderHasActivatableEffect =
-        isInputOwnerPlayer &&
-        player.levelZone?.isAwakened === true &&
-        activatableEffectActions.some((action: any) => action.sourceType === 'LEADER');
+    const leaderEffectActions = isInputOwnerPlayer
+        ? activatableEffectActions.filter((action: any) => action.sourceType === 'LEADER')
+        : [];
     return `
       <div class="player-area ${isOpponent ? 'opponent' : 'current'}">
         <div class="level-zone">
             <div class="leader-slot">
                 ${player.levelZone ? renderCard(player.levelZone, true) : ''}
-                ${isInputOwnerPlayer && localHumanCanInput && leaderHasActivatableEffect ? '<button class="leader-active-btn">Active</button>' : ''}
+                ${isInputOwnerPlayer && localHumanCanInput && leaderEffectActions.length > 0 ? leaderEffectActions.map((action: any) => `
+                    <button class="leader-active-btn" data-effect-index="${action.effectIndex}">Active${leaderEffectActions.length > 1 ? ` ${action.effectIndex + 1}` : ''}</button>
+                `).join('') : ''}
             </div>
 
             ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
@@ -1044,7 +1045,9 @@ function renderPlayer(
         const canBlockWithThisZone = uiState.game!.state.phase === Phase.BLOCK && isInputOwnerPlayer && blockableZoneSet.has(i);
         const showPassControl = uiState.game!.state.phase === Phase.BLOCK && isInputOwnerPlayer && hasBlockPassAction && isEncounterLane;
         const isBlockingTarget = isEncounterLane || canBlockWithThisZone;
-        const zoneHasActivatableEffect = isInputOwnerPlayer && activatableEffectActions.some((action: any) => action.zoneIndex === i);
+        const zoneEffectActions = isInputOwnerPlayer
+            ? activatableEffectActions.filter((action: any) => action.zoneIndex === i && action.sourceType !== 'ITEM')
+            : [];
         const canAttackFromThisZone = isInputOwnerPlayer && attackActionZoneSet.has(i);
         const isSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(z);
         const unitCost = z.unit ? resolveCardCostForDisplay(z.unit) : 0;
@@ -1056,10 +1059,18 @@ function renderPlayer(
                         ${z.items.length > 0 ? `
                             <div class="attached-items">
                                 ${z.items.map((item: Card, itemIndex: number) => {
+            const itemEffectActions = isInputOwnerPlayer
+                ? activatableEffectActions.filter(
+                    (action: any) => action.sourceType === 'ITEM' && action.zoneIndex === i && action.itemIndex === itemIndex,
+                )
+                : [];
             const isItemSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(item);
             return `
                                     <div class="mini-item-card ${isItemSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-zone-index="${i}" data-item-index="${itemIndex}">
                                         <img src="${item.imageUrl}" alt="${item.name}">
+                                        ${isInputOwnerPlayer && localHumanCanInput && itemEffectActions.length > 0 ? itemEffectActions.map((action: any) => `
+                                            <button class="item-active-btn" data-zone-index="${i}" data-item-index="${itemIndex}" data-effect-index="${action.effectIndex}">A${itemEffectActions.length > 1 ? action.effectIndex + 1 : ''}</button>
+                                        `).join('') : ''}
                                     </div>
                                 `;
         }).join('')}
@@ -1067,7 +1078,9 @@ function renderPlayer(
                         ` : ''}
 
                         ${z.unit && isInputOwnerPlayer && localHumanCanInput && canAttackFromThisZone ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${isInputOwnerPlayer && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">Active</button>' : ''}
+                        ${isInputOwnerPlayer && localHumanCanInput && zoneEffectActions.length > 0 ? zoneEffectActions.map((action: any) => `
+                            <button class="active-btn" data-zone-index="${i}" data-effect-index="${action.effectIndex}" data-source-type="${action.sourceType}">Active${zoneEffectActions.length > 1 ? ` ${action.effectIndex + 1}` : ''}</button>
+                        `).join('') : ''}
                         ${(canBlockWithThisZone || showPassControl) && localHumanCanInput ? `
                             <div class="block-controls">
                                 ${canBlockWithThisZone ? `<button class="block-btn" data-blocker-zone-index="${i}">Block</button>` : ''}

@@ -39,6 +39,7 @@ export interface VerificationSessionState {
     orderedTestIds: string[];
     currentIndex: number;
     currentTestId: string;
+    currentTestLabel: string;
     currentInstructions: string;
 }
 
@@ -143,6 +144,7 @@ export const HUMAN_VS_BASELINE_CONFIG: MatchControlConfig = {
 
 export interface UITestResult {
     testId: string;
+    displayName: string;
     success: boolean;
     logs: string[];
     error?: string;

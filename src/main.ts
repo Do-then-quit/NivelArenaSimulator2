@@ -95,7 +95,7 @@ function getVerificationOrderedTestIds(testId: string, orderedTestIds: string[])
 function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     const resolvedOrderedTestIds = getVerificationOrderedTestIds(testId, orderedTestIds);
     const currentIndex = resolvedOrderedTestIds.indexOf(testId);
-    const { engine, instructions } = uiState.cardTester.setupScenario(testId);
+    const { engine, instructions, displayName } = uiState.cardTester.setupScenario(testId);
     clearBotStepTimer();
     clearPlaybackRuntimeState();
     clearPlaybackLogHistory();
@@ -122,6 +122,7 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
         orderedTestIds: resolvedOrderedTestIds,
         currentIndex,
         currentTestId: testId,
+        currentTestLabel: displayName,
         currentInstructions: instructions || 'No instructions provided.',
     };
     (window as any).debug = new DebugManager(uiState.game, render);
@@ -182,7 +183,7 @@ function renderTestScreen() {
                     <div class="test-result ${r.success ? 'pass' : 'fail'}" style="margin-bottom: 10px; padding: 10px; border-left: 5px solid ${r.success ? '#00b894' : '#d63031'}; background: rgba(0,0,0,0.3); border-radius: 4px;">
                         <div style="display:flex; justify-content:space-between; align-items: center; font-weight:bold;">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-size: 1.1em;">${r.testId}</span>
+                                <span style="font-size: 1.1em;">${r.displayName}</span>
                                 <button class="play-test-btn small-btn" data-testid="${r.testId}" style="font-size: 0.8rem; padding: 2px 8px; background: #0984e3; border: none; border-radius: 4px; color: white; cursor: pointer;">Play</button>
                             </div>
                             <span style="color: ${r.success ? '#00b894' : '#d63031'}">${r.success ? 'PASS' : 'FAIL'}</span>

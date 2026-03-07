@@ -473,6 +473,62 @@ export class EffectManager {
                 if (value?.min !== undefined && context.player.hand.length < value.min) return false;
                 if (value?.max !== undefined && context.player.hand.length > value.max) return false;
                 return true;
+            case 'MY_DAMAGE_COUNT': {
+                const count = typeof context.machine.getEffectiveDamageCount === 'function'
+                    ? context.machine.getEffectiveDamageCount(context.player, context)
+                    : context.player.damage.length;
+                if (typeof value === 'number') return count >= value;
+                if (value?.min !== undefined && count < value.min) return false;
+                if (value?.max !== undefined && count > value.max) return false;
+                return true;
+            }
+            case 'OPP_DAMAGE_COUNT': {
+                const count = context.opponent.damage.length;
+                if (typeof value === 'number') return count >= value;
+                if (value?.min !== undefined && count < value.min) return false;
+                if (value?.max !== undefined && count > value.max) return false;
+                return true;
+            }
+            case 'TOTAL_DAMAGE_COUNT': {
+                const myCount = typeof context.machine.getEffectiveDamageCount === 'function'
+                    ? context.machine.getEffectiveDamageCount(context.player, context)
+                    : context.player.damage.length;
+                const count = myCount + context.opponent.damage.length;
+                if (typeof value === 'number') return count >= value;
+                if (value?.min !== undefined && count < value.min) return false;
+                if (value?.max !== undefined && count > value.max) return false;
+                return true;
+            }
+            case 'MY_DAMAGE_TRAIT_COUNT': {
+                const trait = typeof value === 'string' ? value : value?.trait;
+                if (!trait) return false;
+                const count = typeof context.machine.getDamageTraitCount === 'function'
+                    ? context.machine.getDamageTraitCount(context.player, trait)
+                    : 0;
+                if (typeof value === 'string') return count >= 1;
+                if (typeof value === 'number') return count >= value;
+                if (value?.min !== undefined && count < value.min) return false;
+                if (value?.max !== undefined && count > value.max) return false;
+                return true;
+            }
+            case 'DAMAGE_PLACED_IN_MY_ZONE_BY_EFFECT_THIS_TURN': {
+                const originAreas = Array.isArray(value?.originAreas)
+                    ? value.originAreas
+                    : Array.isArray(value?.fromAreas)
+                        ? value.fromAreas
+                        : (value?.originArea || value?.fromArea)
+                            ? [value.originArea || value.fromArea]
+                            : null;
+                const count = originAreas && typeof context.machine.getDamagePlacedByEffectCountFromAreas === 'function'
+                    ? context.machine.getDamagePlacedByEffectCountFromAreas(context.player.id, originAreas)
+                    : typeof context.machine.getDamagePlacedByEffectCount === 'function'
+                        ? context.machine.getDamagePlacedByEffectCount(context.player.id)
+                        : 0;
+                if (typeof value === 'number') return count >= value;
+                if (value?.min !== undefined && count < value.min) return false;
+                if (value?.max !== undefined && count > value.max) return false;
+                return count > 0;
+            }
             case 'DISCARDED_COUNT':
                 const count = (context as any).discardedCount || 0;
                 if (typeof value === 'number') return count >= value;
@@ -588,11 +644,27 @@ export class EffectManager {
                 const min = typeof value === 'number' ? value : value?.min ?? 1;
                 return context.player.skillZone.length >= min;
             }
+            case 'MY_FIELD_UNIT_COUNT': {
+                const count = context.player.unitZones.filter((zone: any) => !!zone?.unit).length;
+                if (typeof value === 'number') return count >= value;
+                if (value?.min !== undefined && count < value.min) return false;
+                if (value?.max !== undefined && count > value.max) return false;
+                return true;
+            }
             case 'ATTACK_COUNT_THIS_TURN_MIN': {
                 const min = typeof value === 'number' ? value : value?.min ?? 1;
                 const baseCount = context.machine.getTurnUnitAttackCount(context.player.id);
                 const bonus = this.getAttackCountReferenceBonus(context);
                 return baseCount + bonus >= min;
+            }
+            case 'TRAIT_ATTACK_COUNT_THIS_TURN_MIN': {
+                const trait = typeof value === 'string' ? value : value?.trait;
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                if (!trait) return false;
+                const count = typeof context.machine.getTraitAttackCountThisTurn === 'function'
+                    ? context.machine.getTraitAttackCountThisTurn(context.player.id, trait)
+                    : 0;
+                return count >= min;
             }
             case 'TRASH_DISTINCT_NAME_COUNT_MIN': {
                 const config = typeof value === 'number' ? { min: value } : (value || {});
@@ -609,6 +681,13 @@ export class EffectManager {
                 });
 
                 return distinctNames.size >= min;
+            }
+            case 'TRASH_TRAIT_COUNT_MIN': {
+                const trait = typeof value === 'string' ? value : value?.trait;
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                if (!trait) return false;
+                const count = context.player.trash.filter((card: any) => String(card?.traits || '').includes(trait)).length;
+                return count >= min;
             }
             case 'SIZE_MARGIN_MIN': {
                 const margin = Math.max(0, Number(value ?? 0));
@@ -640,6 +719,28 @@ export class EffectManager {
                 if (!encounterZone?.unit) return false;
                 const min = Math.max(0, Number(value ?? 0));
                 return resolveCardCost(encounterZone.unit) >= min;
+            }
+            case 'ENCOUNTER_COST_MAX': {
+                if (!context.unitZone) return false;
+                const laneIndex = context.player.unitZones.indexOf(context.unitZone);
+                if (laneIndex < 0) return false;
+                const encounterZone = context.opponent.unitZones[laneIndex];
+                if (!encounterZone?.unit) return false;
+                const max = Math.max(0, Number(value ?? 0));
+                return resolveCardCost(encounterZone.unit) <= max;
+            }
+            case 'ENCOUNTER_COST_LOWER_THAN_MY_DAMAGE_TRAIT_COUNT': {
+                if (!context.unitZone) return false;
+                const laneIndex = context.player.unitZones.indexOf(context.unitZone);
+                if (laneIndex < 0) return false;
+                const encounterZone = context.opponent.unitZones[laneIndex];
+                if (!encounterZone?.unit) return false;
+                const trait = typeof value === 'string' ? value : value?.trait;
+                if (!trait) return false;
+                const threshold = typeof context.machine.getDamageTraitCount === 'function'
+                    ? context.machine.getDamageTraitCount(context.player, trait)
+                    : 0;
+                return resolveCardCost(encounterZone.unit) < threshold;
             }
             default:
                 return true;

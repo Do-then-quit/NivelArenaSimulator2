@@ -10,12 +10,14 @@ function getCardCost(machine: any, card: any): number {
 }
 
 export const destroyUnit: ActionImplementation = (ctx, params, targets) => {
+    let destroyedAny = false;
     targets.forEach(target => {
         if (target && target.unit) {
             if (params.costMax !== undefined && getCardCost(ctx.machine, target.unit) > params.costMax) return;
 
             const owner = getOwnerOfZone(ctx.machine, target);
             if (owner) {
+                const unitBeforeDestroy = target.unit;
                 if (params.alsoDestroyEncounter) {
                     const idx = owner.unitZones.indexOf(target);
                     if (idx !== -1) {
@@ -27,9 +29,25 @@ export const destroyUnit: ActionImplementation = (ctx, params, targets) => {
                     }
                 }
                 ctx.machine.destroyUnit(owner, target, undefined, 'EFFECT');
+                if (unitBeforeDestroy && owner.trash.includes(unitBeforeDestroy)) {
+                    destroyedAny = true;
+                    if (params.storeDestroyedUnitCostFlag) {
+                        ctx.flags = ctx.flags || {};
+                        ctx.flags[params.storeDestroyedUnitCostFlag] = getCardCost(ctx.machine, unitBeforeDestroy);
+                    }
+                    if (params.storeDestroyedUnitAsContext === true) {
+                        ctx.trashedUnit = unitBeforeDestroy;
+                        ctx.trashedUnitOwner = owner;
+                        ctx.costPaymentCard = unitBeforeDestroy;
+                    }
+                }
             }
         }
     });
+    if (destroyedAny && params.setContextFlag) {
+        ctx.flags = ctx.flags || {};
+        ctx.flags[params.setContextFlag] = true;
+    }
 };
 
 export const destroyLaneLowest: ActionImplementation = (ctx, _params, _targets) => {

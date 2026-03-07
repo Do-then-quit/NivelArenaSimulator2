@@ -1,4 +1,4 @@
-﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, Attribute, GameContext, Effect, TargetSchema, PendingEffect, UiTraceEvent, UiTraceEventType } from './types';
+﻿import { GameState, PlayerState, Phase, Card, UnitZoneState, ActivationCondition, CardType, Attribute, GameContext, Effect, TargetSchema, PendingEffect, UiTraceEvent, UiTraceEventType, DamagePlacementOrigin, QueuedNextPlayUnitEffect } from './types';
 import { EffectManager } from './effects';
 import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
@@ -144,6 +144,8 @@ export class GameEngine {
                 handTrashedByEffectCountByPlayerId: {},
                 unitAttackCountByPlayerId: {},
                 traitAttackCountByPlayerId: {},
+                damagePlacedByEffectCountByPlayerId: {},
+                damagePlacedByEffectFromAreaCountByPlayerId: {},
             },
         };
         this.startGame();
@@ -291,8 +293,11 @@ export class GameEngine {
             ],
             skillZone: [],
             lockedSkillTraitsUntilTurnEnd: {},
+            lockedSkillIdsUntilTurnEnd: {},
             lockedActivationsUntilTurnEnd: {},
             lockedActivationsUntilTurnCount: {},
+            pendingNextPlayUnitEffects: [],
+            turnDamageCountReferenceBonus: 0,
         };
     }
 
@@ -397,6 +402,8 @@ export class GameEngine {
                 handTrashedByEffectCountByPlayerId: {},
                 unitAttackCountByPlayerId: {},
                 traitAttackCountByPlayerId: {},
+                damagePlacedByEffectCountByPlayerId: {},
+                damagePlacedByEffectFromAreaCountByPlayerId: {},
             };
         }
         return this.state.turnStats;
@@ -441,6 +448,11 @@ export class GameEngine {
             .filter((trait: string) => trait.length > 0 && trait !== '-');
     }
 
+    private cardHasTrait(card: Card | null | undefined, trait: string): boolean {
+        if (!card || !trait) return false;
+        return this.getCardTraitTokens(card).includes(trait);
+    }
+
     public incrementTraitAttackCount(playerId: string, card: Card | null | undefined) {
         if (!card) return;
         const stats = this.getTurnStats();
@@ -449,6 +461,83 @@ export class GameEngine {
             traitCounts[trait] = (traitCounts[trait] || 0) + 1;
         });
         stats.traitAttackCountByPlayerId[playerId] = traitCounts;
+    }
+
+    public getDamageTraitCount(player: PlayerState, trait: string): number {
+        if (!trait) return 0;
+        return player.damage.reduce((count, card) => count + (this.cardHasTrait(card, trait) ? 1 : 0), 0);
+    }
+
+    public getDamageCountReferenceBonus(player: PlayerState, context?: GameContext): number {
+        if (!context || context.player.id !== player.id) return 0;
+
+        let bonus = Math.max(0, Number(player.turnDamageCountReferenceBonus || 0));
+        const opponent = this.getOpponentOf(player);
+        const applyBonusFromEffect = (effect: Effect | undefined, sourceCard: Card, sourceZone?: UnitZoneState) => {
+            if (!effect || effect.activation !== ActivationCondition.PASSIVE) return;
+            const value = Number(effect.action?.params?.damageCountReferenceBonus || 0);
+            if (!Number.isFinite(value) || value === 0) return;
+
+            const sourceContext: GameContext = {
+                ...context,
+                player,
+                opponent,
+                sourceCard,
+                ...(sourceZone ? { unitZone: sourceZone } : {}),
+            };
+            if (!this.effectManager.checkCondition(effect, sourceContext)) return;
+            if (sourceCard.type === CardType.LEADER && !sourceCard.isAwakened && this.requiresAwakenedLeader(effect)) {
+                return;
+            }
+            bonus += value;
+        };
+
+        if (player.levelZone?.effects) {
+            player.levelZone.effects.forEach(effect => applyBonusFromEffect(effect, player.levelZone!));
+        }
+
+        player.unitZones.forEach(zone => {
+            if (zone.unit?.effects) {
+                zone.unit.effects.forEach(effect => applyBonusFromEffect(effect, zone.unit!, zone));
+            }
+            zone.items.forEach(item => {
+                item.effects?.forEach(effect => applyBonusFromEffect(effect, item, zone));
+            });
+            zone.temporaryEffects.forEach(effect => {
+                if (!zone.unit) return;
+                applyBonusFromEffect(effect, zone.unit, zone);
+            });
+        });
+
+        return bonus;
+    }
+
+    public getEffectiveDamageCount(player: PlayerState, context?: GameContext): number {
+        return Math.max(0, player.damage.length + this.getDamageCountReferenceBonus(player, context));
+    }
+
+    public queueNextPlayUnitEffects(player: PlayerState, queuedEffects: QueuedNextPlayUnitEffect[]) {
+        if (!Array.isArray(queuedEffects) || queuedEffects.length <= 0) return;
+        player.pendingNextPlayUnitEffects.push(...queuedEffects);
+    }
+
+    private applyPendingNextPlayUnitEffects(player: PlayerState, zone: UnitZoneState) {
+        if (!zone.unit || player.pendingNextPlayUnitEffects.length <= 0) return;
+        const queued = [...player.pendingNextPlayUnitEffects];
+        player.pendingNextPlayUnitEffects = [];
+        const opponent = this.getOpponentOf(player);
+
+        queued.forEach(({ effect, sourceCard }) => {
+            if (!effect) return;
+            const context: GameContext = {
+                player,
+                opponent,
+                sourceCard: sourceCard || zone.unit!,
+                unitZone: zone,
+                machine: this,
+            };
+            this.effectManager.executeEffect(effect, context, [zone]);
+        });
     }
 
     public getEffectTrashedFriendlyUnitCount(playerId: string): number {
@@ -471,6 +560,25 @@ export class GameEngine {
         return this.getTurnStats().traitAttackCountByPlayerId[playerId]?.[trait] || 0;
     }
 
+    public recordDamagePlacedByEffect(playerId: string, originArea: DamagePlacementOrigin, count: number = 1) {
+        if (count <= 0) return;
+        const stats = this.getTurnStats();
+        stats.damagePlacedByEffectCountByPlayerId[playerId] =
+            (stats.damagePlacedByEffectCountByPlayerId[playerId] || 0) + count;
+        const areaCounts = stats.damagePlacedByEffectFromAreaCountByPlayerId[playerId] || {};
+        areaCounts[originArea] = (areaCounts[originArea] || 0) + count;
+        stats.damagePlacedByEffectFromAreaCountByPlayerId[playerId] = areaCounts;
+    }
+
+    public getDamagePlacedByEffectCount(playerId: string): number {
+        return this.getTurnStats().damagePlacedByEffectCountByPlayerId[playerId] || 0;
+    }
+
+    public getDamagePlacedByEffectCountFromAreas(playerId: string, originAreas: DamagePlacementOrigin[]): number {
+        const areaCounts = this.getTurnStats().damagePlacedByEffectFromAreaCountByPlayerId[playerId] || {};
+        return originAreas.reduce((sum, area) => sum + (areaCounts[area] || 0), 0);
+    }
+
     private resetTurnStats() {
         this.state.turnStats = {
             effectTrashedFriendlyUnitCountByPlayerId: {},
@@ -478,6 +586,8 @@ export class GameEngine {
             handTrashedByEffectCountByPlayerId: {},
             unitAttackCountByPlayerId: {},
             traitAttackCountByPlayerId: {},
+            damagePlacedByEffectCountByPlayerId: {},
+            damagePlacedByEffectFromAreaCountByPlayerId: {},
         };
     }
 
@@ -1459,7 +1569,9 @@ export class GameEngine {
             z.extraAttackAllowance = 0;
         });
         (this.currentPlayer as any).leaderActivatedEffectKeys = {};
-        (this.currentPlayer as any).lockedSkillIdsUntilTurnEnd = {};
+        this.currentPlayer.lockedSkillIdsUntilTurnEnd = {};
+        this.currentPlayer.pendingNextPlayUnitEffects = [];
+        this.currentPlayer.turnDamageCountReferenceBonus = 0;
 
         // Switch
         this.state.turnPlayerIndex = this.state.turnPlayerIndex === 0 ? 1 : 0;
@@ -1511,6 +1623,27 @@ export class GameEngine {
                         player.trash.splice(idx, 1);
                         player.hand.push(action.card);
                         console.log(`Delayed Action: Returned ${action.card.name} to hand.`);
+                    }
+                } else if (action.type === 'DEPLOY_FROM_TRASH_TO_EMPTY_ZONE') {
+                    const idx = player.trash.indexOf(action.card);
+                    const emptyZone = player.unitZones.find((zone: any) => !zone?.unit);
+                    if (idx !== -1 && emptyZone) {
+                        const [placedUnit] = player.trash.splice(idx, 1);
+                        if (placedUnit) {
+                            emptyZone.unit = placedUnit;
+                            emptyZone.items = [];
+                            emptyZone.buffs = [];
+                            emptyZone.temporaryEffects = [];
+                            emptyZone.hasAttacked = false;
+                            emptyZone.attackCountThisTurn = 0;
+                            emptyZone.extraAttackAllowance = 0;
+                            emptyZone.isExhausted = false;
+                            emptyZone.hasPlacedUnitThisTurn = false;
+                            emptyZone.hasActivatedEffectThisTurn = false;
+                            emptyZone.activatedEffectKeys = {};
+                            this.triggerEntryEffectsForPlacedUnit(player, emptyZone);
+                            console.log(`Delayed Action: Deployed ${placedUnit.name} from trash to an empty zone.`);
+                        }
                     }
                 } else {
                     remaining.push(action);
@@ -1619,9 +1752,14 @@ export class GameEngine {
         zone.hasPlacedUnitThisTurn = true;
         zone.buffs = []; // Ensure clear state for new unit if not upgrade (though empty zone implies empty buffs)
         zone.temporaryEffects = [];
+        zone.isExhausted = false;
         zone.hasAttacked = false;
         zone.attackCountThisTurn = 0;
         zone.extraAttackAllowance = 0;
+        zone.hasActivatedEffectThisTurn = false;
+        zone.activatedEffectKeys = {};
+
+        this.applyPendingNextPlayUnitEffects(this.currentPlayer, zone);
 
         this.triggerEntryEffectsForPlacedUnit(this.currentPlayer, zone);
     }
@@ -1840,6 +1978,11 @@ export class GameEngine {
             this.effectManager.processEffect(effect, context);
         } else if (!confirm) {
             console.log("Optional Effect skipped.");
+            const skippedFlag = effect?.action?.params?.setContextFlag;
+            if (context && skippedFlag) {
+                context.flags = context.flags || {};
+                context.flags[skippedFlag] = false;
+            }
         }
 
         // Resume global queue
@@ -2612,6 +2755,13 @@ export class GameEngine {
                                 } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
                                     const baseUnitCount = source.owner.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
                                     value = baseUnitCount * value;
+                                } else if (params.dynamic === 'DAMAGE_COUNT_MULTIPLIER') {
+                                    value = this.getEffectiveDamageCount(source.owner, context) * value;
+                                } else if (params.dynamic === 'TOTAL_DAMAGE_COUNT_MULTIPLIER') {
+                                    value = (this.getEffectiveDamageCount(source.owner, context) + context.opponent.damage.length) * value;
+                                } else if (params.dynamic === 'DAMAGE_TRAIT_COUNT_MULTIPLIER') {
+                                    const trait = typeof params.trait === 'string' ? params.trait : '';
+                                    value = this.getDamageTraitCount(source.owner, trait) * value;
                                 } else if (params.dynamic === 'ITEM_COUNT_MULTIPLIER') {
                                     const sourceItemCount = source.zone?.items?.length || 0;
                                     value = sourceItemCount * value;

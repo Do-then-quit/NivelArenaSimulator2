@@ -99,9 +99,17 @@ export class TargetSelector {
                     case 'HAS_TRAIT':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
-                            return unit && unit.traits?.includes(filter.value);
+                            return unit && this.hasTrait(unit, filter.value);
                         });
                         break;
+                    case 'HAS_ANY_TRAIT': {
+                        const traits = Array.isArray(filter.value) ? filter.value : [filter.value];
+                        candidates = candidates.filter(c => {
+                            const unit = this.getUnitFromTarget(c);
+                            return unit && traits.some((trait: any) => this.hasTrait(unit, trait));
+                        });
+                        break;
+                    }
                     case 'HAS_KEYWORD':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
@@ -128,6 +136,41 @@ export class TargetSelector {
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
                             return unit && this.getCardCost(engine, unit) <= filter.value;
+                        });
+                        break;
+                    case 'COST_LIMIT_BY_DAMAGE_COUNT':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            if (!card) return false;
+                            const add = typeof filter.value?.add === 'number' ? filter.value.add : 0;
+                            const limit = typeof (engine as any)?.getEffectiveDamageCount === 'function'
+                                ? (engine as any).getEffectiveDamageCount(context.player, context)
+                                : context.player.damage.length;
+                            return this.getCardCost(engine, card) <= limit + add;
+                        });
+                        break;
+                    case 'COST_LIMIT_BY_DAMAGE_TRAIT_COUNT':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            const trait = typeof filter.value === 'string' ? filter.value : filter.value?.trait;
+                            const add = typeof filter.value?.add === 'number' ? filter.value.add : 0;
+                            if (!card || !trait) return false;
+                            const limit = typeof (engine as any)?.getDamageTraitCount === 'function'
+                                ? (engine as any).getDamageTraitCount(context.player, trait)
+                                : 0;
+                            return this.getCardCost(engine, card) <= limit + add;
+                        });
+                        break;
+                    case 'COST_STRICTLY_LOWER_THAN_DAMAGE_TRAIT_COUNT':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            const trait = typeof filter.value === 'string' ? filter.value : filter.value?.trait;
+                            const add = typeof filter.value?.add === 'number' ? filter.value.add : 0;
+                            if (!card || !trait) return false;
+                            const limit = typeof (engine as any)?.getDamageTraitCount === 'function'
+                                ? (engine as any).getDamageTraitCount(context.player, trait)
+                                : 0;
+                            return this.getCardCost(engine, card) < limit + add;
                         });
                         break;
                     case 'POWER_LIMIT':
@@ -383,7 +426,12 @@ export class TargetSelector {
                             if (!card || card.type !== filter.value) return false;
                         }
                         break;
-                    case 'HAS_TRAIT': if (!unit || !unit.traits?.includes(filter.value)) return false; break;
+                    case 'HAS_TRAIT': if (!unit || !this.hasTrait(unit, filter.value)) return false; break;
+                    case 'HAS_ANY_TRAIT': {
+                        const traits = Array.isArray(filter.value) ? filter.value : [filter.value];
+                        if (!unit || !traits.some((trait: any) => this.hasTrait(unit, trait))) return false;
+                        break;
+                    }
                     case 'HAS_KEYWORD':
                         if (!unit) return false;
                         {
@@ -407,6 +455,38 @@ export class TargetSelector {
                         }
                         break;
                     case 'COST_LIMIT': if (!unit || this.getCardCost(engine, unit) > filter.value) return false; break;
+                    case 'COST_LIMIT_BY_DAMAGE_COUNT':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            const add = typeof filter.value?.add === 'number' ? filter.value.add : 0;
+                            const limit = typeof (engine as any)?.getEffectiveDamageCount === 'function'
+                                ? (engine as any).getEffectiveDamageCount(context.player, context)
+                                : context.player.damage.length;
+                            if (!card || this.getCardCost(engine, card) > limit + add) return false;
+                        }
+                        break;
+                    case 'COST_LIMIT_BY_DAMAGE_TRAIT_COUNT':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            const trait = typeof filter.value === 'string' ? filter.value : filter.value?.trait;
+                            const add = typeof filter.value?.add === 'number' ? filter.value.add : 0;
+                            const limit = trait && typeof (engine as any)?.getDamageTraitCount === 'function'
+                                ? (engine as any).getDamageTraitCount(context.player, trait)
+                                : 0;
+                            if (!card || !trait || this.getCardCost(engine, card) > limit + add) return false;
+                        }
+                        break;
+                    case 'COST_STRICTLY_LOWER_THAN_DAMAGE_TRAIT_COUNT':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            const trait = typeof filter.value === 'string' ? filter.value : filter.value?.trait;
+                            const add = typeof filter.value?.add === 'number' ? filter.value.add : 0;
+                            const limit = trait && typeof (engine as any)?.getDamageTraitCount === 'function'
+                                ? (engine as any).getDamageTraitCount(context.player, trait)
+                                : 0;
+                            if (!card || !trait || this.getCardCost(engine, card) >= limit + add) return false;
+                        }
+                        break;
                     case 'HIT_LIMIT':
                         if (target && typeof target === 'object' && 'unit' in target) {
                             const zoneTarget = target as UnitZoneState;
@@ -533,7 +613,7 @@ export class TargetSelector {
         if (schema.conditions) {
             const unit = this.getUnitFromTarget(target);
             if (schema.conditions.costMax !== undefined && (!unit || this.getCardCost(engine, unit) > schema.conditions.costMax)) return false;
-            if (schema.conditions.hasTrait && (!unit || !unit.traits?.includes(schema.conditions.hasTrait))) return false;
+            if (schema.conditions.hasTrait && (!unit || !this.hasTrait(unit, schema.conditions.hasTrait))) return false;
         }
 
         return true;
@@ -723,5 +803,24 @@ export class TargetSelector {
             return (engine as any).getCardCost(card);
         }
         return Math.max(0, Number(card.cost || 0));
+    }
+
+    private static hasTrait(card: any, trait: any): boolean {
+        if (!card || typeof trait !== 'string' || !trait.trim()) return false;
+        return this.getTraitTokens(card).includes(trait.trim());
+    }
+
+    private static getTraitTokens(card: any): string[] {
+        const traits = card?.traits;
+        if (Array.isArray(traits)) {
+            return traits
+                .flatMap((trait: any) => String(trait ?? '').split('/'))
+                .map((trait: string) => trait.trim())
+                .filter((trait: string) => trait.length > 0 && trait !== '-');
+        }
+        return String(traits || '')
+            .split('/')
+            .map((trait: string) => trait.trim())
+            .filter((trait: string) => trait.length > 0 && trait !== '-');
     }
 }

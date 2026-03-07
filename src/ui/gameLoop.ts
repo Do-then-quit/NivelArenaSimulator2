@@ -178,6 +178,7 @@ export function scheduleAutoPhaseAdvance(delayMs: number = 80) {
 
     if (isOnlineRoomInGame()) return;
     if (!uiState.game || uiState.currentScreen !== Screen.GAME || uiState.game.state.winner || uiState.replaySession) return;
+    if (uiState.verificationSession) return;
     if (!shouldAutoAdvancePhase(uiState.game)) return;
 
     uiState.autoPhaseAdvanceTimer = window.setTimeout(() => {

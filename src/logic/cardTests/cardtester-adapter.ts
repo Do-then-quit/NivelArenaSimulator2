@@ -8,49 +8,47 @@
 import { UnifiedTestCase, UnifiedTestModule } from './shared/types';
 import { CardTestModule, CardTestContext } from './types';
 
+function buildScenarioId(testId: string, ordinal: number): string {
+    return `${testId}::${String(ordinal).padStart(2, '0')}`;
+}
+
 /**
  * Convert a UnifiedTestModule into a CardTestModule for use by CardTester.
  */
 export function adaptUnifiedModule(module: UnifiedTestModule): CardTestModule {
     const setupScenarios: Record<string, (ctx: CardTestContext) => string> = {};
     const runTests: Record<string, (ctx: CardTestContext) => Promise<void>> = {};
+    const displayNames: Record<string, string> = {};
+    const scenarioCountsByCard = new Map<string, number>();
 
-    // Group tests by testId, use first test for scenario, combine all for run
-    const byCard = new Map<string, UnifiedTestCase[]>();
     for (const test of module.tests) {
-        if (!byCard.has(test.testId)) {
-            byCard.set(test.testId, []);
-        }
-        byCard.get(test.testId)!.push(test);
-    }
+        const ordinal = (scenarioCountsByCard.get(test.testId) || 0) + 1;
+        scenarioCountsByCard.set(test.testId, ordinal);
+        const scenarioId = buildScenarioId(test.testId, ordinal);
 
-    for (const [testId, tests] of byCard) {
-        // Setup uses first test's setup
-        const firstTest = tests[0];
-        setupScenarios[testId] = (ctx: CardTestContext) => {
-            firstTest.setup(ctx.engine, ctx.getCard);
-            return firstTest.description;
+        setupScenarios[scenarioId] = (ctx: CardTestContext) => {
+            test.setup(ctx.engine, ctx.getCard);
+            return test.description;
         };
 
-        // Run combines all tests for this test ID
-        runTests[testId] = async (ctx: CardTestContext) => {
-            for (const test of tests) {
-                ctx.log(`Running: ${test.name}`);
+        runTests[scenarioId] = async (ctx: CardTestContext) => {
+            ctx.log(`Running: ${test.name}`);
 
-                // Run each case on a fresh engine to keep UI CardTester
-                // behavior aligned with isolated vitest execution.
-                ctx.resetEngine?.();
-                test.setup(ctx.engine, ctx.getCard);
-                const results = test.verify(ctx.engine, ctx.getCard);
+            // Run each case on a fresh engine to keep UI CardTester
+            // behavior aligned with isolated vitest execution.
+            ctx.resetEngine?.();
+            test.setup(ctx.engine, ctx.getCard);
+            const results = test.verify(ctx.engine, ctx.getCard);
 
-                for (const result of results) {
-                    ctx.assert(result.pass, result.message);
-                }
+            for (const result of results) {
+                ctx.assert(result.pass, result.message);
             }
         };
+
+        displayNames[scenarioId] = `${test.testId} · ${test.name}`;
     }
 
-    return { setupScenarios, runTests };
+    return { setupScenarios, runTests, displayNames };
 }
 
 /**

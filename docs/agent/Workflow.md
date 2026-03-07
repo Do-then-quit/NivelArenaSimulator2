@@ -1,5 +1,7 @@
 # Agent Workflow (Feature Implementation)
 
+풀팩 구현을 한 번에 지시할 때의 프롬프트/검증 운영 템플릿은 `docs/agent/PackImplementationRunbook.md`를 우선 참고한다.
+
 ## 1. 사전 확인
 - 룰북 조항 번호와 카드 텍스트를 먼저 확인한다.
 - 변경 범위를 최소화하고 무관한 리팩터링을 분리한다.

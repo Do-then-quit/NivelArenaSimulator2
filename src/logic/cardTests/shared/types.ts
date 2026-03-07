@@ -60,6 +60,12 @@ export interface UnifiedTestCase {
      * @returns Array of test results (all should pass for test to pass)
      */
     verify: (engine: GameEngine, getCard: GetCardFn) => TestResult[];
+
+    /**
+     * Optional list of effect indexes covered by this scenario for the card
+     * identified by `testId`. This is used by pack-specific coverage tests.
+     */
+    coversEffectIndices?: number[];
 }
 
 /**

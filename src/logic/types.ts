@@ -88,6 +88,8 @@ export type ActionType =
     | 'MOVE_ITEM_TO_DECK_BOTTOM'
     | 'MOVE_FROM_DAMAGE_TO_HAND'
     | 'MOVE_FROM_HAND_TO_DAMAGE'
+    | 'MOVE_FROM_TRASH_TO_DAMAGE'
+    | 'MOVE_FROM_DAMAGE_TO_TRASH'
     | 'MOVE_FROM_TRASH_TO_DECK_TOP'
     | 'MOVE_FROM_TRASH_TO_DECK_BOTTOM'
     | 'DRAW_BY_TARGET_HIT'
@@ -99,6 +101,8 @@ export type ActionType =
     | 'LOCK_SKILL_ID_UNTIL_TURN_END'
     | 'SET_TARGET_COST_THIS_TURN'
     | 'LOCK_SKILL_TRAIT_UNTIL_TURN_END'
+    | 'ADD_DAMAGE_COUNT_REFERENCE_BONUS_THIS_TURN'
+    | 'QUEUE_NEXT_PLAY_UNIT_EFFECTS'
     | 'AUTO_ATTACK_IF_ENCOUNTER';
 
 export type UiTraceEventType =
@@ -109,11 +113,14 @@ export type UiTraceEventType =
     | 'PHASE_CHANGED'
     | 'EFFECT_EXECUTED';
 
+export type DamagePlacementOrigin = 'HAND' | 'DECK' | 'FIELD' | 'TRASH' | 'DAMAGE';
+
 export interface TargetFilter {
     type:
     | 'EXCLUDE_SELF'
     | 'UNIT_TYPE'
     | 'HAS_TRAIT'
+    | 'HAS_ANY_TRAIT'
     | 'HAS_KEYWORD'
     | 'HAS_ACTIVE_ATTACK_EFFECT'
     | 'NOT_HAS_KEYWORD'
@@ -134,7 +141,10 @@ export interface TargetFilter {
     | 'ITEM_COUNT_MAX'
     | 'EXCLUDE_CARD_ID'
     | 'EQUIPPED_ON_SOURCE_UNIT'
-    | 'COST_LIMIT_BY_LEADER_LEVEL';
+    | 'COST_LIMIT_BY_LEADER_LEVEL'
+    | 'COST_LIMIT_BY_DAMAGE_COUNT'
+    | 'COST_LIMIT_BY_DAMAGE_TRAIT_COUNT'
+    | 'COST_STRICTLY_LOWER_THAN_DAMAGE_TRAIT_COUNT';
     value?: any;
 }
 
@@ -173,7 +183,10 @@ export interface TargetSchema {
         state?: 'EXHAUSTED' | 'READY';
     };
     selectMode: 'MANUAL' | 'RANDOM' | 'LOWEST_POWER' | 'HIGHEST_POWER' | 'ALL';
-    totalCostLimit?: number | { type: 'MY_HAND_COUNT' | 'MY_DAMAGE_COUNT'; add?: number }; // Total selected cost cap
+    totalCostLimit?:
+        | number
+        | { type: 'MY_HAND_COUNT' | 'MY_DAMAGE_COUNT'; add?: number }
+        | { type: 'MY_DAMAGE_TRAIT_COUNT'; trait: string; add?: number }; // Total selected cost cap
 }
 
 export interface EffectCondition {
@@ -205,7 +218,17 @@ export interface EffectCondition {
     | 'TRASH_DISTINCT_NAME_COUNT_MIN'
     | 'SIZE_MARGIN_MIN'
     | 'SELF_POWER_MIN'
-    | 'ENCOUNTER_COST_MIN';
+    | 'ENCOUNTER_COST_MIN'
+    | 'ENCOUNTER_COST_MAX'
+    | 'ENCOUNTER_COST_LOWER_THAN_MY_DAMAGE_TRAIT_COUNT'
+    | 'MY_DAMAGE_COUNT'
+    | 'OPP_DAMAGE_COUNT'
+    | 'TOTAL_DAMAGE_COUNT'
+    | 'MY_DAMAGE_TRAIT_COUNT'
+    | 'DAMAGE_PLACED_IN_MY_ZONE_BY_EFFECT_THIS_TURN'
+    | 'TRAIT_ATTACK_COUNT_THIS_TURN_MIN'
+    | 'MY_FIELD_UNIT_COUNT'
+    | 'TRASH_TRAIT_COUNT_MIN';
     value?: any;
     trashedUnitCostMin?: number; // New: for triggers like Cinderella's UNIT_TRASHED
     friendlyOnly?: boolean; // New: check if trashed unit belongs to player
@@ -324,6 +347,11 @@ export interface Card {
     };
 }
 
+export interface QueuedNextPlayUnitEffect {
+    effect: Effect;
+    sourceCard?: Card;
+}
+
 export interface UnitZoneState {
     unit: Card | null;
     items: Card[];
@@ -360,8 +388,11 @@ export interface PlayerState {
     unitZones: [UnitZoneState, UnitZoneState, UnitZoneState]; // 3 zones
     skillZone: Card[];
     lockedSkillTraitsUntilTurnEnd: Record<string, boolean>;
+    lockedSkillIdsUntilTurnEnd: Record<string, boolean>;
     lockedActivationsUntilTurnEnd: Partial<Record<ActivationCondition, boolean>>;
     lockedActivationsUntilTurnCount: Partial<Record<ActivationCondition, number>>;
+    pendingNextPlayUnitEffects: QueuedNextPlayUnitEffect[];
+    turnDamageCountReferenceBonus: number;
 }
 
 export interface GameState {
@@ -391,6 +422,8 @@ export interface GameState {
         handTrashedByEffectCountByPlayerId: Record<string, number>;
         unitAttackCountByPlayerId: Record<string, number>;
         traitAttackCountByPlayerId: Record<string, Record<string, number>>;
+        damagePlacedByEffectCountByPlayerId: Record<string, number>;
+        damagePlacedByEffectFromAreaCountByPlayerId: Record<string, Partial<Record<DamagePlacementOrigin, number>>>;
     };
 }
 

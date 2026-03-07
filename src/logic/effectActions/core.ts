@@ -31,9 +31,21 @@ export const drawCard: ActionImplementation = (ctx, params) => {
         targetPlayer.deck.unshift(...revealed);
     } else {
         const count = params.count || 1;
+        if (params.setContextFlag) {
+            ctx.flags = ctx.flags || {};
+            ctx.flags[params.setContextFlag] = true;
+        }
         const drawn = ctx.machine.drawCard(targetPlayerIndex, count, resolveEffectDrawMeta(params));
         if (targetPlayer === ctx.player) {
             (ctx as any).lastDrawnCards = drawn;
+        }
+        if (params.setContextFlag) {
+            ctx.flags = ctx.flags || {};
+            if (drawn.length > 0) {
+                ctx.flags[params.setContextFlag] = true;
+            } else {
+                delete ctx.flags[params.setContextFlag];
+            }
         }
     }
 };
@@ -128,6 +140,23 @@ export const drawDynamic: ActionImplementation = (ctx, params, targets) => {
     let count = 0;
     if (params.multiplier === 'BASE_UNIT_COUNT') {
         count = player.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
+    } else if (params.multiplier === 'OTHER_FRIENDLY_TRAIT_ANY_COUNT') {
+        const traits = Array.isArray(params.traits)
+            ? params.traits.filter((trait: unknown): trait is string => typeof trait === 'string' && trait.trim().length > 0)
+            : (typeof params.trait === 'string' ? [params.trait] : []);
+        const excludeSelf = params.excludeSelf === true && !!ctx.unitZone;
+        count = player.unitZones.reduce((sum, zone) => {
+            if (!zone.unit) return sum;
+            if (excludeSelf && zone === ctx.unitZone) return sum;
+            const traitText = String(zone.unit.traits || '');
+            if (!traits.some((trait: string) => traitText.includes(trait))) return sum;
+            return sum + 1;
+        }, 0);
+    } else if (params.multiplier === 'DAMAGE_TRAIT_COUNT') {
+        const trait = typeof params.trait === 'string' ? params.trait : '';
+        count = trait && typeof ctx.machine?.getDamageTraitCount === 'function'
+            ? ctx.machine.getDamageTraitCount(player, trait)
+            : 0;
     } else if (params.multiplier === 'TARGET_ITEM_COUNT') {
         const costMin = params.costMin ?? 0;
         const selectedTargets = targets || [];
@@ -143,6 +172,10 @@ export const drawDynamic: ActionImplementation = (ctx, params, targets) => {
         const pIdx = ctx.machine.state.players.indexOf(player);
         ctx.machine.drawCard(pIdx, count, resolveEffectDrawMeta(params));
         console.log(`Drew ${count} cards dynamically.`);
+        if (params.setContextFlag) {
+            ctx.flags = ctx.flags || {};
+            ctx.flags[params.setContextFlag] = true;
+        }
     }
 };
 
@@ -158,6 +191,7 @@ export const moveFromDamageToHand: ActionImplementation = (ctx, _params, targets
 };
 
 export const moveFromHandToDamage: ActionImplementation = (ctx, _params, targets) => {
+    let movedAny = false;
     targets.forEach(card => {
         const owner = ctx.machine.state.players.find((player: any) => player.hand.includes(card));
         if (!owner) return;
@@ -165,7 +199,69 @@ export const moveFromHandToDamage: ActionImplementation = (ctx, _params, targets
         if (idx === -1) return;
         owner.hand.splice(idx, 1);
         owner.damage.push(card);
+        if (typeof ctx.machine.recordDamagePlacedByEffect === 'function') {
+            ctx.machine.recordDamagePlacedByEffect(owner.id, 'HAND', 1);
+        }
+        movedAny = true;
+        if ((_params as any)?.storeMovedCardAsCostPayment === true) {
+            ctx.costPaymentCard = card;
+        }
+        (ctx as any).lastMovedCardToDamage = card;
+        if ((_params as any)?.storeMovedCardCostFlag) {
+            ctx.flags = ctx.flags || {};
+            ctx.flags[(_params as any).storeMovedCardCostFlag] = ctx.machine.getCardCost(card);
+        }
     });
+    if (movedAny && (_params as any)?.setContextFlag) {
+        ctx.flags = ctx.flags || {};
+        ctx.flags[(_params as any).setContextFlag] = true;
+    }
+};
+
+export const moveFromTrashToDamage: ActionImplementation = (ctx, _params, targets) => {
+    let movedAny = false;
+    targets.forEach(card => {
+        const owner = ctx.machine.state.players.find((player: any) => player.trash.includes(card));
+        if (!owner) return;
+        const idx = owner.trash.indexOf(card);
+        if (idx === -1) return;
+        owner.trash.splice(idx, 1);
+        owner.damage.push(card);
+        if (typeof ctx.machine.recordDamagePlacedByEffect === 'function') {
+            ctx.machine.recordDamagePlacedByEffect(owner.id, 'TRASH', 1);
+        }
+        movedAny = true;
+        (ctx as any).lastMovedCardToDamage = card;
+        if ((_params as any)?.storeMovedCardCostFlag) {
+            ctx.flags = ctx.flags || {};
+            ctx.flags[(_params as any).storeMovedCardCostFlag] = ctx.machine.getCardCost(card);
+        }
+    });
+    if (movedAny && (_params as any)?.setContextFlag) {
+        ctx.flags = ctx.flags || {};
+        ctx.flags[(_params as any).setContextFlag] = true;
+    }
+};
+
+export const moveFromDamageToTrash: ActionImplementation = (ctx, _params, targets) => {
+    let movedAny = false;
+    targets.forEach(card => {
+        const owner = ctx.machine.state.players.find((player: any) => player.damage.includes(card));
+        if (!owner) return;
+        const idx = owner.damage.indexOf(card);
+        if (idx === -1) return;
+        owner.damage.splice(idx, 1);
+        owner.trash.push(card);
+        movedAny = true;
+        if ((_params as any)?.storeMovedCardCostFlag) {
+            ctx.flags = ctx.flags || {};
+            ctx.flags[(_params as any).storeMovedCardCostFlag] = ctx.machine.getCardCost(card);
+        }
+    });
+    if (movedAny && (_params as any)?.setContextFlag) {
+        ctx.flags = ctx.flags || {};
+        ctx.flags[(_params as any).setContextFlag] = true;
+    }
 };
 
 export const moveFromTrashToDeckTop: ActionImplementation = (ctx, _params, targets) => {
@@ -275,6 +371,29 @@ export const setTargetCostThisTurn: ActionImplementation = (ctx, params, targets
             };
         }
     });
+};
+
+export const addDamageCountReferenceBonusThisTurn: ActionImplementation = (ctx, params) => {
+    const value = Math.max(0, Number(params.value ?? 0));
+    if (value <= 0) return;
+    ctx.player.turnDamageCountReferenceBonus = Math.max(0, Number(ctx.player.turnDamageCountReferenceBonus || 0)) + value;
+};
+
+export const queueNextPlayUnitEffects: ActionImplementation = (ctx, params) => {
+    const rawEffects = Array.isArray(params.effects)
+        ? params.effects
+        : (params.effect ? [params.effect] : []);
+    const queuedEffects = rawEffects
+        .filter((effect: unknown): effect is any => !!effect && typeof effect === 'object')
+        .map(effect => ({
+            effect: JSON.parse(JSON.stringify(effect)),
+            sourceCard: ctx.sourceCard,
+        }));
+
+    if (queuedEffects.length <= 0) return;
+    if (typeof ctx.machine.queueNextPlayUnitEffects === 'function') {
+        ctx.machine.queueNextPlayUnitEffects(ctx.player, queuedEffects);
+    }
 };
 
 export const autoAttackIfEncounter: ActionImplementation = (ctx) => {

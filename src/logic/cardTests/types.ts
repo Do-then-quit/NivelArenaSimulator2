@@ -11,4 +11,5 @@ export interface CardTestContext {
 export interface CardTestModule {
     setupScenarios: Record<string, (ctx: CardTestContext) => string>;
     runTests: Record<string, (ctx: CardTestContext) => Promise<void>>;
+    displayNames?: Record<string, string>;
 }

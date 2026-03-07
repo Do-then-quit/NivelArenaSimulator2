@@ -6,6 +6,7 @@ import { CardTestContext } from './cardTests/types';
 
 export interface TestResult {
     testId: string;
+    displayName: string;
     success: boolean;
     logs: string[];
     error?: string;
@@ -14,6 +15,7 @@ export interface TestResult {
 export class CardTester {
     private engine: GameEngine;
     private logs: string[] = [];
+    private static readonly TEST_ENGINE_SEED = 20260307;
 
     constructor() {
         this.engine = this.createTestEngine();
@@ -24,7 +26,9 @@ export class CardTester {
         const deck2 = createDeck();
         const leader1 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
         const leader2 = DUMMY_CARDS.find(c => c.id === 'ST01-001') || DUMMY_CARDS[0];
-        return new GameEngine('Test P1', 'Test P2', deck1, deck2, leader1, leader2);
+        return new GameEngine('Test P1', 'Test P2', deck1, deck2, leader1, leader2, {
+            seed: CardTester.TEST_ENGINE_SEED,
+        });
     }
 
     public log(msg: string) {
@@ -45,10 +49,15 @@ export class CardTester {
         this.log(`PASS: ${msg}`);
     }
 
+    public getTestDisplayName(testId: string): string {
+        const module = findTestModule(testId);
+        return module?.displayNames?.[testId] || testId;
+    }
+
     private reset(testId: string) {
         this.logs = [];
         this.engine = this.createTestEngine();
-        this.log(`Starting test for ${testId}`);
+        this.log(`Starting test for ${this.getTestDisplayName(testId)}`);
     }
 
     private createCtx(): CardTestContext {
@@ -66,9 +75,10 @@ export class CardTester {
         };
     }
 
-    public setupScenario(testId: string): { engine: GameEngine, instructions: string } {
+    public setupScenario(testId: string): { engine: GameEngine, instructions: string, displayName: string } {
         this.reset(testId);
         let instructions = "";
+        const displayName = this.getTestDisplayName(testId);
 
         const module = findTestModule(testId);
         if (module && module.setupScenarios[testId]) {
@@ -78,11 +88,12 @@ export class CardTester {
             instructions = "Scenario not implemented.";
         }
 
-        return { engine: this.engine, instructions };
+        return { engine: this.engine, instructions, displayName };
     }
 
     public async runTest(testId: string): Promise<TestResult> {
         this.setupScenario(testId);
+        const displayName = this.getTestDisplayName(testId);
         try {
             const module = findTestModule(testId);
             if (module && module.runTests[testId]) {
@@ -90,10 +101,10 @@ export class CardTester {
             } else {
                 throw new Error(`Test for ${testId} not implemented yet`);
             }
-            return { testId, success: true, logs: this.logs };
+            return { testId, displayName, success: true, logs: this.logs };
         } catch (e: any) {
             this.log(`ERROR: ${e.message}`);
-            return { testId, success: false, logs: this.logs, error: e.message };
+            return { testId, displayName, success: false, logs: this.logs, error: e.message };
         }
     }
     public getAvailablePacks(): string[] {

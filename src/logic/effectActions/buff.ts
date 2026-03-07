@@ -8,19 +8,51 @@ function resolveOwnerTurnEndUntilTurnCount(ctx: any, target: any): number {
     return ctx.machine.state.turnCount + (isOwnersTurn ? 0 : 1);
 }
 
+function resolveSourceOwnerTurnEndUntilTurnCount(ctx: any): number {
+    const isSourceOwnersTurn = ctx.machine.currentPlayer?.id === ctx.player.id;
+    return ctx.machine.state.turnCount + (isSourceOwnersTurn ? 0 : 1);
+}
+
 export const buffPower: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(target => {
         if (target && target.unit) {
             let value = params.value || 0;
             if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
                 value = ctx.player.leaderLevel * value;
+            } else if (params.dynamic === 'DAMAGE_COUNT_MULTIPLIER') {
+                const damageCount = typeof ctx.machine?.getEffectiveDamageCount === 'function'
+                    ? ctx.machine.getEffectiveDamageCount(ctx.player, ctx)
+                    : ctx.player.damage.length;
+                value = damageCount * value;
+            } else if (params.dynamic === 'TOTAL_DAMAGE_COUNT_MULTIPLIER') {
+                const myDamageCount = typeof ctx.machine?.getEffectiveDamageCount === 'function'
+                    ? ctx.machine.getEffectiveDamageCount(ctx.player, ctx)
+                    : ctx.player.damage.length;
+                value = (myDamageCount + ctx.opponent.damage.length) * value;
+            } else if (params.dynamic === 'DAMAGE_TRAIT_COUNT_MULTIPLIER') {
+                const trait = typeof params.trait === 'string' ? params.trait : '';
+                const damageTraitCount = trait && typeof ctx.machine?.getDamageTraitCount === 'function'
+                    ? ctx.machine.getDamageTraitCount(ctx.player, trait)
+                    : 0;
+                value = damageTraitCount * value;
+            } else if (params.dynamic === 'TRASHED_CARD_COST_MULTIPLIER') {
+                const trashedCardCost = Math.max(
+                    0,
+                    Number(
+                        params.trashedCardCost ??
+                        ctx.flags?.trashedCardCost ??
+                        (ctx.trashedUnit ? ctx.machine.getCardCost(ctx.trashedUnit) : 0)
+                    ) || 0
+                );
+                value = trashedCardCost * value;
             }
 
             const untilOwnerTurnEnd = params.untilOwnerTurnEnd === true;
-            const duration = untilOwnerTurnEnd ? 'PERMANENT' : (params.duration || 'TURN_END');
+            const untilSourceOwnerTurnEnd = params.untilSourceOwnerTurnEnd === true;
+            const duration = (untilOwnerTurnEnd || untilSourceOwnerTurnEnd) ? 'PERMANENT' : (params.duration || 'TURN_END');
             const untilTurnCount = untilOwnerTurnEnd
                 ? resolveOwnerTurnEndUntilTurnCount(ctx, target)
-                : undefined;
+                : (untilSourceOwnerTurnEnd ? resolveSourceOwnerTurnEndUntilTurnCount(ctx) : undefined);
 
             target.buffs.push({
                 id: ctx.machine.createRuntimeId('BUFF'),
@@ -40,13 +72,15 @@ export const buffHit: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(target => {
         if (target && target.unit) {
             const value = params.value || 0;
+            const untilSourceOwnerTurnEnd = params.untilSourceOwnerTurnEnd === true;
             target.buffs.push({
                 id: ctx.machine.createRuntimeId('BUFF'),
                 sourceCard: ctx.sourceCard,
                 type: 'HIT',
                 value,
                 mode: params.mode || 'ADD',
-                duration: params.duration || 'TURN_END'
+                duration: untilSourceOwnerTurnEnd ? 'PERMANENT' : (params.duration || 'TURN_END'),
+                ...(untilSourceOwnerTurnEnd ? { untilTurnCount: resolveSourceOwnerTurnEndUntilTurnCount(ctx) } : {}),
             });
             console.log(`Buffed ${target.unit.name} to ${value} Hit (Mode: ${params.mode || 'ADD'}).`);
         }

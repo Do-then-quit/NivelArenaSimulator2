@@ -26,12 +26,42 @@ function resolveTotalCostLimit(targetSchema: any, context: GameContext): number 
     }
     if (limit && typeof limit === 'object' && limit.type === 'MY_DAMAGE_COUNT') {
         const add = typeof limit.add === 'number' ? limit.add : 0;
-        return Math.max(0, context.player.damage.length + add);
+        const damageCount = typeof context.machine?.getEffectiveDamageCount === 'function'
+            ? context.machine.getEffectiveDamageCount(context.player, context)
+            : context.player.damage.length;
+        return Math.max(0, damageCount + add);
+    }
+    if (limit && typeof limit === 'object' && limit.type === 'MY_DAMAGE_TRAIT_COUNT') {
+        const trait = typeof limit.trait === 'string' ? limit.trait : '';
+        const add = typeof limit.add === 'number' ? limit.add : 0;
+        const traitCount = trait && typeof context.machine?.getDamageTraitCount === 'function'
+            ? context.machine.getDamageTraitCount(context.player, trait)
+            : 0;
+        return Math.max(0, traitCount + add);
     }
     return null;
 }
 
-function canAddTargetWithinTotalCost(targetSchema: any, context: GameContext, selectedTargets: any[], target: any): boolean {
+function getTargetName(target: any): string {
+    const card = getTargetCard(target);
+    return String(card?.name || card?.id || '');
+}
+
+function canAddTargetWithSelectionConstraints(
+    targetSchema: any,
+    context: GameContext,
+    selectedTargets: any[],
+    target: any,
+    actionValue?: any
+): boolean {
+    const requireDistinctNames = actionValue?.requireDistinctNames === true;
+    if (requireDistinctNames && !selectedTargets.includes(target)) {
+        const nextName = getTargetName(target);
+        if (nextName && selectedTargets.some(selected => getTargetName(selected) === nextName)) {
+            return false;
+        }
+    }
+
     const limit = resolveTotalCostLimit(targetSchema, context);
     if (limit === null) return true;
     if (selectedTargets.includes(target)) return true;
@@ -369,7 +399,7 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
-            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetZone)) {
+            if (!canAddTargetWithSelectionConstraints(targetSchema, context, selectedTargets, targetZone, pending.actionValue)) {
                 console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
@@ -380,7 +410,7 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
-            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetZone)) {
+            if (!canAddTargetWithSelectionConstraints(targetSchema, context, selectedTargets, targetZone, pending.actionValue)) {
                 console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
@@ -672,7 +702,7 @@ export function selectTrashTarget(engine: any, trashIndex: number, targetPlayerI
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
-            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, card)) {
+            if (!canAddTargetWithSelectionConstraints(targetSchema, context, selectedTargets, card, pending.actionValue)) {
                 console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
@@ -716,7 +746,7 @@ export function selectDamageTargetByPlayerId(engine: any, damageIndex: number, t
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
-            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetCard)) {
+            if (!canAddTargetWithSelectionConstraints(targetSchema, context, selectedTargets, targetCard, pending.actionValue)) {
                 console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
@@ -818,7 +848,7 @@ export function selectItemTargetByPlayerId(engine: any, zoneIndex: number, itemI
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
-            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetCard)) {
+            if (!canAddTargetWithSelectionConstraints(targetSchema, context, selectedTargets, targetCard, pending.actionValue)) {
                 console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
@@ -884,7 +914,7 @@ export function selectHandTargetByPlayerId(engine: any, handIndex: number, targe
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
-            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetCard)) {
+            if (!canAddTargetWithSelectionConstraints(targetSchema, context, selectedTargets, targetCard, pending.actionValue)) {
                 console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }
@@ -1289,6 +1319,21 @@ export function selectRevealedTarget(engine: any, index: number) {
         return;
     }
 
+    if (pending.actionType === 'BT04_SELECT_SCRIPTED_OPTION') {
+        const option = pending.actionValue?.options?.[index];
+        if (!option) return;
+
+        executeBt06FollowUpSubActions(engine, context, option.subActions || []);
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT04_066_SELECT_REVEALED_TO_DAMAGE') {
+        engine.effectManager.executeEffect(effect, context, [card]);
+        return;
+    }
+
     if (pending.actionType === 'SB01_001_SELECT_SKILL_ZONE_TO_TRASH') {
         const option = pending.actionValue?.options?.[index];
         const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
@@ -1345,7 +1390,7 @@ export function selectRevealedTarget(engine: any, index: number) {
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;
             }
-            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, card)) {
+            if (!canAddTargetWithSelectionConstraints(targetSchema, context, selectedTargets, card, pending.actionValue)) {
                 console.log('Cannot select target: total cost limit exceeded.');
                 return;
             }

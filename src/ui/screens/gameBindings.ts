@@ -92,6 +92,14 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         if (uiState.game.state.phase !== Phase.MAIN) return false;
         return uiState.game.state.interactionMode === 'NORMAL';
     };
+    const isVerificationTapPlayMode = () => {
+        if (!uiState.game || !uiState.verificationSession) return false;
+        if (uiState.replaySession) return false;
+        if (!canLocalHumanInput()) return false;
+        if (uiState.game.state.phase !== Phase.MAIN) return false;
+        return uiState.game.state.interactionMode === 'NORMAL';
+    };
+    const isClickToPlayMode = () => isMobileTapPlayMode() || isVerificationTapPlayMode();
     const getLegalPlayActions = () => {
         if (!uiState.game) return [];
         const actorPlayerId = getActionOwnerPlayerId(uiState.game);
@@ -142,7 +150,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             (zoneEl as HTMLElement).classList.remove('mobile-play-target');
         });
 
-        if (!isMobileTapPlayMode()) {
+        if (!isClickToPlayMode()) {
             clearMobileTapSelection();
             return;
         }
@@ -487,7 +495,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         });
 
         card.addEventListener('click', (e) => {
-            if (!isMobileTapPlayMode()) return;
+            if (!isClickToPlayMode()) return;
             if (!canLocalHumanInput()) return;
             if (card.closest('.opponent-hand-zone')) return;
 
@@ -604,7 +612,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         });
 
         zone.addEventListener('click', (e) => {
-            if (!isMobileTapPlayMode()) return;
+            if (!isClickToPlayMode()) return;
             if (!canLocalHumanInput()) return;
 
             const selectedHandIndex = uiState.mobileGameView.selectedHandIndex;
@@ -693,7 +701,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
         });
 
         zone.addEventListener('click', (e) => {
-            if (!isMobileTapPlayMode()) return;
+            if (!isClickToPlayMode()) return;
             if (!canLocalHumanInput()) return;
 
             const selectedHandIndex = uiState.mobileGameView.selectedHandIndex;
@@ -717,7 +725,7 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
     });
 
     uiState.app.querySelector('.battle-fit-viewport')?.addEventListener('click', (e) => {
-        if (!isMobileTapPlayMode()) return;
+        if (!isClickToPlayMode()) return;
         if (uiState.mobileGameView.selectedHandIndex === null) return;
         const target = e.target as HTMLElement | null;
         if (!target) return;
@@ -861,15 +869,18 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
             const zoneEl = btn.closest('.unit-zone') as HTMLElement;
-            const zoneIndex = parseInt(zoneEl.dataset.index!);
+            const zoneIndex = parseInt(((btn as HTMLElement).dataset.zoneIndex || zoneEl.dataset.index)!, 10);
             const player = getPlayerForPlayerAttr(zoneEl.dataset.player);
             const actorId = getActionOwnerPlayerId(uiState.game!);
+            const effectIndex = Number((btn as HTMLElement).dataset.effectIndex);
+            const sourceType = ((btn as HTMLElement).dataset.sourceType || 'UNIT') as 'UNIT' | 'LEADER' | 'ITEM';
             const activateActions = uiState.game!.getLegalActions(actorId).filter((action: any) =>
-                action.type === 'ACTIVATE_EFFECT' && action.zoneIndex === zoneIndex,
+                action.type === 'ACTIVATE_EFFECT'
+                && action.zoneIndex === zoneIndex
+                && action.sourceType === sourceType
+                && (!Number.isFinite(effectIndex) || action.effectIndex === effectIndex),
             ) as any[];
-            const preferredAction =
-                activateActions.find((action: any) => action.sourceType !== 'ITEM') ??
-                activateActions[0];
+            const preferredAction = activateActions[0];
 
             if (preferredAction) {
                 dispatchEngineAction(preferredAction as EngineAction);
@@ -885,9 +896,14 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
             e.stopPropagation();
             if (!canLocalHumanInput()) return;
             const actorId = getActionOwnerPlayerId(uiState.game!);
+            const effectIndex = Number((btn as HTMLElement).dataset.effectIndex);
             const leaderAction = uiState.game!
                 .getLegalActions(actorId)
-                .find((action: any) => action.type === 'ACTIVATE_EFFECT' && action.sourceType === 'LEADER') as any;
+                .find((action: any) =>
+                    action.type === 'ACTIVATE_EFFECT'
+                    && action.sourceType === 'LEADER'
+                    && (!Number.isFinite(effectIndex) || action.effectIndex === effectIndex),
+                ) as any;
 
             if (leaderAction) {
                 const area = btn.closest('.player-area') as HTMLElement | null;
@@ -897,6 +913,31 @@ export function attachListeners(renderCardFn: (card: Card, isSmall?: boolean, ca
                 logAction(`[?≫떚釉? 由щ뜑 ${leader?.name ?? ''} ?④낵 諛쒕룞`);
                 uiState.render?.();
             }
+        });
+    });
+
+    document.querySelectorAll('.item-active-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!canLocalHumanInput()) return;
+            const buttonEl = btn as HTMLElement;
+            const zoneIndex = Number(buttonEl.dataset.zoneIndex);
+            const itemIndex = Number(buttonEl.dataset.itemIndex);
+            const effectIndex = Number(buttonEl.dataset.effectIndex);
+            const actorId = getActionOwnerPlayerId(uiState.game!);
+            const action = uiState.game!
+                .getLegalActions(actorId)
+                .find((entry: any) =>
+                    entry.type === 'ACTIVATE_EFFECT'
+                    && entry.sourceType === 'ITEM'
+                    && entry.zoneIndex === zoneIndex
+                    && entry.itemIndex === itemIndex
+                    && (!Number.isFinite(effectIndex) || entry.effectIndex === effectIndex),
+                ) as any;
+
+            if (!action) return;
+            dispatchEngineAction(action as EngineAction);
+            uiState.render?.();
         });
     });
 

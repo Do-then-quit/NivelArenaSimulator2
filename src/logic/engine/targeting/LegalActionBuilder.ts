@@ -35,12 +35,42 @@ function resolveTotalCostLimit(targetSchema: any, context: GameContext): number 
     }
     if (limit && typeof limit === 'object' && limit.type === 'MY_DAMAGE_COUNT') {
         const add = typeof limit.add === 'number' ? limit.add : 0;
-        return Math.max(0, context.player.damage.length + add);
+        const damageCount = typeof context.machine?.getEffectiveDamageCount === 'function'
+            ? context.machine.getEffectiveDamageCount(context.player, context)
+            : context.player.damage.length;
+        return Math.max(0, damageCount + add);
+    }
+    if (limit && typeof limit === 'object' && limit.type === 'MY_DAMAGE_TRAIT_COUNT') {
+        const trait = typeof limit.trait === 'string' ? limit.trait : '';
+        const add = typeof limit.add === 'number' ? limit.add : 0;
+        const traitCount = trait && typeof context.machine?.getDamageTraitCount === 'function'
+            ? context.machine.getDamageTraitCount(context.player, trait)
+            : 0;
+        return Math.max(0, traitCount + add);
     }
     return null;
 }
 
-function canAddTargetWithinTotalCost(targetSchema: any, selectedTargets: any[], nextTarget: any, context: GameContext): boolean {
+function getTargetName(target: any): string {
+    const card = getTargetCard(target);
+    return String(card?.name || card?.id || '');
+}
+
+function canAddTargetWithSelectionConstraints(
+    targetSchema: any,
+    selectedTargets: any[],
+    nextTarget: any,
+    context: GameContext,
+    actionValue?: any
+): boolean {
+    const requireDistinctNames = actionValue?.requireDistinctNames === true;
+    if (requireDistinctNames && !selectedTargets.includes(nextTarget)) {
+        const nextName = getTargetName(nextTarget);
+        if (nextName && selectedTargets.some(target => getTargetName(target) === nextName)) {
+            return false;
+        }
+    }
+
     const limit = resolveTotalCostLimit(targetSchema, context);
     if (limit === null) return true;
     if (selectedTargets.includes(nextTarget)) return true;
@@ -289,7 +319,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const selectableTrashCards: any[] = [];
             targetPlayer.trash.forEach((card: Card, trashIndex: number) => {
                 if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) return;
-                if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, card, context)) return;
+                if (!canAddTargetWithSelectionConstraints(targetSchema, selectedTargets, card, context, pending.actionValue)) return;
                 selectableTrashCards.push(card);
                 actions.push({ type: 'SELECT_TRASH_TARGET', actorPlayerId: id, targetPlayerId, trashIndex });
             });
@@ -303,7 +333,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const selectableRevealedCards: any[] = [];
             engine.state.revealedCards.forEach((card: Card, revealedIndex: number) => {
                 if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) return;
-                if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, card, context)) return;
+                if (!canAddTargetWithSelectionConstraints(targetSchema, selectedTargets, card, context, pending.actionValue)) return;
                 selectableRevealedCards.push(card);
                 actions.push({ type: 'SELECT_REVEALED_TARGET', actorPlayerId: id, revealedIndex });
             });
@@ -325,7 +355,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const selectableHandCards: any[] = [];
             targetPlayer.hand.forEach((card: Card, handIndex: number) => {
                 if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) return;
-                if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, card, context)) return;
+                if (!canAddTargetWithSelectionConstraints(targetSchema, selectedTargets, card, context, pending.actionValue)) return;
                 selectableHandCards.push(card);
                 actions.push({ type: 'SELECT_HAND_TARGET', actorPlayerId: id, targetPlayerId, handIndex });
             });
@@ -343,7 +373,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             const selectableDamageCards: any[] = [];
             targetPlayer.damage.forEach((card: Card, damageIndex: number) => {
                 if (!TargetSelector.isValidTarget(engine, targetSchema, context, card)) return;
-                if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, card, context)) return;
+                if (!canAddTargetWithSelectionConstraints(targetSchema, selectedTargets, card, context, pending.actionValue)) return;
                 selectableDamageCards.push(card);
                 actions.push({ type: 'SELECT_DAMAGE_TARGET', actorPlayerId: id, targetPlayerId, damageIndex });
             });
@@ -363,7 +393,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
                 targetPlayer.unitZones.forEach((zone: UnitZoneState, zoneIndex: number) => {
                     zone.items.forEach((item: Card, itemIndex: number) => {
                         if (!TargetSelector.isValidTarget(engine, targetSchema, context, item)) return;
-                        if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, item, context)) return;
+                        if (!canAddTargetWithSelectionConstraints(targetSchema, selectedTargets, item, context, pending.actionValue)) return;
                         selectableItems.push(item);
                         actions.push({
                             type: 'SELECT_ITEM_TARGET',
@@ -389,7 +419,7 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
                     pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY';
                 if (requiresEmptyZone && targetZone.unit) return;
                 if (TargetSelector.isValidTarget(engine, targetSchema, context, targetZone)) {
-                    if (!canAddTargetWithinTotalCost(targetSchema, selectedTargets, targetZone, context)) return;
+                    if (!canAddTargetWithSelectionConstraints(targetSchema, selectedTargets, targetZone, context, pending.actionValue)) return;
                     selectableZones.push(targetZone);
                     actions.push({ type: 'SELECT_ZONE_TARGET', actorPlayerId: id, targetPlayerId: targetPlayer.id, zoneIndex });
                 }
