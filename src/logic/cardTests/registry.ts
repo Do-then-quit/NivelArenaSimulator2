@@ -8,6 +8,7 @@ import { ST04Module } from './shared/ST04';
 import { ST05Module } from './shared/ST05';
 import { ST06Module } from './shared/ST06';
 import { ST07Module } from './shared/ST07';
+import { ST08Module } from './shared/ST08';
 import { ST10Module } from './shared/ST10';
 import { ST11Module } from './shared/ST11';
 import { SB01Module } from './shared/SB01';
@@ -32,6 +33,7 @@ const UnifiedST04 = adaptUnifiedModule(ST04Module);
 const UnifiedST05 = adaptUnifiedModule(ST05Module);
 const UnifiedST06 = adaptUnifiedModule(ST06Module);
 const UnifiedST07 = adaptUnifiedModule(ST07Module);
+const UnifiedST08 = adaptUnifiedModule(ST08Module);
 const UnifiedST10 = adaptUnifiedModule(ST10Module);
 const UnifiedST11 = adaptUnifiedModule(ST11Module);
 const UnifiedSB01 = adaptUnifiedModule(SB01Module);
@@ -55,6 +57,7 @@ export const CARD_TEST_REGISTRY: Record<string, CardTestModule> = {
     'ST05': UnifiedST05,
     'ST06': UnifiedST06,
     'ST07': UnifiedST07,
+    'ST08': UnifiedST08,
     'ST10': UnifiedST10,
     'ST11': UnifiedST11,
     'SB01': UnifiedSB01,

@@ -1667,7 +1667,10 @@ export class GameEngine {
         if (player.levelZone && !player.levelZone.isAwakened) {
             const leader = player.levelZone;
             if (leader.effects) {
-                const awakenEffect = leader.effects.find(e => e.activation === ActivationCondition.AWAKEN);
+                const awakenEffect = leader.effects.find(e =>
+                    e.activation === ActivationCondition.AWAKEN &&
+                    e.action?.type === 'AWAKEN'
+                );
                 if (awakenEffect) {
                     const context = {
                         player: player,
@@ -1677,6 +1680,14 @@ export class GameEngine {
                     };
                     if (this.effectManager.checkCondition(awakenEffect, context)) {
                         this.awakenLeader(playerIndex);
+                        leader.effects
+                            .filter(effect =>
+                                effect.activation === ActivationCondition.AWAKEN &&
+                                effect.action?.type !== 'AWAKEN'
+                            )
+                            .forEach(effect => {
+                                this.effectManager.processEffect(effect, context);
+                            });
                     }
                 }
             }
@@ -1726,6 +1737,33 @@ export class GameEngine {
         }
     }
 
+    private resolveOpponentHandUnitPlacementReactions(placedPlayer: PlayerState, playedCard: Card) {
+        if (!playedCard || playedCard.type !== CardType.UNIT) return;
+        const basePower = Number(playedCard.power ?? 0);
+        if (!Number.isFinite(basePower) || basePower > 4000) return;
+
+        const reactiveOwner = this.getOpponentOf(placedPlayer);
+        const reactiveState = (reactiveOwner as any).st08_007Reactive as
+            | { untilTurnCount?: number; count?: number }
+            | undefined;
+        const untilTurnCount = Number(reactiveState?.untilTurnCount ?? -1);
+        const count = Math.max(0, Number(reactiveState?.count ?? 0));
+        if (count <= 0 || this.state.turnCount > untilTurnCount) return;
+
+        const ownerIndex = this.state.players.indexOf(reactiveOwner);
+        if (ownerIndex < 0) return;
+
+        for (let i = 0; i < count; i++) {
+            this.drawCard(ownerIndex, 1, {
+                reason: 'EFFECT',
+                sourceActivation: ActivationCondition.ESCAPE,
+                sourcePlayerId: reactiveOwner.id,
+                sourceCardId: 'ST08-007',
+            });
+            this.dealDamage(placedPlayer, 1);
+        }
+    }
+
     playUnit(cardIndex: number, zoneIndex: number) {
         const validation = RuleValidator.canPlayUnit(this, this.currentPlayer, cardIndex, zoneIndex);
         if (!validation.valid) {
@@ -1759,6 +1797,7 @@ export class GameEngine {
         zone.hasActivatedEffectThisTurn = false;
         zone.activatedEffectKeys = {};
 
+        this.resolveOpponentHandUnitPlacementReactions(this.currentPlayer, card);
         this.applyPendingNextPlayUnitEffects(this.currentPlayer, zone);
 
         this.triggerEntryEffectsForPlacedUnit(this.currentPlayer, zone);
@@ -2752,6 +2791,10 @@ export class GameEngine {
                                 let value = params.value || 0;
                                 if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
                                     value = source.owner.leaderLevel * value;
+                                } else if (params.dynamic === 'MY_HAND_COUNT_MULTIPLIER') {
+                                    value = source.owner.hand.length * value;
+                                } else if (params.dynamic === 'HAND_COUNT_DIFF_MULTIPLIER') {
+                                    value = Math.abs(source.owner.hand.length - context.opponent.hand.length) * value;
                                 } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
                                     const baseUnitCount = source.owner.unitZones.filter(z => z.unit && z.unit.traits?.includes('베이스')).length;
                                     value = baseUnitCount * value;

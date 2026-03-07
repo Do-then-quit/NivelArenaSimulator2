@@ -25,6 +25,7 @@ import { ST04_EFFECTS } from './cardEffects/st04';
 import { ST05_EFFECTS } from './cardEffects/st05';
 import { ST06_EFFECTS } from './cardEffects/st06';
 import { ST07_EFFECTS } from './cardEffects/st07';
+import { ST08_EFFECTS } from './cardEffects/st08';
 import { ST10_EFFECTS } from './cardEffects/st10';
 import { ST11_EFFECTS } from './cardEffects/st11';
 import { BT01_EFFECTS } from './cardEffects/bt01';
@@ -42,6 +43,7 @@ const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...ST05_EFFECTS,
     ...ST06_EFFECTS,
     ...ST07_EFFECTS,
+    ...ST08_EFFECTS,
     ...ST10_EFFECTS,
     ...ST11_EFFECTS,
     ...BT01_EFFECTS,

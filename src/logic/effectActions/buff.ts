@@ -19,6 +19,10 @@ export const buffPower: ActionImplementation = (ctx, params, targets) => {
             let value = params.value || 0;
             if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
                 value = ctx.player.leaderLevel * value;
+            } else if (params.dynamic === 'MY_HAND_COUNT_MULTIPLIER') {
+                value = ctx.player.hand.length * value;
+            } else if (params.dynamic === 'HAND_COUNT_DIFF_MULTIPLIER') {
+                value = Math.abs(ctx.player.hand.length - ctx.opponent.hand.length) * value;
             } else if (params.dynamic === 'DAMAGE_COUNT_MULTIPLIER') {
                 const damageCount = typeof ctx.machine?.getEffectiveDamageCount === 'function'
                     ? ctx.machine.getEffectiveDamageCount(ctx.player, ctx)

@@ -21,7 +21,9 @@ export type RecordedScenarioStep = (
     | { kind: 'play_item'; handIndex: number; zoneIndex: number }
     | { kind: 'attack'; attackerZoneIndex: number }
     | { kind: 'activate_effect'; zoneIndex: number; effectIndex: number; sourceType: 'UNIT' | 'ITEM' | 'LEADER'; itemIndex?: number }
+    | { kind: 'check_awakening'; playerIndex: number }
     | { kind: 'next_phase' }
+    | { kind: 'sync_state' }
     | { kind: 'deal_damage'; playerIndex: number; amount: number }
     | { kind: 'destroy_unit'; playerIndex: number; zoneIndex: number; reason: 'BATTLE' | 'EFFECT' | 'RULE' }
     | { kind: 'select_cost_direct'; playerIndex: number; handIndex: number }
@@ -208,6 +210,7 @@ function patchMethod<TObj extends object, TKey extends keyof TObj>(
 export function recordUnifiedScenario(test: UnifiedTestCase): RecordedUnifiedScenario {
     const engine = createUnifiedScenarioTestEngine();
     test.setup(engine, cloneCardFromDatabase);
+    const initialSerializableState = engine.getSerializableState();
 
     const steps: RecordedScenarioStep[] = [];
     const pushStep = (step: Omit<RecordedScenarioStep, 'preState' | 'postState'>) => {
@@ -288,6 +291,19 @@ export function recordUnifiedScenario(test: UnifiedTestCase): RecordedUnifiedSce
         return original(...args);
     });
 
+    patchMethod(engine as any, 'checkAwakening', (original, args) => {
+        if (isScenarioOriginCall()) {
+            const entry = pushStep({
+                kind: 'check_awakening',
+                playerIndex: Number(args[0]),
+            });
+            const result = original(...args);
+            entry.postState = engine.getSerializableState();
+            return result;
+        }
+        return original(...args);
+    });
+
     patchMethod(engine as any, 'nextPhase', (original, args) => {
         if (isScenarioOriginCall()) {
             const entry = pushStep({ kind: 'next_phase' });
@@ -359,12 +375,26 @@ export function recordUnifiedScenario(test: UnifiedTestCase): RecordedUnifiedSce
     });
 
     const results = test.verify(engine, cloneCardFromDatabase);
+    const dedupedSteps = dedupeRecordedSteps(steps);
+    const normalizedFinalState = normalizeSerializableState(engine.getSerializableState());
+    const lastRecordedState = dedupedSteps.length > 0
+        ? (dedupedSteps[dedupedSteps.length - 1].postState ?? dedupedSteps[dedupedSteps.length - 1].preState)
+        : initialSerializableState;
+
+    if (JSON.stringify(normalizeSerializableState(lastRecordedState)) !== JSON.stringify(normalizedFinalState)) {
+        dedupedSteps.push({
+            kind: 'sync_state',
+            preState: lastRecordedState,
+            postState: engine.getSerializableState(),
+        });
+    }
+
     return {
         testId: test.testId,
         name: test.name,
         description: test.description,
-        steps: dedupeRecordedSteps(steps),
+        steps: dedupedSteps,
         results,
-        normalizedFinalState: normalizeSerializableState(engine.getSerializableState()),
+        normalizedFinalState,
     };
 }

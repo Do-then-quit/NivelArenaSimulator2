@@ -121,7 +121,10 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         pending.actionType === 'BT03_067_SELECT_EMPTY_ZONE_TO_REVIVE_EQUIPPED_UNIT' ||
         pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
         pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
-        pending.actionType === 'ST07_010_SELECT_EMPTY_ZONE_TO_DEPLOY';
+        pending.actionType === 'ST08_006_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+        pending.actionType === 'ST07_010_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+        pending.actionType === 'ST08_004_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+        pending.actionType === 'ST08_009_SELECT_EMPTY_ZONE_TO_DEPLOY';
     if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
     const targetPlayer = engine.getPlayerById(targetPlayerId);
     if (!targetPlayer) return;
@@ -380,6 +383,160 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         targetZone.activatedEffectKeys = {};
 
         engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'ST08_004_SELECT_EMPTY_ZONE_TO_DEPLOY') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        if (targetZone.unit) return;
+
+        const selectedCardRef = pending.actionValue?.selectedCardRef;
+        const selectedCardId = pending.actionValue?.selectedCardId;
+        const handIndexByRef = sourcePlayer.hand.indexOf(selectedCardRef);
+        const handIndex = handIndexByRef !== -1
+            ? handIndexByRef
+            : sourcePlayer.hand.findIndex((card: any) =>
+                card?.id === selectedCardId &&
+                card?.type === 'UNIT' &&
+                engine.getCardCost(card) <= sourcePlayer.leaderLevel
+            );
+        if (handIndex < 0) {
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        const [placedUnit] = sourcePlayer.hand.splice(handIndex, 1);
+        if (!placedUnit) {
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        targetZone.unit = placedUnit;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+        targetZone.hasAttacked = false;
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.isExhausted = false;
+        targetZone.hasPlacedUnitThisTurn = false;
+        targetZone.hasActivatedEffectThisTurn = false;
+        targetZone.activatedEffectKeys = {};
+        targetZone.temporaryEffects.push({
+            activation: ActivationCondition.PASSIVE,
+            description: '패시브 : 이 유닛은 이번 턴에 공격할 수 없다.',
+            action: {
+                type: 'NONE',
+                params: {
+                    cannotAttackUntilTurnCount: engine.state.turnCount,
+                },
+            },
+            duration: 'PERMANENT',
+        } as any);
+
+        engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'ST08_006_SELECT_EMPTY_ZONE_TO_DEPLOY') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        if (targetZone.unit) return;
+
+        const selectedCardRef = pending.actionValue?.selectedCardRef;
+        const selectedCardId = pending.actionValue?.selectedCardId;
+        const selectedCard = engine.state.revealedCards.find((card: any) =>
+            card === selectedCardRef ||
+            (selectedCardId && card?.id === selectedCardId)
+        );
+        if (!selectedCard || selectedCard.type !== 'UNIT') {
+            sourcePlayer.trash.push(...engine.state.revealedCards);
+            engine.state.revealedCards = [];
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        const remainingCards = engine.state.revealedCards.filter((card: any) => card !== selectedCard);
+        targetZone.unit = selectedCard;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+        targetZone.hasAttacked = false;
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.isExhausted = false;
+        targetZone.hasPlacedUnitThisTurn = false;
+        targetZone.hasActivatedEffectThisTurn = false;
+        targetZone.activatedEffectKeys = {};
+        (selectedCard as any).turnCostOverride = {
+            cost: 0,
+            turnCount: engine.state.turnCount,
+        };
+        targetZone.buffs.push({
+            id: engine.createRuntimeId('BUFF'),
+            sourceCard: pending.sourceCard,
+            type: 'POWER',
+            value: 5000,
+            duration: 'TURN_END',
+        });
+        targetZone.buffs.push({
+            id: engine.createRuntimeId('BUFF'),
+            sourceCard: pending.sourceCard,
+            type: 'HIT',
+            value: 1,
+            duration: 'TURN_END',
+        });
+
+        if (remainingCards.length > 0) {
+            sourcePlayer.trash.push(...remainingCards);
+        }
+
+        engine.state.revealedCards = [];
+        engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'ST08_009_SELECT_EMPTY_ZONE_TO_DEPLOY') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        if (targetZone.unit) return;
+
+        const revealedCardRef = pending.actionValue?.revealedCardRef;
+        const revealedCardId = pending.actionValue?.revealedCardId;
+        const revealedCardFromState = engine.state.revealedCards.find((card: any) =>
+            card === revealedCardRef ||
+            (revealedCardId && card?.id === revealedCardId),
+        );
+        const revealedCard = revealedCardFromState || revealedCardRef;
+        if (!revealedCard || revealedCard.type !== 'UNIT') {
+            engine.state.revealedCards = [];
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        const revealedIndex = engine.state.revealedCards.indexOf(revealedCard);
+        if (revealedIndex !== -1) {
+            engine.state.revealedCards.splice(revealedIndex, 1);
+        }
+
+        targetZone.unit = revealedCard;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+        targetZone.hasAttacked = false;
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.isExhausted = false;
+        targetZone.hasPlacedUnitThisTurn = false;
+        targetZone.hasActivatedEffectThisTurn = false;
+        targetZone.activatedEffectKeys = {};
+
+        engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
+        engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
         return;
     }
@@ -1377,6 +1534,12 @@ export function selectRevealedTarget(engine: any, index: number) {
             },
         } as any);
         engine.assignInteractionOwner(pending.controllerPlayerId ?? pending.sourcePlayerId);
+        return;
+    }
+
+    if (pending.actionType === 'ST08_006_SELECT_REVEALED_UNIT_TO_DEPLOY') {
+        engine.effectManager.executeEffect(effect, context, [card]);
+        engine.handleEffectCompletion(context, pending);
         return;
     }
 

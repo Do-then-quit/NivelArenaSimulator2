@@ -416,7 +416,10 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             targetPlayer.unitZones.forEach((targetZone: UnitZoneState, zoneIndex: number) => {
                 const requiresEmptyZone =
                     pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
-                    pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY';
+                    pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+                    pending.actionType === 'ST08_006_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+                    pending.actionType === 'ST08_004_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+                    pending.actionType === 'ST08_009_SELECT_EMPTY_ZONE_TO_DEPLOY';
                 if (requiresEmptyZone && targetZone.unit) return;
                 if (TargetSelector.isValidTarget(engine, targetSchema, context, targetZone)) {
                     if (!canAddTargetWithSelectionConstraints(targetSchema, selectedTargets, targetZone, context, pending.actionValue)) return;

@@ -756,6 +756,7 @@ function renderRevealedCardsModal() {
 
     const pending = uiState.game.state.pendingEffect as PendingEffect | null;
     const isSelecting = uiState.game.state.interactionMode === 'SELECT_TARGET' && pending?.validTargets === 'REVEALED';
+    if (uiState.game.state.interactionMode === 'SELECT_TARGET' && !isSelecting) return '';
     if (isSelecting && isSkillZonePromptSelectionAction(pending)) return '';
     const isTakeAll = pending?.actionType === 'TAKE_ALL_REVEALED';
     const filter = pending?.targetSchema?.filters?.[0];

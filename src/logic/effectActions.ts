@@ -212,7 +212,357 @@ function deployUnitToFirstEmptyZone(engine: any, player: any, unit: any, options
     return emptyZone;
 }
 
+function moveUnitZoneToDeckBottom(player: any, zone: any) {
+    if (!player || !zone?.unit) return null;
+    const movedUnit = zone.unit;
+    zone.unit = null;
+    if (Array.isArray(zone.items) && zone.items.length > 0) {
+        player.trash.push(...zone.items);
+    }
+    zone.items = [];
+    zone.buffs = [];
+    zone.temporaryEffects = [];
+    zone.hasAttacked = false;
+    zone.attackCountThisTurn = 0;
+    zone.extraAttackAllowance = 0;
+    zone.isExhausted = false;
+    zone.hasPlacedUnitThisTurn = false;
+    zone.hasActivatedEffectThisTurn = false;
+    zone.activatedEffectKeys = {};
+    player.deck.unshift(movedUnit);
+    return movedUnit;
+}
+
+function hasNonEarthCardOnField(player: any): boolean {
+    return player.unitZones.some((zone: any) =>
+        (zone?.unit && zone.unit.attribute !== Attribute.EARTH) ||
+        (zone?.items || []).some((item: any) => item?.attribute !== Attribute.EARTH)
+    ) || player.skillZone.some((card: any) => card?.attribute !== Attribute.EARTH);
+}
+
 const complexAction: ActionImplementation = (ctx, params, _targets) => {
+    if ((params as any).mode === 'ST08_001_AWAKEN_OPPONENT_DRAW_IF_NON_EARTH_PRESENT') {
+        const stage = (params as any).stage;
+        if (stage === 'FINALIZE') {
+            if ((ctx as any)._optionalConfirmed !== true) return;
+            const opponentIndex = ctx.machine.state.players.indexOf(ctx.opponent);
+            if (opponentIndex < 0) return;
+            ctx.machine.drawCard(opponentIndex, 1, {
+                reason: 'EFFECT',
+                sourceActivation: ActivationCondition.AWAKEN,
+                sourcePlayerId: ctx.player.id,
+                sourceCardId: ctx.sourceCard.id,
+            });
+            return;
+        }
+
+        if (!hasNonEarthCardOnField(ctx.player)) return;
+        ctx.machine.state.interactionMode = 'SELECT_OPTIONAL';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.opponent.id,
+            actionType: 'COMPLEX_ACTION',
+            actionValue: {
+                mode: 'ST08_001_AWAKEN_OPPONENT_DRAW_IF_NON_EARTH_PRESENT',
+                stage: 'FINALIZE',
+            },
+            effectDescription: '상대는 카드를 1장 드로우할 수 있다.',
+            selectionPurpose: '상대의 드로우 여부 선택',
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.AWAKEN,
+            optional: true,
+            description: 'ST08-001 awaken opponent may draw',
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'ST08_001_AWAKEN_OPPONENT_DRAW_IF_NON_EARTH_PRESENT',
+                    stage: 'FINALIZE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.opponent.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST08_003_ESCAPE_BOTTOM_LEVEL') {
+        const sourceZone = ctx.player.unitZones.find((zone: any) => zone?.unit === ctx.sourceCard);
+        if (!sourceZone) return;
+        const movedUnit = moveUnitZoneToDeckBottom(ctx.player, sourceZone);
+        if (!movedUnit) return;
+        gainLevel(ctx, { value: 1 }, _targets);
+        return;
+    }
+
+    if (
+        (params as any).mode === 'ST08_009_REVEAL_TOP_DEPLOY_UNIT' ||
+        (params as any).mode === 'ST08_001_ACTIVE_REVEAL_TOP_DEPLOY'
+    ) {
+        if (ctx.player.deck.length <= 0) return;
+        const revealed = ctx.player.deck.pop();
+        if (!revealed) return;
+        const hasEmptyZone = ctx.player.unitZones.some((zone: any) => !zone?.unit);
+        if (revealed.type !== CardType.UNIT || !hasEmptyZone) {
+            ctx.player.trash.push(revealed);
+            return;
+        }
+
+        ctx.machine.state.revealedCards = [revealed];
+        const zoneSchema = {
+            scope: 'MY_FIELD',
+            type: 'ALL',
+            count: 1,
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST08_009_SELECT_EMPTY_ZONE_TO_DEPLOY',
+            actionValue: {
+                revealedCardRef: revealed,
+                revealedCardId: revealed.id,
+            },
+            effectDescription: '배치할 빈 유닛 존을 선택한다.',
+            validTargets: 'MY_UNITS',
+            targetSchema: zoneSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST08_004_ACTIVE_DEPLOY_FROM_HAND') {
+        const selectedCard = (_targets || []).find((card: any) =>
+            ctx.player.hand.includes(card) &&
+            card.type === CardType.UNIT &&
+            ctx.machine.getCardCost(card) <= ctx.player.leaderLevel
+        );
+        if (!selectedCard) return;
+        if (!ctx.player.unitZones.some((zone: any) => !zone?.unit)) return;
+
+        const zoneSchema = {
+            scope: 'MY_FIELD',
+            type: 'ALL',
+            count: 1,
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST08_004_SELECT_EMPTY_ZONE_TO_DEPLOY',
+            actionValue: {
+                selectedCardRef: selectedCard,
+                selectedCardId: selectedCard.id,
+            },
+            effectDescription: '배치할 빈 유닛 존을 선택한다.',
+            validTargets: 'MY_UNITS',
+            targetSchema: zoneSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, null);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST08_015_BUFF_AND_RECOVER_IF_ATTACKER') {
+        const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!targetZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, targetZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+
+        buffPower(ctx, { value: 2000, duration: 'TURN_END' }, [targetZone]);
+        if (!zoneHasKeywordLike(targetZone, '어태커')) return;
+
+        const targetSchema = {
+            scope: 'MY_TRASH',
+            type: 'CARD',
+            count: 1,
+            filters: [
+                { type: 'UNIT_TYPE', value: CardType.SKILL },
+                { type: 'COST_EQUAL', value: 2 },
+                { type: 'NOT_HAS_KEYWORD', value: '트리거' },
+            ],
+            selectMode: 'MANUAL',
+        } as const;
+        if (TargetSelector.resolve(ctx.machine, targetSchema as any, ctx).length <= 0) return;
+
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST08_015_SELECT_TRASH_SKILL_TO_HAND',
+            actionValue: {},
+            effectDescription: '패에 넣을 2코스트 스킬을 선택한다.',
+            validTargets: 'MY_TRASH',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE,
+            description: 'ST08-015 recover skill from trash',
+            targets: targetSchema as any,
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST08_006_ESCAPE_REVEAL3_DEPLOY_BUFF') {
+        const stage = (params as any).stage;
+        if (stage === 'PROMPT_ZONE') {
+            const selectedCard = (_targets || [])[0];
+            const revealedCards = [...(ctx.machine.state.revealedCards || [])];
+            const selectedIndex = revealedCards.findIndex((card: any) =>
+                card === selectedCard || card?.id === selectedCard?.id
+            );
+            if (selectedIndex < 0) {
+                ctx.player.trash.push(...revealedCards);
+                ctx.machine.state.revealedCards = [];
+                return;
+            }
+
+            ctx.machine.state.interactionMode = 'SELECT_TARGET';
+            ctx.machine.state.pendingEffect = {
+                sourceCard: ctx.sourceCard,
+                sourcePlayerId: ctx.player.id,
+                controllerPlayerId: ctx.player.id,
+                actionType: 'ST08_006_SELECT_EMPTY_ZONE_TO_DEPLOY',
+                actionValue: {
+                    selectedCardRef: revealedCards[selectedIndex],
+                    selectedCardId: revealedCards[selectedIndex]?.id,
+                },
+                effectDescription: '배치할 빈 유닛 존을 선택한다.',
+                validTargets: 'MY_UNITS',
+                targetSchema: {
+                    scope: 'MY_FIELD',
+                    type: 'ALL',
+                    count: 1,
+                    selectMode: 'MANUAL',
+                } as any,
+                selectedTargets: [],
+            };
+            ctx.machine.setPendingRuntime(ctx, null);
+            ctx.machine.setInteractionOwner(ctx.player.id);
+            return;
+        }
+
+        const sourceZone = ctx.player.unitZones.find((zone: any) => zone?.unit === ctx.sourceCard);
+        if (!sourceZone) return;
+        const movedUnit = moveUnitZoneToDeckBottom(ctx.player, sourceZone);
+        if (!movedUnit) return;
+
+        const revealedCards: any[] = [];
+        for (let i = 0; i < 3; i++) {
+            const revealed = ctx.player.deck.pop();
+            if (!revealed) break;
+            revealedCards.push(revealed);
+        }
+        if (revealedCards.length <= 0) return;
+
+        const unitCandidates = revealedCards.filter((card: any) => card?.type === CardType.UNIT);
+        ctx.machine.state.revealedCards = revealedCards;
+        if (unitCandidates.length <= 0 || !ctx.player.unitZones.some((zone: any) => !zone?.unit)) {
+            ctx.player.trash.push(...revealedCards);
+            ctx.machine.state.revealedCards = [];
+            return;
+        }
+
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST08_006_SELECT_REVEALED_UNIT_TO_DEPLOY',
+            actionValue: {},
+            effectDescription: '배치할 공개 유닛을 선택한다.',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                filters: [{ type: 'UNIT_TYPE', value: CardType.UNIT }],
+                selectMode: 'MANUAL',
+            } as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ESCAPE,
+            description: 'ST08-006 select revealed unit then choose zone',
+            targets: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 1,
+                filters: [{ type: 'UNIT_TYPE', value: CardType.UNIT }],
+                selectMode: 'MANUAL',
+            } as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'ST08_006_ESCAPE_REVEAL3_DEPLOY_BUFF',
+                    stage: 'PROMPT_ZONE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST08_006_TRIGGER_TRASH_SELF') {
+        const damageIndexByRef = ctx.player.damage.indexOf(ctx.sourceCard as any);
+        const damageIndex = damageIndexByRef !== -1
+            ? damageIndexByRef
+            : ctx.player.damage.findIndex((card: any) => card?.id === ctx.sourceCard.id);
+        if (damageIndex < 0) return;
+        const [movedCard] = ctx.player.damage.splice(damageIndex, 1);
+        if (!movedCard) return;
+        ctx.player.trash.push(movedCard);
+        const contextFlag = (params as any).setContextFlag;
+        if (contextFlag) {
+            ctx.flags = ctx.flags || {};
+            ctx.flags[contextFlag] = true;
+        }
+        return;
+    }
+
+    if ((params as any).mode === 'ST08_007_ESCAPE_BOTTOM_SET_REACTIVE') {
+        const sourceZone = ctx.player.unitZones.find((zone: any) => zone?.unit === ctx.sourceCard);
+        if (!sourceZone) return;
+        const movedUnit = moveUnitZoneToDeckBottom(ctx.player, sourceZone);
+        if (!movedUnit) return;
+
+        const current = (ctx.player as any).st08_007Reactive as
+            | { untilTurnCount?: number; count?: number }
+            | undefined;
+        const untilTurnCount = ctx.machine.state.turnCount + 1;
+        const previousCount =
+            current && ctx.machine.state.turnCount <= Number(current.untilTurnCount ?? -1)
+                ? Math.max(0, Number(current.count || 0))
+                : 0;
+        (ctx.player as any).st08_007Reactive = {
+            untilTurnCount: Math.max(untilTurnCount, Number(current?.untilTurnCount || 0)),
+            count: previousCount + 1,
+        };
+        return;
+    }
+
+    if ((params as any).mode === 'ST08_016_TRASH_SKILLS_DAMAGE_IF_THREE') {
+        const trashedSkills = ctx.player.skillZone.splice(0, ctx.player.skillZone.length);
+        if (trashedSkills.length > 0) {
+            ctx.player.trash.push(...trashedSkills);
+        }
+        if (trashedSkills.length >= 3) {
+            damage(ctx, { value: 1 }, _targets);
+        }
+        return;
+    }
+
     if ((params as any).mode === 'BT04_PROMPT_SCRIPTED_OPTIONS') {
         const unitPower = ctx.unitZone?.unit ? ctx.machine.getUnitPower(ctx.unitZone, ctx.player) : 0;
         const scriptedOptions = ((params as any).options || []).filter((option: any) => {
