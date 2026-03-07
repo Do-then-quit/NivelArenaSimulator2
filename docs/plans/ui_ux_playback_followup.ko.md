@@ -12,6 +12,22 @@
   - `ATTACK`, `BLOCK`, `ACTIVATE`, `PASS`, `NEXT_PHASE` action beat 추가
   - 버튼 local press feedback 추가
   - source/target/action badge 기반 overlay 추가
+  - `ATTACK`, `BLOCK`, `PASS` 연출 강화
+    - 더 두꺼운 trail
+    - 방향 arrowhead
+    - target impact burst
+    - zone/player-area kind-specific 강조
+  - `PASS`의 lane handoff target 연결
+  - action/focus highlight class cleanup 정리
+- 유지형 presentation 3차
+  - `activeActionPresentation` 상태 추가
+  - beat 동안 lane/phase 의미를 DOM 상태로 유지
+  - `NEXT_PHASE` 전용 phase rail 추가
+  - `ATTACK`/`BLOCK`/`PASS`의 source/target lane hold highlight 추가
+- motion target suppress
+  - damage reveal / draw / reveal enter-exit에서 target 카드가 DOM에 먼저 나타나던 중복 표시 수정
+  - active motion 동안 target card는 placeholder만 유지하고 시각적으로 숨김
+  - damage summary count도 motion 중에는 이전 count 기준으로 유지
 - 선택/모달 가시성
   - `INTERACTION_FOCUS` beat 추가
   - selection modal preparing 상태 추가
@@ -28,21 +44,24 @@
 
 ### 1. 액션 연출의 시각 강도
 
-- 현재 action overlay는 동작하지만, 실제 대전 화면에서 첫인상 기준으로는 아직 약하게 느껴질 수 있다.
-- 특히 `ATTACK`와 `BLOCK`은 카드 간 관계를 더 강하게 보여줘야 한다.
-- 다음 강화 후보:
-  - 라인 전체가 잠깐 밝아지는 lane flash
-  - 공격 방향 화살표/궤적을 더 두껍게 표시
-  - 타격 지점에 짧은 impact burst 추가
-  - `PASS`는 현재 너무 조용하므로 턴 양보 느낌의 area fade 또는 흐름 이동 연출 필요
+- 2026-03-07 기준 `ATTACK`/`BLOCK`/`PASS`의 기본 강화는 적용되었다.
+- 현재 남은 쟁점은 “더 보이게”가 아니라 “강도 균형 조정”이다.
+- 특히 `PASS`와 `BLOCK`은 장면 전체가 조금 과하게 물드는지 한 번 더 조정할 여지가 있다.
+- 다음 미세조정 후보:
+  - `PASS` source player-area glow 범위를 조금 줄이기
+  - `BLOCK`/`PASS` wash opacity를 낮추고 contrast는 유지하기
+  - arrowhead 크기를 lane 길이에 비례해 조금 더 작게 clamp하기
+  - lane 전체 flash를 별도 overlay로 분리할지 검토하기
 
 ### 2. phase 전환의 게임스러운 감각
 
-- 현재 `NEXT_PHASE`는 status/action beat 수준이라 기능은 충분하지만, “진짜 게임처럼 페이즈가 넘어간다”는 체감은 아직 부족하다.
+- 2026-03-07 기준 phase rail은 추가되었고, `NEXT_PHASE`는 버튼 flash보다 rail/source/target hold 중심으로 바뀌었다.
+- 현재 남은 것은 rail 자체의 polish다.
 - 다음 강화 후보:
-  - phase rail 또는 phase badge 전용 트랙 UI 추가
-  - `LEVEL_UP`, `DRAW`, `MAIN`, `ATTACK`, `BLOCK`, `END`별 진입 모션 차등화
-  - `DRAW` phase 진입 시 deck pulse와 draw motion 사이의 리듬을 더 명확히 분리
+  - rail source -> target sweep overlay 추가
+  - `DRAW` 진입 시 rail hold 다음 beat로 deck pulse / draw motion 리듬을 더 분명하게 분리
+  - current phase / next phase / auto advance 상태를 더 또렷하게 분리
+  - 모바일 rail 레이아웃 미세조정
 
 ### 3. 선택 UX의 정보 전달
 
@@ -74,23 +93,36 @@
 
 ### Step 1. 공격/방어/패스 연출 강화
 
-- `ATTACK`, `BLOCK`, `PASS`를 우선 강화한다.
-- 이유:
-  - 가장 자주 보이는 액션이다.
-  - 현재 체감 부족이 가장 크다.
-  - 온라인과 오프라인에서 공통적으로 개선 체감이 크다.
+- 완료. 다음 턴에는 미세조정만 남아 있다.
 
-구현 후보:
+적용된 항목:
 
-- unit-zone에 lane flash class 추가
+- unit-zone / player-area kind-specific highlight
 - action trail 대비 강화
-- impact burst 또는 directional wedge 추가
-- `PASS` 전용 area fade / turn handoff glow 추가
+- target impact burst
+- directional arrowhead
+- `PASS` lane handoff 연결
+
+남은 후보:
+
+- `PASS` area tint 범위/opacity 미세조정
+- lane flash를 element class가 아니라 전용 overlay로 분리할지 판단
 
 ### Step 2. phase rail / phase badge 강화
 
-- side rail 또는 top status 영역에 phase progression을 더 명확하게 보이는 전용 UI를 추가한다.
-- `NEXT_PHASE` action fx가 이 rail과 연결되도록 바꾼다.
+- 1차 완료.
+
+적용된 항목:
+
+- side rail phase progression UI 추가
+- 모바일 compact rail 추가
+- `NEXT_PHASE`가 current/target phase chip과 status panel에 hold state를 남김
+
+남은 후보:
+
+- chip 간 sweep motion
+- auto phase actor와 rail 관계를 더 직관적으로 보이게 표시
+- `DRAW` beat와 rail beat 사이 리듬 분리
 
 ### Step 3. modal/selection 강화
 

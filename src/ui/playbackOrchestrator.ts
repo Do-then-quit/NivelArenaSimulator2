@@ -9,6 +9,7 @@ import {
     InteractionFocusBeat,
     MotionRectSnapshot,
     buildActionButtonAnchorKey,
+    buildPhaseStepAnchorKey,
     buildLeaderSlotAnchorKey,
     buildPhaseStatusAnchorKey,
     buildPlayerAreaAnchorKey,
@@ -91,6 +92,33 @@ function nextBeatId(): string {
 
 function getTiming(speed: PlaybackSpeed): PlaybackTiming {
     return PLAYBACK_TIMING_BY_SPEED[speed];
+}
+
+function getActionBeatDurationMs(kind: ActionFxBeat['kind'], speed: PlaybackSpeed): number {
+    const bySpeed: Record<PlaybackSpeed, Record<ActionFxBeat['kind'], number>> = {
+        SLOW: {
+            ATTACK: 860,
+            BLOCK: 860,
+            ACTIVATE: 620,
+            PASS: 760,
+            NEXT_PHASE: 980,
+        },
+        NORMAL: {
+            ATTACK: 620,
+            BLOCK: 620,
+            ACTIVATE: 440,
+            PASS: 560,
+            NEXT_PHASE: 760,
+        },
+        FAST: {
+            ATTACK: 380,
+            BLOCK: 380,
+            ACTIVATE: 280,
+            PASS: 340,
+            NEXT_PHASE: 460,
+        },
+    };
+    return bySpeed[speed][kind];
 }
 
 function getPlayerName(playerId: string | undefined): string {
@@ -393,8 +421,8 @@ function resolveSelectActionAnchorKeys(
     }
 }
 
-function dedupeAnchorKeys(anchorKeys: string[]): string[] {
-    return [...new Set(anchorKeys.filter((key) => key.length > 0))];
+function dedupeAnchorKeys(anchorKeys: Array<string | undefined>): string[] {
+    return [...new Set(anchorKeys.filter((key): key is string => typeof key === 'string' && key.length > 0))];
 }
 
 function buildActionToastMessage(action: EngineAction, afterState: GameState | null | undefined): string {
@@ -415,7 +443,6 @@ function buildActionToastMessage(action: EngineAction, afterState: GameState | n
 
 function buildActionFxBeat(
     action: EngineAction | null | undefined,
-    timing: PlaybackTiming,
     options: PlaybackBeatBuildOptions,
 ): PlaybackBeat | null {
     if (!action) return null;
@@ -427,6 +454,8 @@ function buildActionFxBeat(
     let sourceAnchorKeys: string[] = [];
     let targetAnchorKeys: string[] = [];
     let emphasisAnchorKeys: string[] = [];
+    let phaseFrom: string | null = null;
+    let phaseTo: string | null = null;
 
     switch (action.type) {
         case 'ATTACK': {
@@ -438,7 +467,7 @@ function buildActionFxBeat(
             ]);
             const opponentPlayerId = resolveOpponentPlayerId(afterState, actorPlayerId);
             targetAnchorKeys = resolveZoneTargetAnchorKeys(opponentPlayerId, action.attackerZoneIndex);
-            emphasisAnchorKeys = sourceAnchorKeys;
+            emphasisAnchorKeys = dedupeAnchorKeys([...sourceAnchorKeys, ...targetAnchorKeys]);
             break;
         }
         case 'RESOLVE_BLOCK': {
@@ -453,16 +482,23 @@ function buildActionFxBeat(
                 const targetPlayerId = resolveOpponentPlayerId(afterState, actorPlayerId);
                 const targetIndex = beforeState?.pendingAttackerIndex ?? afterState?.pendingAttackerIndex ?? null;
                 targetAnchorKeys = resolveZoneTargetAnchorKeys(targetPlayerId, targetIndex ?? undefined);
-                emphasisAnchorKeys = sourceAnchorKeys;
+                emphasisAnchorKeys = dedupeAnchorKeys([...sourceAnchorKeys, ...targetAnchorKeys]);
             } else {
                 kind = 'PASS';
                 label = 'PASS';
                 const laneIndex = beforeState?.pendingAttackerIndex ?? afterState?.pendingAttackerIndex ?? undefined;
+                const targetPlayerId = resolveOpponentPlayerId(afterState, actorPlayerId);
                 sourceAnchorKeys = dedupeAnchorKeys([
                     buildActionButtonAnchorKey('pass', actorPlayerId, laneIndex),
                     buildPlayerAreaAnchorKey(actorPlayerId),
                 ]);
-                emphasisAnchorKeys = [buildPlayerAreaAnchorKey(actorPlayerId)];
+                targetAnchorKeys = laneIndex === undefined
+                    ? (targetPlayerId ? [buildPlayerAreaAnchorKey(targetPlayerId)] : [])
+                    : resolveZoneTargetAnchorKeys(targetPlayerId, laneIndex);
+                emphasisAnchorKeys = dedupeAnchorKeys([
+                    buildPlayerAreaAnchorKey(actorPlayerId),
+                    ...targetAnchorKeys,
+                ]);
             }
             break;
         }
@@ -487,22 +523,33 @@ function buildActionFxBeat(
         case 'NEXT_PHASE': {
             kind = 'NEXT_PHASE';
             label = afterState?.phase ?? 'NEXT';
+            phaseFrom = beforeState?.phase ?? null;
+            phaseTo = afterState?.phase ?? null;
             sourceAnchorKeys = dedupeAnchorKeys([
-                buildActionButtonAnchorKey('next-phase'),
+                phaseFrom ? buildPhaseStepAnchorKey(phaseFrom) : undefined,
                 buildPhaseStatusAnchorKey(),
             ]);
-            targetAnchorKeys = [buildPhaseStatusAnchorKey()];
-            emphasisAnchorKeys = [buildPhaseStatusAnchorKey()];
+            targetAnchorKeys = dedupeAnchorKeys([
+                phaseTo ? buildPhaseStepAnchorKey(phaseTo) : undefined,
+                buildPhaseStatusAnchorKey(),
+            ]);
+            emphasisAnchorKeys = dedupeAnchorKeys([
+                buildPhaseStatusAnchorKey(),
+                ...(phaseFrom ? [buildPhaseStepAnchorKey(phaseFrom)] : []),
+                ...(phaseTo ? [buildPhaseStepAnchorKey(phaseTo)] : []),
+            ]);
             break;
         }
         default:
             return null;
     }
 
+    const durationMs = getActionBeatDurationMs(kind, uiState.playback.speed);
+
     return {
         id: nextBeatId(),
         eventType: 'ACTION_FX',
-        durationMs: timing.beatMs,
+        durationMs,
         modalGateMs: 0,
         toastMessage: buildActionToastMessage(action, afterState),
         pulseTargets: [],
@@ -513,6 +560,8 @@ function buildActionFxBeat(
             sourceAnchorKeys,
             targetAnchorKeys,
             emphasisAnchorKeys,
+            phaseFrom,
+            phaseTo,
             sourceRect: resolveSourceRect(sourceAnchorKeys, options.beforeAnchorRects),
             targetRect: resolveSourceRect(targetAnchorKeys, options.beforeAnchorRects),
         },
@@ -586,7 +635,7 @@ export function buildPlaybackBeats(
     const revealEntryMoves = sortRevealMoves(movedCards, 'ENTER');
     const revealExitMoves = sortRevealMoves(movedCards, 'EXIT');
 
-    const actionBeat = buildActionFxBeat(options.action, timing, options);
+    const actionBeat = buildActionFxBeat(options.action, options);
     if (actionBeat) {
         beats.push(actionBeat);
     }
@@ -689,16 +738,38 @@ function runNextBeat(): void {
         uiState.playback.queueBusy = false;
         uiState.playback.activePulseTargets = [];
         uiState.playback.activeMotionBeatId = null;
+        uiState.playback.activeMotionPresentation = null;
         uiState.playback.activeActionBeatId = null;
         uiState.playback.activeInteractionBeatId = null;
+        uiState.playback.activeActionPresentation = null;
         uiState.render?.();
         return;
     }
 
     uiState.playback.queueBusy = true;
     uiState.playback.activeMotionBeatId = beat.motion?.id ?? null;
+    uiState.playback.activeMotionPresentation = beat.motion
+        ? {
+            motionKey: beat.motion.target.motionKey,
+            motionType: beat.motion.motionType,
+            targetZone: beat.motion.target.zone,
+            targetPlayerId: beat.motion.target.playerId,
+            targetSlotIndex: beat.motion.target.slotIndex,
+        }
+        : null;
     uiState.playback.activeActionBeatId = beat.actionFx?.id ?? null;
     uiState.playback.activeInteractionBeatId = beat.interactionFocus?.id ?? null;
+    uiState.playback.activeActionPresentation = beat.actionFx
+        ? {
+            kind: beat.actionFx.kind,
+            label: beat.actionFx.label,
+            sourceAnchorKeys: [...beat.actionFx.sourceAnchorKeys],
+            targetAnchorKeys: [...beat.actionFx.targetAnchorKeys],
+            emphasisAnchorKeys: [...beat.actionFx.emphasisAnchorKeys],
+            phaseFrom: beat.actionFx.phaseFrom ?? null,
+            phaseTo: beat.actionFx.phaseTo ?? null,
+        }
+        : null;
     if (beat.modalGateMs > 0) {
         uiState.playback.modalGateUntilMs = Math.max(uiState.playback.modalGateUntilMs, Date.now() + beat.modalGateMs);
     }
@@ -716,8 +787,10 @@ function runNextBeat(): void {
         activeBeatTimer = null;
         uiState.playback.activePulseTargets = [];
         uiState.playback.activeMotionBeatId = null;
+        uiState.playback.activeMotionPresentation = null;
         uiState.playback.activeActionBeatId = null;
         uiState.playback.activeInteractionBeatId = null;
+        uiState.playback.activeActionPresentation = null;
         pruneExpiredToasts();
         if (beatQueue.length === 0) {
             uiState.playback.queueBusy = false;
@@ -738,8 +811,10 @@ function flushPlaybackBeatsImmediately(beats: PlaybackBeat[]): void {
     uiState.playback.modalGateUntilMs = 0;
     uiState.playback.activePulseTargets = [];
     uiState.playback.activeMotionBeatId = null;
+    uiState.playback.activeMotionPresentation = null;
     uiState.playback.activeActionBeatId = null;
     uiState.playback.activeInteractionBeatId = null;
+    uiState.playback.activeActionPresentation = null;
     clearPlaybackMotionOverlay();
     uiState.render?.();
 }
@@ -851,8 +926,10 @@ export function skipPlaybackQueue(): boolean {
     const hadPending = activeBeatTimer !== null
         || beatQueue.length > 0
         || uiState.playback.activeMotionBeatId !== null
+        || uiState.playback.activeMotionPresentation !== null
         || uiState.playback.activeActionBeatId !== null
-        || uiState.playback.activeInteractionBeatId !== null;
+        || uiState.playback.activeInteractionBeatId !== null
+        || uiState.playback.activeActionPresentation !== null;
     clearPlaybackMotionOverlay();
     if (activeBeatTimer !== null) {
         window.clearTimeout(activeBeatTimer);
@@ -863,8 +940,10 @@ export function skipPlaybackQueue(): boolean {
     uiState.playback.modalGateUntilMs = 0;
     uiState.playback.activePulseTargets = [];
     uiState.playback.activeMotionBeatId = null;
+    uiState.playback.activeMotionPresentation = null;
     uiState.playback.activeActionBeatId = null;
     uiState.playback.activeInteractionBeatId = null;
+    uiState.playback.activeActionPresentation = null;
     uiState.playback.toasts = [];
     uiState.render?.();
     return hadPending;
@@ -881,8 +960,10 @@ export function clearPlaybackRuntimeState(): void {
     uiState.playback.toasts = [];
     uiState.playback.activePulseTargets = [];
     uiState.playback.activeMotionBeatId = null;
+    uiState.playback.activeMotionPresentation = null;
     uiState.playback.activeActionBeatId = null;
     uiState.playback.activeInteractionBeatId = null;
+    uiState.playback.activeActionPresentation = null;
     uiState.playback.pendingAutoPhaseActorId = null;
     clearPlaybackMotionOverlay();
 }

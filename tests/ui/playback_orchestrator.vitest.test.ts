@@ -8,7 +8,7 @@ import {
     skipPlaybackQueue,
 } from '../../src/ui/playbackOrchestrator';
 import { UiTraceEvent } from '../../src/logic/types';
-import { buildPlayerAreaAnchorKey, CardMotionBeat } from '../../src/ui/playbackMotion';
+import { buildPlayerAreaAnchorKey, buildUnitZoneActionAnchorKey, CardMotionBeat } from '../../src/ui/playbackMotion';
 
 function createCard(id: string, name: string) {
     return {
@@ -201,6 +201,36 @@ describe('playback orchestrator', () => {
         expect(beats[1].motion?.motionType).toBe('DRAW');
     });
 
+    it('routes pass action fx toward the pending attacker lane', () => {
+        const beats = buildPlaybackBeats([], 'NORMAL', {
+            action: { type: 'RESOLVE_BLOCK', actorPlayerId: 'P1', shouldBlock: false },
+            beforeState: {
+                phase: 'BLOCK' as any,
+                interactionMode: 'NORMAL' as any,
+                pendingAttackerIndex: 1,
+                pendingBlockerZoneIndex: null,
+            },
+            afterState: {
+                players: [
+                    { id: 'P1', name: 'Player 1', unitZones: [{}, {}, {}] },
+                    { id: 'P2', name: 'Player 2', unitZones: [{}, {}, {}] },
+                ],
+                phase: 'BLOCK',
+                turnPlayerIndex: 0,
+                interactionMode: 'NORMAL',
+                interactionOwnerPlayerId: 'P1',
+                pendingAttackerIndex: 1,
+                pendingBlockerZoneIndex: null,
+                winner: null,
+            } as any,
+        });
+
+        expect(beats[0].eventType).toBe('ACTION_FX');
+        expect(beats[0].actionFx?.kind).toBe('PASS');
+        expect(beats[0].actionFx?.sourceAnchorKeys).toContain(buildPlayerAreaAnchorKey('P1'));
+        expect(beats[0].actionFx?.targetAnchorKeys).toEqual([buildUnitZoneActionAnchorKey('P2', 1)]);
+    });
+
     it('builds interaction focus without leaking hidden opponent hand targets', () => {
         const hiddenCard = createCard('opp-hand-1', 'Hidden Hand');
         const events: UiTraceEvent[] = [{
@@ -365,5 +395,37 @@ describe('playback orchestrator', () => {
         expect(uiState.playback.modalGateUntilMs).toBe(0);
         expect(uiState.playback.logEntries.map(entry => entry.message)).toContain('motion toast');
         expect(uiState.playback.toasts).toHaveLength(1);
+    });
+
+    it('keeps action presentation state alive for the beat duration and clears it afterward', () => {
+        enqueuePlaybackBeats([{
+            id: 'phase_hold_beat',
+            eventType: 'ACTION_FX',
+            durationMs: 760,
+            modalGateMs: 0,
+            toastMessage: 'phase hold',
+            pulseTargets: [],
+            actionFx: {
+                id: 'phase_fx',
+                kind: 'NEXT_PHASE',
+                label: 'DRAW',
+                sourceAnchorKeys: ['action:phase-step:MAIN', 'action:status:phase'],
+                targetAnchorKeys: ['action:phase-step:DRAW', 'action:status:phase'],
+                emphasisAnchorKeys: ['action:phase-step:MAIN', 'action:phase-step:DRAW', 'action:status:phase'],
+                phaseFrom: 'MAIN',
+                phaseTo: 'DRAW',
+                sourceRect: null,
+                targetRect: null,
+            },
+        }]);
+
+        expect(uiState.playback.activeActionPresentation?.kind).toBe('NEXT_PHASE');
+        expect(uiState.playback.activeActionPresentation?.phaseFrom).toBe('MAIN');
+        expect(uiState.playback.activeActionPresentation?.phaseTo).toBe('DRAW');
+
+        vi.advanceTimersByTime(800);
+
+        expect(uiState.playback.activeActionPresentation).toBeNull();
+        expect(uiState.playback.queueBusy).toBe(false);
     });
 });

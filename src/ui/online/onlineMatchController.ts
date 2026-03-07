@@ -285,6 +285,7 @@ function setupLocalOnlineGame(
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
     uiState.playback.activeMotionBeatId = null;
+    uiState.playback.activeMotionPresentation = null;
 
     const engine = new GameEngine(
         'Player 1',

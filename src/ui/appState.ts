@@ -113,6 +113,24 @@ export interface PlaybackPulseTarget {
     zone: PlaybackPulseZone;
 }
 
+export interface PlaybackActionPresentation {
+    kind: 'ATTACK' | 'BLOCK' | 'ACTIVATE' | 'PASS' | 'NEXT_PHASE';
+    label: string;
+    sourceAnchorKeys: string[];
+    targetAnchorKeys: string[];
+    emphasisAnchorKeys: string[];
+    phaseFrom?: string | null;
+    phaseTo?: string | null;
+}
+
+export interface PlaybackMotionPresentation {
+    motionKey: string;
+    motionType: 'DRAW' | 'DAMAGE_REVEAL' | 'REVEAL_ENTER' | 'REVEAL_EXIT';
+    targetZone: 'DECK' | 'HAND' | 'DAMAGE' | 'TRASH' | 'SKILL' | 'REVEALED';
+    targetPlayerId?: string;
+    targetSlotIndex: number;
+}
+
 export interface PlaybackState {
     enabled: boolean;
     animationEnabled: boolean;
@@ -124,8 +142,10 @@ export interface PlaybackState {
     maxLogEntries: number;
     activePulseTargets: PlaybackPulseTarget[];
     activeMotionBeatId: string | null;
+    activeMotionPresentation: PlaybackMotionPresentation | null;
     activeActionBeatId: string | null;
     activeInteractionBeatId: string | null;
+    activeActionPresentation: PlaybackActionPresentation | null;
     pendingAutoPhaseActorId: string | null;
 }
 
@@ -209,8 +229,10 @@ export const uiState = {
         maxLogEntries: 500,
         activePulseTargets: [],
         activeMotionBeatId: null,
+        activeMotionPresentation: null,
         activeActionBeatId: null,
         activeInteractionBeatId: null,
+        activeActionPresentation: null,
         pendingAutoPhaseActorId: null,
     } as PlaybackState,
     onlineSession: {

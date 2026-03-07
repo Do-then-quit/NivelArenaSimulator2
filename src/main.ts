@@ -59,6 +59,7 @@ function startGame(
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
     uiState.playback.activeMotionBeatId = null;
+    uiState.playback.activeMotionPresentation = null;
     uiState.game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2, {
         enableMulligan: true,
         enableUiTrace: uiState.playback.enabled,
@@ -119,6 +120,7 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
     uiState.playback.activeMotionBeatId = null;
+    uiState.playback.activeMotionPresentation = null;
     uiState.game = engine;
     uiState.verificationPanelCollapsed = false;
     uiState.mobileGameView.logSheetOpen = false;

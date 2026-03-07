@@ -275,6 +275,7 @@ function initializeReplaySession(
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
     uiState.playback.activeMotionBeatId = null;
+    uiState.playback.activeMotionPresentation = null;
     resetCardMotionRegistry();
     uiState.game = playbackEngine;
 

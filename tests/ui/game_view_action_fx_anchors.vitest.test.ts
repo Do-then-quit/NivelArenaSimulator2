@@ -148,6 +148,9 @@ describe('game view action fx anchors', () => {
         renderGame();
 
         expect(document.querySelector('[data-testid="phase-status"]')?.getAttribute('data-action-anchor-key')).toBeTruthy();
+        expect(document.querySelector('[data-testid="phase-rail"]')).toBeTruthy();
+        expect(document.querySelector('[data-testid="phase-step-main"]')?.getAttribute('data-action-anchor-key')).toBeTruthy();
+        expect(document.querySelector('[data-testid="phase-step-draw"]')?.getAttribute('data-action-anchor-key')).toBeTruthy();
         expect(document.querySelector('[data-testid="next-phase-btn"]')?.getAttribute('data-action-anchor-key')).toBeTruthy();
         expect(document.querySelector('[data-testid="unit-zone-P1-0"]')?.getAttribute('data-action-anchor-key')).toBeTruthy();
         expect(document.querySelector('[data-testid="attack-btn-P1-0"]')?.getAttribute('data-action-anchor-key')).toBeTruthy();

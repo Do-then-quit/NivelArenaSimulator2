@@ -210,4 +210,32 @@ describe('game view damage zone summary', () => {
         expect(currentDamageCard?.getAttribute('data-motion-anchor-key')).toMatch(/^card:/);
         expect(revealedCard?.getAttribute('data-motion-zone')).toBe('REVEALED');
     });
+
+    it('suppresses the active damage reveal target card until the motion beat completes', async () => {
+        const { uiState, Screen } = await import('../../src/ui/appState');
+        const { getCardMotionKey } = await import('../../src/ui/playbackMotion');
+        const { renderGame } = await import('../../src/ui/screens/gameView');
+
+        uiState.currentScreen = Screen.GAME;
+        uiState.game = createMockGame(false);
+        uiState.gameLogView.manualOverride = true;
+        uiState.gameLogView.expanded = true;
+        uiState.gameLogView.autoCollapsed = false;
+
+        const suppressedCard = uiState.game.state.players[1].damage[0];
+        uiState.playback.activeMotionPresentation = {
+            motionKey: getCardMotionKey(suppressedCard),
+            motionType: 'DAMAGE_REVEAL',
+            targetZone: 'DAMAGE',
+            targetPlayerId: 'P2',
+            targetSlotIndex: 0,
+        };
+
+        renderGame();
+
+        const opponentDamageCount = document.querySelector('.opponent .damage-zone.summary-mode .damage-count');
+        const suppressedDamageCard = document.querySelector('.opponent .damage-card-item.motion-target-suppressed');
+        expect(opponentDamageCount?.textContent?.trim()).toBe('1');
+        expect(suppressedDamageCard).toBeTruthy();
+    });
 });

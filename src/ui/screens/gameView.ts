@@ -16,6 +16,7 @@ import {
     buildActionButtonAnchorKey,
     buildCardAnchorKey,
     buildLeaderSlotAnchorKey,
+    buildPhaseStepAnchorKey,
     buildPhaseStatusAnchorKey,
     buildPlayerAreaAnchorKey,
     buildSelectionTrayAnchorKey,
@@ -47,6 +48,22 @@ const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
     'BT03_062_SELECT_SKILL_ZONE_TO_CAST',
     'SB01_001_SELECT_SKILL_ZONE_TO_TRASH',
 ]);
+const PHASE_FLOW: Phase[] = [
+    Phase.LEVEL_UP,
+    Phase.DRAW,
+    Phase.MAIN,
+    Phase.ATTACK,
+    Phase.BLOCK,
+    Phase.END,
+];
+const PHASE_SHORT_LABELS: Record<Phase, string> = {
+    [Phase.LEVEL_UP]: 'LEVEL',
+    [Phase.DRAW]: 'DRAW',
+    [Phase.MAIN]: 'MAIN',
+    [Phase.ATTACK]: 'ATK',
+    [Phase.BLOCK]: 'BLK',
+    [Phase.END]: 'END',
+};
 
 let gameResizeRafId: number | null = null;
 let gameResizeListenerBound = false;
@@ -253,6 +270,45 @@ function buildActionAnchorAttributes(anchorKey: string, testId?: string): string
     });
 }
 
+function normalizeActionPresentationKind(kind: string | undefined): string {
+    return String(kind ?? '').toLowerCase().replace(/_/g, '-');
+}
+
+function buildActionPresentationClasses(anchorKeys: string[]): string {
+    const presentation = uiState.playback.activeActionPresentation;
+    if (!presentation) return '';
+    const classes: string[] = [];
+    const hasSource = anchorKeys.some((anchorKey) => presentation.sourceAnchorKeys.includes(anchorKey));
+    const hasTarget = anchorKeys.some((anchorKey) => presentation.targetAnchorKeys.includes(anchorKey));
+    const hasEmphasis = anchorKeys.some((anchorKey) => presentation.emphasisAnchorKeys.includes(anchorKey));
+    if (hasSource) classes.push('action-presentation-source');
+    if (hasTarget) classes.push('action-presentation-target');
+    if (hasEmphasis) classes.push('action-presentation-emphasis');
+    if (classes.length === 0) return '';
+    classes.push(`action-presentation-kind-${normalizeActionPresentationKind(presentation.kind)}`);
+    return classes.join(' ');
+}
+
+function isMotionTargetSuppressed(
+    card: Card,
+    zone: 'HAND' | 'DAMAGE' | 'SKILL' | 'REVEALED' | 'TRASH',
+    playerId?: string,
+): boolean {
+    const motion = uiState.playback.activeMotionPresentation;
+    if (!motion) return false;
+    if (motion.targetZone !== zone) return false;
+    if ((motion.targetPlayerId ?? undefined) !== playerId) return false;
+    return motion.motionKey === getCardMotionKey(card);
+}
+
+function buildMotionTargetSuppressClass(
+    card: Card,
+    zone: 'HAND' | 'DAMAGE' | 'SKILL' | 'REVEALED' | 'TRASH',
+    playerId?: string,
+): string {
+    return isMotionTargetSuppressed(card, zone, playerId) ? 'motion-target-suppressed' : '';
+}
+
 function buildZoneAnchorAttributes(
     zone: 'HAND' | 'DECK' | 'DAMAGE' | 'TRASH' | 'SKILL' | 'REVEALED',
     playerId?: string,
@@ -387,11 +443,12 @@ function getReplayTerminationLabel(reason: string): string {
 
 function renderGameControlButtons(localHumanCanInput: boolean): string {
     if (!uiState.replaySession || !uiState.game) {
+        const nextPhaseButtonAnchorKey = buildActionButtonAnchorKey('next-phase');
         return `
             <button
                 id="next-phase"
-                class="primary-btn ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''}"
-                ${buildActionAnchorAttributes(buildActionButtonAnchorKey('next-phase'), 'next-phase-btn')}
+                class="primary-btn ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''} ${buildActionPresentationClasses([nextPhaseButtonAnchorKey])}"
+                ${buildActionAnchorAttributes(nextPhaseButtonAnchorKey, 'next-phase-btn')}
                 ${uiState.game?.state.phase === Phase.BLOCK || uiState.game?.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}
             >
                 Next Phase
@@ -484,6 +541,40 @@ function renderPlaybackControls(): string {
     `;
 }
 
+function renderPhaseRail(compact: boolean = false): string {
+    if (!uiState.game) return '';
+    const currentPhase = uiState.game.state.phase;
+    const presentation = uiState.playback.activeActionPresentation;
+    const phaseFrom = presentation?.phaseFrom ?? null;
+    const phaseTo = presentation?.phaseTo ?? null;
+    return `
+        <div class="phase-rail ${compact ? 'compact' : ''}" data-testid="${compact ? 'phase-rail-mobile' : 'phase-rail'}">
+            ${PHASE_FLOW.map((phase) => {
+                const phaseIndex = PHASE_FLOW.indexOf(phase) + 1;
+                const anchorKey = buildPhaseStepAnchorKey(phase);
+                const presentationClasses = buildActionPresentationClasses([anchorKey]);
+                const classes = [
+                    'phase-rail-step',
+                    phase === currentPhase ? 'is-current' : '',
+                    phaseFrom === phase ? 'is-from' : '',
+                    phaseTo === phase ? 'is-to' : '',
+                    presentationClasses,
+                ].filter((value) => value.length > 0).join(' ');
+                return `
+                    <div
+                        class="${classes}"
+                        ${buildActionAnchorAttributes(anchorKey, `phase-step-${String(phase).toLowerCase()}`)}
+                        title="${escapeHtml(String(phase))}"
+                    >
+                        <span class="phase-rail-step-index">${phaseIndex}</span>
+                        <strong>${PHASE_SHORT_LABELS[phase]}</strong>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
 function renderMobileFloatingMenuButton(inOnlineMatch: boolean): string {
     return `
         <div class="mobile-floating-menu">
@@ -493,9 +584,9 @@ function renderMobileFloatingMenuButton(inOnlineMatch: boolean): string {
 }
 
 function renderMobileInteractionOverlay(interactionBannerHtml: string): string {
-    if (!interactionBannerHtml) return '';
     return `
         <div class="mobile-interaction-overlay">
+            ${renderPhaseRail(true)}
             ${interactionBannerHtml}
         </div>
     `;
@@ -505,14 +596,15 @@ function renderMobileFloatingActions(localHumanCanInput: boolean): string {
     const nextPhaseDisabled = uiState.game?.state.phase === Phase.BLOCK
         || uiState.game?.state.interactionMode !== 'NORMAL'
         || !localHumanCanInput;
+    const nextPhaseButtonAnchorKey = buildActionButtonAnchorKey('next-phase');
     return `
         <div class="mobile-floating-actions">
             <button id="mobile-log-fab" class="secondary-btn mobile-fab">로그</button>
             ${uiState.replaySession ? '' : `
                 <button
                     id="next-phase"
-                    class="primary-btn mobile-fab mobile-next-phase-fab ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''}"
-                    ${buildActionAnchorAttributes(buildActionButtonAnchorKey('next-phase'), 'next-phase-btn-mobile')}
+                    class="primary-btn mobile-fab mobile-next-phase-fab ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''} ${buildActionPresentationClasses([nextPhaseButtonAnchorKey])}"
+                    ${buildActionAnchorAttributes(nextPhaseButtonAnchorKey, 'next-phase-btn-mobile')}
                     ${nextPhaseDisabled ? 'disabled' : ''}
                 >
                     Next
@@ -812,7 +904,7 @@ function renderTrashModal() {
         const orderIndex = getSelectedTargetOrderIndex(c, pending);
         return `
                         <div
-                            class="trash-card-item ${isSelected ? 'selected-target' : ''}"
+                            class="trash-card-item ${isSelected ? 'selected-target' : ''} ${buildMotionTargetSuppressClass(c, 'TRASH', sourcePlayer.id)}"
                             data-index="${i}"
                             ${buildCardAnchorAttributes(c, 'TRASH', sourcePlayer.id, i)}
                         >
@@ -878,7 +970,7 @@ function renderRevealedCardsModal() {
 
         return `
                         <div
-                            class="revealed-card-item ${isSelected ? 'selected-target' : ''} ${!matchesFilter ? 'grayscale' : ''}"
+                            class="revealed-card-item ${isSelected ? 'selected-target' : ''} ${!matchesFilter ? 'grayscale' : ''} ${buildMotionTargetSuppressClass(c, 'REVEALED', undefined)}"
                             data-index="${i}"
                             ${buildCardAnchorAttributes(c, 'REVEALED', undefined, i)}
                             style="${isSelecting && !isTakeAll ? 'cursor: pointer;' : ''}"
@@ -1102,13 +1194,14 @@ function renderPlayer(
         : 0;
     const damageZoneSelectionClass = hasDamageSelectionCandidate ? 'selection-zone-candidate' : '';
     const damageZoneSelectedClass = selectedDamageCount > 0 ? 'selection-zone-selected' : '';
+    const displayedDamageCount = player.damage.filter((card: Card) => !isMotionTargetSuppressed(card, 'DAMAGE', player.id)).length;
     const damageStackStep = computeDamageStackStep(player.damage.length);
     const damageCardsMarkup = player.damage.map((c: Card, damageIndex: number) => {
         const isDamageSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(c);
         const orderIndex = getSelectedTargetOrderIndex(c, pending);
         return `
             <div
-                class="damage-card-item ${isDamageSelected ? 'selected-target' : ''}"
+                class="damage-card-item ${isDamageSelected ? 'selected-target' : ''} ${buildMotionTargetSuppressClass(c, 'DAMAGE', player.id)}"
                 data-player="${isOpponent ? 'opponent' : 'current'}"
                 data-index="${damageIndex}"
                 ${buildCardAnchorAttributes(c, 'DAMAGE', player.id, damageIndex)}
@@ -1126,14 +1219,18 @@ function renderPlayer(
         isInputOwnerPlayer &&
         player.levelZone?.isAwakened === true &&
         activatableEffectActions.some((action: any) => action.sourceType === 'LEADER');
+    const playerAreaAnchorKey = buildPlayerAreaAnchorKey(player.id);
+    const playerAreaPresentationClasses = buildActionPresentationClasses([playerAreaAnchorKey]);
+    const leaderSlotAnchorKey = buildLeaderSlotAnchorKey(player.id);
+    const leaderPresentationClasses = buildActionPresentationClasses([leaderSlotAnchorKey]);
     return `
       <div
-        class="player-area ${isOpponent ? 'opponent' : 'current'}"
+        class="player-area ${isOpponent ? 'opponent' : 'current'} ${playerAreaPresentationClasses}"
         data-player-id="${player.id}"
-        ${buildActionAnchorAttributes(buildPlayerAreaAnchorKey(player.id), `player-area-${player.id}`)}
+        ${buildActionAnchorAttributes(playerAreaAnchorKey, `player-area-${player.id}`)}
       >
         <div class="level-zone">
-            <div class="leader-slot" ${buildActionAnchorAttributes(buildLeaderSlotAnchorKey(player.id), `leader-slot-${player.id}`)}>
+            <div class="leader-slot ${leaderPresentationClasses}" ${buildActionAnchorAttributes(leaderSlotAnchorKey, `leader-slot-${player.id}`)}>
                 ${player.levelZone ? renderCard(player.levelZone, true) : ''}
                 ${isInputOwnerPlayer && localHumanCanInput && leaderHasActivatableEffect ? `
                     <button
@@ -1167,7 +1264,7 @@ function renderPlayer(
 
         return `
                     <div
-                        class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}"
+                        class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''} ${buildActionPresentationClasses([buildUnitZoneActionAnchorKey(player.id, i)])}"
                         data-player="${isOpponent ? 'opponent' : 'current'}"
                         data-index="${i}"
                         ${buildActionAnchorAttributes(buildUnitZoneActionAnchorKey(player.id, i), `unit-zone-${player.id}-${i}`)}
@@ -1240,12 +1337,12 @@ function renderPlayer(
                     ${buildZoneAnchorAttributes('DAMAGE', player.id)}
                 >
                     ${showDamageCardSelectionInline ? damageCardsMarkup : `
-                        <div class="damage-summary ${player.damage.length === 0 ? 'empty' : ''}">
+                        <div class="damage-summary ${displayedDamageCount === 0 ? 'empty' : ''}">
                             <div class="damage-card-strip" style="--damage-step:${damageStackStep}px;">
                                 ${damageCardsMarkup || '<div class="damage-card-empty">EMPTY</div>'}
                             </div>
                             <div class="damage-summary-meta">
-                                <div class="damage-count">${player.damage.length}</div>
+                                <div class="damage-count">${displayedDamageCount}</div>
                                 <div class="damage-label">DAMAGE</div>
                                 ${hasDamageSelectionCandidate ? `<div class="selection-progress-badge">selected ${selectedDamageCount}/${targetCount === 0 ? 'all' : targetCount}</div>` : ''}
                             </div>
@@ -1262,7 +1359,7 @@ function renderPlayer(
         const skillPromptSelectedClass = skillPromptState.selectedSkillIndexes.has(skillIndex) ? 'selected-target' : '';
         return `
                         <div
-                            class="skill-card-item ${skillPromptCandidateClass} ${skillPromptSelectedClass}"
+                            class="skill-card-item ${skillPromptCandidateClass} ${skillPromptSelectedClass} ${buildMotionTargetSuppressClass(c, 'SKILL', player.id)}"
                             data-player="${isOpponent ? 'opponent' : 'current'}"
                             data-index="${skillIndex}"
                             ${buildCardAnchorAttributes(c, 'SKILL', player.id, skillIndex)}
@@ -1443,7 +1540,7 @@ export function renderGame() {
             uiState.game!.isPendingCardTarget(c);
         return `
                   <div
-                      class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealTopPlayerHand ? '' : 'concealed-hand'}"
+                      class="card-in-hand ${isTargetCandidate ? 'target-candidate' : ''} ${revealTopPlayerHand ? '' : 'concealed-hand'} ${buildMotionTargetSuppressClass(c, 'HAND', topPlayer.id)}"
                       data-index="${i}"
                       data-hand-revealed="${revealTopPlayerHand ? '1' : '0'}"
                       ${buildCardAnchorAttributes(c, 'HAND', topPlayer.id, i)}
@@ -1470,7 +1567,7 @@ export function renderGame() {
 
         return `
                   <div
-                      class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealBottomPlayerHand ? '' : 'concealed-hand'}"
+                      class="card-in-hand ${isCostCandidate ? 'cost-candidate' : ''} ${isTargetCandidate ? 'target-candidate' : ''} ${revealBottomPlayerHand ? '' : 'concealed-hand'} ${buildMotionTargetSuppressClass(c, 'HAND', bottomPlayer.id)}"
                       draggable="${isMainPhase && uiState.game!.state.interactionMode === 'NORMAL' && localHumanCanInput}"
                       data-index="${i}"
                       data-hand-revealed="${revealBottomPlayerHand ? '1' : '0'}"
@@ -1494,10 +1591,11 @@ export function renderGame() {
           ${renderPlaybackToasts()}
           ${renderPlaybackLogPanel()}
           <div class="game-controls">
+            ${renderPhaseRail()}
             <div class="status-bar">
               <div class="status-item"><span>Turn</span> <strong>${uiState.game.state.turnCount}</strong></div>
               <div
-                class="status-item ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''}"
+                class="status-item ${uiState.playback.pendingAutoPhaseActorId ? 'auto-phase-pending' : ''} ${buildActionPresentationClasses([buildPhaseStatusAnchorKey()])}"
                 ${buildActionAnchorAttributes(buildPhaseStatusAnchorKey(), 'phase-status')}
               >
                 <span>Phase</span>

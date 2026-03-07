@@ -54,6 +54,8 @@ export interface ActionFxBeat {
     sourceAnchorKeys: string[];
     targetAnchorKeys: string[];
     emphasisAnchorKeys: string[];
+    phaseFrom?: string | null;
+    phaseTo?: string | null;
     sourceRect: MotionRect | null;
     targetRect: MotionRect | null;
 }
@@ -122,6 +124,10 @@ export function buildActionButtonAnchorKey(
 
 export function buildPhaseStatusAnchorKey(): ActionAnchorKey {
     return buildActionAnchorKey('status', 'phase');
+}
+
+export function buildPhaseStepAnchorKey(phase: string): ActionAnchorKey {
+    return buildActionAnchorKey('phase-step', phase);
 }
 
 export function buildSelectionTrayAnchorKey(kind: 'revealed' | 'trash', playerId?: string): ActionAnchorKey {
@@ -263,6 +269,29 @@ function buildRingMarkup(rect: MotionRect, roleClass: string): string {
     `;
 }
 
+function expandRect(rect: MotionRect, horizontalPadding: number, verticalPadding: number = horizontalPadding): MotionRect {
+    return {
+        left: rect.left - horizontalPadding,
+        top: rect.top - verticalPadding,
+        width: rect.width + (horizontalPadding * 2),
+        height: rect.height + (verticalPadding * 2),
+    };
+}
+
+function buildWashMarkup(rect: MotionRect, roleClass: string): string {
+    const expandedRect = expandRect(
+        rect,
+        Math.max(16, Math.round(rect.width * 0.12)),
+        Math.max(16, Math.round(rect.height * 0.18)),
+    );
+    return `
+        <div
+            class="fx-action-wash ${roleClass}"
+            style="left:${expandedRect.left}px; top:${expandedRect.top}px; width:${expandedRect.width}px; height:${expandedRect.height}px;"
+        ></div>
+    `;
+}
+
 function buildTrailMarkup(sourceRect: MotionRect, targetRect: MotionRect): string {
     const sourceX = sourceRect.left + sourceRect.width / 2;
     const sourceY = sourceRect.top + sourceRect.height / 2;
@@ -276,6 +305,36 @@ function buildTrailMarkup(sourceRect: MotionRect, targetRect: MotionRect): strin
         <div
             class="fx-action-trail"
             style="left:${sourceX}px; top:${sourceY}px; width:${length}px; transform:rotate(${angleDeg}deg);"
+        ></div>
+    `;
+}
+
+function buildArrowheadMarkup(sourceRect: MotionRect, targetRect: MotionRect): string {
+    const sourceX = sourceRect.left + sourceRect.width / 2;
+    const sourceY = sourceRect.top + sourceRect.height / 2;
+    const targetX = targetRect.left + targetRect.width / 2;
+    const targetY = targetRect.top + targetRect.height / 2;
+    const dx = targetX - sourceX;
+    const dy = targetY - sourceY;
+    const angleDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+    const length = Math.sqrt((dx * dx) + (dy * dy));
+    const size = Math.max(18, Math.min(34, Math.round(length * 0.12)));
+    return `
+        <div
+            class="fx-action-arrowhead"
+            style="left:${targetX}px; top:${targetY}px; width:${size}px; height:${size}px; transform:translate(-58%, -50%) rotate(${angleDeg}deg);"
+        ></div>
+    `;
+}
+
+function buildImpactMarkup(rect: MotionRect, roleClass: string): string {
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const size = Math.max(44, Math.round(Math.max(rect.width, rect.height) * 1.14));
+    return `
+        <div
+            class="fx-action-impact ${roleClass}"
+            style="left:${centerX - (size / 2)}px; top:${centerY - (size / 2)}px; width:${size}px; height:${size}px;"
         ></div>
     `;
 }
@@ -352,12 +411,23 @@ class PlaybackMotionOverlayController {
         const layer = this.ensureActionLayer();
         const shell = document.createElement('div');
         shell.className = `fx-action-shell is-${beat.kind.toLowerCase()}`;
+        shell.style.setProperty('--fx-beat-ms', `${durationMs}ms`);
         const anchorRect = sourceRect ?? targetRect ?? emphasisRects[0];
+        const kindClass = `fx-action-kind-${beat.kind.toLowerCase().replace(/_/g, '-')}`;
+        const localCleanups: Array<() => void> = [];
+        const burstRect = beat.kind === 'ACTIVATE'
+            ? (sourceRect ?? targetRect ?? emphasisRects[0])
+            : (targetRect ?? sourceRect ?? emphasisRects[0]);
         shell.innerHTML = `
+            ${sourceRect ? buildWashMarkup(sourceRect, 'is-source') : ''}
+            ${targetRect ? buildWashMarkup(targetRect, 'is-target') : ''}
+            ${emphasisRects.map((rect) => buildWashMarkup(rect, 'is-emphasis')).join('')}
             ${sourceRect ? buildRingMarkup(sourceRect, 'is-source') : ''}
             ${targetRect ? buildRingMarkup(targetRect, 'is-target') : ''}
             ${sourceRect && targetRect ? buildTrailMarkup(sourceRect, targetRect) : ''}
+            ${sourceRect && targetRect ? buildArrowheadMarkup(sourceRect, targetRect) : ''}
             ${emphasisRects.map((rect) => buildRingMarkup(rect, 'is-emphasis')).join('')}
+            ${burstRect ? buildImpactMarkup(burstRect, beat.kind === 'BLOCK' ? 'is-block' : beat.kind === 'PASS' ? 'is-pass' : 'is-primary') : ''}
             <div class="fx-action-badge" style="left:${anchorRect.left + (anchorRect.width / 2)}px; top:${anchorRect.top - 18}px;">
                 ${beat.label}
             </div>
@@ -365,16 +435,16 @@ class PlaybackMotionOverlayController {
         layer.appendChild(shell);
 
         sourceElements.forEach((element) => {
-            element.classList.add('fx-action-source');
-            this.classCleanups.push(() => element.classList.remove('fx-action-source'));
+            this.trackElementClass(element, 'fx-action-source', localCleanups);
+            this.trackElementClass(element, kindClass, localCleanups);
         });
         targetElements.forEach((element) => {
-            element.classList.add('fx-action-target');
-            this.classCleanups.push(() => element.classList.remove('fx-action-target'));
+            this.trackElementClass(element, 'fx-action-target', localCleanups);
+            this.trackElementClass(element, kindClass, localCleanups);
         });
         emphasisElements.forEach((element) => {
-            element.classList.add('fx-action-emphasis');
-            this.classCleanups.push(() => element.classList.remove('fx-action-emphasis'));
+            this.trackElementClass(element, 'fx-action-emphasis', localCleanups);
+            this.trackElementClass(element, kindClass, localCleanups);
         });
 
         window.requestAnimationFrame(() => {
@@ -383,6 +453,7 @@ class PlaybackMotionOverlayController {
 
         const cleanupTimer = window.setTimeout(() => {
             shell.remove();
+            this.flushCleanupGroup(localCleanups);
         }, Math.max(80, durationMs + 80));
         this.cleanupTimerIds.push(cleanupTimer);
         return true;
@@ -401,7 +472,9 @@ class PlaybackMotionOverlayController {
         const layer = this.ensureFocusLayer();
         const shell = document.createElement('div');
         shell.className = 'fx-interaction-shell';
+        shell.style.setProperty('--fx-beat-ms', `${durationMs}ms`);
         const anchorRect = sourceRect ?? targetRects[0];
+        const localCleanups: Array<() => void> = [];
         shell.innerHTML = `
             ${sourceRect ? buildRingMarkup(sourceRect, 'is-source') : ''}
             ${targetRects.map((rect) => buildRingMarkup(rect, 'is-target')).join('')}
@@ -412,19 +485,16 @@ class PlaybackMotionOverlayController {
         layer.appendChild(shell);
 
         document.body.classList.add('fx-interaction-focus-active');
-        this.classCleanups.push(() => document.body.classList.remove('fx-interaction-focus-active'));
+        this.trackCleanup(() => document.body.classList.remove('fx-interaction-focus-active'), localCleanups);
 
         sourceElements.forEach((element) => {
-            element.classList.add('fx-focus-source');
-            this.classCleanups.push(() => element.classList.remove('fx-focus-source'));
+            this.trackElementClass(element, 'fx-focus-source', localCleanups);
         });
         targetElements.forEach((element) => {
-            element.classList.add('fx-focus-target');
-            this.classCleanups.push(() => element.classList.remove('fx-focus-target'));
+            this.trackElementClass(element, 'fx-focus-target', localCleanups);
         });
         selectedElements.forEach((element) => {
-            element.classList.add('fx-focus-selected');
-            this.classCleanups.push(() => element.classList.remove('fx-focus-selected'));
+            this.trackElementClass(element, 'fx-focus-selected', localCleanups);
         });
 
         window.requestAnimationFrame(() => {
@@ -433,7 +503,7 @@ class PlaybackMotionOverlayController {
 
         const cleanupTimer = window.setTimeout(() => {
             shell.remove();
-            this.flushClassCleanups();
+            this.flushCleanupGroup(localCleanups);
         }, Math.max(80, durationMs + 80));
         this.cleanupTimerIds.push(cleanupTimer);
         return true;
@@ -462,6 +532,28 @@ class PlaybackMotionOverlayController {
     private flushClassCleanups(): void {
         this.classCleanups.forEach((cleanup) => cleanup());
         this.classCleanups = [];
+    }
+
+    private flushCleanupGroup(cleanups: Array<() => void>): void {
+        cleanups.forEach((cleanup) => cleanup());
+        cleanups.length = 0;
+    }
+
+    private trackCleanup(cleanup: () => void, localCleanups: Array<() => void>): void {
+        let flushed = false;
+        const wrapped = () => {
+            if (flushed) return;
+            flushed = true;
+            cleanup();
+            this.classCleanups = this.classCleanups.filter((entry) => entry !== wrapped);
+        };
+        this.classCleanups.push(wrapped);
+        localCleanups.push(wrapped);
+    }
+
+    private trackElementClass(element: HTMLElement, className: string, localCleanups: Array<() => void>): void {
+        element.classList.add(className);
+        this.trackCleanup(() => element.classList.remove(className), localCleanups);
     }
 
     private ensureRoot(): HTMLElement {

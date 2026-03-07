@@ -214,6 +214,46 @@ test.describe('action fx smoke', () => {
         expect(consoleErrors).toEqual([]);
     });
 
+    test('shows next phase hold state on the phase rail', async ({ page }) => {
+        const consoleErrors: string[] = [];
+        page.on('console', (msg) => {
+            if (msg.type() === 'error') consoleErrors.push(msg.text());
+        });
+
+        await page.goto('/');
+        await stageMockGame(page, 'main');
+
+        await expect(page.getByTestId('phase-rail')).toBeVisible();
+
+        await page.evaluate(() => {
+            (window as any).__NA_TEST__.enqueuePlaybackBeats([{
+                id: 'phase-beat',
+                eventType: 'ACTION_FX',
+                durationMs: 760,
+                modalGateMs: 0,
+                toastMessage: 'Player 1 draw phase',
+                pulseTargets: [],
+                actionFx: {
+                    id: 'phase-fx',
+                    kind: 'NEXT_PHASE',
+                    label: 'DRAW',
+                    sourceAnchorKeys: ['action:phase-step:MAIN', 'action:status:phase'],
+                    targetAnchorKeys: ['action:phase-step:DRAW', 'action:status:phase'],
+                    emphasisAnchorKeys: ['action:phase-step:MAIN', 'action:phase-step:DRAW', 'action:status:phase'],
+                    phaseFrom: 'MAIN',
+                    phaseTo: 'DRAW',
+                    sourceRect: null,
+                    targetRect: null,
+                },
+            }]);
+        });
+
+        await expect(page.getByTestId('phase-step-main')).toHaveClass(/action-presentation-source/);
+        await expect(page.getByTestId('phase-step-draw')).toHaveClass(/action-presentation-target/);
+        await expect(page.getByTestId('phase-status')).toHaveClass(/action-presentation-kind-next-phase/);
+        expect(consoleErrors).toEqual([]);
+    });
+
     test('renders block action anchors and damage reveal motion', async ({ page }) => {
         const consoleErrors: string[] = [];
         page.on('console', (msg) => {
@@ -273,6 +313,45 @@ test.describe('action fx smoke', () => {
 
         await expect(page.locator('.fx-action-shell.is-block')).toBeVisible();
         await expect(page.locator('.fx-motion-card-shell')).toBeVisible();
+        await expect(page.locator('.opponent .damage-card-item.motion-target-suppressed')).toHaveCount(1);
+        await expect(page.locator('.opponent .damage-count')).toContainText('0');
+        expect(consoleErrors).toEqual([]);
+    });
+
+    test('renders pass action fx with lane handoff emphasis', async ({ page }) => {
+        const consoleErrors: string[] = [];
+        page.on('console', (msg) => {
+            if (msg.type() === 'error') consoleErrors.push(msg.text());
+        });
+
+        await page.goto('/');
+        await stageMockGame(page, 'block');
+
+        await page.evaluate(() => {
+            (window as any).__NA_TEST__.enqueuePlaybackBeats([{
+                id: 'pass-beat',
+                eventType: 'ACTION_FX',
+                durationMs: 320,
+                modalGateMs: 0,
+                toastMessage: 'Player 1 pass',
+                pulseTargets: [],
+                actionFx: {
+                    id: 'pass-fx',
+                    kind: 'PASS',
+                    label: 'PASS',
+                    sourceAnchorKeys: ['action:button:pass:P1:0', 'action:player-area:P1'],
+                    targetAnchorKeys: ['action:unit-zone:P2:0'],
+                    emphasisAnchorKeys: ['action:player-area:P1', 'action:unit-zone:P2:0'],
+                    sourceRect: null,
+                    targetRect: null,
+                },
+            }]);
+        });
+
+        await expect(page.locator('.fx-action-shell.is-pass')).toBeVisible();
+        await expect(page.locator('.fx-action-impact.is-pass')).toBeVisible();
+        await expect(page.locator('.fx-action-arrowhead')).toBeVisible();
+        await expect(page.locator('.fx-action-badge')).toContainText('PASS');
         expect(consoleErrors).toEqual([]);
     });
 
