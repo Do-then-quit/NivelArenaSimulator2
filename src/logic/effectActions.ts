@@ -135,6 +135,31 @@ function countFriendlyExitUnits(player: any): number {
     return player.unitZones.filter((zone: any) => zone?.unit && zoneHasKeywordLike(zone, '엑시트')).length;
 }
 
+function cardHasTraitLike(card: any, trait: string): boolean {
+    if (!card || !trait) return false;
+    if (Array.isArray(card.traits)) {
+        return card.traits.some((entry: unknown) => String(entry ?? '').includes(trait));
+    }
+    return String(card.traits || '').includes(trait);
+}
+
+function countFriendlyTraitAttacks(ctx: any, trait: string): number {
+    if (typeof ctx.machine?.getTraitAttackCountThisTurn !== 'function') return 0;
+    return Math.max(0, Number(ctx.machine.getTraitAttackCountThisTurn(ctx.player.id, trait) || 0));
+}
+
+function trashTopCards(player: any, count: number): any[] {
+    const trashed: any[] = [];
+    for (let i = 0; i < count; i++) {
+        if (player.deck.length <= 0) break;
+        const card = player.deck.pop();
+        if (!card) break;
+        player.trash.push(card);
+        trashed.push(card);
+    }
+    return trashed;
+}
+
 const complexAction: ActionImplementation = (ctx, params, _targets) => {
     if ((params as any).mode === 'GUARDIAN_TRANSFER_POWER') {
         if (!_targets || _targets.length < 2) return;
@@ -159,6 +184,369 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             value: transferredPower,
             duration: params.duration || 'TURN_END',
         });
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_002_EXIT_DRAW_BY_HOMUNCULUS_ATTACK_COUNT') {
+        const homunculusAttackCount = countFriendlyTraitAttacks(ctx, '호문클루스');
+        if (homunculusAttackCount <= 0) return;
+        drawCard(ctx, {
+            count: homunculusAttackCount,
+            __sourceActivation: (params as any).__sourceActivation,
+        }, _targets);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_003_EXIT_REVEAL_BY_HOMUNCULUS_ATTACK_COUNT') {
+        const homunculusAttackCount = countFriendlyTraitAttacks(ctx, '호문클루스');
+        if (homunculusAttackCount <= 0 || ctx.player.deck.length <= 0) return;
+        revealTopAndChooseToHand(ctx, {
+            count: homunculusAttackCount,
+            remainingDestination: 'TRASH',
+            __sourceActivation: (params as any).__sourceActivation,
+        }, _targets);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_004_EXIT_DESTROY_BY_HOMUNCULUS_ATTACK_COUNT') {
+        const homunculusAttackCount = countFriendlyTraitAttacks(ctx, '호문클루스');
+        if (homunculusAttackCount <= 0) return;
+
+        const targetSchema = {
+            scope: 'OPP_FIELD',
+            type: 'UNIT',
+            count: 1,
+            filters: [{ type: 'COST_LIMIT', value: homunculusAttackCount }],
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST07_004_SELECT_OPP_UNIT_TO_TRASH',
+            actionValue: {},
+            effectDescription: '트래시할 상대 유닛을 선택한다.',
+            validTargets: 'OPP_UNITS',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.EXIT,
+            description: 'ST07-004 resolve exit destroy by homunculus attack count',
+            targets: targetSchema as any,
+            action: { type: 'DESTROY_UNIT', params: {} },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_006_EXIT_TRASH_TOP_AND_DAMAGE_BY_HOMUNCULUS_COUNT') {
+        const homunculusAttackCount = countFriendlyTraitAttacks(ctx, '호문클루스');
+        if (homunculusAttackCount <= 0) return;
+
+        const trashedCards = trashTopCards(ctx.player, homunculusAttackCount);
+        const trashedHomunculusCount = trashedCards.filter((card: any) => cardHasTraitLike(card, '호문클루스')).length;
+        if (trashedHomunculusCount <= 0) return;
+
+        damage(ctx, {
+            value: trashedHomunculusCount,
+            target: 'OPPONENT',
+            __sourceActivation: (params as any).__sourceActivation,
+        }, _targets);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_007_EXIT_SELECT_REPEAT_DEBUFF_BY_HOMUNCULUS_COUNT') {
+        const homunculusAttackCount = countFriendlyTraitAttacks(ctx, '호문클루스');
+        if (homunculusAttackCount <= 0) return;
+
+        const targetSchema = {
+            scope: 'OPP_FIELD',
+            type: 'UNIT',
+            count: homunculusAttackCount,
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST07_007_SELECT_EXIT_DEBUFF_TARGETS',
+            actionValue: {
+                allowPartialSelection: true,
+                allowDuplicates: true,
+            },
+            effectDescription: '파워를 감소시킬 상대 유닛을 선택한다.',
+            validTargets: 'OPP_UNITS',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.EXIT,
+            description: 'ST07-007 resolve repeated exit debuff',
+            targets: targetSchema as any,
+            action: { type: 'BUFF_POWER', params: { value: -3000 } },
+            duration: 'TURN_END',
+            actionDurationOverride: 'TURN_END',
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_009_ACTIVE_ATTACK_TRASH_EXIT_HOMUNCULUS_FOR_HIT') {
+        if (!ctx.unitZone?.unit) return;
+        const selectedZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (!selectedZone?.unit) return;
+        const owner = getOwnerOfZone(ctx.machine, selectedZone);
+        if (!owner || owner.id !== ctx.player.id) return;
+
+        ctx.machine.destroyUnit(owner, selectedZone, undefined, 'EFFECT');
+        buffHit(ctx, { value: 1, duration: 'TURN_END' }, [ctx.unitZone]);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_010_ACTIVE_MAIN_DEPLOY_EXIT_FROM_TRASH') {
+        const stage = (params as any).stage;
+        if (stage === 'SELECT_ZONE') {
+            const selectedCard = (_targets || []).find((card: any) =>
+                ctx.player.trash.includes(card) &&
+                card.type === CardType.UNIT &&
+                getCardCost(ctx.machine, card) <= 3 &&
+                cardHasKeywordLike(card, '엑시트')
+            );
+            if (!selectedCard) return;
+            if (!ctx.player.unitZones.some((zone: any) => !zone?.unit)) return;
+
+            const zoneSchema = {
+                scope: 'MY_FIELD',
+                type: 'ALL',
+                count: 1,
+                selectMode: 'MANUAL',
+            } as const;
+            ctx.machine.state.interactionMode = 'SELECT_TARGET';
+            ctx.machine.state.pendingEffect = {
+                sourceCard: ctx.sourceCard,
+                sourcePlayerId: ctx.player.id,
+                controllerPlayerId: ctx.player.id,
+                actionType: 'ST07_010_SELECT_EMPTY_ZONE_TO_DEPLOY',
+                actionValue: {
+                    selectedCardRef: selectedCard,
+                    selectedCardId: selectedCard.id,
+                },
+                effectDescription: '배치할 빈 유닛 존을 선택한다.',
+                validTargets: 'MY_UNITS',
+                targetSchema: zoneSchema as any,
+                selectedTargets: [],
+            };
+            ctx.machine.setPendingRuntime(ctx, null);
+            ctx.machine.setInteractionOwner(ctx.player.id);
+            return;
+        }
+
+        const candidates = ctx.player.trash.filter((card: any) =>
+            card.type === CardType.UNIT &&
+            getCardCost(ctx.machine, card) <= 3 &&
+            cardHasKeywordLike(card, '엑시트')
+        );
+        if (candidates.length <= 0) return;
+        if (!ctx.player.unitZones.some((zone: any) => !zone?.unit)) return;
+
+        const targetSchema = {
+            scope: 'MY_TRASH',
+            type: 'CARD',
+            count: 1,
+            filters: [
+                { type: 'UNIT_TYPE', value: CardType.UNIT },
+                { type: 'HAS_KEYWORD', value: '엑시트' },
+                { type: 'COST_LIMIT', value: 3 },
+            ],
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST07_010_SELECT_TRASH_EXIT_UNIT_TO_DEPLOY',
+            actionValue: {},
+            effectDescription: '배치할 유닛을 선택한다.',
+            validTargets: 'MY_TRASH',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE_MAIN,
+            description: 'ST07-010 resolve deploy from trash',
+            targets: targetSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'ST07_010_ACTIVE_MAIN_DEPLOY_EXIT_FROM_TRASH',
+                    stage: 'SELECT_ZONE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_011_ENTRY_RETURN_HOMUNCULUS_TO_BOTTOM') {
+        if (!ctx.unitZone?.unit) return;
+        const laneIndex = ctx.player.unitZones.indexOf(ctx.unitZone);
+        if (laneIndex < 0) return;
+        const encounterZone = ctx.opponent.unitZones[laneIndex];
+        if (!encounterZone?.unit) return;
+
+        const requiredCount = Math.max(0, getCardCost(ctx.machine, encounterZone.unit));
+        if (requiredCount <= 0) return;
+
+        const candidates = ctx.player.trash.filter((card: any) =>
+            cardHasTraitLike(card, '호문클루스') && !cardHasKeywordLike(card, '트리거')
+        );
+        if (candidates.length <= 0) return;
+
+        const targetSchema = {
+            scope: 'MY_TRASH',
+            type: 'CARD',
+            count: requiredCount,
+            filters: [
+                { type: 'HAS_TRAIT', value: '호문클루스' },
+                { type: 'NOT_HAS_KEYWORD', value: '트리거' },
+            ],
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST07_011_SELECT_TRASH_TO_BOTTOM',
+            actionValue: {
+                allowPartialSelection: true,
+                minSelection: requiredCount,
+            },
+            effectDescription: '덱 맨 아래에 놓을 카드를 선택한다.',
+            validTargets: 'MY_TRASH',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ENTRY,
+            description: 'ST07-011 resolve trash to deck bottom',
+            targets: targetSchema as any,
+            action: {
+                type: 'MOVE_FROM_TRASH_TO_DECK_BOTTOM',
+                params: { thenDestroyEncounter: true },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_013_TRASH_TOP4_THEN_MOVE_TO_DAMAGE_AND_OPTIONAL_DRAW') {
+        const stage = (params as any).stage;
+        if (stage === 'RESOLVE') {
+            const selectedCard = (_targets || []).find((card: any) => ctx.player.trash.includes(card));
+            if (!selectedCard) return;
+
+            const trashIndex = ctx.player.trash.indexOf(selectedCard);
+            if (trashIndex === -1) return;
+            const [movedCard] = ctx.player.trash.splice(trashIndex, 1);
+            if (!movedCard) return;
+            ctx.player.damage.push(movedCard);
+
+            if (ctx.player.damage.length >= 7) {
+                const optionalEffect = {
+                    activation: ActivationCondition.ACTIVE,
+                    optional: true,
+                    description: '카드를 1장 드로우할 수 있다.',
+                    action: { type: 'DRAW', params: { count: 1 } },
+                } as any;
+                ctx.machine.effectManager.processEffect(optionalEffect, ctx);
+            }
+            return;
+        }
+
+        trashTopCards(ctx.player, 4);
+        if (ctx.player.trash.length <= 0) return;
+
+        const targetSchema = {
+            scope: 'MY_TRASH',
+            type: 'CARD',
+            count: 1,
+            selectMode: 'MANUAL',
+        } as const;
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST07_013_SELECT_TRASH_TO_DAMAGE',
+            actionValue: {},
+            effectDescription: '대미지 존에 놓을 카드를 선택한다.',
+            validTargets: 'MY_TRASH',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE,
+            description: 'ST07-013 resolve trash to damage',
+            targets: targetSchema as any,
+            action: {
+                type: 'COMPLEX_ACTION',
+                params: {
+                    mode: 'ST07_013_TRASH_TOP4_THEN_MOVE_TO_DAMAGE_AND_OPTIONAL_DRAW',
+                    stage: 'RESOLVE',
+                },
+            },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_014_ACTIVE_TRASH_TOP4_THEN_OPTIONAL_RUNWAY_RECOVER') {
+        trashTopCards(ctx.player, 4);
+
+        const targetSchema = {
+            scope: 'MY_TRASH',
+            type: 'CARD',
+            count: 1,
+            filters: [
+                { type: 'UNIT_TYPE', value: CardType.UNIT },
+                { type: 'HAS_TRAIT', value: '런웨이 파이터' },
+            ],
+            selectMode: 'MANUAL',
+        } as const;
+        const candidates = ctx.player.trash.filter((card: any) =>
+            card.type === CardType.UNIT && cardHasTraitLike(card, '런웨이 파이터')
+        );
+        if (candidates.length <= 0) return;
+
+        ctx.machine.state.interactionMode = 'SELECT_TARGET';
+        ctx.machine.state.pendingEffect = {
+            sourceCard: ctx.sourceCard,
+            sourcePlayerId: ctx.player.id,
+            controllerPlayerId: ctx.player.id,
+            actionType: 'ST07_014_SELECT_RUNWAY_UNIT_TO_HAND',
+            actionValue: { allowPartialSelection: true },
+            effectDescription: '패에 넣을 런웨이 파이터 유닛을 선택한다.',
+            validTargets: 'MY_TRASH',
+            targetSchema: targetSchema as any,
+            selectedTargets: [],
+        };
+        ctx.machine.setPendingRuntime(ctx, {
+            activation: ActivationCondition.ACTIVE,
+            description: 'ST07-014 resolve optional runway recover',
+            targets: targetSchema as any,
+            action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
+        } as any);
+        ctx.machine.setInteractionOwner(ctx.player.id);
+        return;
+    }
+
+    if ((params as any).mode === 'ST07_014_TRIGGER_TRASH_TOP4') {
+        trashTopCards(ctx.player, 4);
         return;
     }
 

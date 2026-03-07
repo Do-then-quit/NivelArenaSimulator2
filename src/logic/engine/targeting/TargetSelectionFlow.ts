@@ -90,7 +90,8 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         pending.actionType === 'BT03_041_SELECT_EMPTY_ZONE_TO_REVIVE_SELF' ||
         pending.actionType === 'BT03_067_SELECT_EMPTY_ZONE_TO_REVIVE_EQUIPPED_UNIT' ||
         pending.actionType === 'SB01_007_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
-        pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY';
+        pending.actionType === 'SB01_014_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+        pending.actionType === 'ST07_010_SELECT_EMPTY_ZONE_TO_DEPLOY';
     if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
     const targetPlayer = engine.getPlayerById(targetPlayerId);
     if (!targetPlayer) return;
@@ -310,6 +311,49 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         return;
     }
 
+    if (pending.actionType === 'ST07_010_SELECT_EMPTY_ZONE_TO_DEPLOY') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        if (targetZone.unit) return;
+
+        const selectedCardRef = pending.actionValue?.selectedCardRef;
+        const selectedCardId = pending.actionValue?.selectedCardId;
+        const trashIndexByRef = sourcePlayer.trash.indexOf(selectedCardRef);
+        const trashIndex = trashIndexByRef !== -1
+            ? trashIndexByRef
+            : sourcePlayer.trash.findIndex((card: any) =>
+                card?.id === selectedCardId &&
+                card?.type === 'UNIT' &&
+                engine.getCardCost(card) <= 3
+            );
+        if (trashIndex < 0) {
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        const [placedUnit] = sourcePlayer.trash.splice(trashIndex, 1);
+        if (!placedUnit) {
+            engine.handleEffectCompletion(context, pending);
+            return;
+        }
+
+        targetZone.unit = placedUnit;
+        targetZone.items = [];
+        targetZone.buffs = [];
+        targetZone.temporaryEffects = [];
+        targetZone.hasAttacked = false;
+        targetZone.attackCountThisTurn = 0;
+        targetZone.extraAttackAllowance = 0;
+        targetZone.isExhausted = false;
+        targetZone.hasPlacedUnitThisTurn = false;
+        targetZone.hasActivatedEffectThisTurn = false;
+        targetZone.activatedEffectKeys = {};
+
+        engine.triggerEntryEffectsForPlacedUnit(sourcePlayer, targetZone);
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
     // If everything good, execute
     if (effect.action.type === 'DESTROY_LANE_LOWEST') {
         context.selectedLaneIndex = zoneIndex;
@@ -319,7 +363,19 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
     const maxCount = targetSchema.count || 1;
     const selectedTargets = pending.selectedTargets ?? (pending.selectedTargets = []);
     if (maxCount > 1) {
-        if (!selectedTargets.includes(targetZone)) {
+        const allowDuplicates = pending.actionValue?.allowDuplicates === true;
+        if (allowDuplicates) {
+            if (selectedTargets.length >= maxCount) {
+                console.log(`Cannot select more than ${maxCount} targets.`);
+                return;
+            }
+            if (!canAddTargetWithinTotalCost(targetSchema, context, selectedTargets, targetZone)) {
+                console.log('Cannot select target: total cost limit exceeded.');
+                return;
+            }
+            selectedTargets.push(targetZone);
+            console.log(`Target added. ${selectedTargets.length}/${maxCount}`);
+        } else if (!selectedTargets.includes(targetZone)) {
             if (selectedTargets.length >= maxCount) {
                 console.log(`Cannot select more than ${maxCount} targets.`);
                 return;

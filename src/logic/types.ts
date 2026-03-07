@@ -124,6 +124,7 @@ export interface TargetFilter {
     | 'POWER_MIN'
     | 'POWER_LIMIT'
     | 'COST_LOWER_THAN_COST_PAYMENT'
+    | 'COST_LIMIT_BY_COST_PAYMENT'
     | 'COST_LOWER_THAN_TRASHED_UNIT'
     | 'COST_LOWER_THAN_SKILL_ZONE_COUNT'
     | 'COST_EQUAL'
@@ -197,6 +198,7 @@ export interface EffectCondition {
     | 'OPPONENT_HAND_TRASHED_BY_EFFECT_THIS_TURN_MIN'
     | 'TRASH_REASON'
     | 'ITEM_COUNT_GTE_ENCOUNTER_HIT'
+    | 'FIELD_TRASHED_FRIENDLY_THIS_TURN_MIN'
     | 'CONTEXT_FLAG'
     | 'SKILL_ZONE_COUNT_MIN'
     | 'ATTACK_COUNT_THIS_TURN_MIN'
@@ -385,8 +387,10 @@ export interface GameState {
     combatBlocked: boolean; // Tracks if a block was declared
     turnStats?: {
         effectTrashedFriendlyUnitCountByPlayerId: Record<string, number>;
+        fieldTrashedFriendlyUnitCountByPlayerId: Record<string, number>;
         handTrashedByEffectCountByPlayerId: Record<string, number>;
         unitAttackCountByPlayerId: Record<string, number>;
+        traitAttackCountByPlayerId: Record<string, Record<string, number>>;
     };
 }
 

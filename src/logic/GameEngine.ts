@@ -140,8 +140,10 @@ export class GameEngine {
             combatBlocked: false,
             turnStats: {
                 effectTrashedFriendlyUnitCountByPlayerId: {},
+                fieldTrashedFriendlyUnitCountByPlayerId: {},
                 handTrashedByEffectCountByPlayerId: {},
                 unitAttackCountByPlayerId: {},
+                traitAttackCountByPlayerId: {},
             },
         };
         this.startGame();
@@ -391,8 +393,10 @@ export class GameEngine {
         if (!this.state.turnStats) {
             this.state.turnStats = {
                 effectTrashedFriendlyUnitCountByPlayerId: {},
+                fieldTrashedFriendlyUnitCountByPlayerId: {},
                 handTrashedByEffectCountByPlayerId: {},
                 unitAttackCountByPlayerId: {},
+                traitAttackCountByPlayerId: {},
             };
         }
         return this.state.turnStats;
@@ -402,6 +406,12 @@ export class GameEngine {
         const stats = this.getTurnStats();
         stats.effectTrashedFriendlyUnitCountByPlayerId[playerId] =
             (stats.effectTrashedFriendlyUnitCountByPlayerId[playerId] || 0) + 1;
+    }
+
+    private incrementFieldTrashedFriendlyUnitCount(playerId: string) {
+        const stats = this.getTurnStats();
+        stats.fieldTrashedFriendlyUnitCountByPlayerId[playerId] =
+            (stats.fieldTrashedFriendlyUnitCountByPlayerId[playerId] || 0) + 1;
     }
 
     private incrementHandTrashedByEffectCount(playerId: string, amount: number) {
@@ -417,8 +427,36 @@ export class GameEngine {
             (stats.unitAttackCountByPlayerId[playerId] || 0) + 1;
     }
 
+    private getCardTraitTokens(card: Card | null | undefined): string[] {
+        if (!card?.traits) return [];
+        if (Array.isArray(card.traits)) {
+            return card.traits
+                .flatMap((trait: unknown) => String(trait ?? '').split('/'))
+                .map((trait: string) => trait.trim())
+                .filter((trait: string) => trait.length > 0 && trait !== '-');
+        }
+        return String(card.traits)
+            .split('/')
+            .map((trait: string) => trait.trim())
+            .filter((trait: string) => trait.length > 0 && trait !== '-');
+    }
+
+    public incrementTraitAttackCount(playerId: string, card: Card | null | undefined) {
+        if (!card) return;
+        const stats = this.getTurnStats();
+        const traitCounts = stats.traitAttackCountByPlayerId[playerId] || {};
+        this.getCardTraitTokens(card).forEach((trait: string) => {
+            traitCounts[trait] = (traitCounts[trait] || 0) + 1;
+        });
+        stats.traitAttackCountByPlayerId[playerId] = traitCounts;
+    }
+
     public getEffectTrashedFriendlyUnitCount(playerId: string): number {
         return this.getTurnStats().effectTrashedFriendlyUnitCountByPlayerId[playerId] || 0;
+    }
+
+    public getFieldTrashedFriendlyUnitCount(playerId: string): number {
+        return this.getTurnStats().fieldTrashedFriendlyUnitCountByPlayerId[playerId] || 0;
     }
 
     public getHandTrashedByEffectCount(playerId: string): number {
@@ -429,11 +467,17 @@ export class GameEngine {
         return this.getTurnStats().unitAttackCountByPlayerId[playerId] || 0;
     }
 
+    public getTraitAttackCountThisTurn(playerId: string, trait: string): number {
+        return this.getTurnStats().traitAttackCountByPlayerId[playerId]?.[trait] || 0;
+    }
+
     private resetTurnStats() {
         this.state.turnStats = {
             effectTrashedFriendlyUnitCountByPlayerId: {},
+            fieldTrashedFriendlyUnitCountByPlayerId: {},
             handTrashedByEffectCountByPlayerId: {},
             unitAttackCountByPlayerId: {},
+            traitAttackCountByPlayerId: {},
         };
     }
 
@@ -2016,6 +2060,7 @@ export class GameEngine {
             attackerZone.hasAttacked = attackerZone.attackCountThisTurn > 0;
         }
         this.incrementTurnUnitAttackCount(this.currentPlayer.id);
+        this.incrementTraitAttackCount(this.currentPlayer.id, attackerZone.unit);
 
         // COMBAT STEP 1: Attack Declaration
         this.state.combatStep = 'ATTACK_DECLARATION';

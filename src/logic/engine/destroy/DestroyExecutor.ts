@@ -222,6 +222,9 @@ export function destroyUnit(
         zone.attackCountThisTurn = 0;
         zone.extraAttackAllowance = 0;
         zone.hasAttacked = false;
+        if (reason === 'BATTLE' || reason === 'EFFECT') {
+            engine.incrementFieldTrashedFriendlyUnitCount(player.id);
+        }
         if (reason === 'EFFECT' || reason === 'RULE') {
             engine.incrementEffectTrashedFriendlyUnitCount(player.id);
         }

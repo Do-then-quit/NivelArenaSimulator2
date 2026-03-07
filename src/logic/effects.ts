@@ -500,6 +500,11 @@ export class EffectManager {
                 const countByEffect = context.machine.getEffectTrashedFriendlyUnitCount(context.player.id);
                 return countByEffect >= min;
             }
+            case 'FIELD_TRASHED_FRIENDLY_THIS_TURN_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const countFromField = context.machine.getFieldTrashedFriendlyUnitCount(context.player.id);
+                return countFromField >= min;
+            }
             case 'OPPONENT_HAND_TRASHED_BY_EFFECT_THIS_TURN_MIN': {
                 const min = typeof value === 'number' ? value : value?.min ?? 1;
                 const countByEffect = context.machine.getHandTrashedByEffectCount(context.opponent.id);

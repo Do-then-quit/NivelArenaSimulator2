@@ -260,9 +260,12 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
 
         const shouldAllowConfirm = (candidateTargets: any[]): boolean => {
             const minSelection = Math.max(0, Number(pending.actionValue?.minSelection ?? 0));
+            const allowDuplicates = pending.actionValue?.allowDuplicates === true;
+            const remainingSelectableCount = allowDuplicates
+                ? candidateTargets.length
+                : candidateTargets.filter(target => !selectedTargets.includes(target)).length;
             if (pending.actionValue?.allowPartialSelection === true) {
                 if (selectedTargets.length >= minSelection) return true;
-                const remainingSelectableCount = candidateTargets.filter(target => !selectedTargets.includes(target)).length;
                 return selectedTargets.length + remainingSelectableCount < minSelection;
             }
             if (!needsConfirm) {
@@ -276,7 +279,6 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
             if (selectedCount >= requiredCount) return true;
 
             // Rule 1.3.2: if remaining valid targets cannot fill the requirement, allow partial confirm.
-            const remainingSelectableCount = candidateTargets.filter(target => !selectedTargets.includes(target)).length;
             return selectedCount + remainingSelectableCount < requiredCount;
         };
 

@@ -198,6 +198,13 @@ export class TargetSelector {
                             return this.getCardCost(engine, unit) < this.getCardCost(engine, context.costPaymentCard);
                         });
                         break;
+                    case 'COST_LIMIT_BY_COST_PAYMENT':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            if (!card || !context.costPaymentCard) return false;
+                            return this.getCardCost(engine, card) <= this.getCardCost(engine, context.costPaymentCard);
+                        });
+                        break;
                     case 'COST_LOWER_THAN_TRASHED_UNIT':
                         candidates = candidates.filter(c => {
                             const card = this.getCardFromTarget(c);
@@ -449,6 +456,13 @@ export class TargetSelector {
                     case 'COST_LOWER_THAN_COST_PAYMENT':
                         if (!unit || !context.costPaymentCard) return false;
                         if (this.getCardCost(engine, unit) >= this.getCardCost(engine, context.costPaymentCard)) return false;
+                        break;
+                    case 'COST_LIMIT_BY_COST_PAYMENT':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || !context.costPaymentCard) return false;
+                            if (this.getCardCost(engine, card) > this.getCardCost(engine, context.costPaymentCard)) return false;
+                        }
                         break;
                     case 'COST_LOWER_THAN_TRASHED_UNIT':
                         {
