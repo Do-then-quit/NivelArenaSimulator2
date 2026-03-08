@@ -57,10 +57,6 @@ function addPowerBuff(zone: any, value: number, id: string = `BT05_POWER_${value
     } as any);
 }
 
-function repeatCard(getCard: (id: string) => Card, id: string, count: number): Card[] {
-    return Array.from({ length: count }, () => getCard(id));
-}
-
 function setHighSize(engine: any, level: number = 20): void {
     engine.state.players.forEach((player: any) => {
         player.leaderLevel = level;
@@ -98,82 +94,6 @@ function chooseOptional(engine: any, actorPlayerId: string, confirm: boolean = t
     return action;
 }
 
-function chooseZone(engine: any, actorPlayerId: string, targetPlayerId: string, zoneIndex: number) {
-    const action = findAction(
-        engine,
-        actorPlayerId,
-        'SELECT_ZONE_TARGET',
-        (entry: any) => entry.targetPlayerId === targetPlayerId && entry.zoneIndex === zoneIndex,
-    );
-    if (action) engine.step(action);
-    return action;
-}
-
-function chooseHand(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
-    const player = engine.getPlayerById(actorPlayerId);
-    const action = findAction(
-        engine,
-        actorPlayerId,
-        'SELECT_HAND_TARGET',
-        (entry: any) => predicate(player.hand[entry.handIndex]),
-    );
-    if (action) engine.step(action);
-    return action;
-}
-
-function chooseTrash(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
-    const player = engine.getPlayerById(actorPlayerId);
-    const action = findAction(
-        engine,
-        actorPlayerId,
-        'SELECT_TRASH_TARGET',
-        (entry: any) => predicate(player.trash[entry.trashIndex]),
-    );
-    if (action) engine.step(action);
-    return action;
-}
-
-function chooseDamage(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
-    const player = engine.getPlayerById(actorPlayerId);
-    const action = findAction(
-        engine,
-        actorPlayerId,
-        'SELECT_DAMAGE_TARGET',
-        (entry: any) => predicate(player.damage[entry.damageIndex]),
-    );
-    if (action) engine.step(action);
-    return action;
-}
-
-function chooseRevealed(engine: any, actorPlayerId: string, predicate?: (card: Card) => boolean) {
-    const action = findAction(
-        engine,
-        actorPlayerId,
-        'SELECT_REVEALED_TARGET',
-        (entry: any) => !predicate || predicate(engine.state.revealedCards[entry.revealedIndex]),
-    );
-    if (action) engine.step(action);
-    return action;
-}
-
-function chooseCostHand(engine: any, actorPlayerId: string, predicate?: (card: Card) => boolean) {
-    const player = engine.getPlayerById(actorPlayerId);
-    const action = findAction(
-        engine,
-        actorPlayerId,
-        'SELECT_COST_HAND',
-        (entry: any) => !predicate || predicate(player.hand[entry.handIndex]),
-    );
-    if (action) engine.step(action);
-    return action;
-}
-
-function confirmTargets(engine: any, actorPlayerId: string) {
-    const action = findAction(engine, actorPlayerId, 'CONFIRM_TARGETS');
-    if (action) engine.step(action);
-    return action;
-}
-
 function resolveBlock(engine: any, actorPlayerId: string, blockerZoneIndex: number, shouldBlock: boolean = true) {
     const action = findAction(
         engine,
@@ -183,15 +103,6 @@ function resolveBlock(engine: any, actorPlayerId: string, blockerZoneIndex: numb
     );
     if (action) engine.step(action);
     return action;
-}
-
-function advanceUntil(engine: any, predicate: () => boolean, maxSteps: number = 24): boolean {
-    let guard = 0;
-    while (!predicate() && guard < maxSteps) {
-        engine.nextPhase();
-        guard += 1;
-    }
-    return predicate();
 }
 
 function hasTemporaryAction(zone: any, actionType: string): boolean {

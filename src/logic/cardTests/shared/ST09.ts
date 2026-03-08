@@ -16,14 +16,6 @@ function findAction(
         .find((action: any) => action.type === type && (!predicate || predicate(action)));
 }
 
-function advanceUntil(engine: any, predicate: () => boolean, maxSteps = 24) {
-    let guard = 0;
-    while (!predicate() && guard < maxSteps) {
-        engine.nextPhase();
-        guard += 1;
-    }
-}
-
 function createCreditEntryScenario(cardId: string, name: string, drawCardId: string, effectIndex = 0): UnifiedTestCase {
     return {
         testId: `${cardId}-Entry`,

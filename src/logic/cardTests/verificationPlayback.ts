@@ -15,7 +15,7 @@ export type RecordedUiAction =
     | { type: 'CONFIRM_TARGETS' }
     | { type: 'RESOLVE_BLOCK'; shouldBlock: boolean; blockerZoneIndex?: number };
 
-export type RecordedScenarioStep = (
+export type RecordedScenarioStepData = (
     | { kind: 'play_unit'; handIndex: number; zoneIndex: number }
     | { kind: 'play_skill'; handIndex: number }
     | { kind: 'play_item'; handIndex: number; zoneIndex: number }
@@ -29,7 +29,9 @@ export type RecordedScenarioStep = (
     | { kind: 'select_cost_direct'; playerIndex: number; handIndex: number }
     | { kind: 'resolve_block_direct'; shouldBlock: boolean; blockerZoneIndex?: number }
     | { kind: 'ui_action'; action: RecordedUiAction }
-) & {
+);
+
+export type RecordedScenarioStep = RecordedScenarioStepData & {
     preState?: unknown;
     postState?: unknown;
 };
@@ -213,7 +215,7 @@ export function recordUnifiedScenario(test: UnifiedTestCase): RecordedUnifiedSce
     const initialSerializableState = engine.getSerializableState();
 
     const steps: RecordedScenarioStep[] = [];
-    const pushStep = (step: Omit<RecordedScenarioStep, 'preState' | 'postState'>) => {
+    const pushStep = (step: RecordedScenarioStepData) => {
         const entry: RecordedScenarioStep = {
             ...step,
             preState: engine.getSerializableState(),

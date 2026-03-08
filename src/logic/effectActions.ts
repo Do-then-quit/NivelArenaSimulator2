@@ -463,14 +463,14 @@ function getValidEquipZoneIndexesForItem(
     if (!item || item.type !== CardType.ITEM) return [] as number[];
     return ctx.player.unitZones
         .map((zone: UnitZoneState, zoneIndex: number) => ({ zone, zoneIndex }))
-        .filter(({ zone }) => {
+        .filter(({ zone }: { zone: UnitZoneState; zoneIndex: number }) => {
             if (!zone?.unit) return false;
             if (options?.excludeZone && zone === options.excludeZone) return false;
             const duplicateName = zone.items.some((equipped: any) => equipped?.name && equipped.name === item.name);
             if (duplicateName) return false;
             return RuleValidator.validateItemEquipConditions(ctx.machine, ctx.player, zone, item).valid;
         })
-        .map(({ zoneIndex }) => zoneIndex);
+        .map(({ zoneIndex }: { zone: UnitZoneState; zoneIndex: number }) => zoneIndex);
 }
 
 function hasNonAttributeCardOnField(player: any, rawAttribute: unknown): boolean {

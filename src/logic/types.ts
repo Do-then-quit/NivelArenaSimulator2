@@ -47,6 +47,7 @@ export enum ActivationCondition {
 export type ActionType =
     | 'DRAW'
     | 'GAIN_LEVEL'
+    | 'AWAKEN'
     | 'DAMAGE'
     | 'BUFF_POWER'
     | 'BUFF_HIT'
@@ -258,6 +259,7 @@ export interface EffectAction {
     type: ActionType;
     params: Record<string, any>; // Flexible param object
     target?: string; // Legacy field, keeping for now but prefer TargetSchema
+    duration?: string;
 }
 
 export interface GameContext {

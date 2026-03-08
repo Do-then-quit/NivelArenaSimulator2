@@ -50,15 +50,6 @@ function addPowerBuff(zone: any, value: number, id: string = `BT04_POWER_${value
     } as any);
 }
 
-function addHitBuff(zone: any, value: number, id: string = `BT04_HIT_${value}`): void {
-    zone.buffs.push({
-        id,
-        type: 'HIT',
-        value,
-        duration: 'PERMANENT',
-    } as any);
-}
-
 function repeatCard(getCard: (id: string) => Card, id: string, count: number): Card[] {
     return Array.from({ length: count }, () => getCard(id));
 }
@@ -524,7 +515,6 @@ const tests: UnifiedTestCase[] = [
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
-            const p1 = engine.currentPlayer;
             const p2 = engine.opponentPlayer;
             const before = zonePower(engine, p2, 0);
             engine.activateEffect(0, 1);
@@ -1144,7 +1134,7 @@ const tests: UnifiedTestCase[] = [
             const pick = chooseZone(engine, p1.id, p2.id, 0);
             return [
                 { pass: !!pick, message: '대미지 이동 EXIT를 부여할 상대 유닛 선택 가능' },
-                { pass: p2.lockedActivationsUntilTurnEnd?.[String(ActivationCondition.EXIT)] === true, message: '상대 EXIT 잠금 적용' },
+                { pass: p2.lockedActivationsUntilTurnEnd?.[ActivationCondition.EXIT] === true, message: '상대 EXIT 잠금 적용' },
                 { pass: hasTemporaryEffect(p2.unitZones[0], '엑시트 : 이 유닛을 자신의 대미지 존에 놓는다.'), message: '선택한 상대 유닛에 EXIT 부여' },
             ];
         },
@@ -1558,7 +1548,7 @@ const tests: UnifiedTestCase[] = [
                 .getLegalActions(p1.id)
                 .filter((action: any) => action.type === 'SELECT_TRASH_TARGET')
                 .map((action: any) => p1.trash[action.trashIndex]?.id);
-            const chooseTrashCard = chooseTrash(engine, p1.id, (card: Card) => card?.id === 'ST01-002');
+            chooseTrash(engine, p1.id, (card: Card) => card?.id === 'ST01-002');
             return [
                 { pass: !!chooseHandCard, message: '손패의 용의 계곡/혹한의 날들 카드 선택 가능' },
                 { pass: legalIds.includes('ST01-002'), message: '코스트 이하 카드 선택 가능' },
@@ -2378,7 +2368,7 @@ const tests: UnifiedTestCase[] = [
             const confirm = chooseOptional(engine, p1.id, true);
             const pay = chooseCostHand(engine, p1.id);
             const choose = chooseOption(engine, p1.id, '어태커');
-            const untilTurn = p2.lockedActivationsUntilTurnCount?.[String(ActivationCondition.ATTACKER)];
+            const untilTurn = p2.lockedActivationsUntilTurnCount?.[ActivationCondition.ATTACKER];
             return [
                 { pass: !!confirm, message: '활성화 잠금 옵션 수락 가능' },
                 { pass: !!pay, message: '손패 1장 코스트 지불 가능' },
