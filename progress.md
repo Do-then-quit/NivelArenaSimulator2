@@ -15,3 +15,7 @@ Original prompt: BT05의 unifiedtest를 BT04의 테스트를 참고해서 저렇
 - Implemented: widened deck-builder tests so desktop/mobile filters assert `ST07` and `ST09` options are present.
 - Verified: reran the deck-builder Vitest subset and it passed (`14` tests).
 - Verified in browser: selected `ST07` and `ST09` in the pack filter and confirmed the visible card rows switch to `ST07-*` and `ST09-*` entries.
+- Follow-up request: fill missing `BT05` image files for deck builder rendering.
+- Root cause confirmed: local assets for `BT05-001.jpg` through `BT05-018.jpg` were missing while `CardDatabase` still referenced `/assets/cards/${raw.id}.jpg` for every card.
+- Implemented: downloaded the missing 18 BT05 images from the per-card `imageUrl` fields already stored in `packs/BT05.json`.
+- Verified: local BT05 asset scan now reports `missingCount: 0`, and browser checks show `BT05-001` through `BT05-006` loading with non-zero `naturalWidth`/`naturalHeight`.
