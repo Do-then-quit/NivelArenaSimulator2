@@ -4,6 +4,7 @@ import {
     shouldUseDeckBuilderMobilePortraitLayout,
 } from '../../src/DeckBuilderUI';
 import { HoverPreview } from '../../src/HoverPreview';
+import { DECK_BUILDER_ALLOWED_PACKS } from '../../src/logic/DeckBuilderCardPool';
 import { Attribute, Card, CardType } from '../../src/logic/types';
 
 const TEST_CARDS: Card[] = [
@@ -112,5 +113,20 @@ describe('deck builder mobile layout', () => {
         expect(container.querySelector('#db-filter-type')).toBeTruthy();
         expect(container.querySelector('#db-filter-attribute')).toBeTruthy();
         expect(container.querySelector('.db-sidebar')).toBeTruthy();
+    });
+
+    it('renders BT05, ST07, and ST09 in the desktop pack filter options', () => {
+        setViewport(1366, 900);
+        const { container } = renderDeckBuilder();
+
+        const packSelect = container.querySelector('#db-filter-pack') as HTMLSelectElement;
+        const optionValues = Array.from(packSelect.options).map(option => option.value);
+
+        expect(DECK_BUILDER_ALLOWED_PACKS).toContain('BT05');
+        expect(DECK_BUILDER_ALLOWED_PACKS).toContain('ST07');
+        expect(DECK_BUILDER_ALLOWED_PACKS).toContain('ST09');
+        expect(optionValues).toContain('BT05');
+        expect(optionValues).toContain('ST07');
+        expect(optionValues).toContain('ST09');
     });
 });

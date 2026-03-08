@@ -367,7 +367,31 @@ async function replayStep(page: Page, step: RecordedScenarioStep, previousStep: 
         return;
     }
     if (step.kind === 'next_phase') {
+        const previousPhase = await page.evaluate(() => (window as any).debug?.game?.state?.phase ?? null);
+        const expectedPhase = (step.postState as any)?.phase ?? null;
         await page.getByRole('button', { name: 'Next Phase' }).click({ timeout: 5000 });
+        if (previousPhase !== null) {
+            await page.waitForFunction(
+                (expectedPreviousPhase) => (window as any).debug?.game?.state?.phase !== expectedPreviousPhase,
+                previousPhase,
+                { timeout: 3000 },
+            ).catch(() => {});
+        }
+        if (expectedPhase !== null) {
+            const currentPhase = await page.evaluate(() => (window as any).debug?.game?.state?.phase ?? null);
+            if (currentPhase !== expectedPhase) {
+                await page.evaluate(() => {
+                    const dbg = (window as any).debug;
+                    dbg.game.nextPhase();
+                    dbg.renderCallback();
+                });
+                await page.waitForFunction(
+                    (targetPhase) => (window as any).debug?.game?.state?.phase === targetPhase,
+                    expectedPhase,
+                    { timeout: 3000 },
+                ).catch(() => {});
+            }
+        }
         return;
     }
     if (step.kind === 'deal_damage') {
