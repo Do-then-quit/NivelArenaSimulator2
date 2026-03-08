@@ -740,6 +740,78 @@ const behaviorTests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'BT05-065-Entry',
+        name: 'BT05-065 mix entry does not inherit credit draw or trash-discard',
+        description: 'Verifies BT05-065 only resolves its mix entry and has no borrowed credit side effects.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT05-065'), getCard('ST01-011')];
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.damage = [getCard('ST01-002')];
+            p1.deck = [getCard('BT05-081'), getCard('BT05-082'), getCard('BT05-083')];
+            p1.leaderLevel = 10;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const beforeDeckCount = p1.deck.length;
+            const played = playUnitById(engine, p1, 'BT05-065', 0);
+            const confirmOptional = chooseOptional(engine, p1.id, true);
+            const recoverDamage = findAction(
+                engine,
+                p1.id,
+                'SELECT_DAMAGE_TARGET',
+                (action: any) => p1.damage[action.damageIndex]?.id.startsWith('ST01-002'),
+            );
+            if (recoverDamage) engine.step(recoverDamage);
+
+            const handAfterEntry = p1.hand.map((card: Card) => card.id);
+
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const exitDiscardPrompt = findAction(engine, p1.id, 'SELECT_HAND_TARGET');
+
+            return [
+                { pass: played && !!confirmOptional && !!recoverDamage, message: 'BT05-065 mix entry resolved via optional mill and damage recovery' },
+                { pass: handAfterEntry.length === 2, message: 'BT05-065 entry does not draw an extra card on placement' },
+                { pass: handAfterEntry.some((cardId: string) => cardId.startsWith('ST01-011')), message: 'Original hand card stays in hand after entry resolve' },
+                { pass: handAfterEntry.some((cardId: string) => cardId.startsWith('ST01-002')), message: 'Damage-zone card was recovered to hand' },
+                { pass: p1.deck.length === beforeDeckCount - 3, message: 'BT05-065 mills exactly 3 cards from deck' },
+                { pass: !exitDiscardPrompt, message: 'BT05-065 does not prompt a discard when trashed from field' },
+                { pass: p1.hand.length === 2, message: 'BT05-065 trashing leaves hand size unchanged' },
+            ];
+        },
+    },
+    {
+        testId: 'BT05-065-Trigger',
+        name: 'BT05-065 trigger self-trashes and searches a 1-cost item',
+        description: 'Verifies BT05-065 trigger matches pack text after removing the bogus credit helper.',
+        coversEffectIndices: [1, 2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.deck = [getCard('BT05-081'), getCard('BT05-065')];
+            p1.damage = [];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.dealDamage(p1, 1);
+            const pickItem = findAction(
+                engine,
+                p1.id,
+                'SELECT_REVEALED_TARGET',
+                (action: any) => engine.state.revealedCards[action.revealedIndex]?.id.startsWith('BT05-081'),
+            );
+            if (pickItem) engine.step(pickItem);
+
+            return [
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT05-065')), message: 'BT05-065 moved to trash from trigger' },
+                { pass: !!pickItem, message: 'BT05-065 trigger reveals a 1-cost item target' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT05-081')), message: 'BT05-065 trigger recovers a 1-cost item to hand' },
+            ];
+        },
+    },
+    {
         testId: 'BT05-080',
         name: 'Item active moves a non-self equipped item to another friendly unit',
         description: 'Regression scenario for BT05-080 item movement.',

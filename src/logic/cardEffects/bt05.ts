@@ -1188,7 +1188,6 @@ export const BT05_EFFECTS: Record<string, Effect[]> = {
         ...creditEffects(1),
     ],
     'BT05-065': [
-        ...creditEffects(1),
         {
             activation: ActivationCondition.ENTRY,
             optional: true,

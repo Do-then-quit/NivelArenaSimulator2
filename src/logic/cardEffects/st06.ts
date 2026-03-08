@@ -190,7 +190,7 @@ export const ST06_EFFECTS: Record<string, Effect[]> = {
                                 effect: {
                                     activation: ActivationCondition.ATTACKER,
                                     description: '어태커 : 듀얼리스트',
-                                    action: { type: 'NONE', params: {} },
+                                    action: { type: 'APPLY_DUALIST_MARK', params: {} },
                                     duration: 'TURN_END',
                                 },
                                 duration: 'TURN_END',
@@ -462,9 +462,10 @@ export const ST06_EFFECTS: Record<string, Effect[]> = {
             activation: ActivationCondition.ACTIVE,
             description: '필드에 있는 조우 유닛을 가진 자신 유닛을 1장 고른다. 그 유닛은 이 턴 공격 페이즈 중 1번 더 공격할 수 있고 이 턴이 끝날 때까지 파워+2000.',
             targets: {
-                scope: 'SHARED_LANE',
+                scope: 'MY_FIELD',
                 type: 'UNIT',
                 count: 1,
+                filters: [{ type: 'HAS_ENCOUNTER' }],
                 selectMode: 'MANUAL',
             },
             action: {

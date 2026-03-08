@@ -26,6 +26,7 @@ const tests: UnifiedTestCase[] = [
         testId: 'ST06-001',
         name: '리나크 리더 각성 및 각성면 액티브',
         description: '레벨 5 각성 후 0코스트 아군 유닛에 파워/히트를 부여한다.',
+        coversEffectIndices: [0, 1],
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.levelZone = getCard('ST06-001');
@@ -62,6 +63,7 @@ const tests: UnifiedTestCase[] = [
         testId: 'ST06-002',
         name: '소악마 루아 엔트리 다른 아군 +3000',
         description: '엔트리로 다른 자신 유닛 1장을 선택해 +3000을 부여한다.',
+        coversEffectIndices: [0],
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.hand = [getCard('ST06-002')];
@@ -83,6 +85,7 @@ const tests: UnifiedTestCase[] = [
         testId: 'ST06-003',
         name: '실크 엔트리 성약 카드 탐색',
         description: '덱 상위 5장 공개 후 성약 카드 1장을 패에 넣고 나머지 트래시.',
+        coversEffectIndices: [0],
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.hand = [getCard('ST06-003')];
@@ -116,6 +119,7 @@ const tests: UnifiedTestCase[] = [
         testId: 'ST06-004',
         name: '유나 패시브 중첩',
         description: '다른 계승자/과거혹은미래 아군 수만큼 파워가 증가한다.',
+        coversEffectIndices: [0],
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.unitZones[0].unit = getCard('ST06-004');
@@ -130,9 +134,32 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'ST06-004-Entry',
+        name: '유나 엔트리로 다른 유닛에게 어태커 +3000 부여',
+        description: '엔트리로 다른 자신 유닛 1장을 선택해 턴 종료까지 어태커 파워 상승 효과를 부여한다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('ST06-004')];
+            p1.unitZones[1].unit = getCard('ST06-009');
+            p1.leaderLevel = 10;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.playUnit(0, 0);
+            const target = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.zoneIndex === 1);
+            if (target) engine.step(target);
+
+            const granted = p1.unitZones[1].temporaryEffects.some((effect: any) => effect.description.includes('파워+3000'));
+            return [{ pass: granted, message: '다른 자신 유닛에게 어태커 +3000 부여' }];
+        },
+    },
+    {
         testId: 'ST06-005',
         name: '데스티나 엔트리 계승자 탐색',
         description: '덱 상위 3장 공개 후 계승자 카드 1장을 패에 넣는다.',
+        coversEffectIndices: [0],
         setup: (engine, getCard) => {
             const p1 = engine.state.players[0];
             p1.hand = [getCard('ST06-005')];
@@ -155,6 +182,7 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'ST06-006',
+        coversEffectIndices: [1],
         name: '이세리아 엔트리로 다른 유닛 엔트리 선택 발동',
         description: '다른 계승자 유닛의 엔트리 효과를 선택해 발동할 수 있다.',
         setup: (engine, getCard) => {
@@ -183,7 +211,26 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'ST06-006-Passive',
+        coversEffectIndices: [0],
+        name: 'ST06-006 passive power bonus',
+        description: 'Verify ST06-006 gains +1000 per other friendly successor/past-or-future unit.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('ST06-006');
+            p1.unitZones[1].unit = getCard('ST06-004');
+            p1.unitZones[2].unit = getCard('ST06-007');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const power = engine.getUnitPower(p1.unitZones[0], p1);
+            return [{ pass: power === 3500, message: `ST06-006 passive reaches 3500 power (${power})` }];
+        },
+    },
+    {
         testId: 'ST06-007',
+        coversEffectIndices: [0],
         name: '심판자 키세 패시브 스킬존 조건 +5000',
         description: '스킬존에 카드가 1장 이상이면 파워+5000.',
         setup: (engine, getCard) => {
@@ -200,6 +247,7 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'ST06-008',
+        coversEffectIndices: [1],
         name: '리나크 엔트리 듀얼리스트/파워 효과 부여',
         description: '다른 아군에게 턴 종료까지 듀얼리스트와 어태커 +2000을 부여한다.',
         setup: (engine, getCard) => {
@@ -225,6 +273,7 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'ST06-008-Trigger',
+        coversEffectIndices: [2],
         name: '리나크 트리거 패 복귀',
         description: '대미지 트리거로 이 카드를 패에 넣는다.',
         setup: (engine, getCard) => {
@@ -239,7 +288,55 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'ST06-008-Passive',
+        coversEffectIndices: [0],
+        name: 'ST06-008 passive power bonus',
+        description: 'Verify ST06-008 gains +1000 from another successor ally.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('ST06-008');
+            p1.unitZones[1].unit = getCard('ST06-006');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const power = engine.getUnitPower(p1.unitZones[0], p1);
+            return [{ pass: power === 3500, message: `ST06-008 passive reaches 3500 power (${power})` }];
+        },
+    },
+    {
+        testId: 'ST06-008-ForcedBlock',
+        coversEffectIndices: [1],
+        name: 'ST06-008 granted dualist forces encounter block',
+        description: 'Verify the granted dualist effect removes the pass block option for the encounter unit.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.hand = [getCard('ST06-008')];
+            p1.unitZones[1].unit = getCard('ST06-009');
+            p2.unitZones[1].unit = getCard('ST01-002');
+            p1.leaderLevel = 10;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.playUnit(0, 0);
+            const target = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.zoneIndex === 1);
+            if (target) engine.step(target);
+
+            engine.state.phase = Phase.ATTACK;
+            engine.attack(1);
+            const legalBlocks = engine.getLegalActions(p2.id).filter((action: any) => action.type === 'RESOLVE_BLOCK');
+            const forcedEncounterBlock = legalBlocks.some((action: any) => action.shouldBlock === true && action.blockerZoneIndex === 1);
+            const canPassBlock = legalBlocks.some((action: any) => action.shouldBlock === false);
+
+            return [{ pass: forcedEncounterBlock && !canPassBlock, message: 'Granted dualist forces the encounter blocker to defend' }];
+        },
+    },
+    {
         testId: 'ST06-009',
+        coversEffectIndices: [0],
         name: '구원자 아딘 어태커 +2000',
         description: '어태커 +2000으로 동일 코스트 상대로 우위를 가진다.',
         setup: (engine, getCard) => {
@@ -264,6 +361,7 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'ST06-010',
+        coversEffectIndices: [1],
         name: '기원의 라스 엔트리 선택 코스트 후 관통 부여',
         description: '패 1장 트래시 선택 지불 시 다른 아군에게 관통을 부여한다.',
         setup: (engine, getCard) => {
@@ -291,7 +389,25 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'ST06-010-Passive',
+        coversEffectIndices: [0],
+        name: 'ST06-010 passive power bonus',
+        description: 'Verify ST06-010 gains +1000 from another successor ally.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('ST06-010');
+            p1.unitZones[1].unit = getCard('ST06-006');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const power = engine.getUnitPower(p1.unitZones[0], p1);
+            return [{ pass: power === 5000, message: `ST06-010 passive reaches 5000 power (${power})` }];
+        },
+    },
+    {
         testId: 'ST06-011',
+        coversEffectIndices: [0],
         name: '심판자 키세 선택 지불 시 파워 합 디버프',
         description: '어태커 효과로 선택 지불 시 상대 대상 유닛 파워를 감소시킨다.',
         setup: (engine, getCard) => {
@@ -325,7 +441,34 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'ST06-011-Trigger',
+        coversEffectIndices: [1, 2],
+        name: 'ST06-011 trigger self-trash and debuff',
+        description: 'Verify the trigger trashes ST06-011 and applies -3000 to a chosen unit.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.deck = [getCard('ST06-011')];
+            p2.unitZones[0].unit = getCard('ST06-009');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before = engine.getUnitPower(p2.unitZones[0], p2);
+            engine.dealDamage(p1, 1);
+            const target = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p2.id && action.zoneIndex === 0);
+            if (target) engine.step(target);
+            const after = engine.getUnitPower(p2.unitZones[0], p2);
+            return [
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('ST06-011')), message: 'ST06-011 moved to trash from trigger' },
+                { pass: after === before - 3000, message: 'Chosen unit gets -3000 from trigger' },
+            ];
+        },
+    },
+    {
         testId: 'ST06-012',
+        coversEffectIndices: [0],
         name: '빛의 루엘 액티브 메인 스킬 트래시 디버프',
         description: '손패 스킬을 최대 2장 트래시해 조우 유닛 파워를 감소시킨다.',
         setup: (engine, getCard) => {
@@ -353,6 +496,7 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'ST06-012-Trigger',
+        coversEffectIndices: [1],
         name: '빛의 루엘 트리거 계승자 유닛 회수',
         description: '대미지 트리거로 자신의 트래시에서 계승자 유닛 1장을 패에 넣는다.',
         setup: (engine, getCard) => {
@@ -382,6 +526,7 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'ST06-013',
+        coversEffectIndices: [0, 1, 2, 3],
         name: '이계의 머시너리 성약 잠금/0코스트/드로우',
         description: '성약 스킬 잠금, 필드 디버프, 계승자 0코스트, 1드로우를 처리한다.',
         setup: (engine, getCard) => {
@@ -417,6 +562,7 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'ST06-014',
+        coversEffectIndices: [0],
         name: '찬란한 영원 대미지 기반 코스트 상한 회수',
         description: '대미지 수를 넘지 않는 총코스트만큼만 트래시 카드를 회수한다.',
         setup: (engine, getCard) => {
@@ -447,7 +593,34 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'ST06-014-Trigger',
+        coversEffectIndices: [1, 2],
+        name: 'ST06-014 trigger self-trash and debuff',
+        description: 'Verify the trigger trashes ST06-014 and applies -3000 to a chosen unit.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.deck = [getCard('ST06-014')];
+            p2.unitZones[0].unit = getCard('ST06-009');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before = engine.getUnitPower(p2.unitZones[0], p2);
+            engine.dealDamage(p1, 1);
+            const target = findAction(engine, p1.id, 'SELECT_ZONE_TARGET', (action: any) => action.targetPlayerId === p2.id && action.zoneIndex === 0);
+            if (target) engine.step(target);
+            const after = engine.getUnitPower(p2.unitZones[0], p2);
+            return [
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('ST06-014')), message: 'ST06-014 moved to trash from trigger' },
+                { pass: after === before - 3000, message: 'Chosen unit gets -3000 from trigger' },
+            ];
+        },
+    },
+    {
         testId: 'ST06-015',
+        coversEffectIndices: [0, 1, 2, 3],
         name: '은밀한 손길 조건부 트래시 + 0코스트 + 드로우',
         description: '조건 충족 시 상대 유닛 트래시, 계승자 0코스트, 1드로우를 수행한다.',
         setup: (engine, getCard) => {
@@ -481,6 +654,7 @@ const tests: UnifiedTestCase[] = [
     },
     {
         testId: 'ST06-016',
+        coversEffectIndices: [0, 1, 2, 3],
         name: '사랑해, 기억해, 영원히 추가 공격 + 0코스트 + 드로우',
         description: '조우 유닛이 있는 아군에게 추가 공격과 +2000을 부여하고 계승자 0코스트/드로우를 처리한다.',
         setup: (engine, getCard) => {
@@ -515,7 +689,39 @@ const tests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'ST06-016-Targeting',
+        coversEffectIndices: [1],
+        name: 'ST06-016 only targets a friendly unit with an encounter',
+        description: 'Verify ST06-016 cannot target the opponent shared-lane unit for its first selection.',
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.hand = [getCard('ST06-016')];
+            p1.unitZones[0].unit = getCard('ST06-009');
+            p1.unitZones[1].unit = getCard('ST06-006');
+            p2.unitZones[0].unit = getCard('ST06-009');
+            p1.damage = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            p1.leaderLevel = 10;
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.playSkill(0);
+            const legalTargets = engine.getLegalActions(p1.id).filter((action: any) => action.type === 'SELECT_ZONE_TARGET');
+            const canPickOwnEncounterLane = legalTargets.some((action: any) => action.targetPlayerId === p1.id && action.zoneIndex === 0);
+            const canPickOpponentSharedLane = legalTargets.some((action: any) => action.targetPlayerId === p2.id && action.zoneIndex === 0);
+            const canPickOwnNoEncounterLane = legalTargets.some((action: any) => action.targetPlayerId === p1.id && action.zoneIndex === 1);
+            return [
+                { pass: canPickOwnEncounterLane, message: 'Friendly unit with encounter is selectable' },
+                { pass: !canPickOpponentSharedLane, message: 'Opponent shared-lane unit is not selectable' },
+                { pass: !canPickOwnNoEncounterLane, message: 'Friendly unit without encounter is not selectable' },
+            ];
+        },
+    },
+    {
         testId: 'ST06-017',
+        coversEffectIndices: [0],
         name: '흑요석 반지 엑시트 저코스트 유닛 회수',
         description: '장착 유닛보다 코스트가 낮은 유닛만 트래시에서 패로 회수 가능.',
         setup: (engine, getCard) => {
