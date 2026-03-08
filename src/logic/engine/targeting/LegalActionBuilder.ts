@@ -10,6 +10,26 @@ import {
 import { RuleValidator } from '../../RuleValidator';
 import { TargetSelector } from '../../TargetSelector';
 
+function effectHasPhaseAttackCondition(condition: any): boolean {
+    if (!condition || typeof condition !== 'object') return false;
+
+    if (condition.type === 'CONTEXT_FLAG') {
+        const value = condition.value;
+        if (value === 'PHASE_ATTACK') return true;
+        if (value?.key === 'PHASE_ATTACK') {
+            if (value.equals === undefined) return true;
+            return value.equals === true;
+        }
+        return false;
+    }
+
+    if (condition.type === 'ALL' && Array.isArray(condition.value)) {
+        return condition.value.some((nested: any) => effectHasPhaseAttackCondition(nested));
+    }
+
+    return false;
+}
+
 function getTargetCard(target: any): Card | null {
     if (!target) return null;
     if (typeof target === 'object' && 'unit' in target) return target.unit ?? null;
@@ -154,7 +174,13 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
                     sourceCard.effects.forEach((effect, effectIndex) => {
                         const activatableInPhase =
                             (effect.activation === ActivationCondition.ACTIVE && (engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK)) ||
-                            (effect.activation === ActivationCondition.ACTIVE_MAIN && engine.state.phase === Phase.MAIN);
+                            (
+                                effect.activation === ActivationCondition.ACTIVE_MAIN &&
+                                (
+                                    engine.state.phase === Phase.MAIN ||
+                                    (engine.state.phase === Phase.ATTACK && effectHasPhaseAttackCondition(effect.condition))
+                                )
+                            );
                         if (!activatableInPhase) return;
 
                         const effectKey = sourceType === 'ITEM'
@@ -209,7 +235,13 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
                 leader.effects.forEach((effect: Effect, effectIndex: number) => {
                     const activatableInPhase =
                         (effect.activation === ActivationCondition.ACTIVE && (engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK)) ||
-                        (effect.activation === ActivationCondition.ACTIVE_MAIN && engine.state.phase === Phase.MAIN);
+                        (
+                            effect.activation === ActivationCondition.ACTIVE_MAIN &&
+                            (
+                                engine.state.phase === Phase.MAIN ||
+                                (engine.state.phase === Phase.ATTACK && effectHasPhaseAttackCondition(effect.condition))
+                            )
+                        );
                     if (!activatableInPhase) return;
 
                     const effectKey = `${leader.id}_${effect.id || effectIndex}`;

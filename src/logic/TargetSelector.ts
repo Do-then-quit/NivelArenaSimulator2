@@ -132,6 +132,24 @@ export class TargetSelector {
                             return !this.hasDynamicKeyword(unit, filter.value, zone);
                         });
                         break;
+                    case 'HAS_ENCOUNTER':
+                        candidates = candidates.filter(c =>
+                            !!(c && typeof c === 'object' && 'unit' in c) &&
+                            this.hasEncounter(engine, c as UnitZoneState)
+                        );
+                        break;
+                    case 'NO_ENCOUNTER':
+                        candidates = candidates.filter(c =>
+                            !!(c && typeof c === 'object' && 'unit' in c) &&
+                            !this.hasEncounter(engine, c as UnitZoneState)
+                        );
+                        break;
+                    case 'DIFFERENT_LANE_FROM_SOURCE':
+                        candidates = candidates.filter(c =>
+                            !!(c && typeof c === 'object' && 'unit' in c) &&
+                            this.isDifferentLaneFromSource(engine, context, c as UnitZoneState)
+                        );
+                        break;
                     case 'COST_LIMIT':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
@@ -226,6 +244,12 @@ export class TargetSelector {
                             return card && this.getCardCost(engine, card) <= context.player.leaderLevel;
                         });
                         break;
+                    case 'COST_MIN_BY_LEADER_LEVEL':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            return card && this.getCardCost(engine, card) >= context.player.leaderLevel;
+                        });
+                        break;
                     case 'COST_EQUAL':
                         candidates = candidates.filter(c => {
                             const unit = this.getUnitFromTarget(c);
@@ -294,6 +318,48 @@ export class TargetSelector {
                             const maxCount = typeof filter.value === 'number' ? filter.value : 0;
                             const itemCount = Array.isArray((c as UnitZoneState).items) ? (c as UnitZoneState).items.length : 0;
                             return itemCount <= maxCount;
+                        });
+                        break;
+                    case 'COST_LIMIT_BY_EQUIPPED_ITEM_COUNT':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            if (!card || !context.unitZone) return false;
+                            const equippedCount = Array.isArray(context.unitZone.items) ? context.unitZone.items.length : 0;
+                            return this.getCardCost(engine, card) <= equippedCount;
+                        });
+                        break;
+                    case 'POWER_LOWER_THAN_SOURCE':
+                        candidates = candidates.filter(c => {
+                            if (!context.unitZone?.unit) return false;
+                            const sourcePower = engine.getUnitPower(context.unitZone, context.player);
+                            if (c && typeof c === 'object' && 'unit' in c) {
+                                const zone = c as UnitZoneState;
+                                const owner = this.getOwner(engine, zone);
+                                return engine.getUnitPower(zone, owner) < sourcePower;
+                            }
+                            const card = this.getCardFromTarget(c);
+                            return !!card && (card.power || 0) < sourcePower;
+                        });
+                        break;
+                    case 'POWER_LIMIT_BY_SOURCE':
+                        candidates = candidates.filter(c => {
+                            if (!context.unitZone?.unit) return false;
+                            const sourcePower = engine.getUnitPower(context.unitZone, context.player);
+                            if (c && typeof c === 'object' && 'unit' in c) {
+                                const zone = c as UnitZoneState;
+                                const owner = this.getOwner(engine, zone);
+                                return engine.getUnitPower(zone, owner) <= sourcePower;
+                            }
+                            const card = this.getCardFromTarget(c);
+                            return !!card && (card.power || 0) <= sourcePower;
+                        });
+                        break;
+                    case 'CARD_TYPE_IN':
+                        candidates = candidates.filter(c => {
+                            const card = this.getCardFromTarget(c);
+                            if (!card) return false;
+                            const allowedTypes = Array.isArray(filter.value) ? filter.value : [filter.value];
+                            return allowedTypes.includes(card.type);
                         });
                         break;
                     case 'LOWEST_COST_ONLY': {
@@ -454,6 +520,18 @@ export class TargetSelector {
                             if (this.hasDynamicKeyword(unit, filter.value, zone)) return false;
                         }
                         break;
+                    case 'HAS_ENCOUNTER':
+                        if (!target || typeof target !== 'object' || !('unit' in target)) return false;
+                        if (!this.hasEncounter(engine, target as UnitZoneState)) return false;
+                        break;
+                    case 'NO_ENCOUNTER':
+                        if (!target || typeof target !== 'object' || !('unit' in target)) return false;
+                        if (this.hasEncounter(engine, target as UnitZoneState)) return false;
+                        break;
+                    case 'DIFFERENT_LANE_FROM_SOURCE':
+                        if (!target || typeof target !== 'object' || !('unit' in target)) return false;
+                        if (!this.isDifferentLaneFromSource(engine, context, target as UnitZoneState)) return false;
+                        break;
                     case 'COST_LIMIT': if (!unit || this.getCardCost(engine, unit) > filter.value) return false; break;
                     case 'COST_LIMIT_BY_DAMAGE_COUNT':
                         {
@@ -507,6 +585,12 @@ export class TargetSelector {
                         {
                             const card = this.getCardFromTarget(target);
                             if (!card || this.getCardCost(engine, card) > context.player.leaderLevel) return false;
+                        }
+                        break;
+                    case 'COST_MIN_BY_LEADER_LEVEL':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || this.getCardCost(engine, card) < context.player.leaderLevel) return false;
                         }
                         break;
                     case 'POWER_LIMIT':
@@ -591,6 +675,49 @@ export class TargetSelector {
                             if (itemCount > maxCount) return false;
                         }
                         break;
+                    case 'COST_LIMIT_BY_EQUIPPED_ITEM_COUNT':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            if (!card || !context.unitZone) return false;
+                            const equippedCount = Array.isArray(context.unitZone.items) ? context.unitZone.items.length : 0;
+                            if (this.getCardCost(engine, card) > equippedCount) return false;
+                        }
+                        break;
+                    case 'POWER_LOWER_THAN_SOURCE':
+                        if (!context.unitZone?.unit) return false;
+                        {
+                            const sourcePower = engine.getUnitPower(context.unitZone, context.player);
+                            if (target && typeof target === 'object' && 'unit' in target) {
+                                const zoneTarget = target as UnitZoneState;
+                                const owner = this.getOwner(engine, zoneTarget);
+                                if (engine.getUnitPower(zoneTarget, owner) >= sourcePower) return false;
+                                break;
+                            }
+                            const card = this.getCardFromTarget(target);
+                            if (!card || (card.power || 0) >= sourcePower) return false;
+                        }
+                        break;
+                    case 'POWER_LIMIT_BY_SOURCE':
+                        if (!context.unitZone?.unit) return false;
+                        {
+                            const sourcePower = engine.getUnitPower(context.unitZone, context.player);
+                            if (target && typeof target === 'object' && 'unit' in target) {
+                                const zoneTarget = target as UnitZoneState;
+                                const owner = this.getOwner(engine, zoneTarget);
+                                if (engine.getUnitPower(zoneTarget, owner) > sourcePower) return false;
+                                break;
+                            }
+                            const card = this.getCardFromTarget(target);
+                            if (!card || (card.power || 0) > sourcePower) return false;
+                        }
+                        break;
+                    case 'CARD_TYPE_IN':
+                        {
+                            const card = this.getCardFromTarget(target);
+                            const allowedTypes = Array.isArray(filter.value) ? filter.value : [filter.value];
+                            if (!card || !allowedTypes.includes(card.type)) return false;
+                        }
+                        break;
                     case 'LOWEST_COST_ONLY': {
                         const otherFilters = (schema.filters || []).filter(f => f.type !== 'LOWEST_COST_ONLY');
                         const baseSchema: TargetSchema = { ...schema, filters: otherFilters };
@@ -636,6 +763,25 @@ export class TargetSelector {
     private static getOwner(engine: GameEngine, zone: UnitZoneState): PlayerState {
         if (engine.state.players[0].unitZones.includes(zone)) return engine.state.players[0];
         return engine.state.players[1];
+    }
+
+    private static hasEncounter(engine: GameEngine, zone: UnitZoneState): boolean {
+        const owner = this.getOwner(engine, zone);
+        const opponent = engine.state.players.find(player => player.id !== owner.id);
+        if (!opponent) return false;
+        const laneIndex = owner.unitZones.indexOf(zone);
+        if (laneIndex < 0) return false;
+        return !!opponent.unitZones[laneIndex]?.unit;
+    }
+
+    private static isDifferentLaneFromSource(engine: GameEngine, context: GameContext, targetZone: UnitZoneState): boolean {
+        if (!context.unitZone) return false;
+        const sourceOwner = this.getOwner(engine, context.unitZone);
+        const targetOwner = this.getOwner(engine, targetZone);
+        const sourceLaneIndex = sourceOwner.unitZones.indexOf(context.unitZone);
+        const targetLaneIndex = targetOwner.unitZones.indexOf(targetZone);
+        if (sourceLaneIndex < 0 || targetLaneIndex < 0) return false;
+        return sourceLaneIndex !== targetLaneIndex;
     }
 
     private static getFieldItems(player: PlayerState): any[] {

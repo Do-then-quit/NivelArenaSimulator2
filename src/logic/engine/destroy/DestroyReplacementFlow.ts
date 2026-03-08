@@ -15,6 +15,7 @@ export interface DestroyReplacement {
     | 'DISCARD_HAND_BY_HIT'
     | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
     | 'BT03_083_TRASH_SELF_AND_RETURN'
+    | 'BT05_079_MILL3_IF_ITEM'
     | 'SB01_020_DISCARD_HAND_PREVENT_DESTROY';
     sourceCard: Card;
     requiredHandCount?: number;
@@ -151,6 +152,19 @@ export function collectDestroyReplacements(
                 type: 'BT03_083_TRASH_SELF_AND_RETURN',
                 sourceCard: item,
                 description: effect.description || '장착한 IX 고글 1장을 트래시하고 유닛/아이템을 패로 되돌린다.',
+            });
+        });
+
+        item.effects?.forEach(effect => {
+            if (effect.activation !== ActivationCondition.PASSIVE) return;
+            if (effect.action?.type !== 'NONE') return;
+            if (effect.action?.params?.destroyReplacement !== 'BT05_079_MILL3_IF_ITEM') return;
+            if (!engine.effectManager.checkCondition(effect, itemContext)) return;
+
+            replacements.push({
+                type: 'BT05_079_MILL3_IF_ITEM',
+                sourceCard: item,
+                description: effect.description || '덱 맨 위 3장을 트래시하고 아이템이 있으면 파괴를 대체한다.',
             });
         });
     });
@@ -379,6 +393,24 @@ export function resolveDestructionReplacementChoice(engine: any, confirm: boolea
                     };
                     engine.clearPendingRuntime();
                     engine.assignInteractionOwner(owner.id);
+                    return;
+                }
+            }
+
+            if (replacement.type === 'BT05_079_MILL3_IF_ITEM') {
+                (replacement.sourceCard as any).__replacementUsedTurn = engine.state.turnCount;
+                const trashedCards: Card[] = [];
+                const trashCount = Math.min(3, owner.deck.length);
+                for (let step = 0; step < trashCount; step += 1) {
+                    const card = owner.deck.pop();
+                    if (!card) break;
+                    owner.trash.push(card);
+                    trashedCards.push(card);
+                }
+
+                const saved = trashedCards.some((card: any) => card?.type === CardType.ITEM);
+                if (saved) {
+                    engine.resetInteractionMode();
                     return;
                 }
             }

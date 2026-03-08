@@ -1,5 +1,5 @@
 import { GameEngine } from './GameEngine';
-import { ActivationCondition, Effect, TargetSchema, GameContext, CardType } from './types';
+import { ActivationCondition, Attribute, Effect, TargetSchema, GameContext, CardType } from './types';
 import { ActionRegistry } from './effectActions';
 import { TargetSelector } from './TargetSelector';
 
@@ -79,6 +79,57 @@ export class EffectManager {
             }, 0);
             return sum + bonusFromItem;
         }, 0);
+    }
+
+    private normalizeAttributeValue(raw: unknown): Attribute | null {
+        if (typeof raw !== 'string') return null;
+        const normalized = String(raw).trim().toUpperCase();
+        if (normalized in Attribute) {
+            return Attribute[normalized as keyof typeof Attribute];
+        }
+        const aliasMap: Record<string, Attribute> = {
+            '화염': Attribute.FIRE,
+            '대지': Attribute.EARTH,
+            '폭풍': Attribute.STORM,
+            '파도': Attribute.WATER,
+            '번개': Attribute.LIGHTNING,
+            '없음': Attribute.NONE,
+            'FIRE': Attribute.FIRE,
+            'EARTH': Attribute.EARTH,
+            'STORM': Attribute.STORM,
+            'WATER': Attribute.WATER,
+            'LIGHTNING': Attribute.LIGHTNING,
+            'NONE': Attribute.NONE,
+        };
+        return aliasMap[normalized] ?? null;
+    }
+
+    private playerHasNonAttributeFieldCard(player: any, rawAttribute: unknown): boolean {
+        const attribute = this.normalizeAttributeValue(rawAttribute);
+        if (!player || !attribute) return false;
+
+        const hasOffAttributeUnit = player.unitZones.some((zone: any) => {
+            if (zone?.unit && zone.unit.attribute !== attribute) return true;
+            return Array.isArray(zone?.items) && zone.items.some((item: any) => item?.attribute !== attribute);
+        });
+        if (hasOffAttributeUnit) return true;
+        return Array.isArray(player.skillZone) && player.skillZone.some((card: any) => card?.attribute !== attribute);
+    }
+
+    private getEncounterZone(context: GameContext): any | null {
+        if (!context.unitZone) return null;
+        const laneIndex = context.player?.unitZones?.indexOf(context.unitZone) ?? -1;
+        if (laneIndex < 0) return null;
+        return context.opponent?.unitZones?.[laneIndex] ?? null;
+    }
+
+    private getItemDistinctNameCount(context: GameContext): number {
+        const names = new Set<string>();
+        (context.unitZone?.items || []).forEach((item: any) => {
+            const name = String(item?.name || item?.id || '').trim();
+            if (name) names.add(name);
+        });
+        return names.size;
     }
 
     private isActivationLocked(player: any, activation: ActivationCondition | string | undefined): boolean {
@@ -651,11 +702,20 @@ export class EffectManager {
                 if (value?.max !== undefined && count > value.max) return false;
                 return true;
             }
+            case 'FIELD_HAS_NON_ATTRIBUTE_CARD':
+                return this.playerHasNonAttributeFieldCard(context.player, value);
             case 'ATTACK_COUNT_THIS_TURN_MIN': {
                 const min = typeof value === 'number' ? value : value?.min ?? 1;
                 const baseCount = context.machine.getTurnUnitAttackCount(context.player.id);
                 const bonus = this.getAttackCountReferenceBonus(context);
                 return baseCount + bonus >= min;
+            }
+            case 'SKILL_ACTIVATION_COUNT_THIS_TURN_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const count = typeof context.machine.getSkillActivationCountThisTurn === 'function'
+                    ? context.machine.getSkillActivationCountThisTurn(context.player.id)
+                    : 0;
+                return count >= min;
             }
             case 'TRAIT_ATTACK_COUNT_THIS_TURN_MIN': {
                 const trait = typeof value === 'string' ? value : value?.trait;
@@ -681,6 +741,10 @@ export class EffectManager {
                 });
 
                 return distinctNames.size >= min;
+            }
+            case 'ITEM_DISTINCT_NAME_COUNT_MIN': {
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                return this.getItemDistinctNameCount(context) >= min;
             }
             case 'TRASH_TRAIT_COUNT_MIN': {
                 const trait = typeof value === 'string' ? value : value?.trait;
@@ -710,6 +774,15 @@ export class EffectManager {
                 if (!context.unitZone || !context.unitZone.unit) return false;
                 const min = Math.max(0, Number(value ?? 0));
                 return context.machine.getUnitPower(context.unitZone, context.player) >= min;
+            }
+            case 'POWER_MARGIN_MIN': {
+                if (!context.unitZone || !context.unitZone.unit) return false;
+                const encounterZone = this.getEncounterZone(context);
+                if (!encounterZone?.unit) return false;
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const myPower = context.machine.getUnitPower(context.unitZone, context.player);
+                const encounterPower = context.machine.getUnitPower(encounterZone, context.opponent);
+                return myPower - encounterPower >= min;
             }
             case 'ENCOUNTER_COST_MIN': {
                 if (!context.unitZone) return false;
@@ -741,6 +814,15 @@ export class EffectManager {
                     ? context.machine.getDamageTraitCount(context.player, trait)
                     : 0;
                 return resolveCardCost(encounterZone.unit) < threshold;
+            }
+            case 'ENCOUNTER_COST_MARGIN_MIN': {
+                if (!context.unitZone?.unit) return false;
+                const encounterZone = this.getEncounterZone(context);
+                if (!encounterZone?.unit) return false;
+                const min = typeof value === 'number' ? value : value?.min ?? 1;
+                const myCost = resolveCardCost(context.unitZone.unit);
+                const encounterCost = resolveCardCost(encounterZone.unit);
+                return encounterCost - myCost >= min;
             }
             default:
                 return true;

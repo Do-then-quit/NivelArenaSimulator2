@@ -329,10 +329,10 @@ export function stepBattleResolution(engine: any, attackerZone: UnitZoneState) {
     }
 
     // 2. Pre-Combat Effects? (e.g. Infiltration)
-    // INFILTRATION (Rule 10.2.3.1): If Infiltration & No Blocker -> Draw 1
-    if (!engine.state.combatBlocked && (engine.hasKeywordInZone(attackerZone, '침투') || engine.hasKeywordInZone(attackerZone, 'INFILTRATION'))) {
+    const infiltrationValue = getInfiltrationValue(engine, attackerZone);
+    if (!engine.state.combatBlocked && infiltrationValue > 0) {
         console.log("Infiltration Triggered.");
-        engine.drawCard(engine.state.turnPlayerIndex, 1, {
+        engine.drawCard(engine.state.turnPlayerIndex, infiltrationValue, {
             reason: 'EFFECT',
             sourceActivation: ActivationCondition.ATTACKER,
             sourcePlayerId: engine.currentPlayer.id,
@@ -913,6 +913,14 @@ export function isBlockPreventedByBreakthrough(engine: any, attackerZone: UnitZo
     const checkRule = (params: any): boolean => {
         if (!params) return false;
         if (params.mode === 'ALL' || params.costMode === 'ALL' || params.all === true) return true;
+        if (params.mode === 'COST_OVER_SELF') {
+            const attackerCost = attackerZone.unit
+                ? (typeof engine.getCardCost === 'function'
+                    ? engine.getCardCost(attackerZone.unit)
+                    : Math.max(0, Number(attackerZone.unit?.cost || 0)))
+                : 0;
+            return blockerCost > attackerCost;
+        }
         if (params.costMax !== undefined && blockerCost <= params.costMax) return true;
         if (params.costMin !== undefined && blockerCost >= params.costMin) return true;
         return false;
@@ -991,6 +999,35 @@ export function getPlunderValue(engine: any, zone: UnitZoneState): number {
     zone.buffs.forEach(b => {
         if (b.type === 'PLUNDER') value = Math.max(value, b.value);
     });
+
+    return value;
+}
+
+export function getInfiltrationValue(engine: any, zone: UnitZoneState): number {
+    if (!zone.unit) return 0;
+    let value = 0;
+
+    const allEffects: Effect[] = [];
+    if (zone.unit?.effects) allEffects.push(...zone.unit.effects);
+    zone.items.forEach(item => {
+        if (item.effects) allEffects.push(...item.effects);
+    });
+    allEffects.push(...zone.temporaryEffects);
+
+    const infiltrationFromEffects = allEffects.reduce((maxValue, effect) => {
+        if (!effect) return maxValue;
+        const paramsValue = Number(effect.action?.params?.infiltrationValue ?? 0);
+        if (paramsValue > 0) return Math.max(maxValue, paramsValue);
+        const description = String(effect.description || '');
+        const match = description.match(/침투\[(\d+)\]/);
+        if (!match) return maxValue;
+        return Math.max(maxValue, Number(match[1]) || 0);
+    }, 0);
+    value = Math.max(value, infiltrationFromEffects);
+
+    if (value <= 0 && (engine.hasKeywordInZone(zone, '침투') || engine.hasKeywordInZone(zone, 'INFILTRATION'))) {
+        value = 1;
+    }
 
     return value;
 }
