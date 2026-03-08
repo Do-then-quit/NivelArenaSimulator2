@@ -35,6 +35,39 @@ const TEST_CARDS: Card[] = [
         text: '',
         imageUrl: '/assets/cards/ST02-002.jpg',
     },
+    {
+        id: 'ST07-002',
+        name: 'ST07 Unit',
+        type: CardType.UNIT,
+        attribute: Attribute.WATER,
+        cost: 2,
+        power: 4000,
+        hit: 1,
+        text: '',
+        imageUrl: '/assets/cards/ST07-002.jpg',
+    },
+    {
+        id: 'ST09-002',
+        name: 'ST09 Unit',
+        type: CardType.UNIT,
+        attribute: Attribute.LIGHTNING,
+        cost: 2,
+        power: 4000,
+        hit: 1,
+        text: '',
+        imageUrl: '/assets/cards/ST09-002.jpg',
+    },
+    {
+        id: 'BT05-001',
+        name: 'Storm BT05 Unit',
+        type: CardType.UNIT,
+        attribute: Attribute.STORM,
+        cost: 2,
+        power: 4000,
+        hit: 1,
+        text: '',
+        imageUrl: '/assets/cards/BT05-001.jpg',
+    },
 ];
 
 function setViewport(width: number, height: number) {
@@ -171,6 +204,24 @@ describe('deck builder mobile interactions', () => {
 
         (container.querySelector('#db-filter-sheet-backdrop') as HTMLElement).click();
         expect(container.querySelector('#db-filter-sheet')?.classList.contains('open')).toBe(false);
+    });
+
+    it('shows BT05, ST07, and ST09 in the mobile pack filter and filters correctly', () => {
+        const { container } = renderDeckBuilder();
+
+        (container.querySelector('#db-open-filter-sheet') as HTMLButtonElement).click();
+        const packSelect = container.querySelector('#db-filter-pack-mobile') as HTMLSelectElement;
+        const optionValues = Array.from(packSelect.options).map(option => option.value);
+        expect(optionValues).toContain('BT05');
+        expect(optionValues).toContain('ST07');
+        expect(optionValues).toContain('ST09');
+
+        packSelect.value = 'ST09';
+        packSelect.dispatchEvent(new Event('change'));
+
+        const visibleCards = Array.from(container.querySelectorAll('.db-card-item')) as HTMLElement[];
+        expect(visibleCards).toHaveLength(1);
+        expect(visibleCards[0].dataset.id).toBe('ST09-002');
     });
 
     it('loads saved deck correctly even when active filter excludes its cards', () => {

@@ -106,6 +106,25 @@ function trashUnitZoneWithoutTriggers(player: any, zone: any) {
     zone.hasAttacked = false;
 }
 
+function getCardCost(engine: any, card: any): number {
+    if (!card) return 0;
+    if (typeof engine?.getCardCost === 'function') {
+        return engine.getCardCost(card);
+    }
+    return Math.max(0, Number(card.cost || 0));
+}
+
+function getPairDestroyOpponentCandidates(engine: any, sourcePlayer: any, friendlyZone: any, operator: 'LTE' | 'LT') {
+    if (!sourcePlayer || !friendlyZone?.unit) return [];
+    const opponent = engine.getOpponentOf(sourcePlayer);
+    const friendlyCost = getCardCost(engine, friendlyZone.unit);
+    return opponent.unitZones.filter((zone: any) => {
+        if (!zone?.unit) return false;
+        const opponentCost = getCardCost(engine, zone.unit);
+        return operator === 'LT' ? opponentCost < friendlyCost : opponentCost <= friendlyCost;
+    });
+}
+
 export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targetPlayerId: string) {
     if (engine.state.interactionMode !== 'SELECT_TARGET' || !engine.state.pendingEffect) return;
 
@@ -124,7 +143,9 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
         pending.actionType === 'ST08_006_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
         pending.actionType === 'ST07_010_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
         pending.actionType === 'ST08_004_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
-        pending.actionType === 'ST08_009_SELECT_EMPTY_ZONE_TO_DEPLOY';
+        pending.actionType === 'ST08_009_SELECT_EMPTY_ZONE_TO_DEPLOY' ||
+        pending.actionType === 'PAIR_DESTROY_SELECT_FRIENDLY' ||
+        pending.actionType === 'PAIR_DESTROY_SELECT_OPPONENT';
     if ((!effect && !allowsEffectlessSelection) || !context || !targetSchema) return;
     const targetPlayer = engine.getPlayerById(targetPlayerId);
     if (!targetPlayer) return;
@@ -135,6 +156,58 @@ export function selectZoneTargetByPlayerId(engine: any, zoneIndex: number, targe
     // NEW: Full validation using TargetSelector
     if (!TargetSelector.isValidTarget(engine, targetSchema, context, targetZone)) {
         console.log("Invalid Target Selected. Mode maintained.");
+        return;
+    }
+
+    if (pending.actionType === 'PAIR_DESTROY_SELECT_FRIENDLY') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer || sourcePlayer.id !== targetPlayer.id) return;
+        const operator = pending.actionValue?.operator === 'LT' ? 'LT' : 'LTE';
+        const opponentCandidates = getPairDestroyOpponentCandidates(engine, sourcePlayer, targetZone, operator);
+        if (opponentCandidates.length <= 0) return;
+        context.costPaymentCard = targetZone.unit;
+
+        pending.actionType = 'PAIR_DESTROY_SELECT_OPPONENT';
+        pending.actionValue = {
+            ...pending.actionValue,
+            friendlyZoneIndex: zoneIndex,
+        };
+        pending.effectDescription = '함께 트래시할 상대 유닛을 선택한다.';
+        pending.validTargets = 'OPP_UNITS';
+        pending.targetSchema = {
+            scope: 'OPP_FIELD',
+            type: 'UNIT',
+            count: 1,
+            filters: [{
+                type: operator === 'LT' ? 'COST_LOWER_THAN_COST_PAYMENT' : 'COST_LIMIT_BY_COST_PAYMENT',
+            }],
+            selectMode: 'MANUAL',
+        } as any;
+        pending.selectedTargets = [];
+        engine.assignInteractionOwner(sourcePlayer.id);
+        return;
+    }
+
+    if (pending.actionType === 'PAIR_DESTROY_SELECT_OPPONENT') {
+        const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+        if (!sourcePlayer) return;
+        const opponent = engine.getOpponentOf(sourcePlayer);
+        if (opponent.id !== targetPlayer.id) return;
+
+        const friendlyZoneIndex = pending.actionValue?.friendlyZoneIndex;
+        if (typeof friendlyZoneIndex !== 'number' || friendlyZoneIndex < 0 || friendlyZoneIndex >= sourcePlayer.unitZones.length) return;
+        const friendlyZone = sourcePlayer.unitZones[friendlyZoneIndex];
+        if (!friendlyZone?.unit) return;
+
+        const operator = pending.actionValue?.operator === 'LT' ? 'LT' : 'LTE';
+        const validOpponents = getPairDestroyOpponentCandidates(engine, sourcePlayer, friendlyZone, operator);
+        if (!validOpponents.includes(targetZone)) return;
+
+        engine.destroyUnit(sourcePlayer, friendlyZone, undefined, 'EFFECT');
+        if (targetZone?.unit) {
+            engine.destroyUnit(opponent, targetZone, undefined, 'EFFECT');
+        }
+        engine.handleEffectCompletion(context, pending);
         return;
     }
 
@@ -705,11 +778,30 @@ export function confirmTargets(engine: any) {
 
     if (
         pending.actionType === 'BT06_SELECT_SKILL_ZONE_CARD' ||
-        pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST' ||
         pending.actionType === 'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
         pending.actionType === 'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH' ||
         pending.actionType === 'BT03_011_SELECT_TRASH_LOWER_COST_TO_HAND'
     ) {
+        engine.state.revealedCards = [];
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
+    if (pending.actionType === 'BT06_SELECT_TRASHED_SKILL_TO_CAST') {
+        if (pending.actionValue?.returnSkippedSkillToHand === true) {
+            const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
+            if (sourcePlayer) {
+                [...engine.state.revealedCards].forEach((card: any) => {
+                    const trashIndex = sourcePlayer.trash.indexOf(card);
+                    if (trashIndex !== -1) {
+                        const [removed] = sourcePlayer.trash.splice(trashIndex, 1);
+                        if (removed) sourcePlayer.hand.push(removed);
+                        return;
+                    }
+                    sourcePlayer.hand.push(card);
+                });
+            }
+        }
         engine.state.revealedCards = [];
         engine.handleEffectCompletion(context, pending);
         return;
@@ -1173,6 +1265,58 @@ export function selectRevealedTarget(engine: any, index: number) {
         return;
     }
 
+    if (pending.actionType === 'GENERIC_SELECT_ACTIVATABLE_EFFECT') {
+        const option = pending.actionValue?.options?.[index];
+        const sourcePlayer = engine.getPlayerById(option?.sourcePlayerId);
+        if (!sourcePlayer || !option?.effect) return;
+
+        const sourceOpponent = engine.state.players.find((player: any) => player.id !== sourcePlayer.id);
+        if (!sourceOpponent) return;
+
+        const sourceZone = typeof option.sourceZoneIndex === 'number'
+            ? sourcePlayer.unitZones[option.sourceZoneIndex]
+            : undefined;
+        const sourceCard = sourceZone?.unit?.id === option.sourceCardId
+            ? sourceZone.unit
+            : option.sourceCardRef;
+        if (!sourceCard) return;
+
+        if (option.preMoveToDeckBottom === true && !sourceZone) {
+            const trashIndex = sourcePlayer.trash.indexOf(sourceCard);
+            if (trashIndex !== -1) {
+                const [removed] = sourcePlayer.trash.splice(trashIndex, 1);
+                if (removed) sourcePlayer.deck.unshift(removed);
+            } else {
+                const revealedIndex = engine.state.revealedCards.indexOf(sourceCard);
+                if (revealedIndex !== -1) {
+                    const [removed] = engine.state.revealedCards.splice(revealedIndex, 1);
+                    if (removed) sourcePlayer.deck.unshift(removed);
+                }
+            }
+        }
+
+        const selectedEffectContext: GameContext = {
+            sourceCard,
+            player: sourcePlayer,
+            opponent: sourceOpponent,
+            ...(sourceZone ? { unitZone: sourceZone } : {}),
+            machine: engine,
+        };
+
+        if (
+            sourceCard.type === 'SKILL' &&
+            (option.effect.activation === ActivationCondition.ACTIVE || option.effect.activation === ActivationCondition.ACTIVE_MAIN) &&
+            typeof (engine as any).recordSkillActivation === 'function'
+        ) {
+            (engine as any).recordSkillActivation(sourcePlayer.id);
+        }
+
+        engine.state.revealedCards = [];
+        engine.effectManager.processEffect(option.effect, selectedEffectContext);
+        engine.handleEffectCompletion(context, pending);
+        return;
+    }
+
     if (pending.actionType === 'BT03_052_SELECT_SKILL_ZONE_COST3_TO_TRASH') {
         const option = pending.actionValue?.options?.[index];
         const sourcePlayer = engine.getPlayerById(pending.sourcePlayerId);
@@ -1464,6 +1608,10 @@ export function selectRevealedTarget(engine: any, index: number) {
             opponent: sourceOpponent,
             machine: engine,
         };
+
+        if (typeof engine.recordSkillActivation === 'function') {
+            engine.recordSkillActivation(sourcePlayer.id);
+        }
 
         engine.state.revealedCards = [];
         engine.effectManager.processEffects(ActivationCondition.ACTIVE, castContext, { enqueueOnly: true, batchStep });

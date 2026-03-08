@@ -44,6 +44,26 @@ import {
     processPassiveGrantedExitEffects as runProcessPassiveGrantedExitEffects,
 } from './engine/destroy/DestroyExecutor';
 
+function effectHasPhaseAttackCondition(condition: any): boolean {
+    if (!condition || typeof condition !== 'object') return false;
+
+    if (condition.type === 'CONTEXT_FLAG') {
+        const value = condition.value;
+        if (value === 'PHASE_ATTACK') return true;
+        if (value?.key === 'PHASE_ATTACK') {
+            if (value.equals === undefined) return true;
+            return value.equals === true;
+        }
+        return false;
+    }
+
+    if (condition.type === 'ALL' && Array.isArray(condition.value)) {
+        return condition.value.some((nested: any) => effectHasPhaseAttackCondition(nested));
+    }
+
+    return false;
+}
+
 type EngineAction = import('./types').EngineAction;
 type EngineObservation = import('./types').EngineObservation;
 
@@ -96,6 +116,7 @@ export class GameEngine {
     private runtimeIdCounter = 0;
     private pendingRuntime: PendingRuntimeState | null = null;
     private awaitingEndPhaseHandAdjustment = false;
+    private awaitingEndPhaseCleanup = false;
     private readonly destroyInProgressKeys = new Set<string>();
     private readonly resolvingEffectContextStack: GameContext[] = [];
     private isRuleProcessing = false;
@@ -143,6 +164,7 @@ export class GameEngine {
                 fieldTrashedFriendlyUnitCountByPlayerId: {},
                 handTrashedByEffectCountByPlayerId: {},
                 unitAttackCountByPlayerId: {},
+                skillActivationCountByPlayerId: {},
                 traitAttackCountByPlayerId: {},
                 damagePlacedByEffectCountByPlayerId: {},
                 damagePlacedByEffectFromAreaCountByPlayerId: {},
@@ -204,6 +226,7 @@ export class GameEngine {
         void this.tryInitiateDestroyReplacement;
         void this.executePendingDestroyPayload;
         void this.getDestroyGuardKey;
+        void this.incrementFieldTrashedFriendlyUnitCount;
     }
 
     public incrementGlobalStep() {
@@ -394,13 +417,14 @@ export class GameEngine {
         return [turnPlayer, nonTurnPlayer];
     }
 
-    private getTurnStats() {
+    private getTurnStats(): NonNullable<GameState['turnStats']> {
         if (!this.state.turnStats) {
             this.state.turnStats = {
                 effectTrashedFriendlyUnitCountByPlayerId: {},
                 fieldTrashedFriendlyUnitCountByPlayerId: {},
                 handTrashedByEffectCountByPlayerId: {},
                 unitAttackCountByPlayerId: {},
+                skillActivationCountByPlayerId: {},
                 traitAttackCountByPlayerId: {},
                 damagePlacedByEffectCountByPlayerId: {},
                 damagePlacedByEffectFromAreaCountByPlayerId: {},
@@ -556,6 +580,17 @@ export class GameEngine {
         return this.getTurnStats().unitAttackCountByPlayerId[playerId] || 0;
     }
 
+    public recordSkillActivation(playerId: string, count: number = 1) {
+        if (!playerId || count <= 0) return;
+        const stats = this.getTurnStats();
+        stats.skillActivationCountByPlayerId[playerId] =
+            (stats.skillActivationCountByPlayerId[playerId] || 0) + count;
+    }
+
+    public getSkillActivationCountThisTurn(playerId: string): number {
+        return this.getTurnStats().skillActivationCountByPlayerId[playerId] || 0;
+    }
+
     public getTraitAttackCountThisTurn(playerId: string, trait: string): number {
         return this.getTurnStats().traitAttackCountByPlayerId[playerId]?.[trait] || 0;
     }
@@ -585,6 +620,7 @@ export class GameEngine {
             fieldTrashedFriendlyUnitCountByPlayerId: {},
             handTrashedByEffectCountByPlayerId: {},
             unitAttackCountByPlayerId: {},
+            skillActivationCountByPlayerId: {},
             traitAttackCountByPlayerId: {},
             damagePlacedByEffectCountByPlayerId: {},
             damagePlacedByEffectFromAreaCountByPlayerId: {},
@@ -1463,6 +1499,16 @@ export class GameEngine {
             });
         });
         this.effectManager.processQueue();
+        if (this.state.interactionMode !== 'NORMAL' || this.state.pendingEffect) {
+            this.awaitingEndPhaseCleanup = true;
+            return;
+        }
+
+        this.continueEndPhaseResolution();
+    }
+
+    private continueEndPhaseResolution() {
+        this.awaitingEndPhaseCleanup = false;
 
         // 2. Clear Temporary Buffs/Effects ("Until End of Turn")
         this.state.players.forEach(p => {
@@ -1815,6 +1861,7 @@ export class GameEngine {
         // Move to Skill Zone
         this.currentPlayer.hand.splice(cardIndex, 1);
         this.currentPlayer.skillZone.push(card);
+        this.recordSkillActivation(this.currentPlayer.id);
 
         // Process Skill Effects (Skills are treated as ACTIVE effects when played)
         // Note: The card text parser classifies them as Activate type.
@@ -1868,7 +1915,11 @@ export class GameEngine {
         if (!effect) return;
         if (effect.activation !== ActivationCondition.ACTIVE && effect.activation !== ActivationCondition.ACTIVE_MAIN) return;
 
-        if (effect.activation === ActivationCondition.ACTIVE_MAIN && this.state.phase !== Phase.MAIN) {
+        if (
+            effect.activation === ActivationCondition.ACTIVE_MAIN &&
+            this.state.phase !== Phase.MAIN &&
+            !(this.state.phase === Phase.ATTACK && effectHasPhaseAttackCondition(effect.condition))
+        ) {
             return;
         }
         if (effect.activation === ActivationCondition.ACTIVE && this.state.phase !== Phase.MAIN && this.state.phase !== Phase.ATTACK) {
@@ -2459,6 +2510,7 @@ export class GameEngine {
         | 'DISCARD_HAND_BY_HIT'
         | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
         | 'BT03_083_TRASH_SELF_AND_RETURN'
+        | 'BT05_079_MILL3_IF_ITEM'
         | 'SB01_020_DISCARD_HAND_PREVENT_DESTROY';
         sourceCard: Card;
         requiredHandCount?: number;
@@ -2475,6 +2527,7 @@ export class GameEngine {
             | 'DISCARD_HAND_BY_HIT'
             | 'BT03_078_RETURN_WITH_ITEM_BOTTOM'
             | 'BT03_083_TRASH_SELF_AND_RETURN'
+            | 'BT05_079_MILL3_IF_ITEM'
             | 'SB01_020_DISCARD_HAND_PREVENT_DESTROY';
             sourceCard: Card;
             requiredHandCount?: number;
@@ -2808,6 +2861,13 @@ export class GameEngine {
                                 } else if (params.dynamic === 'ITEM_COUNT_MULTIPLIER') {
                                     const sourceItemCount = source.zone?.items?.length || 0;
                                     value = sourceItemCount * value;
+                                } else if (params.dynamic === 'ITEM_DISTINCT_NAME_COUNT_MULTIPLIER') {
+                                    const distinctNames = new Set<string>();
+                                    (source.zone?.items || []).forEach((item: any) => {
+                                        const name = String(item?.name || item?.id || '').trim();
+                                        if (name) distinctNames.add(name);
+                                    });
+                                    value = distinctNames.size * value;
                                 } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
                                     const equippedUnitCount = source.owner.unitZones.filter(z => z.unit && z.items.length > 0).length;
                                     value = equippedUnitCount * value;
@@ -2975,7 +3035,16 @@ export class GameEngine {
         // Resume global queue
         this.effectManager.resumeQueue();
 
+        this.finalizeEndPhaseCleanupIfReady();
         this.finalizeEndPhaseHandAdjustmentIfReady();
+    }
+
+    private finalizeEndPhaseCleanupIfReady() {
+        if (!this.awaitingEndPhaseCleanup) return;
+        if (this.state.interactionMode !== 'NORMAL') return;
+        if (this.state.pendingEffect) return;
+
+        this.continueEndPhaseResolution();
     }
 
     private finalizeEndPhaseHandAdjustmentIfReady() {

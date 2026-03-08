@@ -142,9 +142,17 @@ export interface TargetFilter {
     | 'EXCLUDE_CARD_ID'
     | 'EQUIPPED_ON_SOURCE_UNIT'
     | 'COST_LIMIT_BY_LEADER_LEVEL'
+    | 'COST_MIN_BY_LEADER_LEVEL'
     | 'COST_LIMIT_BY_DAMAGE_COUNT'
     | 'COST_LIMIT_BY_DAMAGE_TRAIT_COUNT'
-    | 'COST_STRICTLY_LOWER_THAN_DAMAGE_TRAIT_COUNT';
+    | 'COST_LIMIT_BY_EQUIPPED_ITEM_COUNT'
+    | 'COST_STRICTLY_LOWER_THAN_DAMAGE_TRAIT_COUNT'
+    | 'HAS_ENCOUNTER'
+    | 'NO_ENCOUNTER'
+    | 'DIFFERENT_LANE_FROM_SOURCE'
+    | 'POWER_LOWER_THAN_SOURCE'
+    | 'POWER_LIMIT_BY_SOURCE'
+    | 'CARD_TYPE_IN';
     value?: any;
 }
 
@@ -228,7 +236,12 @@ export interface EffectCondition {
     | 'DAMAGE_PLACED_IN_MY_ZONE_BY_EFFECT_THIS_TURN'
     | 'TRAIT_ATTACK_COUNT_THIS_TURN_MIN'
     | 'MY_FIELD_UNIT_COUNT'
-    | 'TRASH_TRAIT_COUNT_MIN';
+    | 'TRASH_TRAIT_COUNT_MIN'
+    | 'FIELD_HAS_NON_ATTRIBUTE_CARD'
+    | 'SKILL_ACTIVATION_COUNT_THIS_TURN_MIN'
+    | 'ITEM_DISTINCT_NAME_COUNT_MIN'
+    | 'POWER_MARGIN_MIN'
+    | 'ENCOUNTER_COST_MARGIN_MIN';
     value?: any;
     trashedUnitCostMin?: number; // New: for triggers like Cinderella's UNIT_TRASHED
     friendlyOnly?: boolean; // New: check if trashed unit belongs to player
@@ -421,6 +434,7 @@ export interface GameState {
         fieldTrashedFriendlyUnitCountByPlayerId: Record<string, number>;
         handTrashedByEffectCountByPlayerId: Record<string, number>;
         unitAttackCountByPlayerId: Record<string, number>;
+        skillActivationCountByPlayerId: Record<string, number>;
         traitAttackCountByPlayerId: Record<string, Record<string, number>>;
         damagePlacedByEffectCountByPlayerId: Record<string, number>;
         damagePlacedByEffectFromAreaCountByPlayerId: Record<string, Partial<Record<DamagePlacementOrigin, number>>>;

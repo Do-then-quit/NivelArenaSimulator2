@@ -9,11 +9,13 @@ import { ST05Module } from './shared/ST05';
 import { ST06Module } from './shared/ST06';
 import { ST07Module } from './shared/ST07';
 import { ST08Module } from './shared/ST08';
+import { ST09Module } from './shared/ST09';
 import { ST10Module } from './shared/ST10';
 import { ST11Module } from './shared/ST11';
 import { SB01Module } from './shared/SB01';
 import { BT03Module } from './shared/BT03';
 import { BT04Module } from './shared/BT04';
+import { BT05Module } from './shared/BT05';
 import { BT06Module } from './shared/BT06';
 import { BT01FireModule } from './shared/BT01Fire';
 import { BT01EarthModule } from './shared/BT01Earth';
@@ -34,11 +36,13 @@ const UnifiedST05 = adaptUnifiedModule(ST05Module);
 const UnifiedST06 = adaptUnifiedModule(ST06Module);
 const UnifiedST07 = adaptUnifiedModule(ST07Module);
 const UnifiedST08 = adaptUnifiedModule(ST08Module);
+const UnifiedST09 = adaptUnifiedModule(ST09Module);
 const UnifiedST10 = adaptUnifiedModule(ST10Module);
 const UnifiedST11 = adaptUnifiedModule(ST11Module);
 const UnifiedSB01 = adaptUnifiedModule(SB01Module);
 const UnifiedBT03 = adaptUnifiedModule(BT03Module);
 const UnifiedBT04 = adaptUnifiedModule(BT04Module);
+const UnifiedBT05 = adaptUnifiedModule(BT05Module);
 const UnifiedBT06 = adaptUnifiedModule(BT06Module);
 const UnifiedBT01Fire = adaptUnifiedModule(BT01FireModule);
 const UnifiedBT01Earth = adaptUnifiedModule(BT01EarthModule);
@@ -58,11 +62,13 @@ export const CARD_TEST_REGISTRY: Record<string, CardTestModule> = {
     'ST06': UnifiedST06,
     'ST07': UnifiedST07,
     'ST08': UnifiedST08,
+    'ST09': UnifiedST09,
     'ST10': UnifiedST10,
     'ST11': UnifiedST11,
     'SB01': UnifiedSB01,
     'BT03': UnifiedBT03,
     'BT04': UnifiedBT04,
+    'BT05': UnifiedBT05,
     'BT06': UnifiedBT06,
     'BT01화염': UnifiedBT01Fire,
     'BT01대지': UnifiedBT01Earth,

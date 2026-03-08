@@ -319,6 +319,17 @@ export const damage: ActionImplementation = (ctx, params, _targets) => {
     if (value > 0) {
         ctx.machine.dealDamage(targetPlayer, value);
         console.log(`Dealt ${value} damage to ${targetPlayer.name} via effect.`);
+
+        const drawOnEffectDamageTurnCount = Number((ctx.player as any).st09_007DrawOnEffectDamageUntilTurnCount || 0);
+        if (
+            targetPlayer.id === ctx.opponent.id &&
+            drawOnEffectDamageTurnCount === ctx.machine.state.turnCount
+        ) {
+            const playerIndex = ctx.machine.state.players.indexOf(ctx.player);
+            if (playerIndex !== -1) {
+                ctx.machine.drawCard(playerIndex, 1, resolveEffectDrawMeta(params));
+            }
+        }
     }
 };
 
@@ -385,7 +396,7 @@ export const queueNextPlayUnitEffects: ActionImplementation = (ctx, params) => {
         : (params.effect ? [params.effect] : []);
     const queuedEffects = rawEffects
         .filter((effect: unknown): effect is any => !!effect && typeof effect === 'object')
-        .map(effect => ({
+        .map((effect: any) => ({
             effect: JSON.parse(JSON.stringify(effect)),
             sourceCard: ctx.sourceCard,
         }));

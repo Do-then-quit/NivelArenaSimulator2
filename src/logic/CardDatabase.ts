@@ -26,12 +26,14 @@ import { ST05_EFFECTS } from './cardEffects/st05';
 import { ST06_EFFECTS } from './cardEffects/st06';
 import { ST07_EFFECTS } from './cardEffects/st07';
 import { ST08_EFFECTS } from './cardEffects/st08';
+import { ST09_EFFECTS } from './cardEffects/st09';
 import { ST10_EFFECTS } from './cardEffects/st10';
 import { ST11_EFFECTS } from './cardEffects/st11';
 import { BT01_EFFECTS } from './cardEffects/bt01';
 import { BT02_EFFECTS } from './cardEffects/bt02';
 import { BT03_EFFECTS } from './cardEffects/bt03';
 import { BT04_EFFECTS } from './cardEffects/bt04';
+import { BT05_EFFECTS } from './cardEffects/bt05';
 import { BT06_EFFECTS } from './cardEffects/bt06';
 import { SB01_EFFECTS } from './cardEffects/sb01';
 
@@ -44,12 +46,14 @@ const MANUAL_EFFECTS: Record<string, Effect[]> = {
     ...ST06_EFFECTS,
     ...ST07_EFFECTS,
     ...ST08_EFFECTS,
+    ...ST09_EFFECTS,
     ...ST10_EFFECTS,
     ...ST11_EFFECTS,
     ...BT01_EFFECTS,
     ...BT02_EFFECTS,
     ...BT03_EFFECTS,
     ...BT04_EFFECTS,
+    ...BT05_EFFECTS,
     ...BT06_EFFECTS,
     ...SB01_EFFECTS,
 };

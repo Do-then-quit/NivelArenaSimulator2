@@ -74,14 +74,20 @@ export const destroyLaneLowest: ActionImplementation = (ctx, _params, _targets) 
 
 export const penetration: ActionImplementation = (ctx, params, _targets) => {
     if (ctx.unitZone) {
+        let value = params.value || 0;
+        if (params.dynamic === 'SKILL_ACTIVATION_COUNT_THIS_TURN') {
+            value = typeof ctx.machine?.getSkillActivationCountThisTurn === 'function'
+                ? ctx.machine.getSkillActivationCountThisTurn(ctx.player.id)
+                : 0;
+        }
         ctx.unitZone.buffs.push({
             id: ctx.machine.createRuntimeId('BUFF'),
             sourceCard: ctx.sourceCard,
             type: 'PENETRATION',
-            value: params.value || 0,
+            value,
             duration: params.duration || 'TURN_END'
         });
-        console.log(`Granted PENETRATION[${params.value}] to ${ctx.unitZone.unit?.name}`);
+        console.log(`Granted PENETRATION[${value}] to ${ctx.unitZone.unit?.name}`);
     }
 };
 

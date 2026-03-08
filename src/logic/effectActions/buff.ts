@@ -13,6 +13,11 @@ function resolveSourceOwnerTurnEndUntilTurnCount(ctx: any): number {
     return ctx.machine.state.turnCount + (isSourceOwnersTurn ? 0 : 1);
 }
 
+function resolveSourceOwnerNextTurnEndUntilTurnCount(ctx: any): number {
+    const isSourceOwnersTurn = ctx.machine.currentPlayer?.id === ctx.player.id;
+    return ctx.machine.state.turnCount + (isSourceOwnersTurn ? 2 : 1);
+}
+
 export const buffPower: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(target => {
         if (target && target.unit) {
@@ -96,13 +101,25 @@ export const grantEffect: ActionImplementation = (_ctx, params, targets) => {
         if (target && 'temporaryEffects' in target) {
             const effect = params.effect;
             if (effect) {
+                const nextSourceOwnerTurnEnd = params.untilSourceOwnerNextTurnEnd === true;
+                const untilTurnCount = nextSourceOwnerTurnEnd
+                    ? resolveSourceOwnerNextTurnEndUntilTurnCount(_ctx)
+                    : undefined;
+                const actionParams = {
+                    ...(effect.action?.params || {}),
+                    ...(typeof untilTurnCount === 'number' ? { untilTurnCount } : {}),
+                };
                 const actionDurationOverride =
                     effect.actionDurationOverride !== undefined
                         ? effect.actionDurationOverride
                         : (effect.duration && effect.duration !== 'TURN_END' ? effect.duration : undefined);
                 target.temporaryEffects.push({
                     ...effect,
-                    duration: params.duration || 'TURN_END',
+                    duration: nextSourceOwnerTurnEnd ? 'PERMANENT' : (params.duration || 'TURN_END'),
+                    action: {
+                        ...effect.action,
+                        params: actionParams,
+                    },
                     actionDurationOverride
                 });
                 console.log(`Granted effect to ${target.unit?.name}: ${effect.description}`);
@@ -206,12 +223,13 @@ export const applyDualistMark: ActionImplementation = (_ctx, params, targets) =>
 };
 
 export const applyInfiltrationMark: ActionImplementation = (_ctx, params, targets) => {
+    const value = Math.max(1, Number(params.value ?? 1));
     targets.forEach(target => {
         if (!target || !('temporaryEffects' in target) || !target.unit) return;
         target.temporaryEffects.push({
             activation: ActivationCondition.ATTACKER,
-            description: '어태커 : 침투[1]',
-            action: { type: 'NONE', params: {} },
+            description: `어태커 : 침투[${value}]`,
+            action: { type: 'NONE', params: { infiltrationValue: value } },
             duration: params.duration || 'TURN_END',
         });
     });
