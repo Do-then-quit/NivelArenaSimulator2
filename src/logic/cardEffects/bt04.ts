@@ -37,6 +37,22 @@ function passiveDamageReferenceBonus(value: number): Effect {
     };
 }
 
+function pactDeckOnly(attribute: string): Effect {
+    return {
+        activation: ActivationCondition.PASSIVE,
+        description: `[서약] 자신의 덱에 [${attribute}]카드만 넣을 수 있다.`,
+        action: { type: 'NONE', params: { pactAttribute: attribute } },
+    };
+}
+
+function berserkKeyword(): Effect {
+    return {
+        activation: ActivationCondition.PASSIVE,
+        description: '광전사 (이 유닛은 가능하다면 반드시 공격해야 한다).',
+        action: { type: 'NONE', params: { keyword: 'BERSERK' } },
+    };
+}
+
 function entryBuffOtherFriendly3000(): Effect {
     return {
         activation: ActivationCondition.ENTRY,
@@ -71,6 +87,7 @@ export const BT04_EFFECTS: Record<string, Effect[]> = {
             description: '각성면 패시브 : 자신의 효과로 대미지 존에 있는 카드의 수를 참조할 때 자신의 대미지 존에 카드가 4장 더 있는 것으로 취급한다.',
             action: { type: 'NONE', params: { damageCountReferenceBonus: 4 } },
         },
+        pactDeckOnly('화염'),
     ],
     'BT04-002': [
         awaken(5),
@@ -91,6 +108,7 @@ export const BT04_EFFECTS: Record<string, Effect[]> = {
                 },
             },
         },
+        pactDeckOnly('화염'),
     ],
     'BT04-003': [selfAttackerPower(2000)],
     'BT04-004': [
@@ -373,6 +391,7 @@ export const BT04_EFFECTS: Record<string, Effect[]> = {
             action: { type: 'BUFF_POWER', params: { value: 4000 } },
             duration: 'BATTLE_END',
         },
+        berserkKeyword(),
     ],
     'BT04-020': [
         {
@@ -885,6 +904,7 @@ export const BT04_EFFECTS: Record<string, Effect[]> = {
             description: '각성면 액티브: 메인 - 자신의 패에서 《용의 계곡》이나 《혹한의 날들》을 가진 카드를 1장 골라 대미지 존에 놓는다. 그러면 자신의 트래시 존에서 그 카드의 코스트 이하인 카드를 1장 골라 패에 넣는다.',
             action: { type: 'COMPLEX_ACTION', params: { mode: 'BT04_041_LEADER_MOVE_HAND_TO_DAMAGE_THEN_RECOVER_BY_COST' } },
         },
+        pactDeckOnly('폭풍'),
     ],
     'BT04-042': [
         awaken(5),
@@ -894,6 +914,7 @@ export const BT04_EFFECTS: Record<string, Effect[]> = {
             targets: { scope: 'MY_FIELD', type: 'UNIT', count: 2, selectMode: 'MANUAL' },
             action: { type: 'SACRIFICE_TO_BUFF', params: { powerValue: 2000, duration: 'TURN_END' } },
         },
+        pactDeckOnly('폭풍'),
     ],
     'BT04-043': [
         {
@@ -1232,7 +1253,7 @@ export const BT04_EFFECTS: Record<string, Effect[]> = {
     'BT04-069': [
         {
             activation: ActivationCondition.EXIT,
-            description: '엑시트 : 자신의 트래시 존에서 [트리거]를 가지지 않고 카드명이 다른 카드를 6장 골라 덱 맨 아래에 원하는 순서대로 놓을 수 있다. 그러면 비어 있는 자신의 유닛 존에 이 유닛 카드를 배치한다.',
+            description: '엑시트 : 자신의 트래시 존에서 [트리거]를 가지지 않고 카드명이 다른 카드를 6장 골라 덱 맨 아래에 원하는 순서대로 놓을 수 있다. 그러면 비어 있는 자신의 유닛 존에 이 유닛 카드를 배치한다. 고른 카드 중 《런웨이 파이터》를 가진 카드가 2장 이상이고 자신의 대미지 존에 있는 카드가 7장 이상이라면 자신의 대미지 존에서 카드를 1장 골라 트래시할 수 있다.',
             optional: true,
             action: { type: 'COMPLEX_ACTION', params: { mode: 'BT04_069_EXIT_BOTTOM6_AND_REVIVE_SELF' } },
         },
@@ -1444,7 +1465,6 @@ export const BT04_EFFECTS: Record<string, Effect[]> = {
             condition: { type: 'MY_DAMAGE_TRAIT_COUNT', value: { trait: '용의 계곡', min: 8 } },
             action: { type: 'COMPLEX_ACTION', params: { mode: 'BT04_075_MOVE_ENCOUNTER_TO_OPP_DAMAGE' } },
         },
-        triggerReturnSelfToHand(),
     ],
     'BT04-076': [
         {

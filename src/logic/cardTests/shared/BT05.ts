@@ -94,6 +94,93 @@ function chooseOptional(engine: any, actorPlayerId: string, confirm: boolean = t
     return action;
 }
 
+function chooseZone(engine: any, actorPlayerId: string, targetPlayerId: string, zoneIndex: number) {
+    const action = findAction(
+        engine,
+        actorPlayerId,
+        'SELECT_ZONE_TARGET',
+        (entry: any) => entry.targetPlayerId === targetPlayerId && entry.zoneIndex === zoneIndex,
+    );
+    if (action) engine.step(action);
+    return action;
+}
+
+function chooseHand(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
+    const player = engine.getPlayerById(actorPlayerId);
+    const action = findAction(
+        engine,
+        actorPlayerId,
+        'SELECT_HAND_TARGET',
+        (entry: any) => predicate(player.hand[entry.handIndex]),
+    );
+    if (action) engine.step(action);
+    return action;
+}
+
+function chooseCostHand(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
+    const player = engine.getPlayerById(actorPlayerId);
+    const action = findAction(
+        engine,
+        actorPlayerId,
+        'SELECT_COST_HAND',
+        (entry: any) => predicate(player.hand[entry.handIndex]),
+    );
+    if (action) engine.step(action);
+    return action;
+}
+
+function chooseTrash(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
+    const player = engine.getPlayerById(actorPlayerId);
+    const action = findAction(
+        engine,
+        actorPlayerId,
+        'SELECT_TRASH_TARGET',
+        (entry: any) => predicate(player.trash[entry.trashIndex]),
+    );
+    if (action) engine.step(action);
+    return action;
+}
+
+function chooseDamage(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
+    const player = engine.getPlayerById(actorPlayerId);
+    const action = findAction(
+        engine,
+        actorPlayerId,
+        'SELECT_DAMAGE_TARGET',
+        (entry: any) => predicate(player.damage[entry.damageIndex]),
+    );
+    if (action) engine.step(action);
+    return action;
+}
+
+function chooseRevealed(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
+    const action = findAction(
+        engine,
+        actorPlayerId,
+        'SELECT_REVEALED_TARGET',
+        (entry: any) => predicate(engine.state.revealedCards[entry.revealedIndex]),
+    );
+    if (action) engine.step(action);
+    return action;
+}
+
+function chooseItem(engine: any, actorPlayerId: string, targetPlayerId: string, zoneIndex: number, itemIndex: number) {
+    const action = findAction(
+        engine,
+        actorPlayerId,
+        'SELECT_ITEM_TARGET',
+        (entry: any) => entry.targetPlayerId === targetPlayerId && entry.zoneIndex === zoneIndex && entry.itemIndex === itemIndex,
+    );
+    if (action) engine.step(action);
+    return action;
+}
+
+function confirmTargets(engine: any, actorPlayerId: string) {
+    const action = findAction(engine, actorPlayerId, 'CONFIRM_TARGETS');
+    if (action) engine.step(action);
+    return action;
+}
+
 function resolveBlock(engine: any, actorPlayerId: string, blockerZoneIndex: number, shouldBlock: boolean = true) {
     const action = findAction(
         engine,
@@ -213,6 +300,64 @@ function getBt05Card(cardId: string): Card {
     return card;
 }
 
+function makeMixedLeaderAwakenPromptTest(
+    cardId: string,
+    leaderName: string,
+    requiredLevel: number,
+    coverageIndices: number[],
+): UnifiedTestCase {
+    return createCase({
+        testId: cardId,
+        name: `${leaderName} 각성과 비동일 속성 상대 드로우`,
+        description: `${cardId}가 요구 레벨에서 각성하고, 자신의 필드에 다른 속성 카드가 있으면 상대가 1장 드로우를 선택할 수 있다.`,
+        coversEffectIndices: coverageIndices,
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.levelZone = getCard(cardId);
+            if (p1.levelZone) p1.levelZone.isAwakened = false;
+            p1.leaderLevel = requiredLevel - 1;
+            p1.unitZones[0].unit = getCard(OTHER_ATTRIBUTE_SUPPORT_BY_ATTRIBUTE[p1.levelZone.attribute] || 'ST01-002');
+            p2.deck = [getCard('ST01-011'), getCard('ST01-002')];
+            engine.state.phase = Phase.LEVEL_UP;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const handBefore = p2.hand.length;
+            engine.nextPhase();
+            const confirm = chooseOptional(engine, p2.id, true);
+            return [
+                { pass: p1.levelZone?.isAwakened === true, message: '리더 각성 성공' },
+                { pass: !!confirm, message: '상대 드로우 선택 가능' },
+                { pass: p2.hand.length === handBefore + 1, message: '상대가 1장 드로우' },
+            ];
+        },
+    });
+}
+
+function makeMixedLeaderPactTest(cardId: string, leaderName: string, coverageIndex: number, attribute: Attribute): UnifiedTestCase {
+    return createCase({
+        testId: cardId,
+        name: `${leaderName} 서약 효과 등록`,
+        description: `${cardId}가 cardEffects에 혼합 서약 메타 효과를 가진다.`,
+        coversEffectIndices: [coverageIndex],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard(cardId);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (_engine, getCard) => {
+            const card = getCard(cardId);
+            const pactEffect = card.effects?.find((effect: any) => effect.action?.params?.pactAttribute === attribute);
+            return [
+                { pass: !!pactEffect, message: `[서약] 효과 등록 (${attribute})` },
+                { pass: pactEffect?.action?.params?.offAttributeMustMatch === true, message: '비주속성 카드 동일 속성 제한 메타 포함' },
+            ];
+        },
+    });
+}
+
 function flattenConditions(condition: any): any[] {
     if (!condition) return [];
     if (condition.type === 'ALL' && Array.isArray(condition.value)) {
@@ -299,6 +444,224 @@ function generatedEffectKey(cardId: string, effectIndex: number): string {
 }
 
 const behaviorTests: UnifiedTestCase[] = [
+    makeMixedLeaderAwakenPromptTest('BT05-001', '훈련소장 카티야', 5, [0, 1]),
+    createCase({
+        testId: 'BT05-001',
+        name: '훈련소장 카티야 각성면 액티브 2코 이하 비트리거 스킬 회수',
+        description: '손패 1장을 트래시하고 트래시의 2코스트 이하 비트리거 스킬 1장을 패로 회수한다.',
+        coversEffectIndices: [2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('BT05-001');
+            if (p1.levelZone) p1.levelZone.isAwakened = true;
+            p1.leaderLevel = 5;
+            p1.hand = [getCard('ST01-011')];
+            p1.trash = [getCard('BT05-013'), getCard('BT05-028')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.activateEffect(0, 2, 'LEADER');
+            const discard = chooseCostHand(engine, p1.id, (card: Card) => card.id.startsWith('ST01-011'));
+            const legalIds = engine.getLegalActions(p1.id)
+                .filter((action: any) => action.type === 'SELECT_TRASH_TARGET')
+                .map((action: any) => p1.trash[action.trashIndex]?.id);
+            const recover = chooseTrash(engine, p1.id, (card: Card) => card.id === 'BT05-013');
+            return [
+                { pass: !!discard, message: '손패 트래시 코스트 선택 가능' },
+                { pass: legalIds.includes('BT05-013'), message: '2코스트 이하 비트리거 스킬 선택 가능' },
+                { pass: !legalIds.includes('BT05-028'), message: '코스트 초과 스킬은 선택 불가' },
+                { pass: !!recover, message: '회수할 스킬 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id === 'BT05-013'), message: '조건에 맞는 스킬 회수 성공' },
+            ];
+        },
+    }),
+    makeMixedLeaderPactTest('BT05-001', '훈련소장 카티야', 3, Attribute.FIRE),
+    createCase({
+        testId: 'BT05-004',
+        name: '발렌타인 로지 패시브로 아군 어태커 약탈과 파워 상승 부여',
+        description: '다른 자신 유닛이 공격할 때 약탈[1]과 파워+2000을 함께 얻는다.',
+        coversEffectIndices: [0, 1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT05-004');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p1.deck = [getCard('ST01-011')];
+            p2.unitZones[1].unit = getCard('ST01-002');
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const beforePower = zonePower(engine, p1, 1);
+            const handBefore = p1.hand.length;
+            engine.attack(1);
+            const powerDuringAttack = zonePower(engine, p1, 1);
+            resolveBlock(engine, p2.id, 1, true);
+            return [
+                { pass: powerDuringAttack === beforePower + 2000, message: '공격 선언 직후 아군 어태커 파워+2000 적용' },
+                { pass: p1.hand.length === handBefore + 1, message: '약탈[1]로 1드로우' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-004',
+        name: '발렌타인 로지 이스케이프로 덱 맨 아래 이동 후 다음 배치 관통 부여',
+        description: '이스케이프로 자신을 덱 맨 아래에 두고 다음에 배치한 유닛에게 어태커 관통[1]을 준다.',
+        coversEffectIndices: [2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT05-004');
+            p1.hand = [getCard('ST01-011')];
+            setHighSize(engine, 20);
+            p2.unitZones[0].unit = getCard('ST01-002');
+            p2.deck = [getCard('ST01-002'), getCard('ST01-002')];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.DRAW;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.nextPhase();
+            const queued = (p1.pendingNextPlayUnitEffects || []).length;
+            const played = playUnitById(engine, p1, 'ST01-011', 0);
+            engine.state.phase = Phase.ATTACK;
+            engine.attack(0);
+            resolveBlock(engine, p2.id, 0, true);
+            return [
+                { pass: p1.unitZones.every((zone: any) => zone.unit?.id !== 'BT05-004'), message: '이스케이프로 자신이 필드에서 이탈' },
+                { pass: queued > 0, message: '다음 배치 강화 큐 적재' },
+                { pass: played, message: '다음 유닛 배치 성공' },
+                { pass: zonePenetration(engine, p1, 0) >= 1 || p2.damage.length >= 1, message: '배치한 유닛이 관통[1]을 얻음' },
+            ];
+        },
+    }),
+    makeMixedLeaderAwakenPromptTest('BT05-032', '언럭키 바니 니키', 5, [0, 1]),
+    createCase({
+        testId: 'BT05-032',
+        name: '언럭키 바니 니키 각성면 액티브 귀환 부여',
+        description: '자신 유닛 1장에게 상대 턴 종료까지 엑시트 귀환을 부여한다.',
+        coversEffectIndices: [2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('BT05-032');
+            if (p1.levelZone) p1.levelZone.isAwakened = true;
+            p1.leaderLevel = 5;
+            p1.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.activateEffect(0, 2, 'LEADER');
+            const chooseReturn = chooseRevealed(engine, p1.id, (card: Card) => card?.name === '귀환 부여');
+            const pick = chooseZone(engine, p1.id, p1.id, 0);
+            return [
+                { pass: !!chooseReturn, message: '귀환 부여 선택지 선택 가능' },
+                { pass: !!pick, message: '귀환을 부여할 유닛 선택 가능' },
+                { pass: hasTemporaryAction(p1.unitZones[0], 'RETURN_FROM_TRASH_AT_TURN_END'), message: '엑시트 귀환 효과 부여' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-032',
+        name: '언럭키 바니 니키 각성면 액티브 아군 트래시',
+        description: '다른 선택지로 자신 유닛 1장을 트래시한다.',
+        coversEffectIndices: [2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.levelZone = getCard('BT05-032');
+            if (p1.levelZone) p1.levelZone.isAwakened = true;
+            p1.leaderLevel = 5;
+            p1.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.activateEffect(0, 2, 'LEADER');
+            const chooseDestroy = chooseRevealed(engine, p1.id, (card: Card) => card?.name === '아군 트래시');
+            const pick = chooseZone(engine, p1.id, p1.id, 0);
+            return [
+                { pass: !!chooseDestroy, message: '아군 트래시 선택지 선택 가능' },
+                { pass: !!pick, message: '트래시할 유닛 선택 가능' },
+                { pass: p1.unitZones[0].unit === null, message: '선택한 아군 유닛 트래시' },
+            ];
+        },
+    }),
+    makeMixedLeaderPactTest('BT05-032', '언럭키 바니 니키', 3, Attribute.STORM),
+    createCase({
+        testId: 'BT05-046',
+        name: '마탄의 사수 장착 조건 없음과 파워+2000',
+        description: '어떤 자신 유닛에도 장착 가능하고 장착된 유닛의 파워를 2000 올린다.',
+        coversEffectIndices: [0, 2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.hand = [getCard('BT05-046')];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const before = zonePower(engine, p1, 0);
+            const played = playItemById(engine, p1, 'BT05-046', 0);
+            return [
+                { pass: played, message: '장착 조건 없이 아이템 장착 성공' },
+                { pass: p1.unitZones[0].items.some((item: Card) => item.id.startsWith('BT05-046')), message: '아이템 장착 상태 반영' },
+                { pass: zonePower(engine, p1, 0) === before + 2000, message: '장착 유닛 파워+2000' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-046',
+        name: '마탄의 사수 상대 턴 종료시 패를 버리면 장착 유닛 유지',
+        description: '상대 턴 종료 시 패 1장을 트래시하면 장착 유닛이 남는다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.unitZones[0].items = [getCard('BT05-046')];
+            p1.hand = [getCard('ST01-011')];
+            engine.state.turnPlayerIndex = 1;
+            engine.state.phase = Phase.END;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.nextPhase();
+            const discard = chooseHand(engine, p1.id, (card: Card) => card.id.startsWith('ST01-011'));
+            if (engine.state.interactionMode === 'SELECT_TARGET') {
+                confirmTargets(engine, p1.id);
+            }
+            return [
+                { pass: !!discard, message: '버릴 패 선택 가능' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('ST01-011')), message: '패 1장 트래시' },
+                { pass: p1.unitZones[0].unit?.id.startsWith('ST01-002') === true, message: '장착 유닛 유지' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-046',
+        name: '마탄의 사수 상대 턴 종료시 패가 없으면 장착 유닛 트래시',
+        description: '상대 턴 종료 시 버릴 패가 없으면 장착 유닛이 트래시된다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.unitZones[0].items = [getCard('BT05-046')];
+            p1.hand = [];
+            engine.state.turnPlayerIndex = 1;
+            engine.state.phase = Phase.END;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.nextPhase();
+            return [
+                { pass: p1.unitZones[0].unit === null, message: '장착 유닛이 트래시됨' },
+            ];
+        },
+    }),
+    makeMixedLeaderAwakenPromptTest('BT05-063', '사관후보생 아야', 5, [0, 1]),
+    makeMixedLeaderPactTest('BT05-063', '사관후보생 아야', 3, Attribute.LIGHTNING),
     {
         testId: 'BT05-023',
         name: 'Escape pays hand cost and sends engaged enemy and self to deck bottom',
@@ -1493,4 +1856,3 @@ export const BT05Module: UnifiedTestModule = {
     displayName: 'BT05 Unified Tests',
     tests,
 };
-

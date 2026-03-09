@@ -213,6 +213,49 @@ function makeAwakenTest(cardId: string, leaderLevel: number, cardName: string): 
     });
 }
 
+function makePactEffectRegistrationTest(cardId: string, cardName: string, coverageIndex: number, attribute: string): UnifiedTestCase {
+    return createCase({
+        testId: cardId,
+        name: `${cardName} 서약 효과 등록`,
+        description: `${cardId}가 cardEffects에 [서약] 메타 효과를 가진다.`,
+        coversEffectIndices: [coverageIndex],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.levelZone = getCard(cardId);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (_engine, getCard) => {
+            const card = getCard(cardId);
+            const pactEffect = card.effects?.find((effect: any) => effect.action?.params?.pactAttribute === attribute);
+            return [
+                { pass: !!pactEffect, message: `[서약] 효과 등록 (${attribute})` },
+                { pass: String(pactEffect?.description || '').includes('[서약]'), message: '서약 설명 포함' },
+            ];
+        },
+    });
+}
+
+function makeBerserkEffectRegistrationTest(cardId: string, cardName: string, coverageIndex: number): UnifiedTestCase {
+    return createCase({
+        testId: cardId,
+        name: `${cardName} 광전사 효과 등록`,
+        description: `${cardId}가 cardEffects에 광전사 키워드 효과를 가진다.`,
+        coversEffectIndices: [coverageIndex],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard(cardId);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (_engine, getCard) => {
+            const card = getCard(cardId);
+            const hasBerserk = card.effects?.some((effect: any) => effect.action?.params?.keyword === 'BERSERK') || false;
+            return [
+                { pass: hasBerserk, message: '광전사 효과 등록' },
+            ];
+        },
+    });
+}
+
 function makeDamageReferenceBonusTest(
     cardId: string,
     cardName: string,
@@ -331,6 +374,7 @@ function makeMoveSelfToDamageExitTest(cardId: string, cardName: string, coverage
 const tests: UnifiedTestCase[] = [
     makeAwakenTest('BT04-001', 5, '레테'),
     makeDamageReferenceBonusTest('BT04-001', '레테', 1, 1, 'BT04-023', 'BT04-028', 'LEADER'),
+    makePactEffectRegistrationTest('BT04-001', '레테', 2, '화염'),
     makeAwakenTest('BT04-002', 5, '조장 아룬카'),
     createCase({
         testId: 'BT04-002',
@@ -359,6 +403,7 @@ const tests: UnifiedTestCase[] = [
             ];
         },
     }),
+    makePactEffectRegistrationTest('BT04-002', '조장 아룬카', 2, '화염'),
     makeFlatAttackerPowerTest('BT04-003', '아이테르 : 이제라의 작은 별', 2000, 0),
     createCase({
         testId: 'BT04-004',
@@ -645,6 +690,27 @@ const tests: UnifiedTestCase[] = [
     }),
     createCase({
         testId: 'BT04-016',
+        name: '후계자 태유 액티브 5000 이상 선택지',
+        description: '자신의 파워가 5000 이상 8000 미만이면 다른 자신 유닛 1장에 +3000을 준다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('BT04-016');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            addPowerBuff(p1.unitZones[0], 4000);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const before = zonePower(engine, p1, 1);
+            engine.activateEffect(0, 1);
+            return [
+                { pass: zonePower(engine, p1, 1) === before + 3000, message: '다른 자신 유닛 파워+3000' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT04-016',
         name: '후계자 태유 액티브 8000 이상 선택지',
         description: '자신의 파워가 8000 이상이면 조우 유닛의 파워를 1000으로 만든다.',
         coversEffectIndices: [1],
@@ -712,6 +778,29 @@ const tests: UnifiedTestCase[] = [
             chooseZone(engine, p1.id, p1.id, 1);
             return [
                 { pass: zonePower(engine, p1, 1) === before + 3000, message: '엔트리로 다른 아군 파워+3000' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT04-018',
+        name: '전학생 아딘 액티브 5000 이상 선택지',
+        description: '자신의 파워가 5000 이상 8000 미만이면 상대 유닛 1장에 -2000을 준다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.unitZones[0].unit = getCard('BT04-018');
+            p2.unitZones[0].unit = getCard('ST01-002');
+            addPowerBuff(p1.unitZones[0], 4000);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            const before = zonePower(engine, p2, 0);
+            engine.activateEffect(0, 1);
+            return [
+                { pass: zonePower(engine, p2, 0) === before - 2000, message: '상대 유닛 파워-2000' },
             ];
         },
     }),
@@ -788,6 +877,7 @@ const tests: UnifiedTestCase[] = [
             ];
         },
     }),
+    makeBerserkEffectRegistrationTest('BT04-019', '축제의 에다', 2),
     createCase({
         testId: 'BT04-020',
         name: '빅토리카 패시브 다른 계승자/과거혹은미래 수 비례',
@@ -912,6 +1002,27 @@ const tests: UnifiedTestCase[] = [
     }),
     createCase({
         testId: 'BT04-022',
+        name: '풍기위원 아리아 액티브 5000 이상 선택지',
+        description: '자신의 파워가 5000 이상 8000 미만이면 트래시의 3코스트 이하 나탈론 학원 유닛을 회수한다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('BT04-022');
+            p1.trash = [getCard('BT04-013'), getCard('BT04-025')];
+            addPowerBuff(p1.unitZones[0], 3000);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.activateEffect(0, 1);
+            return [
+                { pass: p1.hand.some((card: Card) => card.id === 'BT04-013'), message: '트래시 유닛 회수 성공' },
+                { pass: !p1.hand.some((card: Card) => card.id === 'BT04-025'), message: '코스트 초과 카드는 회수되지 않음' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT04-022',
         name: '풍기위원 아리아 액티브 8000 이상 듀얼리스트',
         description: '자신의 파워가 8000 이상이면 듀얼리스트를 얻는다.',
         coversEffectIndices: [1],
@@ -995,6 +1106,32 @@ const tests: UnifiedTestCase[] = [
             chooseZone(engine, p1.id, p1.id, 1);
             return [
                 { pass: zonePower(engine, p1, 1) === before + 3000, message: '엔트리로 다른 아군 파워+3000' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT04-025',
+        name: '고독한 늑대 페이라 액티브 9000 이상 선택지',
+        description: '자신의 파워가 9000 이상 12000 미만이면 상대 유닛 1장에 -7000을 준다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            p1.unitZones[0].unit = getCard('BT04-025');
+            p2.unitZones[0].unit = getCard('ST10-008');
+            addPowerBuff(p1.unitZones[0], 6000);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            const p2 = engine.opponentPlayer;
+            const before = zonePower(engine, p2, 0);
+            engine.activateEffect(0, 1);
+            return [
+                {
+                    pass: p2.unitZones[0].unit === null || zonePower(engine, p2, 0) === before - 7000,
+                    message: '상대 유닛 파워-7000 또는 0 이하로 트래시',
+                },
             ];
         },
     }),
@@ -1086,6 +1223,28 @@ const tests: UnifiedTestCase[] = [
             chooseZone(engine, p1.id, p1.id, 1);
             return [
                 { pass: zonePower(engine, p1, 1) === before + 3000, message: '엔트리로 다른 아군 파워+3000' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT04-027',
+        name: '조장 아룬카 액티브 6000 이상 선택지',
+        description: '자신의 파워가 6000 이상 9000 미만이면 자신의 스킬 존 카드 1장을 트래시한다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('BT04-027');
+            p1.skillZone = [getCard('BT04-030')];
+            addPowerBuff(p1.unitZones[0], 3000);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.activateEffect(0, 1);
+            const pick = chooseRevealed(engine, p1.id, (card: Card) => card?.name === '단 하나의 위로');
+            return [
+                { pass: !!pick, message: '트래시할 스킬 선택 가능' },
+                { pass: p1.skillZone.length === 0 && p1.trash.some((card: Card) => card.id === 'BT04-030'), message: '스킬 존 카드 트래시 성공' },
             ];
         },
     }),
@@ -1558,6 +1717,7 @@ const tests: UnifiedTestCase[] = [
             ];
         },
     }),
+    makePactEffectRegistrationTest('BT04-041', '신월의 루나', 2, '폭풍'),
     makeAwakenTest('BT04-042', 5, '용의 반려 셰나'),
     createCase({
         testId: 'BT04-042',
@@ -1586,6 +1746,7 @@ const tests: UnifiedTestCase[] = [
             ];
         },
     }),
+    makePactEffectRegistrationTest('BT04-042', '용의 반려 셰나', 2, '폭풍'),
     createCase({
         testId: 'BT04-043',
         name: '전투형 마야 디펜더 종결',
@@ -2060,6 +2221,38 @@ const tests: UnifiedTestCase[] = [
         },
     }),
     createCase({
+        testId: 'BT04-062',
+        name: '일편고월 벨로나 EXIT 비런웨이 파이터 트래시 제한 회수',
+        description: '런웨이 파이터가 아닌 손패를 트래시하면 2코스트 이하 유닛만 회수할 수 있다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            p1.unitZones[0].unit = getCard('BT04-062');
+            p1.hand = [getCard('ST01-002')];
+            p1.trash = [getCard('BT04-003'), getCard('BT04-081')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const confirm = chooseOptional(engine, p1.id, true);
+            const pay = chooseCostHand(engine, p1.id, (card: Card) => card?.id === 'ST01-002');
+            const legalIds = engine
+                .getLegalActions(p1.id)
+                .filter((action: any) => action.type === 'SELECT_TRASH_TARGET')
+                .map((action: any) => p1.trash[action.trashIndex]?.id);
+            const pick = chooseTrash(engine, p1.id, (card: Card) => card?.id === 'BT04-003');
+            return [
+                { pass: !!confirm, message: '회수 옵션 수락 가능' },
+                { pass: !!pay, message: '비런웨이 파이터 손패 트래시 가능' },
+                { pass: legalIds.includes('BT04-003'), message: '2코스트 이하 유닛 선택 가능' },
+                { pass: !legalIds.includes('BT04-081'), message: '스킬 카드는 선택 불가' },
+                { pass: !!pick, message: '회수 대상 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id === 'BT04-003'), message: '조건부 회수 성공' },
+            ];
+        },
+    }),
+    createCase({
         testId: 'BT04-063',
         name: '세실리아 : 검은 날개의 몽마 손패 대미지 이동 감지 후 드로우',
         description: '이번 턴 효과로 손패 카드가 자신의 대미지 존에 놓였다면 1드로우한다.',
@@ -2286,15 +2479,15 @@ const tests: UnifiedTestCase[] = [
     }),
     createCase({
         testId: 'BT04-069',
-        name: '진혼의 로앤나 EXIT 서로 다른 이름 6장 덱 바닥 후 재배치',
-        description: '트리거가 없는 카드명이 다른 6장을 덱 맨 아래로 보내고 자신을 빈 유닛 존에 배치한다.',
+        name: '진혼의 로앤나 EXIT 서로 다른 이름 6장 덱 바닥 후 추가 대미지 트래시와 재배치',
+        description: '런웨이 파이터 2장 이상과 대미지 7장 이상 조건에서 대미지 1장 추가 트래시 후 자신을 재배치한다.',
         coversEffectIndices: [0],
         setup: (engine, getCard) => {
             const p1 = engine.currentPlayer;
             p1.unitZones[0].unit = getCard('BT04-069');
             p1.trash = [
-                getCard('BT04-030'),
-                getCard('BT04-031'),
+                getCard('ST07-005'),
+                getCard('ST07-013'),
                 getCard('BT04-032'),
                 getCard('BT04-033'),
                 getCard('BT04-034'),
@@ -2306,20 +2499,26 @@ const tests: UnifiedTestCase[] = [
         },
         verify: (engine) => {
             const p1 = engine.currentPlayer;
+            const beforeDamage = p1.damage.length;
             engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
             const accept = chooseOptional(engine, p1.id, true);
             const legal = engine.getLegalActions(p1.id).filter((action: any) => action.type === 'SELECT_TRASH_TARGET') as Array<any>;
             const legalIds = legal.map((action: any) => p1.trash[action.trashIndex]?.id);
-            ['BT04-030', 'BT04-031', 'BT04-032', 'BT04-033', 'BT04-034', 'BT04-036'].forEach((id) => {
+            ['ST07-005', 'ST07-013', 'BT04-032', 'BT04-033', 'BT04-034', 'BT04-036'].forEach((id) => {
                 chooseTrash(engine, p1.id, (card: Card) => card?.id === id);
             });
             const confirm = confirmTargets(engine, p1.id);
+            const confirmDamage = chooseOptional(engine, p1.id, true);
+            const damagePick = chooseDamage(engine, p1.id, (card: Card) => card?.id === 'ST01-002');
             return [
                 { pass: !!accept, message: '엑시트 옵션 수락 가능' },
                 { pass: !legalIds.includes('BT04-076'), message: '트리거 카드 제외 필터 적용' },
                 { pass: !!confirm, message: '서로 다른 이름 6장 선택 후 확정 가능' },
+                { pass: !!confirmDamage, message: '추가 대미지 트래시 옵션 수락 가능' },
+                { pass: !!damagePick, message: '조건 충족 시 대미지 1장 추가 트래시 가능' },
+                { pass: p1.damage.length === beforeDamage - 1, message: '대미지 카드 1장 추가 트래시' },
                 { pass: p1.unitZones.some((zone: any) => zone.unit?.id === 'BT04-069'), message: '자신이 빈 유닛 존에 재배치' },
-                { pass: p1.deck.slice(0, 6).every((card: Card) => ['BT04-030', 'BT04-031', 'BT04-032', 'BT04-033', 'BT04-034', 'BT04-036'].includes(card.id)), message: '선택한 6장이 덱 맨 아래로 이동' },
+                { pass: p1.deck.slice(0, 6).every((card: Card) => ['ST07-005', 'ST07-013', 'BT04-032', 'BT04-033', 'BT04-034', 'BT04-036'].includes(card.id)), message: '선택한 6장이 덱 맨 아래로 이동' },
             ];
         },
     }),
@@ -2345,6 +2544,30 @@ const tests: UnifiedTestCase[] = [
                 { pass: p1.unitZones[1].unit === null, message: '다른 자신 유닛 트래시 성공' },
                 { pass: p1.hand.some((card: Card) => card.id === 'BT04-030'), message: '다른 자신 유닛을 트래시해 1드로우' },
                 { pass: zonePower(engine, p1, 0) === 8000, message: '상대 턴 종료까지 파워+2000' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT04-070',
+        name: '용의 반려 셰나 엔트리 자기 자신 희생 시 보너스 없음',
+        description: '자기 자신을 트래시하면 드로우와 파워+2000을 얻지 않는다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.currentPlayer;
+            setHighSize(engine, 20);
+            p1.hand = [getCard('BT04-070')];
+            p1.deck = [getCard('BT04-030')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.currentPlayer;
+            playUnitById(engine, p1, 'BT04-070', 0);
+            const pick = chooseZone(engine, p1.id, p1.id, 0);
+            return [
+                { pass: !!pick, message: '자기 자신 선택 가능' },
+                { pass: p1.unitZones[0].unit === null, message: '자기 자신 트래시 성공' },
+                { pass: !p1.hand.some((card: Card) => card.id === 'BT04-030'), message: '추가 드로우 없음' },
+                { pass: p1.hand.length === 0, message: '엔트리 카드 소모 외 추가 손패 없음' },
             ];
         },
     }),
@@ -2581,7 +2804,6 @@ const tests: UnifiedTestCase[] = [
             ];
         },
     }),
-    makeReturnSelfToHandTriggerTest('BT04-075', '호반의 마녀 테네브리아', 3),
     createCase({
         testId: 'BT04-076',
         name: '내면의 존재 대미지-트래시 교환 후 조건부 드로우',

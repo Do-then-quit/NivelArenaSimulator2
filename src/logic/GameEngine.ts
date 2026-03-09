@@ -564,6 +564,81 @@ export class GameEngine {
         });
     }
 
+    private queuePassiveGrantedAttackerEffects(attackingPlayer: PlayerState, attackerZone: UnitZoneState, batchStep: number) {
+        if (!attackerZone?.unit) return;
+        const attackerUnit = attackerZone.unit;
+        const attackingOpponent = this.getOpponentOf(attackingPlayer);
+
+        const evaluateEffectList = (
+            sourceOwner: PlayerState,
+            sourceCard: Card,
+            effects: Effect[] | undefined,
+            sourceZone?: UnitZoneState,
+        ) => {
+            if (!sourceCard || !Array.isArray(effects) || effects.length <= 0) return;
+            const sourceOpponent = this.getOpponentOf(sourceOwner);
+
+            effects.forEach((passive, passiveIndex) => {
+                if (!passive || passive.activation !== ActivationCondition.PASSIVE) return;
+                if (passive.action?.type !== 'GRANT_EFFECT') return;
+
+                const granted = passive.action?.params?.effect;
+                if (!granted || granted.activation !== ActivationCondition.ATTACKER) return;
+
+                const sourceContext: GameContext = {
+                    player: sourceOwner,
+                    opponent: sourceOpponent,
+                    sourceCard,
+                    ...(sourceZone ? { unitZone: sourceZone } : {}),
+                    machine: this,
+                };
+                if (!this.effectManager.checkCondition(passive, sourceContext)) return;
+                if (sourceCard.type === CardType.LEADER && !sourceCard.isAwakened && this.requiresAwakenedLeader(passive)) {
+                    return;
+                }
+                if (passive.targets && !TargetSelector.isValidTarget(this, passive.targets, sourceContext, attackerZone)) return;
+
+                const grantedContext: GameContext = {
+                    sourceCard: attackerUnit,
+                    player: attackingPlayer,
+                    opponent: attackingOpponent,
+                    unitZone: attackerZone,
+                    machine: this,
+                };
+
+                this.state.effectQueue.push({
+                    effect: {
+                        ...granted,
+                        actionDurationOverride:
+                            granted.actionDurationOverride
+                            ?? (granted.duration === 'PERMANENT' ? 'BATTLE_END' : undefined),
+                    },
+                    context: grantedContext,
+                    id: this.createRuntimeId(`GRANTED_ATTACKER_${passiveIndex}`),
+                    creationTime: batchStep,
+                    sourcePlayerId: attackingPlayer.id,
+                });
+            });
+        };
+
+        this.state.players.forEach(sourceOwner => {
+            sourceOwner.unitZones.forEach(sourceZone => {
+                if (sourceZone.unit) {
+                    evaluateEffectList(sourceOwner, sourceZone.unit, sourceZone.unit.effects, sourceZone);
+                    evaluateEffectList(sourceOwner, sourceZone.unit, sourceZone.temporaryEffects as any, sourceZone);
+                }
+                sourceZone.items.forEach(item => {
+                    evaluateEffectList(sourceOwner, item, item.effects, sourceZone);
+                });
+            });
+            if (sourceOwner.levelZone) {
+                evaluateEffectList(sourceOwner, sourceOwner.levelZone, sourceOwner.levelZone.effects);
+            }
+        });
+
+        this.sortEffectQueue();
+    }
+
     public getEffectTrashedFriendlyUnitCount(playerId: string): number {
         return this.getTurnStats().effectTrashedFriendlyUnitCountByPlayerId[playerId] || 0;
     }
@@ -2039,6 +2114,10 @@ export class GameEngine {
             pendingSnapshot?.actionType === 'COMPLEX_ACTION' &&
             pendingSnapshot?.actionValue?.mode === 'SB01_007_EXIT_REVEAL_AND_DISCARD_TO_DEPLOY' &&
             pendingSnapshot?.actionValue?.stage === 'SHOW_REVEALED_DECISION';
+        const isBt04069DamageDecision =
+            pendingSnapshot?.actionType === 'COMPLEX_ACTION' &&
+            pendingSnapshot?.actionValue?.mode === 'BT04_069_EXIT_BOTTOM6_AND_REVIVE_SELF' &&
+            pendingSnapshot?.actionValue?.stage === 'SELECT_DAMAGE';
 
         // Reset Mode
         this.state.interactionMode = 'NORMAL';
@@ -2059,6 +2138,32 @@ export class GameEngine {
                 sourcePlayer.trash.push(revealedCard);
             }
             this.state.revealedCards = [];
+        }
+
+        if (!confirm && isBt04069DamageDecision) {
+            const sourcePlayer = this.getPlayerById(pendingSnapshot.sourcePlayerId);
+            const sourceCardRef = pendingSnapshot.sourceCard;
+            const selfIndex = sourcePlayer
+                ? sourcePlayer.trash.findIndex((card: any) => card === sourceCardRef || card?.id === sourceCardRef?.id)
+                : -1;
+            const emptyZone = sourcePlayer?.unitZones.find((zone: any) => !zone?.unit);
+            if (sourcePlayer && selfIndex !== -1 && emptyZone) {
+                const [selfCard] = sourcePlayer.trash.splice(selfIndex, 1);
+                if (selfCard) {
+                    emptyZone.unit = selfCard;
+                    emptyZone.items = [];
+                    emptyZone.buffs = [];
+                    emptyZone.temporaryEffects = [];
+                    emptyZone.hasAttacked = false;
+                    emptyZone.attackCountThisTurn = 0;
+                    emptyZone.extraAttackAllowance = 0;
+                    emptyZone.isExhausted = false;
+                    emptyZone.hasPlacedUnitThisTurn = false;
+                    emptyZone.hasActivatedEffectThisTurn = false;
+                    emptyZone.activatedEffectKeys = {};
+                    this.triggerEntryEffectsForPlacedUnit(sourcePlayer, emptyZone);
+                }
+            }
         }
 
         if (confirm && effect && context) {
@@ -2322,6 +2427,8 @@ export class GameEngine {
                 machine: this
             }, { enqueueOnly: true, batchStep: attackerBatchStep });
         });
+
+        this.queuePassiveGrantedAttackerEffects(this.currentPlayer, attackerZone, attackerBatchStep);
         this.effectManager.processQueue();
 
         // The queue is automatically running.

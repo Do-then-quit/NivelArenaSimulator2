@@ -4098,6 +4098,17 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
 
     if ((params as any).mode === 'BT04_069_EXIT_BOTTOM6_AND_REVIVE_SELF') {
         const stage = (params as any).stage;
+        const redeploySelf = () => {
+            const selfTrashIndex = ctx.player.trash.indexOf(ctx.sourceCard as any);
+            const selfIndex = selfTrashIndex !== -1
+                ? selfTrashIndex
+                : ctx.player.trash.findIndex((card: any) => card?.id === ctx.sourceCard.id);
+            if (selfIndex === -1) return;
+            const [selfCard] = ctx.player.trash.splice(selfIndex, 1);
+            if (selfCard) {
+                deployUnitToFirstEmptyZone(ctx.machine, ctx.player, selfCard);
+            }
+        };
         if (stage === 'RESOLVE_BOTTOM') {
             const selectedCards = (_targets || []).filter((card: any) => ctx.player.trash.includes(card));
             if (selectedCards.length !== 6) return;
@@ -4114,12 +4125,34 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
 
             const runwayCount = movedCards.filter((card: any) => cardHasTraitLike(card, '런웨이 파이터')).length;
             if (runwayCount >= 2 && ctx.player.damage.length >= 7) {
-                const damageSchema = {
-                    scope: 'MY_DAMAGE',
-                    type: 'CARD',
-                    count: 1,
-                    selectMode: 'MANUAL',
-                } as const;
+                const optionalEffect = {
+                    activation: ActivationCondition.EXIT,
+                    optional: true,
+                    description: '자신의 대미지 존에서 카드를 1장 골라 트래시할 수 있다.',
+                    action: {
+                        type: 'COMPLEX_ACTION',
+                        params: { mode: 'BT04_069_EXIT_BOTTOM6_AND_REVIVE_SELF', stage: 'SELECT_DAMAGE' },
+                    },
+                } as any;
+                const optionalCtx = { ...ctx } as any;
+                delete optionalCtx._optionalConfirmed;
+                ctx.machine.effectManager.processEffect(optionalEffect, optionalCtx);
+                return;
+            }
+
+            redeploySelf();
+            return;
+        }
+
+        if (stage === 'SELECT_DAMAGE') {
+            const damageSchema = {
+                scope: 'MY_DAMAGE',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            } as const;
+            const selectedCard = (_targets || []).find((card: any) => ctx.player.damage.includes(card));
+            if (!selectedCard) {
                 ctx.machine.state.interactionMode = 'SELECT_TARGET';
                 ctx.machine.state.pendingEffect = {
                     sourceCard: ctx.sourceCard,
@@ -4127,7 +4160,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                     controllerPlayerId: ctx.player.id,
                     actionType: 'BT04_069_SELECT_DAMAGE_TO_TRASH',
                     actionValue: {},
-                    effectDescription: '트래시할 대미지 카드를 선택할 수 있다.',
+                    effectDescription: '트래시할 대미지 카드를 선택한다.',
                     validTargets: 'MY_DAMAGE',
                     targetSchema: damageSchema as any,
                     selectedTargets: [],
@@ -4144,21 +4177,6 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 ctx.machine.setInteractionOwner(ctx.player.id);
                 return;
             }
-
-            const selfTrashIndex = ctx.player.trash.indexOf(ctx.sourceCard as any);
-            const selfIndex = selfTrashIndex !== -1
-                ? selfTrashIndex
-                : ctx.player.trash.findIndex((card: any) => card?.id === ctx.sourceCard.id);
-            if (selfIndex === -1) return;
-            const [selfCard] = ctx.player.trash.splice(selfIndex, 1);
-            if (selfCard) {
-                deployUnitToFirstEmptyZone(ctx.machine, ctx.player, selfCard);
-            }
-            return;
-        }
-
-        if (stage === 'SELECT_DAMAGE') {
-            const selectedCard = (_targets || []).find((card: any) => ctx.player.damage.includes(card));
             if (selectedCard) {
                 const damageIndex = ctx.player.damage.indexOf(selectedCard);
                 if (damageIndex !== -1) {
@@ -4166,15 +4184,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                     if (movedCard) ctx.player.trash.push(movedCard);
                 }
             }
-            const selfTrashIndex = ctx.player.trash.indexOf(ctx.sourceCard as any);
-            const selfIndex = selfTrashIndex !== -1
-                ? selfTrashIndex
-                : ctx.player.trash.findIndex((card: any) => card?.id === ctx.sourceCard.id);
-            if (selfIndex === -1) return;
-            const [selfCard] = ctx.player.trash.splice(selfIndex, 1);
-            if (selfCard) {
-                deployUnitToFirstEmptyZone(ctx.machine, ctx.player, selfCard);
-            }
+            redeploySelf();
             return;
         }
 

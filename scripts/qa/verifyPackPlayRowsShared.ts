@@ -11,6 +11,14 @@ const TARGET_URL = process.env.TARGET_URL || 'http://127.0.0.1:5173';
 const START_INDEX = Number(process.env.START_INDEX || '1');
 const STEP_DELAY_MS = 120;
 const VERBOSE_VERIFY = process.env.VERBOSE_VERIFY === '1';
+const SKILL_ZONE_PROMPT_ACTION_TYPES = new Set<string>([
+    'BT06_SELECT_SKILL_ZONE_CARD',
+    'BT03_SELECT_SKILL_ZONE_CARD_TO_TRASH',
+    'BT03_011_SELECT_SKILL_ZONE_CARD_TO_TRASH',
+    'BT03_052_SELECT_SKILL_ZONE_COST3_TO_TRASH',
+    'BT03_062_SELECT_SKILL_ZONE_TO_CAST',
+    'SB01_001_SELECT_SKILL_ZONE_TO_TRASH',
+]);
 
 export interface VerifyPackPlayRowsOptions {
     packId: string;
@@ -195,6 +203,51 @@ async function getUiRefForPlayerIndex(page: Page, playerIndex: number): Promise<
     throw new Error(`Unsupported player index for verification UI: ${playerIndex}`);
 }
 
+async function getUiRefForPlayerId(page: Page, playerId: string): Promise<'current' | 'opponent'> {
+    const playerIndex = await page.evaluate((targetPlayerId) => {
+        const players = (window as any).debug?.game?.state?.players || [];
+        return players.findIndex((player: any) => player?.id === targetPlayerId);
+    }, playerId);
+    return getUiRefForPlayerIndex(page, playerIndex);
+}
+
+async function getPlayerIdForIndex(page: Page, playerIndex: number): Promise<string> {
+    const playerId = await page.evaluate((targetPlayerIndex) => {
+        return (window as any).debug?.game?.state?.players?.[targetPlayerIndex]?.id ?? null;
+    }, playerIndex);
+    if (typeof playerId !== 'string' || playerId.length === 0) {
+        throw new Error(`Could not resolve player id for index ${playerIndex}`);
+    }
+    return playerId;
+}
+
+async function clickMappedSkillZonePrompt(page: Page, revealedIndex: number): Promise<boolean> {
+    const pendingPrompt = await page.evaluate((targetRevealedIndex) => {
+        const pending = (window as any).debug?.game?.state?.pendingEffect;
+        if (!pending) return null;
+        const options = Array.isArray(pending.actionValue?.options) ? pending.actionValue.options : [];
+        const option = options[targetRevealedIndex];
+        return {
+            actionType: pending.actionType ?? null,
+            sourcePlayerId: pending.sourcePlayerId ?? null,
+            skillZoneIndex: typeof option?.skillZoneIndex === 'number' ? option.skillZoneIndex : null,
+        };
+    }, revealedIndex);
+
+    if (!pendingPrompt?.actionType || !SKILL_ZONE_PROMPT_ACTION_TYPES.has(pendingPrompt.actionType)) {
+        return false;
+    }
+    if (typeof pendingPrompt.sourcePlayerId !== 'string' || typeof pendingPrompt.skillZoneIndex !== 'number') {
+        return false;
+    }
+
+    const uiRef = await getUiRefForPlayerId(page, pendingPrompt.sourcePlayerId);
+    const skillCard = page.locator(`.skill-card-item[data-player="${uiRef}"][data-index="${pendingPrompt.skillZoneIndex}"]`).first();
+    if (!(await skillCard.count())) return false;
+    await skillCard.click({ timeout: 5000 });
+    return true;
+}
+
 async function applyRecordedPreState(page: Page, preState: unknown) {
     await page.evaluate((inputState) => {
         const dbg = (window as any).debug;
@@ -254,6 +307,48 @@ async function clickConfirmTargets(page: Page) {
     }
 
     await page.locator('#confirm-targets-btn').click({ timeout: 5000 });
+}
+
+async function maybeConfirmTargetsAfterSelection(page: Page, expectedInteractionMode: string | null | undefined) {
+    if (expectedInteractionMode !== 'NORMAL') return;
+
+    const currentInteractionMode = await page.evaluate(() => (window as any).debug?.game?.state?.interactionMode ?? null);
+    if (currentInteractionMode !== 'SELECT_TARGET') return;
+
+    const modalConfirm = page.locator('.selection-modal-overlay #confirm-targets-modal-btn').first();
+    if (await modalConfirm.isVisible().catch(() => false)) {
+        await modalConfirm.click({ timeout: 5000 });
+        return;
+    }
+
+    const inlineConfirm = page.locator('#confirm-targets-btn').first();
+    if (await inlineConfirm.isVisible().catch(() => false)) {
+        await inlineConfirm.click({ timeout: 5000 });
+    }
+}
+
+async function maybeFinalizeSelectionDirectly(page: Page, expectedInteractionMode: string | null | undefined) {
+    if (expectedInteractionMode !== 'NORMAL') return;
+    const currentInteractionMode = await page.evaluate(() => (window as any).debug?.game?.state?.interactionMode ?? null);
+    if (currentInteractionMode !== 'SELECT_TARGET') return;
+    await replayActionDirectly(page, { type: 'CONFIRM_TARGETS' });
+}
+
+async function replayActionDirectly(page: Page, action: unknown) {
+    await page.evaluate((engineAction) => {
+        const dbg = (window as any).debug;
+        const actorPlayerId =
+            (engineAction as any)?.actorPlayerId
+            ?? dbg.game.state.interactionOwnerPlayerId
+            ?? dbg.game.currentPlayer?.id
+            ?? null;
+        const resolvedAction =
+            engineAction && typeof engineAction === 'object'
+                ? { ...(engineAction as Record<string, unknown>), actorPlayerId }
+                : engineAction;
+        dbg.game.step(resolvedAction);
+        dbg.renderCallback();
+    }, action);
 }
 
 async function collapseSelectionModalIfOpen(page: Page) {
@@ -369,6 +464,7 @@ async function replayStep(page: Page, step: RecordedScenarioStep, previousStep: 
     if (step.kind === 'next_phase') {
         const previousPhase = await page.evaluate(() => (window as any).debug?.game?.state?.phase ?? null);
         const expectedPhase = (step.postState as any)?.phase ?? null;
+        const expectedInteractionMode = (step.postState as any)?.interactionMode ?? null;
         await page.getByRole('button', { name: 'Next Phase' }).click({ timeout: 5000 });
         if (previousPhase !== null) {
             await page.waitForFunction(
@@ -377,17 +473,28 @@ async function replayStep(page: Page, step: RecordedScenarioStep, previousStep: 
                 { timeout: 3000 },
             ).catch(() => {});
         }
-        if (expectedPhase !== null) {
-            const currentPhase = await page.evaluate(() => (window as any).debug?.game?.state?.phase ?? null);
-            if (currentPhase !== expectedPhase) {
+        if (expectedPhase !== null || expectedInteractionMode !== null) {
+            const currentState = await page.evaluate(() => ({
+                phase: (window as any).debug?.game?.state?.phase ?? null,
+                interactionMode: (window as any).debug?.game?.state?.interactionMode ?? null,
+            }));
+            const phaseMatches = expectedPhase === null || currentState.phase === expectedPhase;
+            const interactionMatches = expectedInteractionMode === null || currentState.interactionMode === expectedInteractionMode;
+            if (!phaseMatches || !interactionMatches) {
                 await page.evaluate(() => {
                     const dbg = (window as any).debug;
                     dbg.game.nextPhase();
                     dbg.renderCallback();
                 });
                 await page.waitForFunction(
-                    (targetPhase) => (window as any).debug?.game?.state?.phase === targetPhase,
-                    expectedPhase,
+                    (targets) => {
+                        const state = (window as any).debug?.game?.state;
+                        if (!state) return false;
+                        const phaseMatches = targets.phase === null || state.phase === targets.phase;
+                        const interactionMatches = targets.interactionMode === null || state.interactionMode === targets.interactionMode;
+                        return phaseMatches && interactionMatches;
+                    },
+                    { phase: expectedPhase, interactionMode: expectedInteractionMode },
                     { timeout: 3000 },
                 ).catch(() => {});
             }
@@ -446,6 +553,7 @@ async function replayStep(page: Page, step: RecordedScenarioStep, previousStep: 
     }
     if (step.kind === 'ui_action') {
         const action = step.action;
+        const expectedInteractionMode = (step.postState as any)?.interactionMode ?? null;
         if (action.type === 'RESOLVE_OPTIONAL') {
             await page.locator(action.confirm ? '#opt-confirm' : '#opt-skip').click({ timeout: 5000 });
             return;
@@ -454,28 +562,38 @@ async function replayStep(page: Page, step: RecordedScenarioStep, previousStep: 
             const uiRef = await getUiRefForPlayerIndex(page, action.targetPlayerIndex);
             await collapseSelectionModalIfOpen(page);
             await page.locator(`.unit-zone[data-player="${uiRef}"][data-index="${action.zoneIndex}"]`).click({ timeout: 5000 });
+            await maybeConfirmTargetsAfterSelection(page, expectedInteractionMode);
             return;
         }
         if (action.type === 'SELECT_HAND_TARGET') {
-            const uiRef = await getUiRefForPlayerIndex(page, action.targetPlayerIndex);
-            const selector = uiRef === 'current'
-                ? `.hand-zone .card-in-hand[data-index="${action.handIndex}"]`
-                : `.opponent-hand-zone .card-in-hand[data-index="${action.handIndex}"]`;
-            await page.locator(selector).click({ timeout: 5000 });
+            const targetPlayerId = await getPlayerIdForIndex(page, action.targetPlayerIndex);
+            await replayActionDirectly(page, {
+                type: 'SELECT_HAND_TARGET',
+                targetPlayerId,
+                handIndex: action.handIndex,
+            });
+            await maybeFinalizeSelectionDirectly(page, expectedInteractionMode);
             return;
         }
         if (action.type === 'SELECT_TRASH_TARGET') {
             const uiRef = await getUiRefForPlayerIndex(page, action.targetPlayerIndex);
             await clickTrashTarget(page, uiRef, action.trashIndex);
+            await maybeConfirmTargetsAfterSelection(page, expectedInteractionMode);
             return;
         }
         if (action.type === 'SELECT_DAMAGE_TARGET') {
             const uiRef = await getUiRefForPlayerIndex(page, action.targetPlayerIndex);
             await clickDamageTarget(page, uiRef, action.damageIndex);
+            await maybeConfirmTargetsAfterSelection(page, expectedInteractionMode);
             return;
         }
         if (action.type === 'SELECT_REVEALED_TARGET') {
+            if (await clickMappedSkillZonePrompt(page, action.revealedIndex)) {
+                await maybeConfirmTargetsAfterSelection(page, expectedInteractionMode);
+                return;
+            }
             await page.locator(`.revealed-card-item[data-index="${action.revealedIndex}"]`).click({ timeout: 5000 });
+            await maybeConfirmTargetsAfterSelection(page, expectedInteractionMode);
             return;
         }
         if (action.type === 'SELECT_ITEM_TARGET') {
@@ -483,6 +601,7 @@ async function replayStep(page: Page, step: RecordedScenarioStep, previousStep: 
             await page.locator(
                 `.mini-item-card[data-player="${uiRef}"][data-zone-index="${action.zoneIndex}"][data-item-index="${action.itemIndex}"]`,
             ).click({ timeout: 5000 });
+            await maybeConfirmTargetsAfterSelection(page, expectedInteractionMode);
             return;
         }
         if (action.type === 'SELECT_COST_HAND') {

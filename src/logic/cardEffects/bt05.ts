@@ -32,6 +32,14 @@ function awakenLeader(level: number, attribute: Attribute): Effect[] {
     ];
 }
 
+function mixedPactLeader(attribute: Attribute): Effect {
+    return {
+        activation: ActivationCondition.PASSIVE,
+        description: `[서약] 자신의 덱에 [${attribute}] 카드를 넣어야 한다. [${attribute}] 이외의 카드는 모두 같은 속성이어야 한다.`,
+        action: { type: 'NONE', params: { pactAttribute: attribute, offAttributeMustMatch: true } },
+    };
+}
+
 function creditEffects(amount: number): Effect[] {
     return [
         {
@@ -144,6 +152,7 @@ export const BT05_EFFECTS: Record<string, Effect[]> = {
             },
             action: { type: 'MOVE_FROM_TRASH_TO_HAND', params: {} },
         },
+        mixedPactLeader(Attribute.FIRE),
     ],
     'BT05-002': [
         {
@@ -702,6 +711,7 @@ export const BT05_EFFECTS: Record<string, Effect[]> = {
             description: '각성면 [액티브: 메인] 아래 효과 중 하나를 고른다.',
             action: { type: 'COMPLEX_ACTION', params: { mode: 'BT05_032_LEADER_CHOOSE_RETURN_OR_DESTROY' } },
         },
+        mixedPactLeader(Attribute.STORM),
     ],
     'BT05-033': [
         {
@@ -936,6 +946,12 @@ export const BT05_EFFECTS: Record<string, Effect[]> = {
             description: '[패시브] 상대의 턴이 끝날 때 자신의 패를 1장 골라 트래시할 수 있다. 그렇지 않으면 이 유닛을 트래시한다.',
             condition: { type: 'OPPONENT_TURN' },
             action: { type: 'COMPLEX_ACTION', params: { mode: 'BT05_046_OPP_TURN_END_DISCARD_OR_DESTROY' } },
+        },
+        {
+            activation: ActivationCondition.PASSIVE,
+            description: '파워+2000.',
+            targets: SELF_UNIT as any,
+            action: { type: 'BUFF_POWER', params: { value: 2000 } },
         },
     ],
     'BT05-047': [
@@ -1183,6 +1199,7 @@ export const BT05_EFFECTS: Record<string, Effect[]> = {
             description: '각성면 [액티브: 메인] 자신의 패를 1장 골라 트래시한다. 그러면 자신의 트래시 존에서 이 효과로 트래시한 카드와 카드명이 다른 아이템 카드를 1장 골라 필드에 있는 자신 유닛에 사이즈를 무시하고 장착할 수 있다.',
             action: { type: 'COMPLEX_ACTION', params: { mode: 'BT05_063_LEADER_DISCARD_THEN_EQUIP_DIFFERENT_NAME_ITEM' } },
         },
+        mixedPactLeader(Attribute.LIGHTNING),
     ],
     'BT05-064': [
         ...creditEffects(1),
