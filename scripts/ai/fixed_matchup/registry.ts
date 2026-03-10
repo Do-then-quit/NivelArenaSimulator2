@@ -42,6 +42,34 @@ export interface ResolvedFixedMatchup {
 
 const FIXED_DECKS: FixedDeckDefinition[] = [
     {
+        id: 'bt05-unlucky-bunny-nikki-meta-v1',
+        label: 'BT05 Unlucky Bunny Nikki Meta v1',
+        leaderId: 'BT05-032',
+        notes: [
+            'Manually curated fixed meta deck added from a supplied deck list on 2026-03-10.',
+            'Leader: BT05-032 Unlucky Bunny Nikki.',
+        ],
+        cards: [
+            { cardId: 'BT05-065', copies: 3 },
+            { cardId: 'BT05-041', copies: 2 },
+            { cardId: 'BT05-044', copies: 3 },
+            { cardId: 'BT05-033', copies: 3 },
+            { cardId: 'BT05-064', copies: 3 },
+            { cardId: 'ST09-011', copies: 3 },
+            { cardId: 'BT05-034', copies: 1 },
+            { cardId: 'BT05-066', copies: 2 },
+            { cardId: 'BT05-036', copies: 3 },
+            { cardId: 'BT05-072', copies: 3 },
+            { cardId: 'BT05-038', copies: 3 },
+            { cardId: 'BT05-039', copies: 2 },
+            { cardId: 'BT05-040', copies: 3 },
+            { cardId: 'BT05-043', copies: 1 },
+            { cardId: 'BT05-046', copies: 2 },
+            { cardId: 'BT05-081', copies: 2 },
+            { cardId: 'BT05-082', copies: 1 },
+        ],
+    },
+    {
         id: 'fire-redhood-prototype-v1',
         label: 'Fire Red Hood Prototype v1',
         leaderId: 'BT01-001',
@@ -116,6 +144,13 @@ const FIXED_DECKS: FixedDeckDefinition[] = [
 ];
 
 const FIXED_MATCHUPS: FixedMatchupDefinition[] = [
+    {
+        id: 'fm-c-bt05-unlucky-bunny-nikki-mirror',
+        label: 'FM-C BT05 Unlucky Bunny Nikki Mirror',
+        player1DeckId: 'bt05-unlucky-bunny-nikki-meta-v1',
+        player2DeckId: 'bt05-unlucky-bunny-nikki-meta-v1',
+        description: 'Mirror matchup for the curated BT05 Unlucky Bunny Nikki meta deck.',
+    },
     {
         id: 'fm-a-fire-redhood-mirror',
         label: 'FM-A Fire Red Hood Mirror',

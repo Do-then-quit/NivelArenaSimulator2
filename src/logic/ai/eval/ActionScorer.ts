@@ -88,6 +88,25 @@ function getCardTacticalValue(card: Card | undefined, owner: PlayerState | null 
     return getCardIntrinsicValue(card) + getCardTempoAdjustment(card, owner);
 }
 
+function getActivateEffectSourceCard(
+    actor: PlayerState,
+    action: Extract<EngineAction, { type: 'ACTIVATE_EFFECT' }>,
+): Card | undefined {
+    if (action.sourceType === 'LEADER') {
+        return actor.levelZone ?? undefined;
+    }
+
+    const zone = actor.unitZones[action.zoneIndex];
+    if (!zone) return undefined;
+
+    if (action.sourceType === 'ITEM') {
+        if (typeof action.itemIndex !== 'number') return undefined;
+        return zone.items[action.itemIndex];
+    }
+
+    return zone.unit ?? undefined;
+}
+
 function getZoneTacticalValue(engine: GameEngine, targetPlayer: PlayerState, zoneIndex: number): number {
     const zone = targetPlayer.unitZones[zoneIndex];
     if (!zone?.unit) return Number.NEGATIVE_INFINITY;
@@ -278,9 +297,19 @@ function scorePlaySkillAction(actor: PlayerState, action: Extract<EngineAction, 
 }
 
 function scoreActivateEffectAction(_engine: GameEngine, actor: PlayerState, action: Extract<EngineAction, { type: 'ACTIVATE_EFFECT' }>): ActionScoreResult {
-    const zone = actor.unitZones[action.zoneIndex];
-    if (!zone.unit) return { score: Number.NEGATIVE_INFINITY, reason: 'no-effect-source' };
-    const score = 140 + zone.unit.cost * 22 - action.effectIndex;
+    const sourceCard = getActivateEffectSourceCard(actor, action);
+    if (!sourceCard) return { score: Number.NEGATIVE_INFINITY, reason: 'no-effect-source' };
+    if (
+        action.sourceType === 'LEADER'
+        && actor.unitZones.every(zone => !zone.unit)
+        && (sourceCard.text ?? '').includes('필드에 있는 자신 유닛')
+    ) {
+        return { score: Number.NEGATIVE_INFINITY, reason: 'leader-needs-field-unit' };
+    }
+
+    const cost = typeof sourceCard.cost === 'number' ? sourceCard.cost : 0;
+    const sourceTypeBias = action.sourceType === 'LEADER' ? 60 : action.sourceType === 'ITEM' ? 20 : 0;
+    const score = 140 + cost * 22 - action.effectIndex + sourceTypeBias;
     return { score, reason: 'activate-effect' };
 }
 

@@ -239,11 +239,35 @@ export class BaselineBot {
         if (!actor) return activateActions[0];
 
         return this.pickMax(activateActions, action => {
-            const zone = actor.unitZones[action.zoneIndex];
-            const unit = zone.unit;
-            if (!unit) return Number.NEGATIVE_INFINITY;
-            return unit.cost * 1000 - action.effectIndex;
+            const sourceCard = this.getActivateEffectSourceCard(actor, action);
+            if (!sourceCard) return Number.NEGATIVE_INFINITY;
+            if (
+                action.sourceType === 'LEADER'
+                && actor.unitZones.every(zone => !zone.unit)
+                && (sourceCard.text ?? '').includes('필드에 있는 자신 유닛')
+            ) {
+                return Number.NEGATIVE_INFINITY;
+            }
+            const cost = typeof sourceCard.cost === 'number' ? sourceCard.cost : 0;
+            const sourceTypeBias = action.sourceType === 'LEADER' ? 250 : action.sourceType === 'ITEM' ? 120 : 0;
+            return sourceTypeBias + cost * 1000 - action.effectIndex;
         });
+    }
+
+    private getActivateEffectSourceCard(actor: PlayerState, action: ActivateEffectAction): Card | null {
+        if (action.sourceType === 'LEADER') {
+            return actor.levelZone ?? null;
+        }
+
+        const zone = actor.unitZones[action.zoneIndex];
+        if (!zone) return null;
+
+        if (action.sourceType === 'ITEM') {
+            if (typeof action.itemIndex !== 'number') return null;
+            return zone.items[action.itemIndex] ?? null;
+        }
+
+        return zone.unit ?? null;
     }
 
     private pickNextPhaseAction(actions: EngineAction[]): NextPhaseAction | null {

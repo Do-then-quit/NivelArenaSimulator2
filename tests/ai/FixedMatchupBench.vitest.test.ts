@@ -57,4 +57,22 @@ describe('Fixed matchup bench', () => {
         expect(report.sides.primary.matches.map(match => match.seed)).toEqual([2026032000, 2026032001, 2026032002]);
         expect(report.sides.swapped.matches.map(match => match.seed)).toEqual([2026032000, 2026032001, 2026032002]);
     }, 15000);
+
+    it('runs the curated BT05 meta mirror without activate-effect source crashes', () => {
+        const report = runFixedMatchupBatch({
+            matchupId: 'fm-c-bt05-unlucky-bunny-nikki-mirror',
+            gamesPerSide: 1,
+            maxSteps: 1200,
+            enableMulligan: true,
+            traceLimit: 8,
+            startSeed: 2026032010,
+            player1BotId: 'baseline-a',
+            player2BotId: 'baseline-b',
+            measureRuntime: false,
+            suppressLogs: false,
+        });
+
+        expect(report.matchup.id).toBe('fm-c-bt05-unlucky-bunny-nikki-mirror');
+        expect(report.combined.totalGames).toBe(2);
+    }, 15000);
 });

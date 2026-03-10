@@ -23,6 +23,8 @@ const OATH_ATTRIBUTE_TOKEN_TO_ENUM: Record<string, Attribute> = {
 export interface LeaderDeckConstraint {
     attribute: Attribute;
     sourceText: string;
+    allowSingleOffAttribute?: boolean;
+    requirePrimaryAttributeInDeck?: boolean;
 }
 
 export interface DeckLegalityReport {
@@ -67,12 +69,29 @@ function normalizeKeywordText(card: Card): string {
     return '';
 }
 
+function hasTriggerEffectSegment(card: Card): boolean {
+    const effectSegments = (card as Card & {
+        effectSegments?: Array<{ isTriggerSegment?: boolean }> | unknown;
+    }).effectSegments;
+
+    return Array.isArray(effectSegments) && effectSegments.some(segment => segment?.isTriggerSegment === true);
+}
+
 function isTriggerCard(card: Card): boolean {
+    if (hasTriggerEffectSegment(card)) return true;
+
     const keywordText = normalizeKeywordText(card).toLowerCase();
     if (keywordText.includes('트리거') || keywordText.includes('trigger')) return true;
 
     const text = (card.text ?? '').toLowerCase();
-    return text.includes('트리거');
+    return (
+        text.startsWith('[트리거] ')
+        || text.startsWith('trigger:')
+        || text.includes('\n[트리거] ')
+        || text.includes('\ntrigger:')
+        || text.includes('. [트리거] ')
+        || text.includes('. trigger:')
+    );
 }
 
 export function extractCardIdentifier(cardId: string): string {
@@ -85,17 +104,23 @@ export function extractCardIdentifier(cardId: string): string {
 
 export function resolveLeaderDeckConstraint(leader: Card): LeaderDeckConstraint | null {
     const text = leader.text ?? '';
+    const normalizedText = text.replace(/\s+/g, ' ');
     const oathMatch = text.match(
         /서약\s*:\s*자신의\s*덱에\s*([^:\s]+)\s*:\s*카드(?:만\s*넣을\s*수\s*있다|를\s*넣어야\s*한다)/,
     );
+    const bracketedAttributeMatch = text.match(/서약[^\[]*\[([^\]]+)\]\s*카드를\s*넣어야\s*한다/);
 
-    if (oathMatch && oathMatch[1]) {
-        const token = oathMatch[1].trim();
+    const explicitToken = oathMatch?.[1]?.trim() || bracketedAttributeMatch?.[1]?.trim();
+
+    if (explicitToken) {
+        const token = explicitToken;
         const mapped = OATH_ATTRIBUTE_TOKEN_TO_ENUM[token];
         if (mapped) {
             return {
                 attribute: mapped,
                 sourceText: token,
+                allowSingleOffAttribute: /이외의\s*카드는\s*모두\s*같은\s*속성이어야\s*한다/.test(normalizedText),
+                requirePrimaryAttributeInDeck: true,
             };
         }
     }
@@ -104,6 +129,8 @@ export function resolveLeaderDeckConstraint(leader: Card): LeaderDeckConstraint 
         return {
             attribute: leader.attribute,
             sourceText: leader.attribute,
+            allowSingleOffAttribute: /이외의\s*카드는\s*모두\s*같은\s*속성이어야\s*한다/.test(normalizedText),
+            requirePrimaryAttributeInDeck: true,
         };
     }
 
@@ -241,17 +268,32 @@ export function validateDeckAgainstLeader(
     const copyCountByIdentifier = new Map<string, number>();
     let triggerCount = 0;
     const oathViolations: Array<{ cardId: string; cardAttribute: Attribute }> = [];
+    let primaryAttributeCount = 0;
+    let sharedOffAttribute: Attribute | null = null;
 
     for (const card of deck) {
         const identifier = extractCardIdentifier(card.id);
         copyCountByIdentifier.set(identifier, (copyCountByIdentifier.get(identifier) ?? 0) + 1);
         if (isTriggerCard(card)) triggerCount += 1;
 
-        if (constraint && card.attribute !== constraint.attribute) {
-            oathViolations.push({
-                cardId: card.id,
-                cardAttribute: card.attribute,
-            });
+        if (constraint) {
+            if (card.attribute === constraint.attribute) {
+                primaryAttributeCount += 1;
+            } else if (constraint.allowSingleOffAttribute) {
+                if (sharedOffAttribute === null) {
+                    sharedOffAttribute = card.attribute;
+                } else if (card.attribute !== sharedOffAttribute) {
+                    oathViolations.push({
+                        cardId: card.id,
+                        cardAttribute: card.attribute,
+                    });
+                }
+            } else {
+                oathViolations.push({
+                    cardId: card.id,
+                    cardAttribute: card.attribute,
+                });
+            }
         }
     }
 
@@ -268,8 +310,13 @@ export function validateDeckAgainstLeader(
     if (triggerCount > triggerLimit) {
         errors.push(`Deck violates trigger limit (${triggerLimit}). got=${triggerCount}`);
     }
+    if (constraint?.requirePrimaryAttributeInDeck && primaryAttributeCount === 0) {
+        errors.push(`Deck violates leader oath constraint (${constraint.attribute} required in deck).`);
+    }
     if (oathViolations.length > 0) {
-        errors.push(`Deck violates leader oath constraint (${constraint?.attribute ?? 'UNKNOWN'}).`);
+        errors.push(
+            `Deck violates leader oath constraint (${constraint?.attribute ?? 'UNKNOWN'}${constraint?.allowSingleOffAttribute ? ' + shared off-attribute' : ''}).`,
+        );
     }
 
     return {

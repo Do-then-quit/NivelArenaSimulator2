@@ -66,6 +66,25 @@ function getZonePresenceValue(zone: UnitZoneState): number {
     return zone.unit.cost * 10 + getObservedZonePower(zone) / 300 + getObservedZoneHit(zone) * 30 + zone.items.length * 12;
 }
 
+function getActivateEffectSourceCard(
+    actor: PlayerState,
+    action: Extract<EngineAction, { type: 'ACTIVATE_EFFECT' }>,
+): Card | undefined {
+    if (action.sourceType === 'LEADER') {
+        return actor.levelZone ?? undefined;
+    }
+
+    const zone = actor.unitZones[action.zoneIndex];
+    if (!zone) return undefined;
+
+    if (action.sourceType === 'ITEM') {
+        if (typeof action.itemIndex !== 'number') return undefined;
+        return zone.items[action.itemIndex];
+    }
+
+    return zone.unit ?? undefined;
+}
+
 function estimateDirectPressure(attacker: PlayerState, defender: PlayerState): number {
     let pressure = 0;
     for (let laneIndex = 0; laneIndex < attacker.unitZones.length; laneIndex++) {
@@ -333,9 +352,19 @@ export function scoreObservedAction(
             return { score: 90 + card.cost * 18, reason: 'play-skill' };
         }
         case 'ACTIVATE_EFFECT': {
-            const ownZone = actor.unitZones[action.zoneIndex];
-            if (!ownZone.unit) return { score: Number.NEGATIVE_INFINITY, reason: 'no-effect-source' };
-            return { score: 140 + ownZone.unit.cost * 22 - action.effectIndex, reason: 'activate-effect' };
+            const sourceCard = getActivateEffectSourceCard(actor, action);
+            if (!sourceCard) return { score: Number.NEGATIVE_INFINITY, reason: 'no-effect-source' };
+            if (
+                action.sourceType === 'LEADER'
+                && actor.unitZones.every(zone => !zone.unit)
+                && (sourceCard.text ?? '').includes('필드에 있는 자신 유닛')
+            ) {
+                return { score: Number.NEGATIVE_INFINITY, reason: 'leader-needs-field-unit' };
+            }
+
+            const cost = typeof sourceCard.cost === 'number' ? sourceCard.cost : 0;
+            const sourceTypeBias = action.sourceType === 'LEADER' ? 60 : action.sourceType === 'ITEM' ? 20 : 0;
+            return { score: 140 + cost * 22 - action.effectIndex + sourceTypeBias, reason: 'activate-effect' };
         }
         case 'RESOLVE_BLOCK':
             return scoreResolveBlockAction(state, actor, action);
