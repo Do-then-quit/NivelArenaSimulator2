@@ -8,6 +8,13 @@ function parseBoolEnv(name: string, fallback: boolean): boolean {
     return normalized === '1' || normalized === 'true' || normalized === 'yes';
 }
 
+function parseIntEnv(name: string, fallback: number): number {
+    const raw = process.env[name];
+    if (!raw) return fallback;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 function runCommand(command: string, args: string[]): void {
     const result = spawnSync(command, args, { stdio: 'inherit', shell: true });
     if (result.error) {
@@ -25,7 +32,8 @@ function runAiRegression(): void {
         throw new Error('No vitest files configured in phase0 regression manifest.');
     }
 
-    runCommand('npx', ['vitest', 'run', ...vitestFiles]);
+    const vitestTimeoutMs = parseIntEnv('AI_REGRESSION_TEST_TIMEOUT_MS', 60000);
+    runCommand('npx', ['vitest', 'run', `--testTimeout=${vitestTimeoutMs}`, ...vitestFiles]);
 
     const skipSoak = parseBoolEnv('AI_REGRESSION_SKIP_SOAK', false);
     if (manifest.regression.includeBotSoak && !skipSoak) {

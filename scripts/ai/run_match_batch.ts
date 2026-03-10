@@ -5,6 +5,7 @@ import { MatchReport, MatchTerminationReason, runSingleMatch } from './match_har
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 import { resolveBotFactory } from './bot_registry';
 import { parseSeedListCsv, resolveSeedSuiteSeeds, SeedSuiteName } from './seed_suites';
+import { Card } from '../../src/logic/types';
 
 export interface RunMatchBatchConfig {
     startSeed: number;
@@ -19,6 +20,10 @@ export interface RunMatchBatchConfig {
     seedSuiteName?: SeedSuiteName;
     seedSuitePath?: string;
     suppressLogs?: boolean;
+    player1Deck?: Card[];
+    player2Deck?: Card[];
+    player1Leader?: Card;
+    player2Leader?: Card;
 }
 
 export interface MatchBatchReport {
@@ -155,6 +160,10 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
             traceLimit: config.traceLimit,
             player1BotFactory,
             player2BotFactory,
+            player1Deck: config.player1Deck,
+            player2Deck: config.player2Deck,
+            player1Leader: config.player1Leader,
+            player2Leader: config.player2Leader,
         };
 
         if (!measureRuntime) {
@@ -215,10 +224,17 @@ export function runMatchBatch(config: RunMatchBatchConfig): MatchBatchReport {
         },
         { winner: 0, max_steps: 0, no_action: 0, invalid_action: 0 },
     );
+    const {
+        player1Deck: _player1Deck,
+        player2Deck: _player2Deck,
+        player1Leader: _player1Leader,
+        player2Leader: _player2Leader,
+        ...reportConfig
+    } = config;
 
     return {
         config: {
-            ...config,
+            ...reportConfig,
             games: seeds.length,
             seedList: [...seeds],
         },

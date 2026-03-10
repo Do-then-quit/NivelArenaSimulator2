@@ -37,6 +37,8 @@ describe('Phase0 Manifest', () => {
         expect(manifest.version).toBe(DEFAULT_PHASE0_MANIFEST.version);
         expect(manifest.bench.games).toBe(DEFAULT_PHASE0_MANIFEST.bench.games);
         expect(manifest.ladder.entrants).toEqual(DEFAULT_PHASE0_MANIFEST.ladder.entrants);
+        expect(manifest.fixedMatchupBench.matchupId).toBe(DEFAULT_PHASE0_MANIFEST.fixedMatchupBench.matchupId);
+        expect(manifest.fixedMatchupBench.seedSuiteName).toBe(DEFAULT_PHASE0_MANIFEST.fixedMatchupBench.seedSuiteName);
         expect(manifest.phase4.runtimeGateThresholds).toEqual(DEFAULT_PHASE0_MANIFEST.phase4.runtimeGateThresholds);
         expect(manifest.phase4.performanceGate).toEqual(DEFAULT_PHASE0_MANIFEST.phase4.performanceGate);
         expect(manifest.phase41Promotion.performanceGate).toEqual(DEFAULT_PHASE0_MANIFEST.phase41Promotion.performanceGate);
@@ -59,6 +61,10 @@ describe('Phase0 Manifest', () => {
                 regression: {
                     includeBotSoak: false,
                 },
+                fixedMatchupBench: {
+                    gamesPerSide: 6,
+                    player1BotId: 'baseline-a',
+                },
                 phase4: {
                     stressMatrix: {
                         gamesPerPairing: 8,
@@ -80,6 +86,9 @@ describe('Phase0 Manifest', () => {
         expect(manifest.bench.startSeed).toBe(DEFAULT_PHASE0_MANIFEST.bench.startSeed);
         expect(manifest.regression.includeBotSoak).toBe(false);
         expect(manifest.regression.vitestFiles).toEqual(DEFAULT_PHASE0_MANIFEST.regression.vitestFiles);
+        expect(manifest.fixedMatchupBench.gamesPerSide).toBe(6);
+        expect(manifest.fixedMatchupBench.player1BotId).toBe('baseline-a');
+        expect(manifest.fixedMatchupBench.outputPath).toBe(DEFAULT_PHASE0_MANIFEST.fixedMatchupBench.outputPath);
         expect(manifest.phase4.stressMatrix.gamesPerPairing).toBe(8);
         expect(manifest.phase4.runtimeGateBaseline.avgMsPerGame).toBe(DEFAULT_PHASE0_MANIFEST.phase4.runtimeGateBaseline.avgMsPerGame);
         expect(manifest.phase4.performanceGate.minStrongV3WinRateVsStrongV2)

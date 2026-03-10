@@ -26,6 +26,20 @@ export interface Phase0RegressionConfig {
     includeBotSoak: boolean;
 }
 
+export interface FixedMatchupBenchDefaults {
+    matchupId: string;
+    gamesPerSide: number;
+    maxSteps: number;
+    enableMulligan: boolean;
+    traceLimit: number;
+    startSeed: number;
+    player1BotId: string;
+    player2BotId: string;
+    seedSuiteName: 'tuning' | 'dev' | 'promotion-holdout' | '';
+    seedSuitePath: string;
+    outputPath: string;
+}
+
 export interface Phase4StressMatrixPairing {
     player1BotId: string;
     player2BotId: string;
@@ -97,6 +111,7 @@ export interface Phase0Manifest {
     bench: Phase0BenchDefaults;
     ladder: Phase0LadderDefaults;
     regression: Phase0RegressionConfig;
+    fixedMatchupBench: FixedMatchupBenchDefaults;
     phase4: Phase0Phase4Config;
     phase41Promotion: Phase41PromotionConfig;
 }
@@ -150,6 +165,19 @@ const FALLBACK_PHASE0_MANIFEST: Phase0Manifest = {
             'tests/rules_v2_regression/rules_v2_ai_seed_2026021312_trash_toggle_regression.test.ts',
         ],
         includeBotSoak: true,
+    },
+    fixedMatchupBench: {
+        matchupId: 'fm-b-fire-vs-storm',
+        gamesPerSide: 12,
+        maxSteps: 2400,
+        enableMulligan: true,
+        traceLimit: 18,
+        startSeed: 2026032000,
+        player1BotId: 'strong-v3',
+        player2BotId: 'strong-v3',
+        seedSuiteName: 'dev',
+        seedSuitePath: 'artifacts/ai/seeds/phase3_v1.json',
+        outputPath: 'artifacts/ai/fixed_matchup/bench/latest.json',
     },
     phase4: {
         stressMatrix: {
@@ -222,6 +250,10 @@ function mergeManifest(base: Phase0Manifest, input: Partial<Phase0Manifest>): Ph
             ...base.regression,
             ...(input.regression ?? {}),
             vitestFiles: input.regression?.vitestFiles ?? base.regression.vitestFiles,
+        },
+        fixedMatchupBench: {
+            ...base.fixedMatchupBench,
+            ...(input.fixedMatchupBench ?? {}),
         },
         phase4: {
             ...base.phase4,

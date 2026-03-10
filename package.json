@@ -13,6 +13,7 @@
         "test": "vitest run",
         "test:bot-soak": "vitest run tests/rules_v2_regression/rules_v2_ai_bot_selfplay_soak_regression.test.ts",
         "ai:bench": "tsx scripts/ai/run_match_batch.ts",
+        "ai:fixed:bench": "tsx scripts/ai/run_fixed_matchup_batch.ts",
         "ai:ladder": "tsx scripts/ai/elo_ladder.ts",
         "ai:deck-search": "tsx scripts/ai/run_deck_search.ts",
         "ai:regression": "tsx scripts/ai/run_ai_regression.ts",

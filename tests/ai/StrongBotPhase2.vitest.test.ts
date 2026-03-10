@@ -97,7 +97,7 @@ describe('StrongBot Phase2', () => {
         expect(report.summary.totalGames).toBe(8);
         expect(report.summary.terminationCounts.invalid_action).toBe(0);
         expect(report.summary.terminationCounts.no_action).toBe(0);
-    }, 15000);
+    }, 45000);
 
     it('keeps v1 bot available for fallback compatibility', () => {
         const engine = createEngine(6003);

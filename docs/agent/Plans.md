@@ -13,6 +13,7 @@
 - KO: `docs/roadmaps/aiRoadmap.ko.md`
 
 ## Related References
+- `docs/ai/fixed_matchup_practice_bot_start_2026-03-10.md`
 - `docs/reference/GEMINI.md`
 - `docs/reference/knowledge.md`
 - `Legacy/`

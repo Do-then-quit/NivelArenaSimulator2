@@ -49,6 +49,19 @@
     ],
     "includeBotSoak": true
   },
+  "fixedMatchupBench": {
+    "matchupId": "fm-b-fire-vs-storm",
+    "gamesPerSide": 12,
+    "maxSteps": 2400,
+    "enableMulligan": true,
+    "traceLimit": 18,
+    "startSeed": 2026032000,
+    "player1BotId": "strong-v3",
+    "player2BotId": "strong-v3",
+    "seedSuiteName": "dev",
+    "seedSuitePath": "artifacts/ai/seeds/phase3_v1.json",
+    "outputPath": "artifacts/ai/fixed_matchup/bench/latest.json"
+  },
   "phase4": {
     "stressMatrix": {
       "startSeed": 2026021301,
