@@ -141,18 +141,6 @@ function chooseTrash(engine: any, actorPlayerId: string, predicate: (card: Card)
     return action;
 }
 
-function chooseDamage(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
-    const player = engine.getPlayerById(actorPlayerId);
-    const action = findAction(
-        engine,
-        actorPlayerId,
-        'SELECT_DAMAGE_TARGET',
-        (entry: any) => predicate(player.damage[entry.damageIndex]),
-    );
-    if (action) engine.step(action);
-    return action;
-}
-
 function chooseRevealed(engine: any, actorPlayerId: string, predicate: (card: Card) => boolean) {
     const action = findAction(
         engine,
@@ -1732,7 +1720,6 @@ const behaviorTests: UnifiedTestCase[] = [
         },
         verify: (engine) => {
             const p1 = engine.state.players[0];
-            const p2 = engine.state.players[1];
             const played = playItemById(engine, p1, 'BT05-062', 0);
             const equipped = p1.unitZones[0].items.some((item: Card) => item.id.startsWith('BT05-062'));
             engine.state.turnPlayerIndex = 1;

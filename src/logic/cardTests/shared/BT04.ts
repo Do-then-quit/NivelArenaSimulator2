@@ -795,7 +795,6 @@ const tests: UnifiedTestCase[] = [
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
-            const p1 = engine.currentPlayer;
             const p2 = engine.opponentPlayer;
             const before = zonePower(engine, p2, 0);
             engine.activateEffect(0, 1);
@@ -1123,7 +1122,6 @@ const tests: UnifiedTestCase[] = [
             engine.state.phase = Phase.MAIN;
         },
         verify: (engine) => {
-            const p1 = engine.currentPlayer;
             const p2 = engine.opponentPlayer;
             const before = zonePower(engine, p2, 0);
             engine.activateEffect(0, 1);
