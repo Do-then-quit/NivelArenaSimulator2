@@ -1098,11 +1098,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
             description: '엑시트 : 자신의 트래시 존에 있는 이 카드를 대미지 존에 놓는다.',
             action: {
                 type: 'COMPLEX_ACTION',
-                params: {
-                    mode: 'BT05_015_MOVE_STORED_SKILL_FROM_TRASH_TO_DAMAGE',
-                    sourceCardRef: ctx.sourceCard,
-                    sourceCardId: ctx.sourceCard.id,
-                },
+                params: { mode: 'BT05_015_MOVE_STORED_SKILL_FROM_TRASH_TO_DAMAGE' },
             },
             duration: 'TURN_END',
         } as any);
@@ -1110,9 +1106,7 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
     }
 
     if ((params as any).mode === 'BT05_015_MOVE_STORED_SKILL_FROM_TRASH_TO_DAMAGE') {
-        const sourceCardRef = (params as any).sourceCardRef;
-        const sourceCardId = (params as any).sourceCardId;
-        const moved = removeCardFromArrayByRefOrId(ctx.player.trash, sourceCardRef, sourceCardId);
+        const moved = removeCardFromArrayByRefOrId(ctx.player.trash, ctx.sourceCard, ctx.sourceCard?.id);
         if (!moved) return;
         ctx.player.damage.push(moved);
         if (typeof ctx.machine.recordDamagePlacedByEffect === 'function') {
@@ -1263,13 +1257,15 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
 
     if ((params as any).mode === 'BT05_027_BOTTOM_FRIENDLY_AND_DEPLOY_FROM_HAND') {
         const stage = (params as any).stage;
-        if (stage === 'SELECT_ZONE') {
-            const selectedCardRef = (params as any).selectedCardRef;
-            const selectedCardId = (params as any).selectedCardId;
-            const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+        if (stage === 'APPLY_DEPLOY') {
+            const selectedCard = (_targets || [])[0];
+            const targetZoneIndex = Number((params as any).targetZoneIndex ?? -1);
+            if (!selectedCard || targetZoneIndex < 0) return;
+
+            const targetZone = ctx.player.unitZones[targetZoneIndex];
             if (!targetZone || targetZone.unit) return;
 
-            const placedUnit = removeCardFromArrayByRefOrId(ctx.player.hand, selectedCardRef, selectedCardId);
+            const placedUnit = removeCardFromArrayByRefOrId(ctx.player.hand, selectedCard, selectedCard?.id);
             if (!placedUnit) return;
             resetUnitZoneForPlacement(targetZone, placedUnit);
             ctx.machine.triggerEntryEffectsForPlacedUnit(ctx.player, targetZone);
@@ -1308,39 +1304,78 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
                 validTargets: 'MY_HAND',
                 targetSchema: handSchema,
             },
-            {
-                activation: ActivationCondition.ACTIVE,
-                description: 'BT05-027 choose empty zone',
-                targets: {
-                    scope: 'MY_FIELD',
-                    type: 'ALL',
-                    count: 1,
-                    selectMode: 'MANUAL',
+            createComplexRuntimeEffect(
+                handSchema,
+                'BT05-027 deploy selected hand unit',
+                {
+                    mode: 'BT05_027_BOTTOM_FRIENDLY_AND_DEPLOY_FROM_HAND',
+                    stage: 'APPLY_DEPLOY',
+                    targetZoneIndex: laneIndex,
                 },
-                action: {
-                    type: 'COMPLEX_ACTION',
-                    params: {
-                        mode: 'BT05_027_BOTTOM_FRIENDLY_AND_DEPLOY_FROM_HAND',
-                        stage: 'SELECT_ZONE',
-                    },
-                },
-            } as any,
+                ActivationCondition.ACTIVE,
+            ),
         );
-        ctx.machine.state.pendingEffect!.actionValue = {
-            selectedCardRef: undefined,
-            selectedCardId: undefined,
-        };
-        // The first selection chooses the hand card. Resolve immediately to second stage.
         return;
     }
 
     if ((params as any).mode === 'BT05_028_BOTTOM_FRIENDLY_REVEAL3_DEPLOY_AND_ZERO_SELF') {
         const stage = (params as any).stage;
-        if (stage === 'PROMPT_ZONE') {
+        if (stage === 'APPLY_DEPLOY') {
+            const targetZone = (_targets || [])[0] as UnitZoneState | undefined;
+            const selectedCardRef = (params as any).selectedCardRef;
+            const selectedCardId = (params as any).selectedCardId;
+            if (!targetZone || targetZone.unit) return;
+
+            const placedUnit = removeCardFromArrayByRefOrId(ctx.machine.state.revealedCards, selectedCardRef, selectedCardId);
+            if (!placedUnit) return;
+
+            resetUnitZoneForPlacement(targetZone, placedUnit);
+            ctx.machine.triggerEntryEffectsForPlacedUnit(ctx.player, targetZone);
+
+            if (getCardCost(ctx.machine, placedUnit) <= ctx.player.leaderLevel) {
+                ctx.sourceCard.turnCostOverride = {
+                    cost: 0,
+                    turnCount: ctx.machine.state.turnCount,
+                };
+            }
+
+            if (ctx.machine.state.revealedCards.length > 0) {
+                ctx.player.trash.push(...ctx.machine.state.revealedCards);
+            }
+            ctx.machine.state.revealedCards = [];
+            return;
+        }
+
+        if (stage === 'RESOLVE_DEPLOY') {
             const selectedCard = (_targets || [])[0];
-            const targetZone = (_targets || [])[1] as UnitZoneState | undefined;
-            void selectedCard;
-            void targetZone;
+            if (!selectedCard) return;
+
+            const zoneSchema = {
+                scope: 'MY_FIELD',
+                type: 'ALL',
+                count: 1,
+                selectMode: 'MANUAL',
+            } as const;
+            beginTargetSelection(
+                ctx,
+                {
+                    actionType: 'BT05_028_SELECT_DEPLOY_ZONE',
+                    effectDescription: '배치할 빈 유닛 존을 선택한다.',
+                    validTargets: 'MY_FIELD',
+                    targetSchema: zoneSchema,
+                },
+                createComplexRuntimeEffect(
+                    zoneSchema,
+                    'BT05-028 deploy chosen revealed unit',
+                    {
+                        mode: 'BT05_028_BOTTOM_FRIENDLY_REVEAL3_DEPLOY_AND_ZERO_SELF',
+                        stage: 'APPLY_DEPLOY',
+                        selectedCardRef: selectedCard,
+                        selectedCardId: selectedCard.id,
+                    },
+                    ActivationCondition.ACTIVE,
+                ),
+            );
             return;
         }
 
@@ -1896,8 +1931,15 @@ const complexAction: ActionImplementation = (ctx, params, _targets) => {
 
             const shouldRepeat = Math.max(0, Number((params as any).shouldRepeat ?? 0));
             const mixActive = hasNonAttributeCardOnField(ctx.player, Attribute.STORM);
-            if (shouldRepeat > 0 && mixActive && ctx.machine.state.interactionMode === 'NORMAL') {
-                complexAction(ctx, { mode: 'BT05_044_BORROW_EXIT_EFFECT', repeatsIfMix: 0 }, []);
+            if (shouldRepeat > 0 && mixActive) {
+                ctx.machine.effectManager.queueEphemeralEffect(
+                    {
+                        activation: ActivationCondition.ACTIVE,
+                        description: 'BT05-044 repeat borrow exit effect',
+                        action: { type: 'COMPLEX_ACTION', params: { mode: 'BT05_044_BORROW_EXIT_EFFECT', repeatsIfMix: 0 } },
+                    } as any,
+                    ctx,
+                );
             }
             return;
         }

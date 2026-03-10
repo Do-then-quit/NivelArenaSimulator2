@@ -538,6 +538,721 @@ const behaviorTests: UnifiedTestCase[] = [
             ];
         },
     }),
+    createCase({
+        testId: 'BT05-005',
+        name: '비터스윗 라우라 이스케이프 상대 2장 약화 후 덱 맨 아래 이동',
+        description: '이스케이프로 상대 유닛을 최대 2장까지 자신의 파워만큼 약화시키고 자신은 덱 맨 아래로 이동한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT05-005');
+            p2.unitZones[0].unit = getCard('ST01-011');
+            p2.unitZones[1].unit = getCard('ST01-011');
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.DRAW;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const sourcePower = zonePower(engine, p1, 0);
+            const before0 = zonePower(engine, p2, 0);
+            const before1 = zonePower(engine, p2, 1);
+            engine.nextPhase();
+            const first = chooseZone(engine, p1.id, p2.id, 0);
+            const second = chooseZone(engine, p1.id, p2.id, 1);
+            const confirm = confirmTargets(engine, p1.id);
+            return [
+                { pass: !!first && !!second && !!confirm, message: '상대 유닛 2장 선택 가능' },
+                { pass: zonePower(engine, p2, 0) === before0 - sourcePower, message: '첫 번째 상대 유닛이 자신의 파워만큼 약화' },
+                { pass: zonePower(engine, p2, 1) === before1 - sourcePower, message: '두 번째 상대 유닛이 자신의 파워만큼 약화' },
+                { pass: p1.unitZones[0].unit === null, message: '이스케이프로 자신이 필드를 떠남' },
+                { pass: p1.deck[0]?.id.startsWith('BT05-005') === true, message: '자신이 덱 맨 아래로 이동' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-007',
+        name: '용 다이린 엔트리로 상대 디펜더와 엑시트 잠금',
+        description: '엔트리 시 상대의 디펜더/엑시트 활성화를 턴 종료까지 모두 잠근다.',
+        coversEffectIndices: [0, 1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            setHighSize(engine, 20);
+            p1.hand = [getCard('BT05-007')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const played = playUnitById(engine, p1, 'BT05-007', 0);
+            return [
+                { pass: played, message: '유닛 배치 성공' },
+                { pass: p2.lockedActivationsUntilTurnEnd?.[ActivationCondition.DEFENDER] === true, message: '상대 DEFENDER 효과 잠금' },
+                { pass: p2.lockedActivationsUntilTurnEnd?.[ActivationCondition.EXIT] === true, message: '상대 EXIT 효과 잠금' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-008',
+        name: '심연의 마왕 레녹스 스킬 발동 수만큼 반복 약화',
+        description: '믹스 조건에서 이 턴 발동한 스킬 수만큼 추가 처리되어 상대 유닛들을 반복 약화시킨다.',
+        coversEffectIndices: [2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT05-008');
+            ensureOtherAttributeSupport(engine, getCard, Attribute.FIRE);
+            engine.recordSkillActivation(p1.id, 1);
+            p2.unitZones[0].unit = getCard('ST01-002');
+            p2.unitZones[1].unit = getCard('ST01-011');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before0 = zonePower(engine, p2, 0);
+            const before1 = zonePower(engine, p2, 1);
+            engine.activateEffect(0, 2);
+            const first = chooseZone(engine, p1.id, p2.id, 0);
+            const second = chooseZone(engine, p1.id, p2.id, 1);
+            return [
+                { pass: !!first && !!second, message: '반복 처리로 상대 유닛 2번 선택 가능' },
+                { pass: zonePower(engine, p2, 0) === before0 - 2000, message: '첫 번째 선택 유닛 파워-2000' },
+                { pass: zonePower(engine, p2, 1) === before1 - 2000, message: '두 번째 선택 유닛 파워-2000' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-009',
+        name: '멧현우 어태커 조우 약화 후 파괴 시 스킬 회수',
+        description: '어태커로 조우 유닛을 약화해 파괴하면 트래시의 2코스트 이하 비트리거 스킬을 회수한다.',
+        coversEffectIndices: [2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT05-009');
+            p1.trash = [getCard('BT05-013')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.attack(0);
+            const recover = chooseTrash(engine, p1.id, (card: Card) => card.id === 'BT05-013');
+            return [
+                { pass: p2.unitZones[0].unit === null, message: '조우 유닛이 파워 감소로 트래시됨' },
+                { pass: !!recover, message: '회수할 스킬 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id === 'BT05-013'), message: '2코스트 이하 비트리거 스킬 회수' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-010',
+        name: '몽환의 악마 시셀라 엔트리 트래시 복귀와 조우 약화',
+        description: '엔트리로 트래시 카드를 덱 맨 아래에 두고 조우 유닛을 약화시킨다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            setHighSize(engine, 20);
+            p1.hand = [getCard('BT05-010')];
+            p1.trash = [getCard('BT05-013')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const before = zonePower(engine, p2, 0);
+            const played = playUnitById(engine, p1, 'BT05-010', 0);
+            const pick = chooseTrash(engine, p1.id, (card: Card) => card.id === 'BT05-013');
+            return [
+                { pass: played, message: '유닛 배치 성공' },
+                { pass: !!pick, message: '덱 맨 아래로 돌릴 트래시 카드 선택 가능' },
+                { pass: p1.deck[0]?.id === 'BT05-013', message: '선택한 트래시 카드가 덱 맨 아래로 이동' },
+                { pass: zonePower(engine, p2, 0) === before - 2000, message: '조우 유닛 파워 총 -2000 적용' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-011',
+        name: '훈련소장 카티야 엔트리 스킬 트래시 후 즉시 발동과 어태커 강화',
+        description: '믹스 엔트리로 2코스트 이상 스킬을 트래시해 발동하고, 이 턴 발동한 스킬 수만큼 관통과 듀얼리스트를 얻는다.',
+        coversEffectIndices: [0, 1, 2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            setHighSize(engine, 20);
+            ensureOtherAttributeSupport(engine, getCard, Attribute.FIRE);
+            p1.hand = [getCard('BT05-011')];
+            p1.skillZone = [getCard('BT05-012'), getCard('BT05-013')];
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.recordSkillActivation(p1.id, 2);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const beforePower = zonePower(engine, p2, 0);
+            const played = playUnitById(engine, p1, 'BT05-011', 0);
+            const castSkill = chooseRevealed(engine, p1.id, (card: Card) => card.id === 'BT05-012');
+            const debuffTarget = chooseZone(engine, p1.id, p2.id, 0);
+            engine.state.phase = Phase.ATTACK;
+            engine.attack(0);
+            return [
+                { pass: played, message: '유닛 배치 성공' },
+                { pass: !!castSkill, message: '트래시 후 발동할 2코스트 이상 스킬 선택 가능' },
+                { pass: !!debuffTarget, message: '발동한 스킬의 대상 선택 가능' },
+                { pass: p1.skillZone.every((card: Card) => card.id !== 'BT05-012'), message: '선택한 스킬이 스킬 존에서 제거됨' },
+                { pass: p1.trash.some((card: Card) => card.id === 'BT05-012'), message: '선택한 스킬이 트래시로 이동' },
+                { pass: zonePower(engine, p2, 0) === beforePower - 3000, message: '트래시한 스킬 효과가 즉시 발동' },
+                { pass: engine.getSkillActivationCountThisTurn(p1.id) >= 3, message: '이 턴 스킬 발동 수가 3 이상으로 집계됨' },
+                { pass: zonePenetration(engine, p1, 0) >= 3, message: '어태커 관통[X]가 스킬 발동 수만큼 적용' },
+                {
+                    pass: (p1.unitZones[0].temporaryEffects || []).some((effect: any) => effect.description?.includes('듀얼리스트')),
+                    message: 'X가 3 이상이면 듀얼리스트 부여',
+                },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-013',
+        name: '이 맛이지 트래시 회수 후 선택 유닛 덱 맨 아래',
+        description: '선택한 아군보다 코스트가 낮은 비트리거 카드를 트래시에서 회수하고, 선택 유닛을 덱 맨 아래에 둔다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            setHighSize(engine, 20);
+            p1.hand = [getCard('BT05-013')];
+            p1.unitZones[0].unit = getCard('BT05-025');
+            ensureKnownTrash(engine, getCard, ['BT05-016', 'BT05-011']);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playSkillById(engine, p1, 'BT05-013');
+            const pickUnit = chooseZone(engine, p1.id, p1.id, 0);
+            const legalIds = engine.getLegalActions(p1.id)
+                .filter((action: any) => action.type === 'SELECT_TRASH_TARGET')
+                .map((action: any) => p1.trash[action.trashIndex]?.id);
+            const recover = chooseTrash(engine, p1.id, (card: Card) => card.id === 'BT05-016');
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickUnit, message: '덱 맨 아래로 보낼 아군 유닛 선택 가능' },
+                { pass: legalIds.includes('BT05-016'), message: '선택 유닛보다 코스트가 낮은 비트리거 카드 선택 가능' },
+                { pass: !legalIds.includes('BT05-011'), message: '선택 유닛보다 코스트가 높거나 같은 카드는 제외' },
+                { pass: !!recover, message: '회수할 트래시 카드 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id === 'BT05-016'), message: '조건에 맞는 카드를 패에 회수' },
+                { pass: p1.unitZones[0].unit === null, message: '선택한 아군 유닛이 필드를 떠남' },
+                { pass: p1.deck[0]?.id === 'BT05-025', message: '선택한 아군 유닛이 덱 맨 아래로 이동' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-015',
+        name: '꽤 아플걸 상대 유닛 트래시 시 소스 스킬 대미지 이동',
+        description: '상대 유닛에 부여한 종료 효과가 발동하면 트래시의 이 카드가 대미지 존으로 이동한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            setHighSize(engine, 5);
+            p1.hand = [getCard('BT05-015')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const played = playSkillById(engine, p1, 'BT05-015');
+            const pickTarget = chooseZone(engine, p1.id, p2.id, 0);
+            const granted = (p2.unitZones[0].temporaryEffects || []).some(
+                (effect: any) => effect.action?.params?.mode === 'BT05_015_MOVE_STORED_SKILL_FROM_TRASH_TO_DAMAGE',
+            );
+            engine.destroyUnit(p2, p2.unitZones[0], undefined, 'EFFECT');
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickTarget, message: '효과를 부여할 상대 유닛 선택 가능' },
+                { pass: granted, message: '상대 유닛에 트래시 시 이동 효과가 부여됨' },
+                { pass: p2.damage.some((card: Card) => card.id === 'ST01-002'), message: '트래시된 대상 유닛이 상대 대미지 존으로 이동' },
+                { pass: !p2.trash.some((card: Card) => card.id === 'ST01-002'), message: '트래시된 대상 유닛이 트래시에 남지 않음' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-019',
+        name: '운명의 푸른 가약 케네스 공개 회수 후 대상 유닛 덱 맨 아래',
+        description: '선택한 아군의 히트만큼 공개해 1장을 패에 넣고 나머지는 트래시한 뒤, 선택 유닛을 덱 맨 아래로 보낸다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('ST01-011');
+            p1.unitZones[1].unit = getCard('BT05-019');
+            ensureDeckTop(engine, getCard, ['BT05-012', 'BT05-015', 'ST01-002']);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.activateEffect(1, 0);
+            const pickUnit = chooseZone(engine, p1.id, p1.id, 0);
+            const pickReveal = chooseRevealed(engine, p1.id, (card: Card) => card.id === 'BT05-012');
+            return [
+                { pass: !!pickUnit, message: '공개 수를 정할 아군 유닛 선택 가능' },
+                { pass: !!pickReveal, message: '공개한 카드 중 패에 넣을 카드 선택 가능' },
+                { pass: p1.hand.some((card: Card) => card.id === 'BT05-012'), message: '선택한 공개 카드를 패에 넣음' },
+                { pass: p1.trash.some((card: Card) => card.id === 'BT05-015'), message: '남은 공개 카드가 트래시로 이동' },
+                { pass: p1.trash.some((card: Card) => card.id === 'ST01-002'), message: '남은 공개 카드 전부가 트래시로 이동' },
+                { pass: p1.unitZones[0].unit === null, message: '선택한 아군 유닛이 필드를 떠남' },
+                { pass: p1.deck[0]?.id === 'ST01-011', message: '선택한 아군 유닛이 덱 맨 아래로 이동' },
+                { pass: engine.state.revealedCards.length === 0, message: '공개 영역 정리 완료' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-025',
+        name: '2nd Anniversary 이바 Blossom 패 다중 트래시 버프와 돌파 획득',
+        description: '레벨링크 9에서 패를 여러 장 트래시해 파워를 올리고, 조우 유닛과의 파워 차가 12000 이상이면 돌파를 얻는다.',
+        coversEffectIndices: [0, 1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.leaderLevel = 9;
+            p1.unitZones[0].unit = getCard('BT05-025');
+            p1.hand = [getCard('ST01-002'), getCard('BT05-012'), getCard('BT05-013')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const beforePower = zonePower(engine, p1, 0);
+            engine.activateEffect(0, 1);
+            const discard0 = chooseHand(engine, p1.id, (card: Card) => card.id === 'ST01-002');
+            const discard1 = chooseHand(engine, p1.id, (card: Card) => card.id === 'BT05-012');
+            const discard2 = chooseHand(engine, p1.id, (card: Card) => card.id === 'BT05-013');
+            const confirm = confirmTargets(engine, p1.id);
+            return [
+                { pass: beforePower === 12000, message: '레벨링크 7 파워+5000이 먼저 적용됨' },
+                { pass: !!discard0 && !!discard1 && !!discard2 && !!confirm, message: '패 3장을 선택해 트래시 가능' },
+                { pass: p1.hand.length === 0, message: '선택한 패가 모두 트래시됨' },
+                { pass: zonePower(engine, p1, 0) === beforePower + 3000, message: '트래시한 카드 수만큼 파워+1000 누적' },
+                { pass: hasTemporaryAction(p1.unitZones[0], 'BREAKTHROUGH'), message: '파워 차 12000 이상이면 돌파 획득' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-027',
+        name: '즐거운 축제 아군 하단 이동 후 같은 존에 손패 유닛 배치',
+        description: '선택한 아군을 덱 맨 아래로 보내고, 코스트+3 이하 손패 유닛을 같은 유닛 존에 사이즈를 무시하고 배치한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            setHighSize(engine, 5);
+            p1.hand = [getCard('BT05-027'), getCard('ST01-011')];
+            p1.unitZones[1].unit = getCard('BT05-036');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playSkillById(engine, p1, 'BT05-027');
+            const pickBottom = chooseZone(engine, p1.id, p1.id, 1);
+            const pickHand = chooseHand(engine, p1.id, (card: Card) => card.id === 'ST01-011');
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickBottom, message: '덱 맨 아래로 보낼 아군 유닛 선택 가능' },
+                { pass: !!pickHand, message: '코스트+3 이하 손패 유닛 선택 가능' },
+                { pass: p1.unitZones[1].unit?.id === 'ST01-011', message: '선택한 손패 유닛이 같은 존에 배치됨' },
+                { pass: p1.deck[0]?.id === 'BT05-036', message: '원래 아군 유닛이 덱 맨 아래로 이동' },
+                { pass: !p1.hand.some((card: Card) => card.id === 'ST01-011'), message: '배치한 유닛이 패에서 제거됨' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-028',
+        name: '불꽃놀이 공개 배치 후 조건부 0코스트와 나머지 트래시',
+        description: '아군을 덱 맨 아래로 보낸 뒤 덱 위 3장을 공개해 유닛을 배치하고, 조건 충족 시 이 스킬이 0코스트가 된다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            setHighSize(engine, 5);
+            p1.leaderLevel = 5;
+            p1.hand = [getCard('BT05-028')];
+            p1.unitZones[0].unit = getCard('BT05-019');
+            ensureDeckTop(engine, getCard, ['ST01-002', 'BT05-012', 'BT05-015']);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playSkillById(engine, p1, 'BT05-028');
+            const pickBottom = chooseZone(engine, p1.id, p1.id, 0);
+            const pickRevealed = chooseRevealed(engine, p1.id, (card: Card) => card.id === 'ST01-002');
+            const pickZone = chooseZone(engine, p1.id, p1.id, 1);
+            const skillCard = p1.skillZone.find((card: Card) => card.id === 'BT05-028');
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickBottom, message: '덱 맨 아래로 보낼 아군 유닛 선택 가능' },
+                { pass: !!pickRevealed, message: '공개된 유닛 카드 선택 가능' },
+                { pass: !!pickZone, message: '배치할 빈 유닛 존 선택 가능' },
+                { pass: p1.deck[0]?.id === 'BT05-019', message: '선택한 아군 유닛이 덱 맨 아래로 이동' },
+                { pass: p1.unitZones[1].unit?.id === 'ST01-002', message: '선택한 공개 유닛이 빈 유닛 존에 배치됨' },
+                { pass: p1.trash.some((card: Card) => card.id === 'BT05-012'), message: '선택하지 않은 공개 카드가 트래시됨' },
+                { pass: p1.trash.some((card: Card) => card.id === 'BT05-015'), message: '남은 공개 카드가 모두 트래시됨' },
+                { pass: skillCard?.turnCostOverride?.cost === 0, message: '배치한 유닛 코스트가 리더 레벨 이하이면 이 스킬 0코스트화' },
+                { pass: engine.state.revealedCards.length === 0, message: '공개 영역 정리 완료' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-029',
+        name: '쉬워도 너무 쉬운데 아군 하단 이동 후 상대 방어 잠금',
+        description: '기준 아군을 선택해 덱 맨 아래로 보내고, 그 파워 이하의 상대 유닛에게 턴 종료까지 방어 불가를 부여한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            setHighSize(engine, 8);
+            p1.hand = [getCard('BT05-029')];
+            p1.unitZones[1].unit = getCard('BT05-036');
+            p2.unitZones[0].unit = getCard('ST01-011');
+            p2.unitZones[1].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const played = playSkillById(engine, p1, 'BT05-029');
+            const pickFriendly = chooseZone(engine, p1.id, p1.id, 1);
+            const legalOppZones = engine.getLegalActions(p1.id)
+                .filter((action: any) => action.type === 'SELECT_ZONE_TARGET' && action.targetPlayerId === p2.id)
+                .map((action: any) => action.zoneIndex);
+            const pickOpponent = chooseZone(engine, p1.id, p2.id, 1);
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickFriendly, message: '기준이 될 자신 유닛 선택 가능' },
+                { pass: !legalOppZones.includes(0) && legalOppZones.includes(1), message: '기준 유닛 파워 이하의 상대 유닛만 선택 가능' },
+                { pass: !!pickOpponent, message: '조건에 맞는 상대 유닛 선택 가능' },
+                { pass: p1.unitZones[1].unit === null, message: '기준이 된 자신 유닛이 필드를 떠남' },
+                { pass: p1.deck[0]?.id === 'BT05-036', message: '기준이 된 자신 유닛이 덱 맨 아래로 이동' },
+                {
+                    pass: (p2.unitZones[1].temporaryEffects || []).some((effect: any) => effect.action?.params?.cannotBlock === true),
+                    message: '선택한 상대 유닛이 턴 종료까지 공격 방어 불가',
+                },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-035',
+        name: '블레어 액티브 아군 트래시 후 돌파 획득',
+        description: '다른 아군을 트래시하고 자신이 턴 종료까지 어태커 돌파를 얻는다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT05-035');
+            p1.unitZones[1].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.activateEffect(0, 0);
+            const pickTarget = chooseZone(engine, p1.id, p1.id, 1);
+            return [
+                { pass: !!pickTarget, message: '트래시할 아군 유닛 선택 가능' },
+                { pass: p1.unitZones[1].unit === null, message: '선택한 아군 유닛 트래시' },
+                { pass: hasTemporaryAction(p1.unitZones[0], 'BREAKTHROUGH'), message: '자신이 어태커 돌파 획득' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-036',
+        name: '고스트헌터 키아라 엔트리 트래시 엑시트 차용 후 덱 바닥',
+        description: '트래시의 비트리거 엑시트 유닛을 골라 그 엑시트 효과를 발동하고, 원본 카드를 덱 맨 아래로 보낸다.',
+        coversEffectIndices: [2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            setHighSize(engine, 10);
+            p1.hand = [getCard('BT05-036')];
+            p1.trash = [getCard('BT05-033')];
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const beforePower = zonePower(engine, p2, 0);
+            const played = playUnitById(engine, p1, 'BT05-036', 0);
+            const pickExitSource = chooseTrash(engine, p1.id, (card: Card) => card.id === 'BT05-033');
+            const pickTarget = chooseZone(engine, p1.id, p2.id, 0);
+            return [
+                { pass: played, message: '유닛 배치 성공' },
+                { pass: !!pickExitSource, message: '차용할 엑시트 유닛 선택 가능' },
+                { pass: !!pickTarget, message: '차용한 엑시트 효과의 대상 선택 가능' },
+                { pass: p1.deck[0]?.id === 'BT05-033', message: '차용한 유닛 카드가 덱 맨 아래로 이동' },
+                { pass: !p1.trash.some((card: Card) => card.id === 'BT05-033'), message: '차용한 유닛 카드가 트래시에 남지 않음' },
+                { pass: zonePower(engine, p2, 0) === beforePower - 2000, message: '차용한 엑시트 효과가 정상 발동' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-037',
+        name: '포커페이스 바니 아비게일 믹스 파워 보정과 엑시트 전개',
+        description: '믹스 조건에서 파워+2000을 받고, 엑시트 시 트래시의 2코스트 이하 유닛을 빈 유닛 존에 배치한다.',
+        coversEffectIndices: [0, 1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT05-037');
+            ensureOtherAttributeSupport(engine, getCard, Attribute.STORM);
+            p1.trash = [getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const beforePower = zonePower(engine, p1, 0);
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const pickTrash = chooseTrash(engine, p1.id, (card: Card) => card.id === 'ST01-002');
+            const pickZone = chooseZone(engine, p1.id, p1.id, 1);
+            return [
+                { pass: beforePower === 6000, message: '믹스 조건에서 파워+2000 적용' },
+                { pass: !!pickTrash, message: '트래시의 2코스트 이하 유닛 선택 가능' },
+                { pass: !!pickZone, message: '비어 있는 유닛 존 선택 가능' },
+                { pass: p1.unitZones[1].unit?.id === 'ST01-002', message: '선택한 유닛을 빈 유닛 존에 배치' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-039',
+        name: '퍼펙트 샷 바니 리오 엔트리 트래시 엑시트 차용',
+        description: '엔트리로 트래시의 엑시트 유닛을 골라 그 엑시트 효과를 발동하고 원본 카드를 덱 맨 아래로 보낸다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            setHighSize(engine, 20);
+            p1.hand = [getCard('BT05-039')];
+            p1.trash = [getCard('BT05-033')];
+            p2.unitZones[0].unit = getCard('ST01-011');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const beforePower = zonePower(engine, p2, 0);
+            const played = playUnitById(engine, p1, 'BT05-039', 0);
+            const pickExitSource = chooseTrash(engine, p1.id, (card: Card) => card.id === 'BT05-033');
+            const pickTarget = chooseZone(engine, p1.id, p2.id, 0);
+            return [
+                { pass: played, message: '유닛 배치 성공' },
+                { pass: !!pickExitSource, message: '차용할 엑시트 유닛 선택 가능' },
+                { pass: !!pickTarget, message: '차용한 엑시트 효과의 대상 선택 가능' },
+                { pass: p1.deck[0]?.id === 'BT05-033', message: '차용한 유닛 카드가 덱 맨 아래로 이동' },
+                { pass: zonePower(engine, p2, 0) === beforePower - 2000, message: '차용한 엑시트 효과가 정상 발동' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-039',
+        name: '퍼펙트 샷 바니 리오 믹스 엑시트 저코스트 유닛 전개',
+        description: '믹스 조건의 엑시트로 트래시의 2코스트 이하 유닛을 빈 유닛 존에 사이즈를 무시하고 배치한다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT05-039');
+            ensureOtherAttributeSupport(engine, getCard, Attribute.STORM);
+            p1.trash = [getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const pickTrash = chooseTrash(engine, p1.id, (card: Card) => card.id === 'ST01-002');
+            const pickZone = chooseZone(engine, p1.id, p1.id, 1);
+            return [
+                { pass: !!pickTrash, message: '전개할 저코스트 유닛 선택 가능' },
+                { pass: !!pickZone, message: '배치할 빈 유닛 존 선택 가능' },
+                { pass: p1.unitZones[1].unit?.id === 'ST01-002', message: '엑시트로 저코스트 유닛 재배치' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-041',
+        name: '언럭키 바니 니키 믹스 엑시트 최대 9장 하단 적재 후 대미지',
+        description: '믹스 엑시트로 트래시 카드 최대 9장을 덱 맨 아래로 보내고, 3장마다 상대에게 1대미지를 준다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT05-041');
+            ensureOtherAttributeSupport(engine, getCard, Attribute.STORM);
+            p1.trash = [
+                getCard('BT05-012'),
+                getCard('BT05-014'),
+                getCard('BT05-016'),
+                getCard('BT05-017'),
+                getCard('BT05-018'),
+                getCard('BT05-019'),
+            ];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            ['BT05-012', 'BT05-014', 'BT05-016', 'BT05-017', 'BT05-018', 'BT05-019'].forEach((id) => {
+                chooseTrash(engine, p1.id, (card: Card) => card.id === id);
+            });
+            const confirm = confirmTargets(engine, p1.id);
+            return [
+                { pass: !!confirm, message: '덱 맨 아래로 보낼 카드를 최대 선택 후 확정 가능' },
+                {
+                    pass: ['BT05-012', 'BT05-014', 'BT05-016', 'BT05-017', 'BT05-018', 'BT05-019']
+                        .every((id) => !p1.trash.some((card: Card) => card.id === id)),
+                    message: '선택한 트래시 카드들이 덱 맨 아래로 이동',
+                },
+                { pass: p2.damage.length === 2, message: '되돌린 카드 3장마다 1대미지 적용' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-042',
+        name: '깡총깡총 엑시트 유닛 하단 이동 후 코스트 이하 유닛 히트 강화',
+        description: '트래시의 엑시트 유닛을 덱 맨 아래로 보내고, 그 코스트 이하인 아군 유닛 1장에 히트+1을 준다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            setHighSize(engine, 5);
+            p1.hand = [getCard('BT05-042')];
+            p1.unitZones[0].unit = getCard('ST01-002');
+            p1.trash = [getCard('BT05-033')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const beforeHit = zoneHit(engine, p1, 0);
+            const played = playSkillById(engine, p1, 'BT05-042');
+            const pickExit = chooseTrash(engine, p1.id, (card: Card) => card.id === 'BT05-033');
+            const pickFriendly = chooseZone(engine, p1.id, p1.id, 0);
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickExit, message: '덱 맨 아래로 보낼 엑시트 유닛 선택 가능' },
+                { pass: !!pickFriendly, message: '코스트 이하 아군 유닛 선택 가능' },
+                { pass: p1.deck[0]?.id === 'BT05-033', message: '선택한 엑시트 유닛이 덱 맨 아래로 이동' },
+                { pass: zoneHit(engine, p1, 0) === beforeHit + 1, message: '선택한 아군 유닛 히트+1' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-043',
+        name: '당첨이야 손패 유닛 트래시 후 저코스트 필드 유닛 파괴',
+        description: '손패 유닛을 트래시하고, 그보다 코스트가 낮은 필드 유닛 1장을 골라 트래시한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            setHighSize(engine, 5);
+            p1.hand = [getCard('BT05-043'), getCard('BT05-039')];
+            p2.unitZones[0].unit = getCard('BT05-036');
+            p2.unitZones[1].unit = getCard('BT05-025');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const played = playSkillById(engine, p1, 'BT05-043');
+            const pickHand = chooseHand(engine, p1.id, (card: Card) => card.id === 'BT05-039');
+            const legalTargets = engine.getLegalActions(p1.id)
+                .filter((action: any) => action.type === 'SELECT_ZONE_TARGET' && action.targetPlayerId === p2.id)
+                .map((action: any) => action.zoneIndex);
+            const pickTarget = chooseZone(engine, p1.id, p2.id, 0);
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickHand, message: '트래시할 손패 유닛 선택 가능' },
+                { pass: legalTargets.includes(0) && !legalTargets.includes(1), message: '트래시한 유닛보다 코스트가 낮은 필드 유닛만 선택 가능' },
+                { pass: !!pickTarget, message: '조건에 맞는 필드 유닛 선택 가능' },
+                { pass: p1.trash.some((card: Card) => card.id === 'BT05-039'), message: '선택한 손패 유닛이 트래시됨' },
+                { pass: p2.unitZones[0].unit === null, message: '선택한 저코스트 필드 유닛이 트래시됨' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-044',
+        name: '토끼 등장이에요 액티브로 엑시트 드로우를 2번 빌린다',
+        description: '비폭풍 카드가 있을 때 트래시의 엑시트 유닛 2장을 순서대로 빌려 두 번 처리한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-044')];
+            p1.unitZones[0].unit = getCard('BT05-048');
+            p1.trash = [getCard('ST03-006'), getCard('ST09-011')];
+            p1.deck = [getCard('ST01-002'), getCard('ST01-011')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playSkillById(engine, p1, 'BT05-044');
+            const firstBorrow = chooseTrash(engine, p1.id, (card: Card) => card.id.startsWith('ST03-006'));
+            const secondBorrow = chooseTrash(engine, p1.id, (card: Card) => card.id.startsWith('ST09-011'));
+            const handIds = p1.hand.map((card: Card) => card.id).sort();
+            const deckBottomIds = p1.deck.slice(0, 2).map((card: Card) => card.id).sort();
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!firstBorrow && !!secondBorrow, message: '믹스 조건으로 엑시트 유닛 2장을 연속 선택 가능' },
+                { pass: handIds.includes('ST01-002') && handIds.includes('ST01-011'), message: '빌린 엑시트 드로우 2회 처리' },
+                { pass: deckBottomIds.includes('ST03-006') && deckBottomIds.includes('ST09-011'), message: '빌린 유닛 2장이 덱 맨 아래 경로로 이동' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-044',
+        name: '토끼 등장이에요 트리거가 자신을 트래시하고 엑시트를 빌린다',
+        description: '대미지 트리거 시 자신을 트래시한 뒤 트래시의 엑시트 유닛 효과를 발동한다.',
+        coversEffectIndices: [1, 2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.trash = [getCard('ST03-006')];
+            p1.deck = [getCard('ST01-011'), getCard('BT05-044')];
+            p1.damage = [];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.dealDamage(p1, 1);
+            const borrow = chooseTrash(engine, p1.id, (card: Card) => card.id.startsWith('ST03-006'));
+            return [
+                { pass: !!borrow, message: '트리거 후 빌릴 엑시트 유닛 선택 가능' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT05-044')), message: '트리거 카드가 자신을 트래시함' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-011')), message: '빌린 엑시트 효과가 정상 발동함' },
+                { pass: p1.deck[0]?.id.startsWith('ST03-006') === true, message: '빌린 유닛이 덱 맨 아래 경로로 이동' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-045',
+        name: '구원의 손길 아군 유닛을 트래시하고 2장 드로우',
+        description: '필드의 자신 유닛 1장을 트래시한 뒤 카드를 2장 드로우한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-045')];
+            p1.deck = [getCard('ST01-011'), getCard('ST01-002')];
+            p1.unitZones[0].unit = getCard('ST01-003');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playSkillById(engine, p1, 'BT05-045');
+            const pickTarget = chooseZone(engine, p1.id, p1.id, 0);
+            const handIds = p1.hand.map((card: Card) => card.id).sort();
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickTarget, message: '트래시할 아군 유닛 선택 가능' },
+                { pass: p1.unitZones[0].unit === null, message: '선택한 아군 유닛이 트래시됨' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('ST01-003')), message: '대상 유닛이 트래시에 존재함' },
+                { pass: handIds.includes('ST01-002') && handIds.includes('ST01-011'), message: '카드 2장을 드로우함' },
+            ];
+        },
+    }),
     makeMixedLeaderAwakenPromptTest('BT05-032', '언럭키 바니 니키', 5, [0, 1]),
     createCase({
         testId: 'BT05-032',
@@ -660,6 +1375,55 @@ const behaviorTests: UnifiedTestCase[] = [
             ];
         },
     }),
+    createCase({
+        testId: 'BT05-048',
+        name: '슈린 패시브가 이스케이프 아군 전체를 강화한다',
+        description: '자신을 포함한 이스케이프 보유 아군만 파워+1500을 받는다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-048')];
+            p1.unitZones[0].unit = getCard('BT05-023');
+            p1.unitZones[2].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const escapeBefore = zonePower(engine, p1, 0);
+            const plainBefore = zonePower(engine, p1, 2);
+            const played = playUnitById(engine, p1, 'BT05-048', 1);
+            return [
+                { pass: played, message: '유닛 배치 성공' },
+                { pass: zonePower(engine, p1, 1) === 2000, message: '슈린 자신도 이스케이프 패시브를 받아 파워 2000' },
+                { pass: zonePower(engine, p1, 0) === escapeBefore + 1500, message: '다른 이스케이프 아군 파워+1500' },
+                { pass: zonePower(engine, p1, 2) === plainBefore, message: '이스케이프가 없는 아군은 강화되지 않음' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-048',
+        name: '슈린 이스케이프가 자신을 덱 아래로 보내고 1장 드로우',
+        description: '메인 페이즈 시작 시 자신을 덱 맨 아래로 보내고 카드를 1장 드로우한다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT05-048');
+            p1.deck = [getCard('ST01-011')];
+            p1.hand = [];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.DRAW;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.nextPhase();
+            return [
+                { pass: p1.unitZones[0].unit === null, message: '이스케이프로 자신이 필드를 떠남' },
+                { pass: p1.deck[0]?.id.startsWith('BT05-048') === true, message: '자신이 덱 맨 아래 경로로 이동' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-011')), message: '카드 1장 드로우' },
+            ];
+        },
+    }),
     makeMixedLeaderAwakenPromptTest('BT05-063', '사관후보생 아야', 5, [0, 1]),
     makeMixedLeaderPactTest('BT05-063', '사관후보생 아야', 3, Attribute.LIGHTNING),
     {
@@ -730,6 +1494,117 @@ const behaviorTests: UnifiedTestCase[] = [
         },
     },
     {
+        testId: 'BT05-052',
+        name: '엔트리로 4코 이상 조우 유닛을 되돌리고 히트를 1로 만든다',
+        description: '비용을 버리면 4코스트 이상 조우 유닛을 패로 돌리고 자신의 히트를 1로 설정한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-052'), getCard('ST01-011')];
+            p2.unitZones[0].unit = getCard('BT05-054');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const played = playUnitById(engine, p1, 'BT05-052', 0);
+            const confirm = chooseOptional(engine, p1.id, true);
+            const payCost = chooseCostHand(engine, p1.id, (card: Card) => card.id.startsWith('ST01-011'));
+            return [
+                { pass: played, message: '유닛 배치 성공' },
+                { pass: !!confirm && !!payCost, message: '엔트리 선택과 패 1장 트래시 코스트 지불 가능' },
+                { pass: p2.unitZones[0].unit === null, message: '조우 유닛이 필드를 떠남' },
+                { pass: p2.hand.some((card: Card) => card.id.startsWith('BT05-054')), message: '조우 유닛이 상대 패로 되돌아감' },
+                { pass: zoneHit(engine, p1, 0) === 1, message: '이 유닛의 히트가 1이 됨' },
+            ];
+        },
+    },
+    {
+        testId: 'BT05-052',
+        name: '이스케이프로 자신을 덱 아래로 보내고 1장 드로우',
+        description: '메인 페이즈 시작 시 자신이 덱 맨 아래로 가고 카드를 1장 드로우한다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT05-052');
+            p1.deck = [getCard('ST01-011')];
+            p1.hand = [];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.DRAW;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.nextPhase();
+            return [
+                { pass: p1.unitZones[0].unit === null, message: '이스케이프로 자신이 필드를 떠남' },
+                { pass: p1.deck[0]?.id.startsWith('BT05-052') === true, message: '자신이 덱 맨 아래 경로로 이동' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-011')), message: '카드 1장 드로우' },
+            ];
+        },
+    },
+    {
+        testId: 'BT05-054',
+        name: '가디언 방벽[2]로 인접 레인 블록 시 패 2장을 지불한다',
+        description: '인접 레인 가디언 블록에서 방벽[2] 코스트를 정확히 지불한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.ATTACK;
+            p1.unitZones[1].unit = getCard('ST01-002');
+            p2.unitZones[0].unit = getCard('BT05-054');
+            p2.hand = [getCard('ST01-011'), getCard('ST01-002')];
+        },
+        verify: (engine) => {
+            const p2 = engine.state.players[1];
+            engine.attack(1);
+            const guardianBlock = findAction(
+                engine,
+                p2.id,
+                'RESOLVE_BLOCK',
+                (action: any) => action.shouldBlock && action.blockerZoneIndex === 0,
+            );
+            if (guardianBlock) engine.step(guardianBlock);
+            if (engine.state.interactionMode === 'SELECT_COST') {
+                engine.selectCostForPlayerId(0, p2.id);
+                if (engine.state.interactionMode === 'SELECT_COST') {
+                    engine.selectCostForPlayerId(0, p2.id);
+                }
+            }
+            return [
+                { pass: !!guardianBlock, message: '인접 레인 가디언 블록 가능' },
+                { pass: p2.trash.length >= 2, message: '방벽[2] 코스트로 패 2장을 지불함' },
+                { pass: p2.unitZones[0].unit?.id.startsWith('BT05-054') === true, message: '가디언 유닛이 필드에 남아 블록을 수행함' },
+            ];
+        },
+    },
+    {
+        testId: 'BT05-054',
+        name: '이스케이프로 자신을 덱 아래로 보내고 1장 드로우',
+        description: '메인 페이즈 시작 시 자신이 덱 맨 아래로 가고 카드를 1장 드로우한다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.unitZones[0].unit = getCard('BT05-054');
+            p1.deck = [getCard('ST01-011')];
+            p1.hand = [];
+            engine.state.turnPlayerIndex = 0;
+            engine.state.phase = Phase.DRAW;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.nextPhase();
+            return [
+                { pass: p1.unitZones[0].unit === null, message: '이스케이프로 자신이 필드를 떠남' },
+                { pass: p1.deck[0]?.id.startsWith('BT05-054') === true, message: '자신이 덱 맨 아래 경로로 이동' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-011')), message: '카드 1장 드로우' },
+            ];
+        },
+    },
+    {
         testId: 'BT05-055',
         name: 'Entry sends escape unit to deck bottom and deals 1 damage',
         description: 'Verifies BT05-055 entry target selection and damage bonus.',
@@ -764,6 +1639,123 @@ const behaviorTests: UnifiedTestCase[] = [
             ];
         },
     },
+    createCase({
+        testId: 'BT05-056',
+        name: '바다의 화가 띠아 액티브로 패를 버리고 스킬 수만큼 대미지 후 공격 봉인',
+        description: '패 1장을 버리면 스킬 존 수만큼 대미지를 주고 이 턴 동안 공격할 수 없게 된다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT05-056');
+            p1.hand = [getCard('ST01-011')];
+            p1.skillZone = [getCard('BT05-012'), getCard('BT05-013')];
+            p2.deck = [getCard('ST01-002'), getCard('ST01-002'), getCard('ST01-002')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const damageBefore = p2.damage.length;
+            engine.activateEffect(0, 0);
+            const confirm = chooseOptional(engine, p1.id, true);
+            const payCost = chooseCostHand(engine, p1.id, (card: Card) => card.id.startsWith('ST01-011'));
+            engine.state.phase = Phase.ATTACK;
+            const canAttack = engine.getLegalActions(p1.id).some((action: any) => action.type === 'ATTACK' && action.attackerZoneIndex === 0);
+            return [
+                { pass: !!confirm && !!payCost, message: '선택과 패 1장 트래시 코스트 지불 가능' },
+                { pass: p2.damage.length === damageBefore + 2, message: '스킬 존의 스킬 수만큼 상대에게 2대미지' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('ST01-011')), message: '패 코스트 카드가 트래시됨' },
+                { pass: !canAttack, message: '이 턴 동안 공격 불가 적용' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-057',
+        name: '청랑일섬이 아군 이스케이프 효과를 그대로 발동한다',
+        description: '필드의 이스케이프 유닛을 골라 그 유닛의 이스케이프 효과를 직접 발동한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-057')];
+            p1.unitZones[0].unit = getCard('BT05-048');
+            p1.deck = [getCard('ST01-011')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playSkillById(engine, p1, 'BT05-057');
+            const pickTarget = chooseZone(engine, p1.id, p1.id, 0);
+            return [
+                { pass: played, message: '스킬 발동 성공' },
+                { pass: !!pickTarget, message: '이스케이프 유닛 선택 가능' },
+                { pass: p1.unitZones[0].unit === null, message: '선택한 이스케이프 유닛이 필드를 떠남' },
+                { pass: p1.deck[0]?.id.startsWith('BT05-048') === true, message: '선택한 유닛이 덱 맨 아래 경로로 이동' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-011')), message: '차용한 이스케이프 효과로 카드 1장 드로우' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-057',
+        name: '청랑일섬 트리거는 자신을 패로 되돌린다',
+        description: '대미지 트리거 시 이 카드를 자신의 패로 되돌린다.',
+        coversEffectIndices: [1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.deck = [getCard('ST01-011'), getCard('BT05-057')];
+            p1.damage = [];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.dealDamage(p1, 1);
+            return [
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT05-057')), message: '트리거 카드가 자신의 패로 이동' },
+                { pass: p1.damage.length === 0, message: '대미지 존에 카드가 남지 않음' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-062',
+        name: '알마스는 장착 조건 없이 장착되고 가디언 방벽[2]를 제공한다',
+        description: '아무 유닛에나 장착한 뒤 인접 레인 가디언 블록에서 패 2장을 지불하게 한다.',
+        coversEffectIndices: [0, 1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-062'), getCard('ST01-011'), getCard('ST01-002')];
+            p1.unitZones[0].unit = getCard('ST01-003');
+            p2.unitZones[1].unit = getCard('ST01-002');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const played = playItemById(engine, p1, 'BT05-062', 0);
+            const equipped = p1.unitZones[0].items.some((item: Card) => item.id.startsWith('BT05-062'));
+            engine.state.turnPlayerIndex = 1;
+            engine.state.phase = Phase.ATTACK;
+            engine.attack(1);
+            const guardianBlock = findAction(
+                engine,
+                p1.id,
+                'RESOLVE_BLOCK',
+                (action: any) => action.shouldBlock && action.blockerZoneIndex === 0,
+            );
+            if (guardianBlock) engine.step(guardianBlock);
+            return [
+                { pass: played, message: '장착 조건 없이 아이템 장착 성공' },
+                { pass: equipped, message: '알마스 장착 상태 반영' },
+                { pass: !!guardianBlock, message: '장착 유닛이 인접 레인 가디언 블록 가능' },
+                {
+                    pass: engine.state.interactionMode === 'SELECT_COST' && engine.state.pendingEffect?.costToPay?.amount === 2,
+                    message: '방벽[2] 코스트 지불 단계와 요구 수량 2가 열림',
+                },
+            ];
+        },
+    }),
     {
         testId: 'BT05-063',
         name: 'Leader active equips a recovered item to another unit',
@@ -810,6 +1802,105 @@ const behaviorTests: UnifiedTestCase[] = [
             ];
         },
     },
+    createCase({
+        testId: 'BT05-066',
+        name: '사관후보생 하트 엔트리로 상단 3장을 트래시하고 아이템이 있으면 1장 드로우',
+        description: '덱 상단 3장을 트래시한 뒤 그중 아이템이 있으면 추가 드로우를 얻는다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-066')];
+            p1.deck = [getCard('ST01-003'), getCard('BT05-081'), getCard('ST01-002'), getCard('ST01-011')];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playUnitById(engine, p1, 'BT05-066', 0);
+            return [
+                { pass: played, message: '유닛 배치 성공' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT05-081')), message: '상단 3장 트래시 중 아이템이 포함됨' },
+                { pass: p1.trash.length >= 3, message: '덱 상단 3장이 트래시됨' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-003')), message: '아이템을 밀어 추가로 1장 드로우' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-073',
+        name: '사관후보생 마이 믹스 패시브는 아이템 장착 때마다 1장 드로우',
+        description: '비번개 카드가 있을 때 자신에게 아이템을 장착하면 1장 드로우한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-081')];
+            p1.deck = [getCard('ST01-011')];
+            p1.unitZones[0].unit = getCard('BT05-073');
+            p1.unitZones[1].unit = getCard('BT05-048');
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playItemById(engine, p1, 'BT05-081', 0);
+            return [
+                { pass: played, message: '아이템 장착 성공' },
+                { pass: p1.unitZones[0].items.some((item: Card) => item.id.startsWith('BT05-081')), message: '아이템 장착 상태 반영' },
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-011')), message: '패시브로 카드 1장 드로우' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-073',
+        name: '사관후보생 마이 어태커는 장착 수만큼 강화하고 아이템 2장을 버려 다른 레인을 파괴한다',
+        description: '공격 시 장착 아이템 수만큼 파워가 오르고, 장착 아이템 2장을 트래시해 다른 레인 상대 유닛을 파괴한다.',
+        coversEffectIndices: [1, 2],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.unitZones[0].unit = getCard('BT05-073');
+            p1.unitZones[0].items = [getCard('BT05-081'), getCard('BT05-082')];
+            p2.unitZones[0].unit = getCard('ST01-002');
+            p2.unitZones[1].unit = getCard('ST01-011');
+            engine.state.phase = Phase.ATTACK;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const beforePower = zonePower(engine, p1, 0);
+            engine.attack(0);
+            const afterPower = zonePower(engine, p1, 0);
+            const firstItem = chooseItem(engine, p1.id, p1.id, 0, 0);
+            const secondItem = chooseItem(engine, p1.id, p1.id, 0, 1);
+            const confirm = confirmTargets(engine, p1.id);
+            const destroyTarget = chooseZone(engine, p1.id, p2.id, 1);
+            return [
+                { pass: afterPower === beforePower + 4000, message: '장착 아이템 2장으로 파워+4000' },
+                { pass: !!firstItem && !!secondItem && !!confirm && !!destroyTarget, message: '장착 아이템 2장 트래시와 다른 레인 대상 선택 가능' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT05-081')) && p1.trash.some((card: Card) => card.id.startsWith('BT05-082')), message: '선택한 아이템 2장이 트래시됨' },
+                { pass: p2.unitZones[1].unit === null, message: '다른 레인의 상대 유닛이 트래시됨' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-073',
+        name: '사관후보생 마이 트리거는 자신을 패로 되돌린다',
+        description: '대미지 트리거 시 이 카드를 자신의 패로 되돌린다.',
+        coversEffectIndices: [3],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.deck = [getCard('ST01-011'), getCard('BT05-073')];
+            p1.damage = [];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            engine.dealDamage(p1, 1);
+            return [
+                { pass: p1.hand.some((card: Card) => card.id.startsWith('BT05-073')), message: '트리거 카드가 자신의 패로 이동' },
+                { pass: p1.damage.length === 0, message: '대미지 존에 카드가 남지 않음' },
+            ];
+        },
+    }),
     {
         testId: 'BT05-072',
         name: 'Entry reveals top 3 and trashes selected cards',
@@ -1004,6 +2095,37 @@ const behaviorTests: UnifiedTestCase[] = [
             ];
         },
     },
+    createCase({
+        testId: 'BT05-058',
+        name: 'Opponent can return encounter instead of allowing draw',
+        description: '상대가 귀환 분기를 고르면 해당 레인의 조우 유닛이 패로 돌아가고 드로우는 발생하지 않는다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.leaderLevel = 10;
+            p2.leaderLevel = 10;
+            p1.hand = [getCard('BT05-058')];
+            p1.unitZones[0].unit = getCard('BT05-048');
+            ensureDeckTop(engine, getCard, ['ST01-011']);
+            p2.unitZones[0].unit = getCard('ST01-002');
+            p2.hand = [];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const played = playSkillById(engine, p1, 'BT05-058');
+            const pickZone = chooseZone(engine, p1.id, p1.id, 0);
+            const chooseReturn = chooseRevealed(engine, p2.id, (card: Card) => card.id === 'BT05_058_RETURN');
+            return [
+                { pass: played && !!pickZone && !!chooseReturn, message: '자신 유닛 선택과 상대 귀환 분기 선택 가능' },
+                { pass: p2.unitZones[0].unit === null, message: '상대 조우 유닛이 필드에서 사라짐' },
+                { pass: p2.hand.some((card: Card) => card.id.startsWith('ST01-002')), message: '상대 조우 유닛이 패로 돌아감' },
+                { pass: !p1.hand.some((card: Card) => card.id.startsWith('ST01-011')), message: '귀환 분기에서는 자신이 카드를 드로우하지 않음' },
+            ];
+        },
+    }),
     {
         testId: 'BT05-070',
         name: 'Entry draws extra when both discarded cards are items',
@@ -1043,6 +2165,149 @@ const behaviorTests: UnifiedTestCase[] = [
             ];
         },
     },
+    createCase({
+        testId: 'BT05-070',
+        name: 'Entry only draws discarded count when fewer than two items are trashed',
+        description: '아이템 2장 미만을 버린 경우에는 기본 드로우만 해결되고 추가 드로우는 발생하지 않는다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-070'), getCard('BT05-081'), getCard('ST01-011')];
+            ensureDeckTop(engine, getCard, ['ST01-002', 'ST01-003'], ['BT05-082']);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playUnitById(engine, p1, 'BT05-070', 0);
+            const discardItem = chooseHand(engine, p1.id, (card: Card) => card.id.startsWith('BT05-081'));
+            const discardNonItem = chooseHand(engine, p1.id, (card: Card) => card.id.startsWith('ST01-011'));
+            const confirm = confirmTargets(engine, p1.id);
+            return [
+                { pass: played && !!discardItem && !!discardNonItem && !!confirm, message: '아이템 1장과 비아이템 1장 선택 후 확정 가능' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT05-081')), message: '선택한 아이템 카드가 트래시됨' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('ST01-011')), message: '선택한 비아이템 카드가 트래시됨' },
+                { pass: p1.hand.length === 2, message: '버린 수만큼만 드로우하고 추가 드로우는 발생하지 않음' },
+                {
+                    pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002'))
+                        && p1.hand.some((card: Card) => card.id.startsWith('ST01-003'))
+                        && p1.deck.length === 1
+                        && p1.deck[0]?.id.startsWith('BT05-082') === true,
+                    message: '기본 드로우 2장만 해결되고 덱에 1장이 남음',
+                },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-074',
+        name: '히이익은 패의 아이템만 골라 버린 수만큼 드로우한다',
+        description: '패의 아이템 카드만 선택 가능하며 트래시한 수와 같은 수의 카드를 드로우한다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-074'), getCard('BT05-081'), getCard('BT05-082'), getCard('ST01-011')];
+            ensureDeckTop(engine, getCard, ['ST01-002', 'ST01-003']);
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playSkillById(engine, p1, 'BT05-074');
+            const selectableIds = engine.getLegalActions(p1.id)
+                .filter((action: any) => action.type === 'SELECT_HAND_TARGET')
+                .map((action: any) => p1.hand[action.handIndex]?.id);
+            const discardFirst = chooseHand(engine, p1.id, (card: Card) => card.id.startsWith('BT05-081'));
+            const discardSecond = chooseHand(engine, p1.id, (card: Card) => card.id.startsWith('BT05-082'));
+            const confirm = confirmTargets(engine, p1.id);
+            return [
+                { pass: played && !!discardFirst && !!discardSecond && !!confirm, message: '아이템 2장 선택 후 확정 가능' },
+                {
+                    pass: selectableIds.includes('BT05-081') && selectableIds.includes('BT05-082') && !selectableIds.includes('ST01-011'),
+                    message: '비아이템 카드는 선택 대상에 포함되지 않음',
+                },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT05-081')), message: '첫 번째 아이템이 트래시됨' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT05-082')), message: '두 번째 아이템이 트래시됨' },
+                {
+                    pass: p1.hand.length === 3
+                        && p1.hand.some((card: Card) => card.id.startsWith('ST01-011'))
+                        && p1.hand.some((card: Card) => card.id.startsWith('ST01-002'))
+                        && p1.hand.some((card: Card) => card.id.startsWith('ST01-003')),
+                    message: '트래시한 2장만큼 카드를 드로우함',
+                },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-078',
+        name: '든든하네요는 장착 유닛을 트래시하고 2장 드로우 후 믹스면 1대미지',
+        description: '아이템을 장착한 자신 유닛을 트래시하고 2드로우를 해결하며, 믹스 조건이면 상대에게 1대미지를 준다.',
+        coversEffectIndices: [0],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-078')];
+            p1.unitZones[0].unit = getCard('ST01-003');
+            p1.unitZones[0].items = [getCard('BT05-081')];
+            ensureOtherAttributeSupport(engine, getCard, Attribute.LIGHTNING);
+            ensureDeckTop(engine, getCard, ['ST01-002', 'ST01-011']);
+            p2.deck = [getCard('ST01-003')];
+            p2.damage = [];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const p2 = engine.state.players[1];
+            const played = playSkillById(engine, p1, 'BT05-078');
+            const pickTarget = chooseZone(engine, p1.id, p1.id, 0);
+            return [
+                { pass: played && !!pickTarget, message: '장착 유닛 선택 후 효과 해결 가능' },
+                { pass: p1.unitZones[0].unit === null, message: '선택한 장착 유닛이 트래시됨' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('ST01-003')), message: '선택한 유닛 카드가 트래시에 있음' },
+                { pass: p1.trash.some((card: Card) => card.id.startsWith('BT05-081')), message: '장착 아이템도 함께 트래시됨' },
+                {
+                    pass: p1.hand.some((card: Card) => card.id.startsWith('ST01-002'))
+                        && p1.hand.some((card: Card) => card.id.startsWith('ST01-011')),
+                    message: '카드 2장을 드로우함',
+                },
+                { pass: p2.damage.length === 1, message: '믹스 조건으로 상대에게 1대미지' },
+            ];
+        },
+    }),
+    createCase({
+        testId: 'BT05-079',
+        name: '알타이르는 장착 조건 없이 장착되고 아이템을 밀면 파괴를 대체한다',
+        description: '아무 유닛에 장착 가능하며 파괴 시 상단 3장을 밀어 아이템이 나오면 장착 유닛을 지킨다.',
+        coversEffectIndices: [0, 1],
+        setup: (engine, getCard) => {
+            const p1 = engine.state.players[0];
+            p1.leaderLevel = 10;
+            p1.hand = [getCard('BT05-079')];
+            p1.unitZones[0].unit = getCard('ST01-003');
+            ensureDeckTop(engine, getCard, ['BT05-081', 'ST01-002', 'ST01-011']);
+            p1.trash = [];
+            engine.state.phase = Phase.MAIN;
+        },
+        verify: (engine) => {
+            const p1 = engine.state.players[0];
+            const played = playItemById(engine, p1, 'BT05-079', 0);
+            const equipped = p1.unitZones[0].items.some((item: Card) => item.id.startsWith('BT05-079'));
+            engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+            const replacementPromptOpen = engine.state.pendingEffect?.actionType === 'DESTRUCTION_REPLACEMENT';
+            const confirm = chooseOptional(engine, p1.id, true);
+            return [
+                { pass: played && equipped, message: '장착 조건 없이 아이템 장착 성공' },
+                { pass: replacementPromptOpen && !!confirm, message: '파괴 대체 선택창이 열리고 사용 가능' },
+                { pass: p1.unitZones[0].unit?.id.startsWith('ST01-003') === true, message: '아이템을 밀어 장착 유닛이 필드에 남음' },
+                { pass: p1.unitZones[0].items.some((item: Card) => item.id.startsWith('BT05-079')), message: '알타이르가 계속 장착 상태를 유지함' },
+                {
+                    pass: p1.trash.length === 3 && p1.trash.some((card: Card) => card.id.startsWith('BT05-081')),
+                    message: '덱 상단 3장을 트래시했고 그중 아이템이 포함됨',
+                },
+                { pass: !p1.trash.some((card: Card) => card.id.startsWith('ST01-003')), message: '장착 유닛은 트래시에 가지 않음' },
+            ];
+        },
+    }),
     {
         testId: 'BT05-076',
         name: 'Active recovers up to two distinct item names from trash',

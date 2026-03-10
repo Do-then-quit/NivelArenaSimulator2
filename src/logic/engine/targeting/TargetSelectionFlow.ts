@@ -1691,6 +1691,11 @@ export function selectRevealedTarget(engine: any, index: number) {
         return;
     }
 
+    if (pending.actionType === 'BT05_028_SELECT_REVEALED_UNIT') {
+        engine.effectManager.executeEffect(effect, context, [card]);
+        return;
+    }
+
     if (!effect) return;
 
     const maxCount = targetSchema.count || 1;

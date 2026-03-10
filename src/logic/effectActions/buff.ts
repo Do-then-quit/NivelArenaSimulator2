@@ -22,8 +22,12 @@ export const buffPower: ActionImplementation = (ctx, params, targets) => {
     targets.forEach(target => {
         if (target && target.unit) {
             let value = params.value || 0;
+            const sourceZone = ctx.unitZone || target;
             if (params.dynamic === 'LEADER_LEVEL_MULTIPLIER') {
                 value = ctx.player.leaderLevel * value;
+            } else if (params.dynamic === 'BASE_UNIT_COUNT_MULTIPLIER') {
+                const baseUnitCount = ctx.player.unitZones.filter((zone: any) => zone.unit && String(zone.unit.traits || '').includes('베이스')).length;
+                value = baseUnitCount * value;
             } else if (params.dynamic === 'MY_HAND_COUNT_MULTIPLIER') {
                 value = ctx.player.hand.length * value;
             } else if (params.dynamic === 'HAND_COUNT_DIFF_MULTIPLIER') {
@@ -54,6 +58,18 @@ export const buffPower: ActionImplementation = (ctx, params, targets) => {
                     ) || 0
                 );
                 value = trashedCardCost * value;
+            } else if (params.dynamic === 'ITEM_COUNT_MULTIPLIER') {
+                value = (sourceZone?.items?.length || 0) * value;
+            } else if (params.dynamic === 'ITEM_DISTINCT_NAME_COUNT_MULTIPLIER') {
+                const distinctNames = new Set<string>();
+                (sourceZone?.items || []).forEach((item: any) => {
+                    const name = String(item?.name || item?.id || '').trim();
+                    if (name) distinctNames.add(name);
+                });
+                value = distinctNames.size * value;
+            } else if (params.dynamic === 'EQUIPPED_UNIT_COUNT_MULTIPLIER') {
+                const equippedUnitCount = ctx.player.unitZones.filter((zone: any) => zone.unit && zone.items.length > 0).length;
+                value = equippedUnitCount * value;
             }
 
             const untilOwnerTurnEnd = params.untilOwnerTurnEnd === true;
