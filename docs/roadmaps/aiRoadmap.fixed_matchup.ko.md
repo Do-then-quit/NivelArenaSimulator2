@@ -174,3 +174,6 @@
 - 현재 AI 회귀/soak 게이트는 통과 가능한 상태이므로, 엔진 안정화보다 평가 레일 정리가 우선이다.
 - 자세한 실행 순서와 문서화된 권장 구조는 아래 문서를 따른다:
   - `docs/ai/fixed_matchup_practice_bot_start_2026-03-10.md`
+- 특정 덱 하나를 먼저 제대로 굴리는 소목표는 별도 체크리스트 문서로 관리한다.
+  - 현재 활성 소목표:
+    - `docs/ai/bt05_unlucky_bunny_nikki_practice_bot_checklist_2026-03-10.md`
