@@ -18,17 +18,29 @@ export function renderMenu() {
         <div class="main-menu">
             <h1>NivelArena</h1>
             <div class="menu-buttons">
-                <button id="start-game-btn" class="primary-btn">Quick Play (ST01 vs ST01)</button>
-                <button id="start-vs-bot-btn" class="primary-btn">Quick Play vs Baseline Bot</button>
                 <button id="custom-sim-btn" class="primary-btn">Custom Simulation (PvP)</button>
-                <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Baseline Bot</button>
-                <button id="online-room-btn" class="primary-btn">Online Match (Room Code)</button>
-                <button id="bot-replay-btn" class="primary-btn">Simulate Bot vs Bot (Replay)</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
-                <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Logic Verification</button>
+                <button id="advanced-menu-btn" class="secondary-btn" type="button" aria-expanded="false" aria-controls="advanced-menu-actions">Advanced</button>
+                <div id="advanced-menu-actions" class="advanced-menu-actions" hidden>
+                    <button id="start-game-btn" class="primary-btn">Quick Play (ST01 vs ST01)</button>
+                    <button id="start-vs-bot-btn" class="primary-btn">Quick Play vs Baseline Bot</button>
+                    <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Baseline Bot</button>
+                    <button id="online-room-btn" class="primary-btn">Online Match (Room Code)</button>
+                    <button id="bot-replay-btn" class="primary-btn">Simulate Bot vs Bot (Replay)</button>
+                    <button id="card-test-btn" class="secondary-btn menu-card-test-btn">Card Logic Verification</button>
+                </div>
             </div>
         </div>
     `;
+
+    const advancedMenuButton = document.getElementById('advanced-menu-btn') as HTMLButtonElement | null;
+    const advancedMenuActions = document.getElementById('advanced-menu-actions') as HTMLDivElement | null;
+
+    advancedMenuButton?.addEventListener('click', () => {
+        if (!advancedMenuActions) return;
+        advancedMenuActions.hidden = !advancedMenuActions.hidden;
+        advancedMenuButton.setAttribute('aria-expanded', advancedMenuActions.hidden ? 'false' : 'true');
+    });
 
     document.getElementById('start-game-btn')?.addEventListener('click', () => {
         const seed = Date.now();

@@ -24,6 +24,7 @@ describe('online room state transitions', () => {
         uiState.render = vi.fn();
         renderMenu();
 
+        (document.getElementById('advanced-menu-btn') as HTMLButtonElement).click();
         (document.getElementById('online-room-btn') as HTMLButtonElement).click();
         expect(uiState.currentScreen).toBe(Screen.ONLINE_ROOM);
     });

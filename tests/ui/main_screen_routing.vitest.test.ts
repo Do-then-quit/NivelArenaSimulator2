@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+function openAdvancedMenu() {
+    (document.getElementById('advanced-menu-btn') as HTMLButtonElement).click();
+}
+
 describe('main screen routing', () => {
     beforeEach(() => {
         vi.resetModules();
@@ -14,10 +18,12 @@ describe('main screen routing', () => {
         uiState.render = vi.fn();
         renderMenu();
 
+        expect((document.getElementById('advanced-menu-actions') as HTMLDivElement).hidden).toBe(true);
         (document.getElementById('custom-sim-btn') as HTMLButtonElement).click();
         expect(uiState.currentScreen).toBe(Screen.SETUP);
 
         uiState.currentScreen = Screen.MENU;
+        openAdvancedMenu();
         (document.getElementById('custom-vs-bot-btn') as HTMLButtonElement).click();
         expect(uiState.currentScreen).toBe(Screen.SETUP);
     });
@@ -29,14 +35,19 @@ describe('main screen routing', () => {
         uiState.render = vi.fn();
         renderMenu();
 
+        openAdvancedMenu();
         (document.getElementById('bot-replay-btn') as HTMLButtonElement).click();
         expect(uiState.currentScreen).toBe(Screen.BOT_REPLAY_SETUP);
 
         uiState.currentScreen = Screen.MENU;
+        renderMenu();
+        openAdvancedMenu();
         (document.getElementById('card-test-btn') as HTMLButtonElement).click();
         expect(uiState.currentScreen).toBe(Screen.TEST);
 
         uiState.currentScreen = Screen.MENU;
+        renderMenu();
+        openAdvancedMenu();
         (document.getElementById('online-room-btn') as HTMLButtonElement).click();
         expect(uiState.currentScreen).toBe(Screen.ONLINE_ROOM);
     });

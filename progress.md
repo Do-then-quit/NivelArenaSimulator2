@@ -19,3 +19,11 @@ Original prompt: BT05의 unifiedtest를 BT04의 테스트를 참고해서 저렇
 - Root cause confirmed: local assets for `BT05-001.jpg` through `BT05-018.jpg` were missing while `CardDatabase` still referenced `/assets/cards/${raw.id}.jpg` for every card.
 - Implemented: downloaded the missing 18 BT05 images from the per-card `imageUrl` fields already stored in `packs/BT05.json`.
 - Verified: local BT05 asset scan now reports `missingCount: 0`, and browser checks show `BT05-001` through `BT05-006` loading with non-zero `naturalWidth`/`naturalHeight`.
+
+2026-03-11
+- Follow-up request: keep only `Custom Simulation` and `Deck Builder` visible on the main menu, and reveal the remaining menu actions behind an `Advanced` button.
+- Implemented: restructured `src/ui/screens/menu.ts` so the default menu shows `Custom Simulation (PvP)`, `Deck Builder`, and an `Advanced` toggle, with quick play, bot, online, replay, and card verification actions moved into a hidden advanced section.
+- Implemented: added menu styles for the advanced section and moved the card verification accent styling out of inline HTML into `src/style.css`.
+- Verified: `npx vitest run tests/ui/main_screen_routing.vitest.test.ts tests/ui/online_room_state_transitions.vitest.test.ts` passed (`4` tests).
+- Verified in browser: headless Playwright capture shows the initial menu exposes only `Custom Simulation (PvP)`, `Deck Builder`, and `Advanced`, and the advanced button reveals the quick play, bot, online, replay, and card verification actions.
+- Note: the shared `develop-web-game` Playwright client still fails to resolve `playwright` from the skill directory in this session, so browser verification used the repository's local `playwright` dependency instead.
