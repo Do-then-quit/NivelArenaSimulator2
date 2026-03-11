@@ -15,6 +15,8 @@
 - 리더: `BT05-032` 언럭키 바니 니키
 - 고정 덱 ID: `bt05-unlucky-bunny-nikki-meta-v1`
 - 고정 미러 매치업 ID: `fm-c-bt05-unlucky-bunny-nikki-mirror`
+- 참고 분석 문서:
+  - `docs/ai/bt05_unlucky_bunny_nikki_deck_analysis_2026-03-11.md`
 - 현재 기준선:
   - 엔진/하네스: fixed matchup rail 사용
   - 범용 강봇 기준: `strong-v3`
