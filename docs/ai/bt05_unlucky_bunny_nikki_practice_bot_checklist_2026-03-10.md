@@ -298,17 +298,50 @@ M4 후속 관찰 메모:
 
 ## M6. 수용 게이트
 
-- [ ] 미러전 20게임 수동 리플레이 검수 완료
-- [ ] 미러전 side-swapped bench에서 `max_steps=0`, `no_action=0`, `invalid_action=0`
-- [ ] 최소 1개 교차 매치업 추가
-- [ ] 교차 매치업에서도 안정성 게이트 유지
-- [ ] `strong-v3` 상대로 완패 수준의 무기력 게임이 반복되지 않음
+- [x] 미러전 20게임 수동 리플레이/트레이스 검수 완료
+- [x] 미러전 side-swapped bench에서 `max_steps=0`, `no_action=0`, `invalid_action=0`
+- [x] 최소 1개 교차 매치업 추가
+- [x] 교차 매치업에서도 안정성 게이트 유지
+- [x] `strong-v3` 상대로 완패 수준의 무기력 게임이 반복되지 않음
 
 이 단계는 승률 절대값보다 아래를 더 중요하게 본다.
 - 플레이 의도 노출
 - 콤보 수행 여부
 - 자원 낭비 감소
 - 반복 오판 감소
+
+검증 메모 (2026-03-12, M6):
+- 신규 교차 매치업:
+  - `fm-d-bt05-vs-fire-redhood`
+- 수용 아티팩트:
+  - `artifacts/ai/fixed_matchup/bt05_strong_practice_self_mirror_20260312.json`
+  - `artifacts/ai/fixed_matchup/bt05_strong_practice_self_mirror_20260312_extra10.json`
+  - `artifacts/ai/fixed_matchup/bt05_strong_practice_vs_strong_v3_mirror_20260312.json`
+  - `artifacts/ai/fixed_matchup/bt05_strong_practice_vs_strong_v3_fire_cross_20260312.json`
+- self mirror side-swapped gate:
+  - `20`게임
+  - `winner=20`
+  - `max_steps=0`
+  - `no_action=0`
+  - `invalid_action=0`
+- self mirror 수동 검수:
+  - 위 2개 self mirror 아티팩트의 `primary` match trace를 합쳐
+    seed `2026032000-2026032019` 총 `20`개 고유 시드를 직접 확인
+  - 공통 관찰:
+    - 의미 없는 리더 액티브 루프 재발 없음
+    - `ACTIVATE_EFFECT -> SELECT_REVEALED_TARGET -> SELECT_ZONE_TARGET` 뒤에
+      전개/공격으로 이어지는 의도 노출 확인
+    - 잔여 병목은 주로 occupied lane 위 저품질 업그레이드
+- `strong-v3` 상대로:
+  - 미러 `20`게임 `8-12`
+  - `self_lethal_open_rate 0`
+  - `max_steps/no_action/invalid_action = 0/0/0`
+- 교차 매치업(`fm-d-bt05-vs-fire-redhood`)에서:
+  - `20`게임 `11-9`
+  - `self_lethal_open_rate 0`
+  - `max_steps/no_action/invalid_action = 0/0/0`
+- 세부 수용 검토 문서:
+  - `docs/ai/bt05_unlucky_bunny_nikki_acceptance_review_2026-03-12.md`
 
 ## 구현 순서 체크리스트
 
@@ -323,10 +356,10 @@ M4 후속 관찰 메모:
 - [x] 코스트 지불 우선순위 추가
 - [x] 타겟 선택 우선순위 추가
 - [x] 아이템 운용 규칙 추가
-- [ ] 리플레이 20게임 수동 검수
-- [ ] 교차 매치업 1종 추가
+- [x] 리플레이/트레이스 20게임 수동 검수
+- [x] 교차 매치업 1종 추가
 - [x] deck-aware practice profile 분리
-- [ ] 수용 게이트 통과
+- [x] 수용 게이트 통과
 
 ## 매 구현 때 공통으로 체크할 실행 절차
 
@@ -351,6 +384,18 @@ AI_FIXED_BENCH_MATCHUP=fm-c-bt05-unlucky-bunny-nikki-mirror AI_FIXED_BENCH_GAMES
 
 - 턴 1 리더 액티브 고착은 해소됐다.
 - BT05 전용 오프닝 멀리건/초반 전개/초반 자원 낭비 억제는 1차 완료됐다.
-- 다음 실제 병목은 `M3. 덱 핵심 플랜 이해`다.
-  특히 `BT05-036`, `BT05-039`, `BT05-044`의
-  트래시 엑시트 차용 타이밍과 차용 대상 선택이 아직 deck-aware 하지 않다.
+- `M6` 수용 게이트까지는 통과했지만,
+  다음 실제 병목은 여전히 `wasteful_upgrade_rate`다.
+- self mirror 고유 seed `20`게임 수동 검수 기준 상위 문제 seed:
+  - `2026032003`
+  - `2026032004`
+  - `2026032008`
+  - `2026032009`
+  - `2026032012`
+  - `2026032017`
+- 공통 패턴:
+  - occupied lane 재전개/업그레이드가 즉시 압박 증가로 이어지지 않음
+  - 리더 액티브 후 전개는 있으나 lane 선택 품질이 아직 들쭉날쭉함
+- 따라서 다음 후속 과제는
+  `BT05` mirror/cross 고빈도 seed를 기준으로
+  lane pressure / upgrade 가치판단을 더 세분화하는 것이다.

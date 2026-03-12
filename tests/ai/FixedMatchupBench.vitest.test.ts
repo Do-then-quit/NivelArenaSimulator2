@@ -122,4 +122,26 @@ describe('Fixed matchup bench', () => {
         expect(report.combined.terminationCounts.no_action).toBe(0);
         expect(report.combined.terminationCounts.invalid_action).toBe(0);
     }, 15000);
+
+    it('runs a BT05 cross matchup against fire-redhood without stability regressions', () => {
+        const report = runFixedMatchupBatch({
+            matchupId: 'fm-d-bt05-vs-fire-redhood',
+            gamesPerSide: 1,
+            maxSteps: 1200,
+            enableMulligan: true,
+            traceLimit: 8,
+            startSeed: 2026032018,
+            player1BotId: 'practice-bt05-nikki-strong-v1',
+            player2BotId: 'strong-v3',
+            measureRuntime: false,
+            suppressLogs: false,
+        });
+
+        expect(report.matchup.id).toBe('fm-d-bt05-vs-fire-redhood');
+        expect(report.combined.totalGames).toBe(2);
+        expect(report.combined.unfinished).toBe(0);
+        expect(report.combined.terminationCounts.max_steps).toBe(0);
+        expect(report.combined.terminationCounts.no_action).toBe(0);
+        expect(report.combined.terminationCounts.invalid_action).toBe(0);
+    }, 15000);
 });

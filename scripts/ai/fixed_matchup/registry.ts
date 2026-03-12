@@ -152,6 +152,13 @@ const FIXED_MATCHUPS: FixedMatchupDefinition[] = [
         description: 'Mirror matchup for the curated BT05 Unlucky Bunny Nikki meta deck.',
     },
     {
+        id: 'fm-d-bt05-vs-fire-redhood',
+        label: 'FM-D BT05 Nikki vs Fire Red Hood',
+        player1DeckId: 'bt05-unlucky-bunny-nikki-meta-v1',
+        player2DeckId: 'fire-redhood-prototype-v1',
+        description: 'Cross matchup for BT05 Unlucky Bunny Nikki versus the current fire prototype deck.',
+    },
+    {
         id: 'fm-a-fire-redhood-mirror',
         label: 'FM-A Fire Red Hood Mirror',
         player1DeckId: 'fire-redhood-prototype-v1',

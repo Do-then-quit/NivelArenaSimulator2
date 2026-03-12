@@ -1,0 +1,1609 @@
+{
+  "generatedAt": "2026-03-12T14:34:03.580Z",
+  "matchup": {
+    "id": "fm-c-bt05-unlucky-bunny-nikki-mirror",
+    "label": "FM-C BT05 Unlucky Bunny Nikki Mirror",
+    "description": "Mirror matchup for the curated BT05 Unlucky Bunny Nikki meta deck.",
+    "player1DeckId": "bt05-unlucky-bunny-nikki-meta-v1",
+    "player2DeckId": "bt05-unlucky-bunny-nikki-meta-v1"
+  },
+  "decks": {
+    "player1": {
+      "id": "bt05-unlucky-bunny-nikki-meta-v1",
+      "label": "BT05 Unlucky Bunny Nikki Meta v1",
+      "leaderId": "BT05-032",
+      "notes": [
+        "Manually curated fixed meta deck added from a supplied deck list on 2026-03-10.",
+        "Leader: BT05-032 Unlucky Bunny Nikki."
+      ]
+    },
+    "player2": {
+      "id": "bt05-unlucky-bunny-nikki-meta-v1",
+      "label": "BT05 Unlucky Bunny Nikki Meta v1",
+      "leaderId": "BT05-032",
+      "notes": [
+        "Manually curated fixed meta deck added from a supplied deck list on 2026-03-10.",
+        "Leader: BT05-032 Unlucky Bunny Nikki."
+      ]
+    }
+  },
+  "config": {
+    "matchupId": "fm-c-bt05-unlucky-bunny-nikki-mirror",
+    "gamesPerSide": 10,
+    "maxSteps": 2400,
+    "enableMulligan": true,
+    "traceLimit": 18,
+    "startSeed": 2026032000,
+    "player1BotId": "practice-bt05-nikki-strong-v1",
+    "player2BotId": "strong-v3",
+    "measureRuntime": false,
+    "suppressLogs": false,
+    "seedList": [
+      2026032000,
+      2026032001,
+      2026032002,
+      2026032003,
+      2026032004,
+      2026032005,
+      2026032006,
+      2026032007,
+      2026032008,
+      2026032009
+    ],
+    "seedSuiteName": "dev",
+    "seedSuitePath": "artifacts/ai/seeds/phase3_v1.json"
+  },
+  "sides": {
+    "primary": {
+      "config": {
+        "startSeed": 2026032000,
+        "games": 10,
+        "maxSteps": 2400,
+        "enableMulligan": true,
+        "traceLimit": 18,
+        "player1BotId": "practice-bt05-nikki-strong-v1",
+        "player2BotId": "strong-v3",
+        "measureRuntime": false,
+        "suppressLogs": false,
+        "seedList": [
+          2026032000,
+          2026032001,
+          2026032002,
+          2026032003,
+          2026032004,
+          2026032005,
+          2026032006,
+          2026032007,
+          2026032008,
+          2026032009
+        ],
+        "seedSuiteName": "dev",
+        "seedSuitePath": "artifacts/ai/seeds/phase3_v1.json"
+      },
+      "matches": [
+        {
+          "seed": 2026032000,
+          "reason": "winner",
+          "steps": 180,
+          "turnCount": 12,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_hre3vg",
+          "winnerId": "PLAYER_2_hre3vg",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 8,
+          "player1LeaderId": "BT05-032_L_2026032000_1",
+          "player2LeaderId": "BT05-032_L_2026032000_2",
+          "lastActions": [
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_UNIT(h:2,z:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:16)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_SKILL(h:2)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:20)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:11)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:15)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_UNIT(h:0,z:2)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 9,
+            "wastefulUpgradeCount": 6,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 37,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.6667,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 6,
+                "wastefulUpgradeCount": 5,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 19,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 18,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032001,
+          "reason": "winner",
+          "steps": 130,
+          "turnCount": 10,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_a85bfq",
+          "winnerId": "PLAYER_2_a85bfq",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 5,
+          "player1LeaderId": "BT05-032_L_2026032001_1",
+          "player2LeaderId": "BT05-032_L_2026032001_2",
+          "lastActions": [
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)",
+            "RESOLVE_BLOCK(N)",
+            "CONFIRM_TARGETS",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "SELECT_HAND_TARGET(p:PLAYER,h:2)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "PLAY_UNIT(h:1,z:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:1)",
+            "RESOLVE_BLOCK(N)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 6,
+            "wastefulUpgradeCount": 4,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 25,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.6667,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 13,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 4,
+                "wastefulUpgradeCount": 3,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 12,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032002,
+          "reason": "winner",
+          "steps": 187,
+          "turnCount": 14,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_bqzd5g",
+          "winnerId": "PLAYER_2_bqzd5g",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 8,
+          "player1LeaderId": "BT05-032_L_2026032002_1",
+          "player2LeaderId": "BT05-032_L_2026032002_2",
+          "lastActions": [
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(N)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:1)",
+            "SELECT_HAND_TARGET(p:PLAYER,h:2)",
+            "ATTACK(z:1)",
+            "RESOLVE_BLOCK(Y)",
+            "SELECT_HAND_TARGET(p:PLAYER,h:1)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "SELECT_HAND_TARGET(p:PLAYER,h:2)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:3,z:1)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 6,
+            "wastefulUpgradeCount": 3,
+            "lethalOpportunityCount": 2,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 45,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.5,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 4,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 23,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 2,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 22,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032003,
+          "reason": "winner",
+          "steps": 133,
+          "turnCount": 11,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_1_kkk6bj",
+          "winnerId": "PLAYER_1_kkk6bj",
+          "winnerPlayer": 1,
+          "player1Damage": 9,
+          "player2Damage": 10,
+          "player1LeaderId": "BT05-032_L_2026032003_1",
+          "player2LeaderId": "BT05-032_L_2026032003_2",
+          "lastActions": [
+            "ATTACK(z:1)",
+            "RESOLVE_BLOCK(Y)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:2,z:1)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:5)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:6)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:7)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:4)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:8)",
+            "CONFIRM_TARGETS",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 5,
+            "wastefulUpgradeCount": 3,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 28,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.6,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 14,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 14,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032004,
+          "reason": "winner",
+          "steps": 192,
+          "turnCount": 12,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_rqrrnm",
+          "winnerId": "PLAYER_2_rqrrnm",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 8,
+          "player1LeaderId": "BT05-032_L_2026032004_1",
+          "player2LeaderId": "BT05-032_L_2026032004_2",
+          "lastActions": [
+            "SELECT_HAND_TARGET(p:PLAYER,h:0)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:2,z:2)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:3)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_UNIT(h:0,z:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "ACTIVATE_EFFECT(z:0,e:1)",
+            "SELECT_HAND_TARGET(p:PLAYER,h:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 7,
+            "wastefulUpgradeCount": 4,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 45,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.5714,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 4,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 23,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 22,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032005,
+          "reason": "winner",
+          "steps": 125,
+          "turnCount": 11,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_1_coywiv",
+          "winnerId": "PLAYER_1_coywiv",
+          "winnerPlayer": 1,
+          "player1Damage": 9,
+          "player2Damage": 10,
+          "player1LeaderId": "BT05-032_L_2026032005_1",
+          "player2LeaderId": "BT05-032_L_2026032005_2",
+          "lastActions": [
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)",
+            "RESOLVE_BLOCK(N)",
+            "ATTACK(z:1)",
+            "RESOLVE_BLOCK(Y)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_ITEM(h:4,z:2)",
+            "PLAY_UNIT(h:4,z:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(N)",
+            "ATTACK(z:0)",
+            "RESOLVE_BLOCK(N)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 4,
+            "wastefulUpgradeCount": 3,
+            "lethalOpportunityCount": 0,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 44,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.75,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 22,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 22,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032006,
+          "reason": "winner",
+          "steps": 75,
+          "turnCount": 7,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_1_m7jm9d",
+          "winnerId": "PLAYER_1_m7jm9d",
+          "winnerPlayer": 1,
+          "player1Damage": 8,
+          "player2Damage": 10,
+          "player1LeaderId": "BT05-032_L_2026032006_1",
+          "player2LeaderId": "BT05-032_L_2026032006_2",
+          "lastActions": [
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(N)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "RESOLVE_OPTIONAL",
+            "NEXT_PHASE",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_UNIT(h:0,z:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "SELECT_HAND_TARGET(p:PLAYER,h:0)",
+            "PLAY_UNIT(h:1,z:2)",
+            "RESOLVE_OPTIONAL",
+            "SELECT_DAMAGE_TARGET",
+            "NEXT_PHASE",
+            "ATTACK(z:1)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 2,
+            "wastefulUpgradeCount": 0,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 16,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 0,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 8,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 0,
+                "wastefulUpgradeCount": 0,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 8,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032007,
+          "reason": "winner",
+          "steps": 121,
+          "turnCount": 10,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_mth1pi",
+          "winnerId": "PLAYER_2_mth1pi",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 9,
+          "player1LeaderId": "BT05-032_L_2026032007_1",
+          "player2LeaderId": "BT05-032_L_2026032007_2",
+          "lastActions": [
+            "RESOLVE_BLOCK(N)",
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(Y)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:2,z:0)",
+            "PLAY_UNIT(h:0,z:2)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:9)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_SKILL(h:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:9)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:9)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 6,
+            "wastefulUpgradeCount": 2,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 33,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.3333,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 17,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 16,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032008,
+          "reason": "winner",
+          "steps": 128,
+          "turnCount": 10,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_jnbajv",
+          "winnerId": "PLAYER_2_jnbajv",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 8,
+          "player1LeaderId": "BT05-032_L_2026032008_1",
+          "player2LeaderId": "BT05-032_L_2026032008_2",
+          "lastActions": [
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:0,z:1)",
+            "SELECT_REVEALED_TARGET(r:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_REVEALED_TARGET(r:1)",
+            "CONFIRM_TARGETS",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "PLAY_SKILL(h:3)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:3)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "NEXT_PHASE",
+            "ATTACK(z:2)",
+            "ATTACK(z:1)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 5,
+            "wastefulUpgradeCount": 3,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 27,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.6,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 14,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 13,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032009,
+          "reason": "winner",
+          "steps": 113,
+          "turnCount": 9,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_1_2tbopc",
+          "winnerId": "PLAYER_1_2tbopc",
+          "winnerPlayer": 1,
+          "player1Damage": 8,
+          "player2Damage": 10,
+          "player1LeaderId": "BT05-032_L_2026032009_1",
+          "player2LeaderId": "BT05-032_L_2026032009_2",
+          "lastActions": [
+            "SELECT_TRASH_TARGET(p:PLAYER,t:3)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(N)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "SELECT_HAND_TARGET(p:PLAYER,h:3)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:3,z:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:4)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:1)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 3,
+            "wastefulUpgradeCount": 1,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 24,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.3333,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 12,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 1,
+                "wastefulUpgradeCount": 0,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 12,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        }
+      ],
+      "summary": {
+        "totalGames": 10,
+        "wins": {
+          "player1": 4,
+          "player2": 6
+        },
+        "winRate": {
+          "player1": 0.4,
+          "player2": 0.6
+        },
+        "unfinished": 0,
+        "avgSteps": 138.4,
+        "avgTurns": 10.6,
+        "terminationCounts": {
+          "winner": 10,
+          "max_steps": 0,
+          "no_action": 0,
+          "invalid_action": 0
+        },
+        "confidence": {
+          "player1WinRate": {
+            "pointEstimate": 0.4,
+            "standardError": 0.1549,
+            "ci95Low": 0.0964,
+            "ci95High": 0.7036
+          },
+          "player2WinRate": {
+            "pointEstimate": 0.6,
+            "standardError": 0.1549,
+            "ci95Low": 0.2964,
+            "ci95High": 0.9036
+          }
+        },
+        "runtime": {
+          "enabled": false,
+          "totalMs": 0,
+          "avgMsPerGame": 0,
+          "msPerAction": 0
+        },
+        "tacticalKPIs": {
+          "wasteful_upgrade_rate": 0.5472,
+          "lethal_miss_rate": 0,
+          "self_lethal_open_rate": 0,
+          "counts": {
+            "upgradeActionCount": 53,
+            "wastefulUpgradeCount": 29,
+            "lethalOpportunityCount": 10,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 324,
+            "selfLethalOpenCount": 0
+          },
+          "byPlayer": {
+            "player1": {
+              "upgradeActionCount": 31,
+              "wastefulUpgradeCount": 16,
+              "lethalOpportunityCount": 3,
+              "lethalMissCount": 0,
+              "selfLethalCheckCount": 165,
+              "selfLethalOpenCount": 0
+            },
+            "player2": {
+              "upgradeActionCount": 22,
+              "wastefulUpgradeCount": 13,
+              "lethalOpportunityCount": 7,
+              "lethalMissCount": 0,
+              "selfLethalCheckCount": 159,
+              "selfLethalOpenCount": 0
+            }
+          }
+        }
+      }
+    },
+    "swapped": {
+      "config": {
+        "startSeed": 2026032000,
+        "games": 10,
+        "maxSteps": 2400,
+        "enableMulligan": true,
+        "traceLimit": 18,
+        "player1BotId": "practice-bt05-nikki-strong-v1",
+        "player2BotId": "strong-v3",
+        "measureRuntime": false,
+        "suppressLogs": false,
+        "seedList": [
+          2026032000,
+          2026032001,
+          2026032002,
+          2026032003,
+          2026032004,
+          2026032005,
+          2026032006,
+          2026032007,
+          2026032008,
+          2026032009
+        ],
+        "seedSuiteName": "dev",
+        "seedSuitePath": "artifacts/ai/seeds/phase3_v1.json"
+      },
+      "matches": [
+        {
+          "seed": 2026032000,
+          "reason": "winner",
+          "steps": 180,
+          "turnCount": 12,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_hre3vg",
+          "winnerId": "PLAYER_2_hre3vg",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 8,
+          "player1LeaderId": "BT05-032_L_2026032000_1",
+          "player2LeaderId": "BT05-032_L_2026032000_2",
+          "lastActions": [
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_UNIT(h:2,z:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:16)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_SKILL(h:2)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:20)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:11)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:15)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_UNIT(h:0,z:2)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 9,
+            "wastefulUpgradeCount": 6,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 37,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.6667,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 6,
+                "wastefulUpgradeCount": 5,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 19,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 18,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032001,
+          "reason": "winner",
+          "steps": 130,
+          "turnCount": 10,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_a85bfq",
+          "winnerId": "PLAYER_2_a85bfq",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 5,
+          "player1LeaderId": "BT05-032_L_2026032001_1",
+          "player2LeaderId": "BT05-032_L_2026032001_2",
+          "lastActions": [
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)",
+            "RESOLVE_BLOCK(N)",
+            "CONFIRM_TARGETS",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "SELECT_HAND_TARGET(p:PLAYER,h:2)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "PLAY_UNIT(h:1,z:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:1)",
+            "RESOLVE_BLOCK(N)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 6,
+            "wastefulUpgradeCount": 4,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 25,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.6667,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 13,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 4,
+                "wastefulUpgradeCount": 3,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 12,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032002,
+          "reason": "winner",
+          "steps": 187,
+          "turnCount": 14,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_bqzd5g",
+          "winnerId": "PLAYER_2_bqzd5g",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 8,
+          "player1LeaderId": "BT05-032_L_2026032002_1",
+          "player2LeaderId": "BT05-032_L_2026032002_2",
+          "lastActions": [
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(N)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:1)",
+            "SELECT_HAND_TARGET(p:PLAYER,h:2)",
+            "ATTACK(z:1)",
+            "RESOLVE_BLOCK(Y)",
+            "SELECT_HAND_TARGET(p:PLAYER,h:1)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "SELECT_HAND_TARGET(p:PLAYER,h:2)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:3,z:1)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 6,
+            "wastefulUpgradeCount": 3,
+            "lethalOpportunityCount": 2,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 45,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.5,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 4,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 23,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 2,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 22,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032003,
+          "reason": "winner",
+          "steps": 133,
+          "turnCount": 11,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_1_kkk6bj",
+          "winnerId": "PLAYER_1_kkk6bj",
+          "winnerPlayer": 1,
+          "player1Damage": 9,
+          "player2Damage": 10,
+          "player1LeaderId": "BT05-032_L_2026032003_1",
+          "player2LeaderId": "BT05-032_L_2026032003_2",
+          "lastActions": [
+            "ATTACK(z:1)",
+            "RESOLVE_BLOCK(Y)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:2,z:1)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:5)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:6)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:7)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:4)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:8)",
+            "CONFIRM_TARGETS",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 5,
+            "wastefulUpgradeCount": 3,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 28,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.6,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 14,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 14,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032004,
+          "reason": "winner",
+          "steps": 192,
+          "turnCount": 12,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_rqrrnm",
+          "winnerId": "PLAYER_2_rqrrnm",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 8,
+          "player1LeaderId": "BT05-032_L_2026032004_1",
+          "player2LeaderId": "BT05-032_L_2026032004_2",
+          "lastActions": [
+            "SELECT_HAND_TARGET(p:PLAYER,h:0)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:2,z:2)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:3)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_UNIT(h:0,z:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "ACTIVATE_EFFECT(z:0,e:1)",
+            "SELECT_HAND_TARGET(p:PLAYER,h:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 7,
+            "wastefulUpgradeCount": 4,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 45,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.5714,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 4,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 23,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 22,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032005,
+          "reason": "winner",
+          "steps": 125,
+          "turnCount": 11,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_1_coywiv",
+          "winnerId": "PLAYER_1_coywiv",
+          "winnerPlayer": 1,
+          "player1Damage": 9,
+          "player2Damage": 10,
+          "player1LeaderId": "BT05-032_L_2026032005_1",
+          "player2LeaderId": "BT05-032_L_2026032005_2",
+          "lastActions": [
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)",
+            "RESOLVE_BLOCK(N)",
+            "ATTACK(z:1)",
+            "RESOLVE_BLOCK(Y)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_ITEM(h:4,z:2)",
+            "PLAY_UNIT(h:4,z:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(N)",
+            "ATTACK(z:0)",
+            "RESOLVE_BLOCK(N)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 4,
+            "wastefulUpgradeCount": 3,
+            "lethalOpportunityCount": 0,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 44,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.75,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 22,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 22,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032006,
+          "reason": "winner",
+          "steps": 75,
+          "turnCount": 7,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_1_m7jm9d",
+          "winnerId": "PLAYER_1_m7jm9d",
+          "winnerPlayer": 1,
+          "player1Damage": 8,
+          "player2Damage": 10,
+          "player1LeaderId": "BT05-032_L_2026032006_1",
+          "player2LeaderId": "BT05-032_L_2026032006_2",
+          "lastActions": [
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(N)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "RESOLVE_OPTIONAL",
+            "NEXT_PHASE",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_UNIT(h:0,z:1)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "SELECT_HAND_TARGET(p:PLAYER,h:0)",
+            "PLAY_UNIT(h:1,z:2)",
+            "RESOLVE_OPTIONAL",
+            "SELECT_DAMAGE_TARGET",
+            "NEXT_PHASE",
+            "ATTACK(z:1)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 2,
+            "wastefulUpgradeCount": 0,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 16,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 0,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 8,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 0,
+                "wastefulUpgradeCount": 0,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 8,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032007,
+          "reason": "winner",
+          "steps": 121,
+          "turnCount": 10,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_mth1pi",
+          "winnerId": "PLAYER_2_mth1pi",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 9,
+          "player1LeaderId": "BT05-032_L_2026032007_1",
+          "player2LeaderId": "BT05-032_L_2026032007_2",
+          "lastActions": [
+            "RESOLVE_BLOCK(N)",
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(Y)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:2,z:0)",
+            "PLAY_UNIT(h:0,z:2)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:9)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "PLAY_SKILL(h:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:9)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:9)",
+            "NEXT_PHASE",
+            "ATTACK(z:0)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 6,
+            "wastefulUpgradeCount": 2,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 33,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.3333,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 17,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 16,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032008,
+          "reason": "winner",
+          "steps": 128,
+          "turnCount": 10,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_2_jnbajv",
+          "winnerId": "PLAYER_2_jnbajv",
+          "winnerPlayer": 2,
+          "player1Damage": 10,
+          "player2Damage": 8,
+          "player1LeaderId": "BT05-032_L_2026032008_1",
+          "player2LeaderId": "BT05-032_L_2026032008_2",
+          "lastActions": [
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:0,z:1)",
+            "SELECT_REVEALED_TARGET(r:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_REVEALED_TARGET(r:1)",
+            "CONFIRM_TARGETS",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "PLAY_SKILL(h:3)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:3)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:2)",
+            "NEXT_PHASE",
+            "ATTACK(z:2)",
+            "ATTACK(z:1)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 5,
+            "wastefulUpgradeCount": 3,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 27,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.6,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 3,
+                "wastefulUpgradeCount": 2,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 14,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 13,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        },
+        {
+          "seed": 2026032009,
+          "reason": "winner",
+          "steps": 113,
+          "turnCount": 9,
+          "phase": "ATTACK",
+          "interactionMode": "NORMAL",
+          "actorPlayerId": "PLAYER_1_2tbopc",
+          "winnerId": "PLAYER_1_2tbopc",
+          "winnerPlayer": 1,
+          "player1Damage": 8,
+          "player2Damage": 10,
+          "player1LeaderId": "BT05-032_L_2026032009_1",
+          "player2LeaderId": "BT05-032_L_2026032009_2",
+          "lastActions": [
+            "SELECT_TRASH_TARGET(p:PLAYER,t:3)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "ATTACK(z:2)",
+            "RESOLVE_BLOCK(N)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "SELECT_HAND_TARGET(p:PLAYER,h:3)",
+            "NEXT_PHASE",
+            "NEXT_PHASE",
+            "PLAY_UNIT(h:3,z:1)",
+            "SELECT_TRASH_TARGET(p:PLAYER,t:4)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:0)",
+            "ACTIVATE_EFFECT(z:-1,e:2)",
+            "SELECT_REVEALED_TARGET(r:0)",
+            "SELECT_ZONE_TARGET(p:PLAYER,z:1)",
+            "NEXT_PHASE",
+            "ATTACK(z:1)"
+          ],
+          "tacticalMetrics": {
+            "upgradeActionCount": 3,
+            "wastefulUpgradeCount": 1,
+            "lethalOpportunityCount": 1,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 24,
+            "selfLethalOpenCount": 0,
+            "wastefulUpgradeRate": 0.3333,
+            "lethalMissRate": 0,
+            "selfLethalOpenRate": 0,
+            "byPlayer": {
+              "player1": {
+                "upgradeActionCount": 2,
+                "wastefulUpgradeCount": 1,
+                "lethalOpportunityCount": 1,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 12,
+                "selfLethalOpenCount": 0
+              },
+              "player2": {
+                "upgradeActionCount": 1,
+                "wastefulUpgradeCount": 0,
+                "lethalOpportunityCount": 0,
+                "lethalMissCount": 0,
+                "selfLethalCheckCount": 12,
+                "selfLethalOpenCount": 0
+              }
+            }
+          }
+        }
+      ],
+      "summary": {
+        "totalGames": 10,
+        "wins": {
+          "player1": 4,
+          "player2": 6
+        },
+        "winRate": {
+          "player1": 0.4,
+          "player2": 0.6
+        },
+        "unfinished": 0,
+        "avgSteps": 138.4,
+        "avgTurns": 10.6,
+        "terminationCounts": {
+          "winner": 10,
+          "max_steps": 0,
+          "no_action": 0,
+          "invalid_action": 0
+        },
+        "confidence": {
+          "player1WinRate": {
+            "pointEstimate": 0.4,
+            "standardError": 0.1549,
+            "ci95Low": 0.0964,
+            "ci95High": 0.7036
+          },
+          "player2WinRate": {
+            "pointEstimate": 0.6,
+            "standardError": 0.1549,
+            "ci95Low": 0.2964,
+            "ci95High": 0.9036
+          }
+        },
+        "runtime": {
+          "enabled": false,
+          "totalMs": 0,
+          "avgMsPerGame": 0,
+          "msPerAction": 0
+        },
+        "tacticalKPIs": {
+          "wasteful_upgrade_rate": 0.5472,
+          "lethal_miss_rate": 0,
+          "self_lethal_open_rate": 0,
+          "counts": {
+            "upgradeActionCount": 53,
+            "wastefulUpgradeCount": 29,
+            "lethalOpportunityCount": 10,
+            "lethalMissCount": 0,
+            "selfLethalCheckCount": 324,
+            "selfLethalOpenCount": 0
+          },
+          "byPlayer": {
+            "player1": {
+              "upgradeActionCount": 31,
+              "wastefulUpgradeCount": 16,
+              "lethalOpportunityCount": 3,
+              "lethalMissCount": 0,
+              "selfLethalCheckCount": 165,
+              "selfLethalOpenCount": 0
+            },
+            "player2": {
+              "upgradeActionCount": 22,
+              "wastefulUpgradeCount": 13,
+              "lethalOpportunityCount": 7,
+              "lethalMissCount": 0,
+              "selfLethalCheckCount": 159,
+              "selfLethalOpenCount": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "combined": {
+    "totalGames": 20,
+    "wins": {
+      "player1Bot": 8,
+      "player2Bot": 12
+    },
+    "winRate": {
+      "player1Bot": 0.4,
+      "player2Bot": 0.6
+    },
+    "unfinished": 0,
+    "avgSteps": 138.4,
+    "avgTurns": 10.6,
+    "terminationCounts": {
+      "winner": 20,
+      "max_steps": 0,
+      "no_action": 0,
+      "invalid_action": 0
+    },
+    "confidence": {
+      "player1BotWinRate": {
+        "pointEstimate": 0.4,
+        "standardError": 0.1095,
+        "ci95Low": 0.1853,
+        "ci95High": 0.6147
+      },
+      "player2BotWinRate": {
+        "pointEstimate": 0.6,
+        "standardError": 0.1095,
+        "ci95Low": 0.3853,
+        "ci95High": 0.8147
+      }
+    },
+    "runtime": {
+      "enabled": false,
+      "totalMs": 0,
+      "avgMsPerGame": 0,
+      "msPerAction": 0
+    },
+    "tacticalKPIs": {
+      "wasteful_upgrade_rate": 0.5472,
+      "lethal_miss_rate": 0,
+      "self_lethal_open_rate": 0,
+      "counts": {
+        "upgradeActionCount": 106,
+        "wastefulUpgradeCount": 58,
+        "lethalOpportunityCount": 20,
+        "lethalMissCount": 0,
+        "selfLethalCheckCount": 648,
+        "selfLethalOpenCount": 0
+      },
+      "byPlayer": {
+        "player1": {
+          "upgradeActionCount": 62,
+          "wastefulUpgradeCount": 32,
+          "lethalOpportunityCount": 6,
+          "lethalMissCount": 0,
+          "selfLethalCheckCount": 330,
+          "selfLethalOpenCount": 0
+        },
+        "player2": {
+          "upgradeActionCount": 44,
+          "wastefulUpgradeCount": 26,
+          "lethalOpportunityCount": 14,
+          "lethalMissCount": 0,
+          "selfLethalCheckCount": 318,
+          "selfLethalOpenCount": 0
+        }
+      }
+    }
+  }
+}

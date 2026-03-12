@@ -47,6 +47,10 @@ describe('Fixed matchup deck registry', () => {
         const mirror = resolveFixedMatchup('fm-c-bt05-unlucky-bunny-nikki-mirror');
         expect(mirror.player1.definition.id).toBe('bt05-unlucky-bunny-nikki-meta-v1');
         expect(mirror.player2.definition.id).toBe('bt05-unlucky-bunny-nikki-meta-v1');
+
+        const cross = resolveFixedMatchup('fm-d-bt05-vs-fire-redhood');
+        expect(cross.player1.definition.id).toBe('bt05-unlucky-bunny-nikki-meta-v1');
+        expect(cross.player2.definition.id).toBe('fire-redhood-prototype-v1');
     });
 
     it('resolves matchup decks and mirror matchups correctly', () => {
