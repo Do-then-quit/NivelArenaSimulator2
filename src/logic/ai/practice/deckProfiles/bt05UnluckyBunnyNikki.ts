@@ -2,6 +2,9 @@ import { Attribute, Card, CardType, EngineAction, Phase, PlayerState } from '../
 import { PracticeMainPhaseAction, PracticeMainPhaseContext, PracticeMulliganContext, PracticeProfile } from '../types';
 
 type PlayFieldAction = Extract<EngineAction, { type: 'PLAY_UNIT' | 'PLAY_ITEM' }>;
+type PlaySkillAction = Extract<EngineAction, { type: 'PLAY_SKILL' }>;
+type ActivateEffectAction = Extract<EngineAction, { type: 'ACTIVATE_EFFECT' }>;
+type NextPhaseAction = Extract<EngineAction, { type: 'NEXT_PHASE' }>;
 
 const BT05_NIKKI_LEADER_ID = 'BT05-032';
 const LOW_COST_STORM_OPENERS = new Set(['BT05-033', 'ST09-011']);
@@ -9,8 +12,14 @@ const LOW_COST_LIGHTNING_OPENERS = new Set(['BT05-064', 'BT05-065', 'BT05-066'])
 const MIX_CONNECTOR_ITEMS = new Set(['BT05-046', 'BT05-081', 'BT05-082']);
 const EARLY_PAYOFF_IDS = new Set(['BT05-038', 'BT05-039', 'BT05-040', 'BT05-041']);
 
+function getCardKey(card: Card | null | undefined): string {
+    if (!card) return '';
+    const match = card.id.match(/^[A-Z]{2}\d{2}-\d{3}/);
+    return match?.[0] ?? card.id;
+}
+
 function isBt05NikkiLeader(actor: PlayerState | null | undefined): boolean {
-    return actor?.levelZone?.id === BT05_NIKKI_LEADER_ID;
+    return getCardKey(actor?.levelZone ?? null) === BT05_NIKKI_LEADER_ID;
 }
 
 function getHandCard(actor: PlayerState, action: PlayFieldAction): Card | null {
@@ -87,8 +96,35 @@ function isOpeningWindow(context: PracticeMainPhaseContext): boolean {
         && context.actor.leaderLevel <= 4;
 }
 
+function isBorrowableExitUnit(card: Card | null | undefined): boolean {
+    if (!card || card.type !== CardType.UNIT) return false;
+    const keywords = String(card.keywords ?? '');
+    const text = String(card.text ?? '');
+    return keywords.includes('엑시트') && !text.includes('트리거');
+}
+
+function countBorrowableExitUnits(cards: Card[]): number {
+    return cards.filter(card => isBorrowableExitUnit(card)).length;
+}
+
+function getActivateEffectSourceCard(actor: PlayerState, action: ActivateEffectAction): Card | null {
+    if (action.sourceType === 'LEADER') {
+        return actor.levelZone ?? null;
+    }
+
+    const zone = actor.unitZones[action.zoneIndex];
+    if (!zone) return null;
+
+    if (action.sourceType === 'ITEM') {
+        if (typeof action.itemIndex !== 'number') return null;
+        return zone.items[action.itemIndex] ?? null;
+    }
+
+    return zone.unit ?? null;
+}
+
 function getCardSpecificOpeningScore(card: Card, actor: PlayerState, mixedBefore: boolean, mixedAfter: boolean): number {
-    switch (card.id) {
+    switch (getCardKey(card)) {
         case 'BT05-033':
             return 2100 + (mixedAfter && !mixedBefore ? 500 : 0);
         case 'ST09-011':
@@ -110,7 +146,7 @@ function getCardSpecificOpeningScore(card: Card, actor: PlayerState, mixedBefore
         case 'BT05-081':
             return mixedAfter ? 1100 : 150;
         case 'BT05-082':
-            return mixedAfter ? 700 : -100;
+            return mixedAfter ? 700 : -2200;
         default:
             return EARLY_PAYOFF_IDS.has(card.id) ? -5000 : 0;
     }
@@ -125,6 +161,13 @@ function getLaneScoreForItem(actor: PlayerState, zoneIndex: number): number {
 function scoreOpeningAction(context: PracticeMainPhaseContext, action: PlayFieldAction): number {
     const card = getHandCard(context.actor, action);
     if (!card) return Number.NEGATIVE_INFINITY;
+    const cardKey = getCardKey(card);
+
+    if (action.type === 'PLAY_ITEM' && cardKey === 'BT05-046') {
+        // BT05-046 spends future hand resources for a small early stat bump.
+        // In the opening window we want bodies and clean mix setup first.
+        return -4000;
+    }
 
     const attributesBefore = getFieldAttributes(context.actor);
     const mixedBefore = hasMixedField(attributesBefore);
@@ -133,6 +176,10 @@ function scoreOpeningAction(context: PracticeMainPhaseContext, action: PlayField
         attributesAfter.add(card.attribute);
     }
     const mixedAfter = hasMixedField(attributesAfter);
+
+    if (action.type === 'PLAY_ITEM' && cardKey === 'BT05-082' && !mixedAfter) {
+        return -4000;
+    }
 
     let score = 0;
 
@@ -143,10 +190,10 @@ function scoreOpeningAction(context: PracticeMainPhaseContext, action: PlayField
     if (action.type === 'PLAY_UNIT') score += 1200;
     if (action.type === 'PLAY_ITEM') score += getLaneScoreForItem(context.actor, action.zoneIndex);
 
-    if (LOW_COST_STORM_OPENERS.has(card.id) || LOW_COST_LIGHTNING_OPENERS.has(card.id)) {
+    if (LOW_COST_STORM_OPENERS.has(cardKey) || LOW_COST_LIGHTNING_OPENERS.has(cardKey)) {
         score += 1200;
     }
-    if (MIX_CONNECTOR_ITEMS.has(card.id)) {
+    if (MIX_CONNECTOR_ITEMS.has(cardKey)) {
         score += mixedAfter ? 400 : -200;
     }
 
@@ -154,17 +201,54 @@ function scoreOpeningAction(context: PracticeMainPhaseContext, action: PlayField
     return score;
 }
 
-function chooseBestOpeningPlay(context: PracticeMainPhaseContext): PlayFieldAction | null {
-    const playActions = context.actions.filter(
-        (action): action is PlayFieldAction => action.type === 'PLAY_UNIT' || action.type === 'PLAY_ITEM',
-    );
-    if (playActions.length === 0) return null;
+function scoreOpeningSkillAction(context: PracticeMainPhaseContext, action: PlaySkillAction): number {
+    const card = context.actor.hand[action.handIndex];
+    if (!card) return Number.NEGATIVE_INFINITY;
 
-    let bestAction: PlayFieldAction | null = null;
+    if (getCardKey(card) === 'BT05-044') {
+        const borrowableExitCount = countBorrowableExitUnits(context.actor.trash);
+        if (borrowableExitCount === 0) return -5000;
+        return -1000;
+    }
+
+    return -3000;
+}
+
+function scoreOpeningActivateEffectAction(context: PracticeMainPhaseContext, action: ActivateEffectAction): number {
+    const sourceCard = getActivateEffectSourceCard(context.actor, action);
+    if (!sourceCard) return Number.NEGATIVE_INFINITY;
+
+    if (getCardKey(sourceCard) === 'BT05-082') {
+        return -4500;
+    }
+
+    return -3500;
+}
+
+function scoreOpeningMainAction(context: PracticeMainPhaseContext, action: PracticeMainPhaseAction): number {
+    switch (action.type) {
+        case 'PLAY_UNIT':
+        case 'PLAY_ITEM':
+            return scoreOpeningAction(context, action);
+        case 'PLAY_SKILL':
+            return scoreOpeningSkillAction(context, action);
+        case 'ACTIVATE_EFFECT':
+            return scoreOpeningActivateEffectAction(context, action);
+        case 'NEXT_PHASE':
+            return 0;
+        default:
+            return Number.NEGATIVE_INFINITY;
+    }
+}
+
+function chooseBestOpeningAction(context: PracticeMainPhaseContext): PracticeMainPhaseAction | null {
+    if (context.actions.length === 0) return null;
+
+    let bestAction: PracticeMainPhaseAction | null = null;
     let bestScore = Number.NEGATIVE_INFINITY;
 
-    for (const action of playActions) {
-        const score = scoreOpeningAction(context, action);
+    for (const action of context.actions) {
+        const score = scoreOpeningMainAction(context, action);
         if (score > bestScore) {
             bestAction = action;
             bestScore = score;
@@ -186,9 +270,9 @@ export const bt05UnluckyBunnyNikkiOpeningProfile: PracticeProfile = {
         const heavyCardCount = getHeavyCardCount(hand);
         const mixedOpeningPlan = hasMixedOpeningPlan(hand);
         const hasNamedOpeners = hand.some(card =>
-            LOW_COST_STORM_OPENERS.has(card.id)
-            || LOW_COST_LIGHTNING_OPENERS.has(card.id)
-            || MIX_CONNECTOR_ITEMS.has(card.id),
+            LOW_COST_STORM_OPENERS.has(getCardKey(card))
+            || LOW_COST_LIGHTNING_OPENERS.has(getCardKey(card))
+            || MIX_CONNECTOR_ITEMS.has(getCardKey(card)),
         );
 
         const shouldMulligan = !mixedOpeningPlan || lowCurveCount < 2 || !hasNamedOpeners || heavyCardCount >= 3;
@@ -197,6 +281,6 @@ export const bt05UnluckyBunnyNikkiOpeningProfile: PracticeProfile = {
     chooseMainPhaseAction(context: PracticeMainPhaseContext): PracticeMainPhaseAction | null {
         if (!isBt05NikkiLeader(context.actor)) return null;
         if (!isOpeningWindow(context)) return null;
-        return chooseBestOpeningPlay(context);
+        return chooseBestOpeningAction(context);
     },
 };

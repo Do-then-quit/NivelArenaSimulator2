@@ -157,6 +157,84 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
         }
     });
 
+    it('skips BT05-046 in the opening window when it would only create discard pressure', () => {
+        const engine = createEngine({ seed: 2026031206 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 2;
+        p1.levelZone = { ...getCard('BT05-032'), id: 'BT05-032_L_2026031206_1' };
+        p1.unitZones[0].unit = getCard('BT05-066');
+        p1.hand = [getCard('BT05-046')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
+    it('skips BT05-044 in the opening window when trash has no borrow target', () => {
+        const engine = createEngine({ seed: 2026031207 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 2;
+        p1.hand = [getCard('BT05-044')];
+        p1.trash = [];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
+    it('skips BT05-082 active in the opening window when it would only churn hand quality', () => {
+        const engine = createEngine({ seed: 2026031208 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 2;
+        p1.unitZones[0].unit = getCard('BT05-033');
+        p1.unitZones[0].items = [getCard('BT05-082')];
+        p1.hand = [getCard('BT05-036')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
+    it('skips BT05-082 equip in the opening window when it does not improve mix or board quality', () => {
+        const engine = createEngine({ seed: 2026031209 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 2;
+        p1.unitZones[0].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-082')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
     it('registers the BT05 opening profile in both CLI and UI bot registries', () => {
         expect(getAvailableBotIds()).toContain('practice-bt05-nikki-open-v1');
         expect(normalizeBotModelId('practice-bt05-nikki')).toBe('practice-bt05-nikki-open-v1');
