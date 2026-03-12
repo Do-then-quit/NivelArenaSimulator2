@@ -182,14 +182,53 @@
 
 ## M4. 전술 선택 품질
 
-- [ ] 코스트 지불 시 저가치 카드부터 버리는 기본 규칙이 들어간다.
+- [x] 코스트 지불 시 저가치 카드부터 버리는 기본 규칙이 들어간다.
 - [ ] 타겟 선택에서 제거 가치가 낮은 유닛을 우선 치지 않는다.
-- [ ] optional effect를 의미 없이 남발하지 않는다.
-- [ ] 아이템 `BT05-081`, `BT05-082` 장착/이동/소모 판단이 개선된다.
+- [x] optional effect를 의미 없이 남발하지 않는다.
+- [x] 아이템 `BT05-081`, `BT05-082` 장착/이동/소모 판단이 개선된다.
 - [ ] 자기 킬각 오픈과 과투자 업그레이드가 반복되지 않는다.
 
 이 단계의 출력물:
 카드별 priority table 또는 deck profile 문서/코드가 있어야 한다.
+
+검증 메모 (2026-03-12, M4 part 1):
+- `PracticeProfile`에 optional/confirm hook을 연결하고
+  `BaselineBot`의 interaction path에서 deck-aware confirm 분기를 사용
+- `src/logic/ai/practice/deckProfiles/bt05UnluckyBunnyNikki.ts`
+  에 아래 전술 규칙 추가
+  - `BT05-082` draw-then-discard에서 `BT05-041`보다 `BT05-039` 같은 loot 자원을 우선 버리는 규칙
+  - `BT05-046` upkeep에서 저가치 유닛이면 손패 핵심 파츠를 버리기보다 `CONFIRM_TARGETS`로 죽게 두는 규칙
+  - `BT05-072` reveal 3에서 가치 있는 카드만 고르고 조기 `CONFIRM_TARGETS` 하는 규칙
+  - `BT05-041` exit 하단 적재에서 양수 가치 카드만 3의 배수로 모으고 조기 `CONFIRM_TARGETS` 하는 규칙
+  - `BT05-065` optional entry를 대미지 회수 가치가 없을 때는 넘기는 규칙
+  - midgame `BT05-081`, `BT05-082`, `BT05-046` 장착/사용 점수화
+- `tests/ai/Bt05UnluckyBunnyNikkiPracticeBot.vitest.test.ts`
+  시나리오 확장으로 아래 라인 보호
+  - `BT05-065` optional skip
+  - `BT05-082` discard target 우선순위
+  - `BT05-046` zero-select confirm
+  - `BT05-072` / `BT05-041` partial confirm
+  - `BT05-081` midgame equip
+  - `BT05-082` midgame active use / skip
+- `npx vitest run tests/ai/Bt05UnluckyBunnyNikkiPracticeBot.vitest.test.ts`
+  `25/25` 통과
+- `npx vitest run tests/ai/FixedMatchupBench.vitest.test.ts tests/rules_v2_regression/rules_v2_ai_baseline_bot_regression.test.ts`
+  통과
+- `AI_FIXED_BENCH_MATCHUP=fm-c-bt05-unlucky-bunny-nikki-mirror ... npm run ai:fixed:bench`
+  결과:
+  - combined `4`게임
+  - `winner=4`
+  - `max_steps=0`
+  - `no_action=0`
+  - `invalid_action=0`
+  - avgTurns `11`
+  - tactical KPI: `self_lethal_open_rate 0`, `wasteful_upgrade_rate 0.5714`
+- `npm run ai:regression` 재통과
+
+현재 M4 잔여 초점:
+- 상대 제거 타겟의 가치판단을 더 명시적으로 넣기
+- low-value lane 업그레이드 남발을 더 줄이기
+- mirror 20게임 리플레이로 업그레이드 오판 로그를 수동 확인하기
 
 ## M5. 덱 전용 practice profile 분리
 
@@ -227,10 +266,10 @@
 - [x] 턴 1 고착 수정
 - [x] 멀리건 규칙 추가
 - [x] 초반 전개 규칙 추가
-- [ ] 트래시/엑시트 차용 우선순위 추가
-- [ ] 코스트 지불 우선순위 추가
+- [x] 트래시/엑시트 차용 우선순위 추가
+- [x] 코스트 지불 우선순위 추가
 - [ ] 타겟 선택 우선순위 추가
-- [ ] 아이템 운용 규칙 추가
+- [x] 아이템 운용 규칙 추가
 - [ ] 리플레이 20게임 수동 검수
 - [ ] 교차 매치업 1종 추가
 - [x] deck-aware practice profile 분리

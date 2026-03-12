@@ -110,6 +110,8 @@ export class BaselineBot {
     }
 
     private pickInteractionAction(engine: GameEngine, actorPlayerId: string, actions: EngineAction[]): EngineAction | null {
+        const actor = this.getPlayerById(engine, actorPlayerId);
+
         const mulliganActions = this.filterByType(actions, 'RESOLVE_MULLIGAN');
         if (mulliganActions.length > 0) {
             return this.pickMulliganAction(engine, actorPlayerId, mulliganActions);
@@ -117,6 +119,15 @@ export class BaselineBot {
 
         const optionalActions = this.filterByType(actions, 'RESOLVE_OPTIONAL');
         if (optionalActions.length > 0) {
+            if (actor && this.practiceProfile?.chooseOptionalAction) {
+                const practiceAction = this.practiceProfile.chooseOptionalAction({
+                    engine,
+                    actorPlayerId,
+                    actor,
+                    actions: optionalActions,
+                });
+                if (practiceAction) return practiceAction;
+            }
             return optionalActions.find(a => a.confirm) ?? optionalActions[0];
         }
 
@@ -125,12 +136,21 @@ export class BaselineBot {
             return this.pickCostAction(engine, actorPlayerId, costActions);
         }
 
+        const confirmActions = this.filterByType(actions, 'CONFIRM_TARGETS');
+        if (confirmActions.length > 0 && actor && this.practiceProfile?.chooseConfirmTargetsAction) {
+            const practiceAction = this.practiceProfile.chooseConfirmTargetsAction({
+                engine,
+                actorPlayerId,
+                actor,
+                actions: confirmActions,
+            });
+            if (practiceAction) return practiceAction;
+        }
+
         const readyConfirmAction = this.pickReadyConfirmAction(engine, actions);
         if (readyConfirmAction) {
             return readyConfirmAction;
         }
-
-        const actor = this.getPlayerById(engine, actorPlayerId);
 
         const handActions = this.filterByType(actions, 'SELECT_HAND_TARGET');
         if (handActions.length > 0) {
@@ -192,9 +212,9 @@ export class BaselineBot {
             if (revealedAction) return revealedAction;
         }
 
-        const confirmActions = this.filterByType(actions, 'CONFIRM_TARGETS');
-        if (confirmActions.length > 0) {
-            return confirmActions[0];
+        const trailingConfirmActions = this.filterByType(actions, 'CONFIRM_TARGETS');
+        if (trailingConfirmActions.length > 0) {
+            return trailingConfirmActions[0];
         }
 
         return actions[0] ?? null;

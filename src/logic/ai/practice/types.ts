@@ -7,6 +7,8 @@ export type PracticeHandTargetAction = Extract<EngineAction, { type: 'SELECT_HAN
 export type PracticeTrashTargetAction = Extract<EngineAction, { type: 'SELECT_TRASH_TARGET' }>;
 export type PracticeZoneTargetAction = Extract<EngineAction, { type: 'SELECT_ZONE_TARGET' }>;
 export type PracticeRevealedTargetAction = Extract<EngineAction, { type: 'SELECT_REVEALED_TARGET' }>;
+export type PracticeOptionalAction = Extract<EngineAction, { type: 'RESOLVE_OPTIONAL' }>;
+export type PracticeConfirmTargetsAction = Extract<EngineAction, { type: 'CONFIRM_TARGETS' }>;
 
 export interface PracticeContextBase {
     engine: GameEngine;
@@ -40,6 +42,14 @@ export interface PracticeRevealedTargetContext extends PracticeContextBase {
     actions: PracticeRevealedTargetAction[];
 }
 
+export interface PracticeOptionalContext extends PracticeContextBase {
+    actions: PracticeOptionalAction[];
+}
+
+export interface PracticeConfirmTargetsContext extends PracticeContextBase {
+    actions: PracticeConfirmTargetsAction[];
+}
+
 export interface PracticeProfile {
     id: string;
     label: string;
@@ -49,4 +59,6 @@ export interface PracticeProfile {
     chooseTrashTargetAction?(context: PracticeTrashTargetContext): PracticeTrashTargetAction | null;
     chooseZoneTargetAction?(context: PracticeZoneTargetContext): PracticeZoneTargetAction | null;
     chooseRevealedTargetAction?(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null;
+    chooseOptionalAction?(context: PracticeOptionalContext): PracticeOptionalAction | null;
+    chooseConfirmTargetsAction?(context: PracticeConfirmTargetsContext): PracticeConfirmTargetsAction | null;
 }

@@ -1,10 +1,14 @@
 import { Attribute, Card, CardType, EngineAction, Phase, PlayerState } from '../../../types';
 import {
+    PracticeConfirmTargetsAction,
+    PracticeConfirmTargetsContext,
     PracticeHandTargetAction,
     PracticeHandTargetContext,
     PracticeMainPhaseAction,
     PracticeMainPhaseContext,
     PracticeMulliganContext,
+    PracticeOptionalAction,
+    PracticeOptionalContext,
     PracticeProfile,
     PracticeRevealedTargetAction,
     PracticeRevealedTargetContext,
@@ -27,6 +31,7 @@ const BT05_BORROW_SOURCE_IDS = new Set(['BT05-033', 'ST09-011', 'BT05-038', 'BT0
 const BT05_LOW_COST_REDEPLOY_IDS = new Set(['BT05-033', 'BT05-034', 'BT05-064', 'BT05-066', 'ST09-011']);
 const BT05_FINISHER_IDS = new Set(['BT05-038', 'BT05-039', 'BT05-040', 'BT05-041']);
 const BT05_DISCARD_SAFE_IDS = new Set(['BT05-064', 'BT05-065', 'BT05-066']);
+const BT05_REVEAL_TRASH_PRIORITY_IDS = new Set(['BT05-033', 'ST09-011', 'BT05-038', 'BT05-039', 'BT05-040', 'BT05-064', 'BT05-065', 'BT05-066', 'BT05-081', 'BT05-082', 'BT05-046']);
 const BT05_LEADER_RETURN_OPTION_ID = 'BT05-032-RETURN';
 const BT05_LEADER_DESTROY_OPTION_ID = 'BT05-032-DESTROY';
 
@@ -44,7 +49,17 @@ function getHandCard(actor: PlayerState, action: PlayFieldAction): Card | null {
     return actor.hand[action.handIndex] ?? null;
 }
 
-function getOpponent(engine: PracticeMainPhaseContext['engine'] | PracticeHandTargetContext['engine'] | PracticeTrashTargetContext['engine'], actorPlayerId: string): PlayerState | null {
+function getOpponent(
+    engine:
+    | PracticeMainPhaseContext['engine']
+    | PracticeHandTargetContext['engine']
+    | PracticeTrashTargetContext['engine']
+    | PracticeZoneTargetContext['engine']
+    | PracticeRevealedTargetContext['engine']
+    | PracticeOptionalContext['engine']
+    | PracticeConfirmTargetsContext['engine'],
+    actorPlayerId: string,
+): PlayerState | null {
     return engine.state.players.find(player => player.id !== actorPlayerId) ?? null;
 }
 
@@ -176,6 +191,10 @@ function countLeaderActiveDestroyOutletsInHand(actor: PlayerState): number {
     }, 0);
 }
 
+function countHandCopies(actor: PlayerState, cardKey: string): number {
+    return actor.hand.filter(card => getCardKey(card) === cardKey).length;
+}
+
 function hasValuableReturnTarget(actor: PlayerState): boolean {
     return actor.unitZones.some(zone => {
         const unit = zone.unit;
@@ -221,6 +240,294 @@ function getActionCard(actor: PlayerState, action: PracticeMainPhaseAction): Car
         return getActivateEffectSourceCard(actor, action);
     }
     return null;
+}
+
+function findSourceItemLane(actor: PlayerState, sourceCard: Card | null | undefined): number | null {
+    if (!sourceCard) return null;
+
+    for (let zoneIndex = 0; zoneIndex < actor.unitZones.length; zoneIndex += 1) {
+        if (actor.unitZones[zoneIndex].items.some(item => item === sourceCard || item.id === sourceCard.id)) {
+            return zoneIndex;
+        }
+    }
+
+    return null;
+}
+
+function getUnitStrategicValue(actor: PlayerState, unit: Card | null | undefined): number {
+    if (!unit) return Number.NEGATIVE_INFINITY;
+
+    const cardKey = getCardKey(unit);
+    switch (cardKey) {
+        case 'BT05-041':
+            return 14000;
+        case 'BT05-040':
+            return 11800;
+        case 'BT05-038':
+            return 11200;
+        case 'BT05-039':
+            return 10800;
+        case 'BT05-036':
+            return 9800;
+        case 'BT05-034':
+            return 7600;
+        case 'ST09-011':
+            return actor.hand.length <= 2 ? 6200 : 4800;
+        case 'BT05-033':
+            return 4400;
+        case 'BT05-066':
+            return 4100;
+        case 'BT05-065':
+            return 3900;
+        case 'BT05-064':
+            return 3600;
+        default:
+            return (unit.cost ?? 0) * 1000 + (unit.hit ?? 0) * 300 + (unit.power ?? 0);
+    }
+}
+
+type Bt05DiscardMode = 'UPKEEP' | 'LOOT' | 'GENERIC';
+
+function scoreDiscardCandidate(actor: PlayerState, card: Card, mode: Bt05DiscardMode): number {
+    const cardKey = getCardKey(card);
+    const mixedActive = hasMixedField(getFieldAttributes(actor));
+    const duplicateCount = countHandCopies(actor, cardKey);
+    let score = 0;
+
+    if (mode === 'LOOT') {
+        switch (cardKey) {
+            case 'BT05-039':
+                score += 7600;
+                break;
+            case 'BT05-040':
+                score += 7200;
+                break;
+            case 'BT05-038':
+                score += 6800;
+                break;
+            case 'ST09-011':
+                score += 5600;
+                break;
+            case 'BT05-033':
+                score += 5200;
+                break;
+            case 'BT05-066':
+                score += 4200;
+                break;
+            case 'BT05-065':
+            case 'BT05-064':
+                score += 3500;
+                break;
+            case 'BT05-082':
+            case 'BT05-081':
+            case 'BT05-046':
+                score += 1800;
+                break;
+            case 'BT05-041':
+                score -= 12000;
+                break;
+            case 'BT05-044':
+                score -= 9000;
+                break;
+            case 'BT05-036':
+                score -= 5000;
+                break;
+            case 'BT05-072':
+                score -= 3000;
+                break;
+            default:
+                score += Math.max(0, (3 - (card.cost ?? 0))) * 300;
+                break;
+        }
+    } else {
+        switch (cardKey) {
+            case 'BT05-046':
+                score += 7200;
+                break;
+            case 'BT05-082':
+                score += 6400;
+                break;
+            case 'BT05-081':
+                score += 5600;
+                break;
+            case 'BT05-066':
+                score += 5200;
+                break;
+            case 'BT05-065':
+                score += 5000;
+                break;
+            case 'BT05-064':
+                score += 4600;
+                break;
+            case 'BT05-033':
+                score += 3600;
+                break;
+            case 'ST09-011':
+                score += 3200;
+                break;
+            case 'BT05-072':
+                score += 1500;
+                break;
+            case 'BT05-039':
+                score -= 6500;
+                break;
+            case 'BT05-040':
+            case 'BT05-038':
+                score -= 7800;
+                break;
+            case 'BT05-041':
+                score -= 11000;
+                break;
+            case 'BT05-044':
+                score -= 9000;
+                break;
+            case 'BT05-036':
+                score -= 5200;
+                break;
+            default:
+                score += Math.max(0, 3 - (card.cost ?? 0)) * 250;
+                break;
+        }
+    }
+
+    if (duplicateCount > 1) score += (duplicateCount - 1) * 700;
+    if (!mixedActive && card.attribute !== Attribute.NONE) score += 200;
+    return score;
+}
+
+function scoreRevealTrashCandidate(card: Card): number {
+    const cardKey = getCardKey(card);
+
+    if (!BT05_REVEAL_TRASH_PRIORITY_IDS.has(cardKey)) return -3000;
+    if (cardKey === 'BT05-041') return -12000;
+    if (cardKey === 'BT05-044') return -9500;
+    if (cardKey === 'BT05-036') return -5200;
+    if (cardKey === 'BT05-039') return 7600;
+    if (cardKey === 'BT05-040') return 7100;
+    if (cardKey === 'BT05-038') return 6800;
+    if (cardKey === 'ST09-011') return 5600;
+    if (cardKey === 'BT05-033') return 5300;
+    if (cardKey === 'BT05-066') return 4500;
+    if (cardKey === 'BT05-065' || cardKey === 'BT05-064') return 3900;
+    if (cardKey === 'BT05-082' || cardKey === 'BT05-081' || cardKey === 'BT05-046') return 2500;
+    return 1200;
+}
+
+function scoreBt05041BottomCandidate(card: Card): number {
+    const cardKey = getCardKey(card);
+
+    switch (cardKey) {
+        case 'BT05-044':
+            return -12000;
+        case 'BT05-041':
+            return -9000;
+        case 'BT05-039':
+            return -6000;
+        case 'BT05-040':
+        case 'BT05-038':
+            return -5200;
+        case 'BT05-036':
+            return -3600;
+        case 'BT05-046':
+        case 'BT05-082':
+        case 'BT05-081':
+            return 5800;
+        case 'BT05-066':
+        case 'BT05-065':
+        case 'BT05-064':
+            return 5400;
+        case 'ST09-011':
+        case 'BT05-033':
+            return 4200;
+        default:
+            return !String(card.text ?? '').includes('트리거') ? 2200 : -4000;
+    }
+}
+
+function getBt05041DesiredSelectionCount(actor: PlayerState): number {
+    const positiveCount = actor.trash.filter(card => scoreBt05041BottomCandidate(card) > 0).length;
+    return Math.min(9, Math.max(0, Math.floor(positiveCount / 3) * 3));
+}
+
+function getBestDiscardScoreFromHand(actor: PlayerState, mode: Bt05DiscardMode, excludedHandIndex: number | null = null): number {
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (let handIndex = 0; handIndex < actor.hand.length; handIndex += 1) {
+        if (excludedHandIndex !== null && handIndex === excludedHandIndex) continue;
+        const card = actor.hand[handIndex];
+        if (!card) continue;
+        bestScore = Math.max(bestScore, scoreDiscardCandidate(actor, card, mode));
+    }
+
+    return bestScore;
+}
+
+function getBestSelectableHandAction(
+    context: PracticeHandTargetContext,
+    scoreCard: (card: Card) => number,
+): { action: PracticeHandTargetAction; score: number } | null {
+    const pendingSelectedTargets = context.engine.state.pendingEffect?.selectedTargets ?? [];
+    let bestAction: PracticeHandTargetAction | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (const action of context.actions) {
+        const targetPlayer = context.engine.state.players.find(player => player.id === action.targetPlayerId);
+        const card = targetPlayer?.hand[action.handIndex];
+        if (!card || pendingSelectedTargets.includes(card)) continue;
+
+        const score = scoreCard(card);
+        if (score > bestScore) {
+            bestAction = action;
+            bestScore = score;
+        }
+    }
+
+    return bestAction ? { action: bestAction, score: bestScore } : null;
+}
+
+function getBestSelectableTrashAction(
+    context: PracticeTrashTargetContext,
+    scoreCard: (card: Card) => number,
+): { action: PracticeTrashTargetAction; score: number } | null {
+    const pendingSelectedTargets = context.engine.state.pendingEffect?.selectedTargets ?? [];
+    let bestAction: PracticeTrashTargetAction | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (const action of context.actions) {
+        const targetPlayer = context.engine.state.players.find(player => player.id === action.targetPlayerId);
+        const card = targetPlayer?.trash[action.trashIndex];
+        if (!card || pendingSelectedTargets.includes(card)) continue;
+
+        const score = scoreCard(card);
+        if (score > bestScore) {
+            bestAction = action;
+            bestScore = score;
+        }
+    }
+
+    return bestAction ? { action: bestAction, score: bestScore } : null;
+}
+
+function getBestSelectableRevealedAction(
+    context: PracticeRevealedTargetContext,
+    scoreCard: (card: Card) => number,
+): { action: PracticeRevealedTargetAction; score: number } | null {
+    const pendingSelectedTargets = context.engine.state.pendingEffect?.selectedTargets ?? [];
+    let bestAction: PracticeRevealedTargetAction | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (const action of context.actions) {
+        const card = context.engine.state.revealedCards[action.revealedIndex];
+        if (!card || pendingSelectedTargets.includes(card)) continue;
+
+        const score = scoreCard(card);
+        if (score > bestScore) {
+            bestAction = action;
+            bestScore = score;
+        }
+    }
+
+    return bestAction ? { action: bestAction, score: bestScore } : null;
 }
 
 function isBt05LeaderActivateAction(actor: PlayerState, action: PracticeMainPhaseAction): boolean {
@@ -281,7 +588,7 @@ function getSecondBestBorrowTargetScore(actor: PlayerState, opponent: PlayerStat
     return scores[1] ?? Number.NEGATIVE_INFINITY;
 }
 
-function scoreBt05043DiscardTarget(actor: PlayerState, opponent: PlayerState | null, card: Card): number {
+function scoreBt05043DiscardTarget(opponent: PlayerState | null, card: Card): number {
     const cardKey = getCardKey(card);
     const canDestroyAnyUnit = canBt05043DestroyAnyUnit(opponent, card);
     const highestDestroyableCost = getHighestDestroyableOpponentCost(opponent, card);
@@ -552,6 +859,62 @@ function chooseBestOpeningAction(context: PracticeMainPhaseContext): PracticeMai
     return bestAction;
 }
 
+function scoreMidgamePlayItemAction(
+    context: PracticeMainPhaseContext,
+    action: Extract<PracticeMainPhaseAction, { type: 'PLAY_ITEM' }>,
+    card: Card,
+): number {
+    const zone = context.actor.unitZones[action.zoneIndex];
+    const unit = zone?.unit;
+    if (!zone || !unit) return Number.NEGATIVE_INFINITY;
+
+    const unitValue = getUnitStrategicValue(context.actor, unit);
+    const existingItemPenalty = zone.items.length * 2200;
+    const attributesBefore = getFieldAttributes(context.actor);
+    const mixedBefore = hasMixedField(attributesBefore);
+    const attributesAfter = new Set(attributesBefore);
+    if (card.attribute !== Attribute.NONE) {
+        attributesAfter.add(card.attribute);
+    }
+    const mixedAfter = hasMixedField(attributesAfter);
+
+    switch (getCardKey(card)) {
+        case 'BT05-081': {
+            if (unitValue < 4200 && !mixedAfter) return Number.NEGATIVE_INFINITY;
+            let score = 3200 + Math.floor(unitValue * 0.55) - existingItemPenalty;
+            if (!mixedBefore && mixedAfter) score += 2400;
+            if (mixedAfter) score += 1400;
+            return score;
+        }
+        case 'BT05-082': {
+            const bestLootScore = getBestDiscardScoreFromHand(context.actor, 'LOOT', action.handIndex);
+            if (bestLootScore < 2800) return Number.NEGATIVE_INFINITY;
+            let score = 2600 + Math.floor(unitValue * 0.45) - existingItemPenalty + Math.min(3200, Math.floor(bestLootScore * 0.45));
+            if (!mixedBefore && mixedAfter) score += 2000;
+            return score;
+        }
+        case 'BT05-046': {
+            const bestUpkeepScore = getBestDiscardScoreFromHand(context.actor, 'UPKEEP', action.handIndex);
+            if (bestUpkeepScore < 2200 && unitValue < 9000) return Number.NEGATIVE_INFINITY;
+            return 2400 + Math.floor(unitValue * 0.45) - existingItemPenalty + Math.min(3000, Math.floor(bestUpkeepScore * 0.5));
+        }
+        default:
+            return Number.NEGATIVE_INFINITY;
+    }
+}
+
+function scoreMidgameActivateEffectAction(context: PracticeMainPhaseContext, card: Card): number {
+    if (getCardKey(card) !== 'BT05-082') return Number.NEGATIVE_INFINITY;
+
+    const bestLootScore = getBestDiscardScoreFromHand(context.actor, 'LOOT');
+    if (bestLootScore < 3000) return Number.NEGATIVE_INFINITY;
+
+    const sourceLane = findSourceItemLane(context.actor, card);
+    const sourceUnit = sourceLane !== null ? context.actor.unitZones[sourceLane]?.unit ?? null : null;
+    const unitValue = Math.max(0, getUnitStrategicValue(context.actor, sourceUnit));
+    return 3600 + bestLootScore + Math.floor(unitValue * 0.1);
+}
+
 function scoreMidgameAction(context: PracticeMainPhaseContext, action: PracticeMainPhaseAction): number {
     const card = getActionCard(context.actor, action);
     const opponent = getOpponent(context.engine, context.actorPlayerId);
@@ -574,7 +937,7 @@ function scoreMidgameAction(context: PracticeMainPhaseContext, action: PracticeM
         if (cardKey === 'BT05-043') {
             const bestDiscardScore = context.actor.hand
                 .filter(handCard => handCard.type === CardType.UNIT)
-                .map(handCard => scoreBt05043DiscardTarget(context.actor, opponent, handCard))
+                .map(handCard => scoreBt05043DiscardTarget(opponent, handCard))
                 .sort((a, b) => b - a)[0] ?? Number.NEGATIVE_INFINITY;
             if (bestDiscardScore < 2500) return Number.NEGATIVE_INFINITY;
             return 7200 + bestDiscardScore;
@@ -593,6 +956,14 @@ function scoreMidgameAction(context: PracticeMainPhaseContext, action: PracticeM
             if (bestBorrowScore < 3000) return Number.NEGATIVE_INFINITY;
             return 8200 + bestBorrowScore + (mixedActive && emptyZoneCount > 0 && lowCostRedeployCount > 0 ? 2200 : 0);
         }
+    }
+
+    if (action.type === 'PLAY_ITEM' && card) {
+        return scoreMidgamePlayItemAction(context, action, card);
+    }
+
+    if (action.type === 'ACTIVATE_EFFECT' && card && !isBt05LeaderActivateAction(context.actor, action)) {
+        return scoreMidgameActivateEffectAction(context, card);
     }
 
     if (isBt05LeaderActivateAction(context.actor, action)) {
@@ -624,6 +995,14 @@ function chooseBestMidgameAction(context: PracticeMainPhaseContext): PracticeMai
             return cardKey === 'BT05-036' || cardKey === 'BT05-039';
         }
 
+        if (action.type === 'PLAY_ITEM') {
+            return cardKey === 'BT05-046' || cardKey === 'BT05-081' || cardKey === 'BT05-082';
+        }
+
+        if (action.type === 'ACTIVATE_EFFECT') {
+            return cardKey === 'BT05-082' || isBt05LeaderActivateAction(context.actor, action);
+        }
+
         if (isBt05LeaderActivateAction(context.actor, action)) {
             return true;
         }
@@ -646,12 +1025,11 @@ function chooseBestMidgameAction(context: PracticeMainPhaseContext): PracticeMai
 
     if (bestScore >= 9000) return bestAction;
 
-    const hasLeaderAction = context.actions.some(action => isBt05LeaderActivateAction(context.actor, action));
-    const hasOtherProgressAction = context.actions.some(action => {
+    const hasUnhandledProgressAction = context.actions.some(action => {
         if (action.type === 'NEXT_PHASE') return false;
-        return !isBt05LeaderActivateAction(context.actor, action);
+        return !handledActions.includes(action);
     });
-    if (hasLeaderAction && !hasOtherProgressAction) {
+    if (!hasUnhandledProgressAction) {
         return context.actions.find((action): action is PracticeMainPhaseAction => action.type === 'NEXT_PHASE') ?? null;
     }
 
@@ -690,69 +1068,137 @@ function isBorrowTrashSelection(context: PracticeTrashTargetContext): boolean {
 
 function chooseBt05BorrowTrashAction(context: PracticeTrashTargetContext): PracticeTrashTargetAction | null {
     const opponent = getOpponent(context.engine, context.actorPlayerId);
-
-    let bestAction: PracticeTrashTargetAction | null = null;
-    let bestScore = Number.NEGATIVE_INFINITY;
-
-    for (const action of context.actions) {
-        const targetPlayer = context.engine.state.players.find(player => player.id === action.targetPlayerId);
-        const card = targetPlayer?.trash[action.trashIndex];
-        if (!card) continue;
-
-        const score = scoreBorrowTarget(context.actor, opponent, card);
-        if (score > bestScore) {
-            bestAction = action;
-            bestScore = score;
-        }
-    }
-
-    return bestScore > Number.NEGATIVE_INFINITY ? bestAction : null;
+    return getBestSelectableTrashAction(context, card => scoreBorrowTarget(context.actor, opponent, card))?.action ?? null;
 }
 
 function chooseBt05RedeployTrashAction(context: PracticeTrashTargetContext): PracticeTrashTargetAction | null {
     const pending = context.engine.state.pendingEffect;
     if (pending?.actionType !== 'BT05_STORM_SELECT_TRASH_UNIT') return null;
     const opponent = getOpponent(context.engine, context.actorPlayerId);
+    return getBestSelectableTrashAction(context, card => scoreLowCostRedeployTarget(context.actor, opponent, card))?.action ?? null;
+}
 
-    let bestAction: PracticeTrashTargetAction | null = null;
-    let bestScore = Number.NEGATIVE_INFINITY;
+function chooseBt05041BottomTrashAction(context: PracticeTrashTargetContext): PracticeTrashTargetAction | null {
+    const pending = context.engine.state.pendingEffect;
+    if (pending?.actionType !== 'BT05_041_SELECT_TRASH') return null;
 
-    for (const action of context.actions) {
-        const targetPlayer = context.engine.state.players.find(player => player.id === action.targetPlayerId);
-        const card = targetPlayer?.trash[action.trashIndex];
-        if (!card) continue;
+    const bestSelection = getBestSelectableTrashAction(context, scoreBt05041BottomCandidate);
+    if (!bestSelection || bestSelection.score <= 0) return null;
+    return bestSelection.action;
+}
 
-        const score = scoreLowCostRedeployTarget(context.actor, opponent, card);
-        if (score > bestScore) {
-            bestAction = action;
-            bestScore = score;
-        }
-    }
-
-    return bestScore > Number.NEGATIVE_INFINITY ? bestAction : null;
+function chooseBt05DiscardByMode(context: PracticeHandTargetContext, mode: Bt05DiscardMode): PracticeHandTargetAction | null {
+    return getBestSelectableHandAction(context, card => scoreDiscardCandidate(context.actor, card, mode))?.action ?? null;
 }
 
 function chooseBt05043DiscardAction(context: PracticeHandTargetContext): PracticeHandTargetAction | null {
-    const pending = context.engine.state.pendingEffect;
-    if (pending?.actionType !== 'BT05_043_SELECT_HAND_UNIT') return null;
     const opponent = getOpponent(context.engine, context.actorPlayerId);
+    return getBestSelectableHandAction(context, card => scoreBt05043DiscardTarget(opponent, card))?.action ?? null;
+}
 
-    let bestAction: PracticeHandTargetAction | null = null;
-    let bestScore = Number.NEGATIVE_INFINITY;
+function chooseBt05HandTargetAction(context: PracticeHandTargetContext): PracticeHandTargetAction | null {
+    const pending = context.engine.state.pendingEffect;
+    if (!pending) return null;
 
-    for (const action of context.actions) {
-        const targetPlayer = context.engine.state.players.find(player => player.id === action.targetPlayerId);
-        const card = targetPlayer?.hand[action.handIndex];
-        if (!card) continue;
-
-        const score = scoreBt05043DiscardTarget(context.actor, opponent, card);
-        if (score > bestScore) {
-            bestAction = action;
-            bestScore = score;
-        }
+    if (pending.actionType === 'BT05_043_SELECT_HAND_UNIT') {
+        return chooseBt05043DiscardAction(context);
     }
 
-    return bestScore > Number.NEGATIVE_INFINITY ? bestAction : null;
+    if (pending.actionType === 'BT05_046_SELECT_HAND') {
+        return chooseBt05DiscardByMode(context, 'UPKEEP');
+    }
+
+    if (pending.actionType === 'DISCARD_FROM_HAND_AFTER_DRAW') {
+        return chooseBt05DiscardByMode(context, 'LOOT');
+    }
+
+    if (pending.actionType === 'DISCARD' && getCardKey(pending.sourceCard) === 'BT05-040') {
+        return chooseBt05DiscardByMode(context, 'GENERIC');
+    }
+
+    return null;
+}
+
+function chooseBt05072RevealTrashAction(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null {
+    const pending = context.engine.state.pendingEffect;
+    if (pending?.actionType !== 'BT05_072_SELECT_REVEALED') return null;
+
+    const bestSelection = getBestSelectableRevealedAction(context, scoreRevealTrashCandidate);
+    if (!bestSelection || bestSelection.score <= 0) return null;
+    return bestSelection.action;
+}
+
+function chooseBt05OptionalAction(context: PracticeOptionalContext): PracticeOptionalAction | null {
+    const pending = context.engine.state.pendingEffect;
+    if (pending?.actionType !== 'BT05_065_ENTRY_MILL3_AND_RECOVER_DAMAGE') return null;
+
+    const shouldConfirm = context.actor.damage.length > 0 && context.actor.deck.length > 3;
+    return context.actions.find(action => action.confirm === shouldConfirm) ?? null;
+}
+
+function chooseBt05ConfirmTargetsAction(context: PracticeConfirmTargetsContext): PracticeConfirmTargetsAction | null {
+    const confirmAction = context.actions[0] ?? null;
+    if (!confirmAction) return null;
+
+    const pending = context.engine.state.pendingEffect;
+    if (!pending) return null;
+
+    if (pending.actionType === 'BT05_046_SELECT_HAND') {
+        const selectedCount = pending.selectedTargets?.length ?? 0;
+        if (selectedCount > 0) return null;
+
+        const legalActions = context.engine.getLegalActions(context.actorPlayerId);
+        const handActions = legalActions.filter((action): action is PracticeHandTargetAction => action.type === 'SELECT_HAND_TARGET');
+        const handContext: PracticeHandTargetContext = {
+            engine: context.engine,
+            actorPlayerId: context.actorPlayerId,
+            actor: context.actor,
+            actions: handActions,
+        };
+        const bestDiscardAction = getBestSelectableHandAction(handContext, card => scoreDiscardCandidate(context.actor, card, 'UPKEEP'));
+        const bestDiscardScore = bestDiscardAction?.score ?? Number.NEGATIVE_INFINITY;
+        const sourceLane = findSourceItemLane(context.actor, pending.sourceCard ?? null);
+        const sourceUnit = sourceLane !== null ? context.actor.unitZones[sourceLane]?.unit ?? null : null;
+        const sourceUnitValue = Math.max(0, getUnitStrategicValue(context.actor, sourceUnit));
+
+        if (!sourceUnit || sourceUnitValue <= 4500) return confirmAction;
+        if (bestDiscardScore < 2600 && sourceUnitValue < 9000) return confirmAction;
+        if (bestDiscardScore < 1200 && context.actor.hand.length <= 1) return confirmAction;
+        return null;
+    }
+
+    if (pending.actionType === 'BT05_072_SELECT_REVEALED') {
+        const legalActions = context.engine.getLegalActions(context.actorPlayerId);
+        const revealedActions = legalActions.filter((action): action is PracticeRevealedTargetAction => action.type === 'SELECT_REVEALED_TARGET');
+        const revealedContext: PracticeRevealedTargetContext = {
+            engine: context.engine,
+            actorPlayerId: context.actorPlayerId,
+            actor: context.actor,
+            actions: revealedActions,
+        };
+        const bestSelection = getBestSelectableRevealedAction(revealedContext, scoreRevealTrashCandidate);
+        if (!bestSelection || bestSelection.score <= 0) return confirmAction;
+        return null;
+    }
+
+    if (pending.actionType === 'BT05_041_SELECT_TRASH') {
+        const desiredSelectionCount = getBt05041DesiredSelectionCount(context.actor);
+        const selectedCount = pending.selectedTargets?.length ?? 0;
+        if (selectedCount >= desiredSelectionCount) return confirmAction;
+
+        const legalActions = context.engine.getLegalActions(context.actorPlayerId);
+        const trashActions = legalActions.filter((action): action is PracticeTrashTargetAction => action.type === 'SELECT_TRASH_TARGET');
+        const trashContext: PracticeTrashTargetContext = {
+            engine: context.engine,
+            actorPlayerId: context.actorPlayerId,
+            actor: context.actor,
+            actions: trashActions,
+        };
+        const bestSelection = getBestSelectableTrashAction(trashContext, scoreBt05041BottomCandidate);
+        if (desiredSelectionCount <= 0 || !bestSelection || bestSelection.score <= 0) return confirmAction;
+    }
+
+    return null;
 }
 
 function chooseBt05LeaderOptionAction(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null {
@@ -816,14 +1262,14 @@ export const bt05UnluckyBunnyNikkiOpeningProfile: PracticeProfile = {
     },
     chooseHandTargetAction(context: PracticeHandTargetContext): PracticeHandTargetAction | null {
         if (!isBt05NikkiLeader(context.actor)) return null;
-        return chooseBt05043DiscardAction(context);
+        return chooseBt05HandTargetAction(context);
     },
     chooseTrashTargetAction(context: PracticeTrashTargetContext): PracticeTrashTargetAction | null {
         if (!isBt05NikkiLeader(context.actor)) return null;
         if (isBorrowTrashSelection(context)) {
             return chooseBt05BorrowTrashAction(context);
         }
-        return chooseBt05RedeployTrashAction(context);
+        return chooseBt05041BottomTrashAction(context) ?? chooseBt05RedeployTrashAction(context);
     },
     chooseZoneTargetAction(context: PracticeZoneTargetContext): PracticeZoneTargetAction | null {
         if (!isBt05NikkiLeader(context.actor)) return null;
@@ -831,6 +1277,14 @@ export const bt05UnluckyBunnyNikkiOpeningProfile: PracticeProfile = {
     },
     chooseRevealedTargetAction(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null {
         if (!isBt05NikkiLeader(context.actor)) return null;
-        return chooseBt05LeaderOptionAction(context);
+        return chooseBt05LeaderOptionAction(context) ?? chooseBt05072RevealTrashAction(context);
+    },
+    chooseOptionalAction(context: PracticeOptionalContext): PracticeOptionalAction | null {
+        if (!isBt05NikkiLeader(context.actor)) return null;
+        return chooseBt05OptionalAction(context);
+    },
+    chooseConfirmTargetsAction(context: PracticeConfirmTargetsContext): PracticeConfirmTargetsAction | null {
+        if (!isBt05NikkiLeader(context.actor)) return null;
+        return chooseBt05ConfirmTargetsAction(context);
     },
 };

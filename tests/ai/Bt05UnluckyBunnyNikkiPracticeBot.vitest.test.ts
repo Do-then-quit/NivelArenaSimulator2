@@ -54,6 +54,36 @@ function createPracticeBot(): PracticeBot {
     return new PracticeBot('BT05Practice', bt05UnluckyBunnyNikkiOpeningProfile);
 }
 
+function setMainPhase(engine: GameEngine, actorPlayerId: string): void {
+    engine.state.turnPlayerIndex = engine.state.players.findIndex(player => player.id === actorPlayerId);
+    engine.state.phase = Phase.MAIN;
+    engine.state.interactionMode = 'NORMAL';
+    engine.state.interactionOwnerPlayerId = actorPlayerId;
+    engine.state.pendingEffect = null;
+    engine.setPendingRuntime(null);
+}
+
+function setTargetSelection(engine: GameEngine, actorPlayerId: string, pendingEffect: Record<string, unknown>): void {
+    const actor = engine.state.players.find(player => player.id === actorPlayerId)!;
+    const opponent = engine.state.players.find(player => player.id !== actorPlayerId)!;
+    engine.state.interactionMode = 'SELECT_TARGET';
+    engine.state.interactionOwnerPlayerId = actorPlayerId;
+    engine.state.pendingEffect = pendingEffect as any;
+    engine.setPendingRuntime({
+        player: actor,
+        opponent,
+        sourceCard: pendingEffect.sourceCard as Card,
+        machine: engine,
+    }, null);
+}
+
+function setOptionalSelection(engine: GameEngine, actorPlayerId: string, pendingEffect: Record<string, unknown>): void {
+    engine.state.interactionMode = 'SELECT_OPTIONAL';
+    engine.state.interactionOwnerPlayerId = actorPlayerId;
+    engine.state.pendingEffect = pendingEffect as any;
+    engine.setPendingRuntime(null);
+}
+
 describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
     it('keeps a hand with an immediate storm-plus-lightning opening plan', () => {
         const engine = createEngine({ enableMulligan: true, seed: 2026031201 });
@@ -442,5 +472,231 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
         if (targetAction?.type === 'SELECT_ZONE_TARGET') {
             expect(targetAction.zoneIndex).toBe(0);
         }
+    });
+
+    it('declines BT05-065 optional entry when there is no damage card to recover', () => {
+        const engine = createEngine({ seed: 2026031217 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        p1.damage = [];
+        p1.deck = [getCard('BT05-033'), getCard('BT05-064'), getCard('BT05-066'), getCard('ST09-011')];
+        setOptionalSelection(engine, p1.id, {
+            sourceCard: getCard('BT05-065'),
+            sourcePlayerId: p1.id,
+            controllerPlayerId: p1.id,
+            actionType: 'BT05_065_ENTRY_MILL3_AND_RECOVER_DAMAGE',
+            actionValue: { stage: 'OPTIONAL' },
+            effectDescription: 'BT05-065 optional mill 3 and recover damage',
+        });
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('RESOLVE_OPTIONAL');
+        if (action?.type === 'RESOLVE_OPTIONAL') {
+            expect(action.confirm).toBe(false);
+        }
+    });
+
+    it('discards BT05-039 before BT05-041 when BT05-082 resolves draw-then-discard', () => {
+        const engine = createEngine({ seed: 2026031218 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        p1.hand = [getCard('BT05-041'), getCard('BT05-039')];
+        setTargetSelection(engine, p1.id, {
+            sourceCard: getCard('BT05-082'),
+            sourcePlayerId: p1.id,
+            controllerPlayerId: p1.id,
+            actionType: 'DISCARD_FROM_HAND_AFTER_DRAW',
+            actionValue: { discardCount: 1 },
+            effectDescription: 'Discard 1 card after drawing',
+            validTargets: 'MY_HAND',
+            targetSchema: {
+                scope: 'MY_HAND',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        });
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('SELECT_HAND_TARGET');
+        if (action?.type === 'SELECT_HAND_TARGET') {
+            expect(getCardKey(p1.hand[action.handIndex])).toBe('BT05-039');
+        }
+    });
+
+    it('lets a low-value BT05-064 die instead of pitching BT05-041 to BT05-046 upkeep', () => {
+        const engine = createEngine({ seed: 2026031219 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+        const equipped046 = getCard('BT05-046');
+
+        p1.unitZones[0].unit = getCard('BT05-064');
+        p1.unitZones[0].items = [equipped046];
+        p1.hand = [getCard('BT05-041')];
+        setTargetSelection(engine, p1.id, {
+            sourceCard: equipped046,
+            sourcePlayerId: p1.id,
+            controllerPlayerId: p1.id,
+            actionType: 'BT05_046_SELECT_HAND',
+            actionValue: { allowPartialSelection: true, minSelection: 0, maxSelection: 1 },
+            effectDescription: 'Discard 1 hand card or destroy equipped unit',
+            validTargets: 'MY_HAND',
+            targetSchema: {
+                scope: 'MY_HAND',
+                type: 'CARD',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        });
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('CONFIRM_TARGETS');
+    });
+
+    it('trashes only the positive BT05-072 reveal target and then confirms', () => {
+        const engine = createEngine({ seed: 2026031220 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.revealedCards = [getCard('BT05-041'), getCard('BT05-039'), getCard('ST01-002')];
+        setTargetSelection(engine, p1.id, {
+            sourceCard: getCard('BT05-072'),
+            sourcePlayerId: p1.id,
+            controllerPlayerId: p1.id,
+            actionType: 'BT05_072_SELECT_REVEALED',
+            actionValue: { allowPartialSelection: true, minSelection: 0, maxSelection: 3 },
+            effectDescription: 'Select revealed cards to trash',
+            validTargets: 'REVEALED',
+            targetSchema: {
+                scope: 'REVEALED',
+                type: 'CARD',
+                count: 3,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        });
+
+        const firstAction = bot.chooseAction(engine, p1.id);
+        expect(firstAction?.type).toBe('SELECT_REVEALED_TARGET');
+        if (firstAction?.type === 'SELECT_REVEALED_TARGET') {
+            expect(getCardKey(engine.state.revealedCards[firstAction.revealedIndex])).toBe('BT05-039');
+        }
+
+        engine.state.pendingEffect = {
+            ...engine.state.pendingEffect!,
+            selectedTargets: [engine.state.revealedCards[1]],
+        };
+        const confirmAction = bot.chooseAction(engine, p1.id);
+
+        expect(confirmAction).not.toBeNull();
+        expect(confirmAction?.type).toBe('CONFIRM_TARGETS');
+    });
+
+    it('bottoms filler trash for BT05-041 and confirms once three cards are lined up', () => {
+        const engine = createEngine({ seed: 2026031221 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        p1.trash = [getCard('BT05-046'), getCard('BT05-064'), getCard('BT05-065'), getCard('BT05-041')];
+        setTargetSelection(engine, p1.id, {
+            sourceCard: getCard('BT05-041'),
+            sourcePlayerId: p1.id,
+            controllerPlayerId: p1.id,
+            actionType: 'BT05_041_SELECT_TRASH',
+            actionValue: { allowPartialSelection: true, minSelection: 0, maxSelection: 4 },
+            effectDescription: 'Select trash cards to bottom',
+            validTargets: 'MY_TRASH',
+            targetSchema: {
+                scope: 'MY_TRASH',
+                type: 'CARD',
+                count: 4,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        });
+
+        const firstAction = bot.chooseAction(engine, p1.id);
+        expect(firstAction?.type).toBe('SELECT_TRASH_TARGET');
+        if (firstAction?.type === 'SELECT_TRASH_TARGET') {
+            expect(getCardKey(p1.trash[firstAction.trashIndex])).toBe('BT05-046');
+        }
+
+        engine.state.pendingEffect = {
+            ...engine.state.pendingEffect!,
+            selectedTargets: [p1.trash[0], p1.trash[1], p1.trash[2]],
+        };
+        const confirmAction = bot.chooseAction(engine, p1.id);
+
+        expect(confirmAction).not.toBeNull();
+        expect(confirmAction?.type).toBe('CONFIRM_TARGETS');
+    });
+
+    it('equips BT05-081 onto BT05-041 in midgame when it is the cleanest pressure upgrade', () => {
+        const engine = createEngine({ seed: 2026031222 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 9;
+        p1.unitZones[0].unit = getCard('BT05-041');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-081')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('PLAY_ITEM');
+        if (action?.type === 'PLAY_ITEM') {
+            expect(getCardKey(p1.hand[action.handIndex])).toBe('BT05-081');
+            expect(action.zoneIndex).toBe(0);
+        }
+    });
+
+    it('skips BT05-082 active in midgame when hand quality is already too concentrated', () => {
+        const engine = createEngine({ seed: 2026031223 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+        const lootItem = getCard('BT05-082');
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 5;
+        p1.unitZones[0].unit = getCard('BT05-041');
+        p1.unitZones[0].items = [lootItem];
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-041')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
+    it('uses BT05-082 active in midgame when hand has a clear loot discard target', () => {
+        const engine = createEngine({ seed: 2026031224 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+        const lootItem = getCard('BT05-082');
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 5;
+        p1.unitZones[0].unit = getCard('BT05-041');
+        p1.unitZones[0].items = [lootItem];
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-041'), getCard('BT05-039')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('ACTIVATE_EFFECT');
     });
 });
