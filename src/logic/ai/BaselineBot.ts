@@ -1,5 +1,6 @@
 import { GameEngine } from '../GameEngine';
 import { Card, CardType, EngineAction, Phase, PlayerState } from '../types';
+import { PracticeProfile } from './practice/types';
 
 type BlockAction = Extract<EngineAction, { type: 'RESOLVE_BLOCK' }>;
 type MulliganAction = Extract<EngineAction, { type: 'RESOLVE_MULLIGAN' }>;
@@ -38,11 +39,17 @@ export interface BaselineSelfPlayResult {
     terminationReason: BaselineTerminationReason;
 }
 
+export interface BaselineBotOptions {
+    practiceProfile?: PracticeProfile;
+}
+
 export class BaselineBot {
     readonly name: string;
+    protected readonly practiceProfile?: PracticeProfile;
 
-    constructor(name: string = 'BaselineBot') {
+    constructor(name: string = 'BaselineBot', options: BaselineBotOptions = {}) {
         this.name = name;
+        this.practiceProfile = options.practiceProfile;
     }
 
     public chooseAction(engine: GameEngine, actorPlayerId?: string): EngineAction | null {
@@ -73,6 +80,24 @@ export class BaselineBot {
         }
 
         if (engine.state.phase === Phase.MAIN) {
+            const actor = this.getPlayerById(engine, actorPlayerId);
+            if (actor && this.practiceProfile?.chooseMainPhaseAction) {
+                const practiceActions = actions.filter((action): action is Extract<EngineAction, { type: 'PLAY_UNIT' | 'PLAY_ITEM' | 'PLAY_SKILL' | 'ACTIVATE_EFFECT' | 'NEXT_PHASE' }> => (
+                    action.type === 'PLAY_UNIT'
+                    || action.type === 'PLAY_ITEM'
+                    || action.type === 'PLAY_SKILL'
+                    || action.type === 'ACTIVATE_EFFECT'
+                    || action.type === 'NEXT_PHASE'
+                ));
+                const practiceAction = this.practiceProfile.chooseMainPhaseAction({
+                    engine,
+                    actorPlayerId,
+                    actor,
+                    actions: practiceActions,
+                });
+                if (practiceAction) return practiceAction;
+            }
+
             return this.pickPlayUnitAction(engine, actorPlayerId, actions)
                 ?? this.pickPlayItemAction(engine, actorPlayerId, actions)
                 ?? this.pickPlaySkillAction(engine, actorPlayerId, actions)
@@ -145,6 +170,17 @@ export class BaselineBot {
 
         const actor = this.getPlayerById(engine, actorPlayerId);
         if (!actor || actor.hand.length === 0) return keepAction;
+        if (this.practiceProfile?.chooseMulliganAction) {
+            const practiceAction = this.practiceProfile.chooseMulliganAction({
+                engine,
+                actorPlayerId,
+                actor,
+                actions,
+                keepAction,
+                redrawAction,
+            });
+            if (practiceAction) return practiceAction;
+        }
 
         const unitCount = actor.hand.filter(card => card.type === CardType.UNIT).length;
         const lowCostCount = actor.hand.filter(card => card.cost <= 2).length;

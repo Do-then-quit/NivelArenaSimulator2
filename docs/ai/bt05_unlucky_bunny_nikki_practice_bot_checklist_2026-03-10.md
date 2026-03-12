@@ -52,6 +52,7 @@
 - [x] leader/item `ACTIVATE_EFFECT`에서 baseline/scorer가 크래시 나지 않도록 보정
 - [x] fixed matchup bench 스모크가 새 덱 미러에서 실행되도록 연결
 - [x] baseline 또는 practice profile이 턴 1 leader active 반복 루프 없이 실제 게임을 진행
+- [x] `practice-bt05-nikki-open-v1` 프로필이 BT05 오프닝 멀리건/전개 휴리스틱을 가진 상태로 연결
 
 ## 활성 이정표
 
@@ -90,13 +91,30 @@
 
 ## M2. 오프닝 플랜 이해
 
-- [ ] 멀리건 우선순위가 문서화되고 bot 정책에 반영된다.
-- [ ] 1코스트, 2코스트, 4코스트로 이어지는 초반 곡선 전개 우선순위가 반영된다.
+- [x] 멀리건 우선순위가 문서화되고 bot 정책에 반영된다.
+- [x] 1코스트, 2코스트, 4코스트로 이어지는 초반 곡선 전개 우선순위가 반영된다.
 - [ ] 초반에 손패/트래시 리소스를 무의미하게 소모하지 않는다.
-- [ ] "배치 가능한 유닛을 안 내고 패스" 같은 명백한 저품질 라인이 줄어든다.
+- [x] "배치 가능한 유닛을 안 내고 패스" 같은 명백한 저품질 라인이 줄어든다.
 
 우선 점검 카드:
 `BT05-033`, `BT05-064`, `ST09-011`, `BT05-034`, `BT05-066`, `BT05-036`
+
+검증 메모 (2026-03-12, M2 part 1):
+- `src/logic/ai/practice/deckProfiles/bt05UnluckyBunnyNikki.ts`에 BT05 오프닝 전용 멀리건/메인 페이즈 휴리스틱 추가
+- `tests/ai/Bt05UnluckyBunnyNikkiPracticeBot.vitest.test.ts`로 아래 시나리오 보호
+  - 좋은 혼합 오프닝 핸드 keep
+  - 나쁜 고코스트 핸드 redraw
+  - 빈 필드에서 `BT05-064` 1코 선전개
+  - 혼합 조건을 바로 켜는 `BT05-081` 아이템 우선
+  - 혼합 상태 이후 `BT05-036` 4코 엔진 우선
+- `AI_FIXED_BENCH_MATCHUP=fm-c-bt05-unlucky-bunny-nikki-mirror ... AI_FIXED_BENCH_P1_BOT=practice-bt05-nikki-open-v1 AI_FIXED_BENCH_P2_BOT=practice-bt05-nikki-open-v1 npm run ai:fixed:bench`
+  결과:
+  - combined `4`게임
+  - `winner=4`
+  - `max_steps=0`
+  - `no_action=0`
+  - `invalid_action=0`
+  - avgTurns `12`
 
 ## M3. 덱 핵심 플랜 이해
 
@@ -123,10 +141,10 @@
 
 ## M5. 덱 전용 practice profile 분리
 
-- [ ] 범용 baseline 패치가 아니라 별도 deck-aware profile로 분리된다.
+- [x] 범용 baseline 패치가 아니라 별도 deck-aware profile로 분리된다.
 - [ ] `strong-v3` 기반 또는 동급의 practice profile ID가 정의된다.
-- [ ] CLI 벤치 레지스트리와 UI/replay 레지스트리에 같은 프로필이 등록된다.
-- [ ] 덱 전용 정책이 공통 엔진과 분리된 파일에 정리된다.
+- [x] CLI 벤치 레지스트리와 UI/replay 레지스트리에 같은 프로필이 등록된다.
+- [x] 덱 전용 정책이 공통 엔진과 분리된 파일에 정리된다.
 
 권장 파일 방향:
 - `src/logic/ai/practice/PracticeBot.ts`
@@ -155,15 +173,15 @@
 - [x] 미러 매치업 스모크 연결
 - [x] 턴 1 고착 재현 테스트 작성
 - [x] 턴 1 고착 수정
-- [ ] 멀리건 규칙 추가
-- [ ] 초반 전개 규칙 추가
+- [x] 멀리건 규칙 추가
+- [x] 초반 전개 규칙 추가
 - [ ] 트래시/엑시트 차용 우선순위 추가
 - [ ] 코스트 지불 우선순위 추가
 - [ ] 타겟 선택 우선순위 추가
 - [ ] 아이템 운용 규칙 추가
 - [ ] 리플레이 20게임 수동 검수
 - [ ] 교차 매치업 1종 추가
-- [ ] deck-aware practice profile 분리
+- [x] deck-aware practice profile 분리
 - [ ] 수용 게이트 통과
 
 ## 매 구현 때 공통으로 체크할 실행 절차
@@ -188,6 +206,8 @@ AI_FIXED_BENCH_MATCHUP=fm-c-bt05-unlucky-bunny-nikki-mirror AI_FIXED_BENCH_GAMES
 ## 현재 알려진 병목
 
 - 턴 1 리더 액티브 고착은 해소됐다.
-- 이제 병목은 "멈추지 않느냐"가 아니라
-  "이 덱의 오프닝 플랜과 혼합 상태를 얼마나 의도적으로 켜느냐"다.
-- 다음 실제 구현 우선순위는 `M2. 오프닝 플랜 이해`다.
+- BT05 전용 오프닝 멀리건/초반 전개 프로필은 들어갔지만,
+  아직 `초반 손패/트래시 자원 절약`과 `중반 엑시트 차용 운영`은 미완료다.
+- 다음 실제 구현 우선순위는
+  `M2`의 남은 항목인 초반 자원 절약 정리,
+  그 다음 `M3. 덱 핵심 플랜 이해`다.
