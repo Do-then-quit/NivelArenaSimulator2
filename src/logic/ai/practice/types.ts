@@ -5,6 +5,8 @@ export type PracticeMulliganAction = Extract<EngineAction, { type: 'RESOLVE_MULL
 export type PracticeMainPhaseAction = Extract<EngineAction, { type: 'PLAY_UNIT' | 'PLAY_ITEM' | 'PLAY_SKILL' | 'ACTIVATE_EFFECT' | 'NEXT_PHASE' }>;
 export type PracticeHandTargetAction = Extract<EngineAction, { type: 'SELECT_HAND_TARGET' }>;
 export type PracticeTrashTargetAction = Extract<EngineAction, { type: 'SELECT_TRASH_TARGET' }>;
+export type PracticeZoneTargetAction = Extract<EngineAction, { type: 'SELECT_ZONE_TARGET' }>;
+export type PracticeRevealedTargetAction = Extract<EngineAction, { type: 'SELECT_REVEALED_TARGET' }>;
 
 export interface PracticeContextBase {
     engine: GameEngine;
@@ -30,6 +32,14 @@ export interface PracticeTrashTargetContext extends PracticeContextBase {
     actions: PracticeTrashTargetAction[];
 }
 
+export interface PracticeZoneTargetContext extends PracticeContextBase {
+    actions: PracticeZoneTargetAction[];
+}
+
+export interface PracticeRevealedTargetContext extends PracticeContextBase {
+    actions: PracticeRevealedTargetAction[];
+}
+
 export interface PracticeProfile {
     id: string;
     label: string;
@@ -37,4 +47,6 @@ export interface PracticeProfile {
     chooseMainPhaseAction?(context: PracticeMainPhaseContext): PracticeMainPhaseAction | null;
     chooseHandTargetAction?(context: PracticeHandTargetContext): PracticeHandTargetAction | null;
     chooseTrashTargetAction?(context: PracticeTrashTargetContext): PracticeTrashTargetAction | null;
+    chooseZoneTargetAction?(context: PracticeZoneTargetContext): PracticeZoneTargetAction | null;
+    chooseRevealedTargetAction?(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null;
 }

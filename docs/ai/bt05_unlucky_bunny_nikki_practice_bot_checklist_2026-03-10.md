@@ -135,8 +135,8 @@
 - [x] `BT05-036`, `BT05-039`의 트래시 존 엑시트 차용 라인을 bot이 이해한다.
 - [x] `BT05-044`의 차용/반복 차용 사용 타이밍이 무의미하지 않다.
 - [x] `BT05-043`의 손패 트래시 코스트를 핵심 파츠 자해 없이 사용한다.
-- [ ] `BT05-041`, `BT05-038`, `BT05-040` 같은 상위 코스트 피니시 라인을 보존한다.
-- [ ] 리더 액티브는 "지금 쓸 이유가 있을 때"만 선택한다.
+- [x] `BT05-041`, `BT05-038`, `BT05-040` 같은 상위 코스트 피니시 라인을 보존한다.
+- [x] 리더 액티브는 "지금 쓸 이유가 있을 때"만 선택한다.
 
 우선 목표:
 이 덱의 플레이 로그에서
@@ -156,6 +156,29 @@
   - mixed redeploy window에서 차용 우선순위가 `BT05-039` 라인을 먼저 본다
   - `BT05-039` 엑시트가 `BT05-064` 재전개를 우선 선택
   - `BT05-043`가 `BT05-041` 대신 `BT05-039`를 손패 코스트로 선택
+
+검증 메모 (2026-03-12, M3 part 2):
+- `PracticeProfile`에 zone/revealed target 훅 추가 후 `BaselineBot`에 연결
+- `src/logic/ai/practice/deckProfiles/bt05UnluckyBunnyNikki.ts`
+  에 아래 리더/피니시 규칙 추가
+  - `BT05-041`, `BT05-038`, `BT05-040`, `BT05-039` 중심의 leader destroy target 우선순위
+  - 후속 self-trash 아웃렛이 있을 때만 leader return 라인을 여는 규칙
+  - 이유 없는 각성 리더 액티브를 `NEXT_PHASE`로 넘기는 억제 규칙
+  - `BT05-032` 옵션 선택과 아군 대상 선택의 deck-aware 훅
+- `tests/ai/Bt05UnluckyBunnyNikkiPracticeBot.vitest.test.ts`
+  시나리오 확장으로 아래 라인 보호
+  - 이유 없는 각성 리더 액티브 스킵
+  - stocked trash에서 `BT05-041` destroy 피니시 라인 선택
+  - 후속 recycle line이 있을 때 leader return 선택
+- `AI_FIXED_BENCH_MATCHUP=fm-c-bt05-unlucky-bunny-nikki-mirror ... npm run ai:fixed:bench`
+  결과:
+  - combined `4`게임
+  - `winner=4`
+  - `max_steps=0`
+  - `no_action=0`
+  - `invalid_action=0`
+  - avgTurns `12.5`
+- `npm run ai:regression` 재통과
 
 ## M4. 전술 선택 품질
 

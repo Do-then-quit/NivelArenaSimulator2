@@ -353,4 +353,94 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
             expect(getCardKey(p1.trash[action.trashIndex])).toBe('BT05-064');
         }
     });
+
+    it('skips awakened leader active when there is no meaningful destroy or return line', () => {
+        const engine = createEngine({ seed: 2026031214 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 5;
+        p1.levelZone = { ...getCard('BT05-032'), isAwakened: true };
+        p1.hand = [];
+        p1.unitZones[0].unit = getCard('BT05-033');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.trash = [];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
+    it('uses awakened leader active to destroy BT05-041 when stocked trash turns it into immediate finish value', () => {
+        const engine = createEngine({ seed: 2026031215 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 5;
+        p1.levelZone = { ...getCard('BT05-032'), isAwakened: true };
+        p1.hand = [];
+        p1.unitZones[0].unit = getCard('BT05-041');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.trash = [getCard('BT05-033'), getCard('BT05-064'), getCard('BT05-066')];
+
+        const mainAction = bot.chooseAction(engine, p1.id);
+        expect(mainAction?.type).toBe('ACTIVATE_EFFECT');
+        expect(engine.step(mainAction!)).toBe(true);
+
+        const optionAction = bot.chooseAction(engine, p1.id);
+        expect(optionAction?.type).toBe('SELECT_REVEALED_TARGET');
+        if (optionAction?.type === 'SELECT_REVEALED_TARGET') {
+            expect(engine.state.revealedCards[optionAction.revealedIndex]?.id).toBe('BT05-032-DESTROY');
+        }
+        expect(engine.step(optionAction!)).toBe(true);
+
+        const targetAction = bot.chooseAction(engine, p1.id);
+        expect(targetAction?.type).toBe('SELECT_ZONE_TARGET');
+        if (targetAction?.type === 'SELECT_ZONE_TARGET') {
+            expect(targetAction.zoneIndex).toBe(0);
+        }
+    });
+
+    it('uses awakened leader active to grant return when a finisher recycle line is already available in hand', () => {
+        const engine = createEngine({ seed: 2026031216 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 5;
+        p1.levelZone = { ...getCard('BT05-032'), isAwakened: true };
+        p1.hand = [getCard('BT05-038')];
+        p1.unitZones[0].unit = getCard('BT05-040');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.trash = [];
+
+        const mainAction = bot.chooseAction(engine, p1.id);
+        expect(mainAction?.type).toBe('ACTIVATE_EFFECT');
+        expect(engine.step(mainAction!)).toBe(true);
+
+        const optionAction = bot.chooseAction(engine, p1.id);
+        expect(optionAction?.type).toBe('SELECT_REVEALED_TARGET');
+        if (optionAction?.type === 'SELECT_REVEALED_TARGET') {
+            expect(engine.state.revealedCards[optionAction.revealedIndex]?.id).toBe('BT05-032-RETURN');
+        }
+        expect(engine.step(optionAction!)).toBe(true);
+
+        const targetAction = bot.chooseAction(engine, p1.id);
+        expect(targetAction?.type).toBe('SELECT_ZONE_TARGET');
+        if (targetAction?.type === 'SELECT_ZONE_TARGET') {
+            expect(targetAction.zoneIndex).toBe(0);
+        }
+    });
 });

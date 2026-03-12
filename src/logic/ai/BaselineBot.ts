@@ -149,6 +149,15 @@ export class BaselineBot {
 
         const zoneActions = this.filterByType(actions, 'SELECT_ZONE_TARGET');
         if (zoneActions.length > 0) {
+            if (actor && this.practiceProfile?.chooseZoneTargetAction) {
+                const practiceAction = this.practiceProfile.chooseZoneTargetAction({
+                    engine,
+                    actorPlayerId,
+                    actor,
+                    actions: zoneActions,
+                });
+                if (practiceAction) return practiceAction;
+            }
             const zoneAction = this.pickZoneTargetAction(engine, actorPlayerId, zoneActions);
             if (zoneAction) return zoneAction;
         }
@@ -170,6 +179,15 @@ export class BaselineBot {
 
         const revealedActions = this.filterByType(actions, 'SELECT_REVEALED_TARGET');
         if (revealedActions.length > 0) {
+            if (actor && this.practiceProfile?.chooseRevealedTargetAction) {
+                const practiceAction = this.practiceProfile.chooseRevealedTargetAction({
+                    engine,
+                    actorPlayerId,
+                    actor,
+                    actions: revealedActions,
+                });
+                if (practiceAction) return practiceAction;
+            }
             const revealedAction = this.pickRevealedTargetAction(engine, revealedActions);
             if (revealedAction) return revealedAction;
         }

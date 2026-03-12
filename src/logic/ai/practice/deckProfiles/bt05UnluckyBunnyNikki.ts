@@ -6,8 +6,12 @@ import {
     PracticeMainPhaseContext,
     PracticeMulliganContext,
     PracticeProfile,
+    PracticeRevealedTargetAction,
+    PracticeRevealedTargetContext,
     PracticeTrashTargetAction,
     PracticeTrashTargetContext,
+    PracticeZoneTargetAction,
+    PracticeZoneTargetContext,
 } from '../types';
 
 type PlayFieldAction = Extract<EngineAction, { type: 'PLAY_UNIT' | 'PLAY_ITEM' }>;
@@ -23,6 +27,8 @@ const BT05_BORROW_SOURCE_IDS = new Set(['BT05-033', 'ST09-011', 'BT05-038', 'BT0
 const BT05_LOW_COST_REDEPLOY_IDS = new Set(['BT05-033', 'BT05-034', 'BT05-064', 'BT05-066', 'ST09-011']);
 const BT05_FINISHER_IDS = new Set(['BT05-038', 'BT05-039', 'BT05-040', 'BT05-041']);
 const BT05_DISCARD_SAFE_IDS = new Set(['BT05-064', 'BT05-065', 'BT05-066']);
+const BT05_LEADER_RETURN_OPTION_ID = 'BT05-032-RETURN';
+const BT05_LEADER_DESTROY_OPTION_ID = 'BT05-032-DESTROY';
 
 function getCardKey(card: Card | null | undefined): string {
     if (!card) return '';
@@ -123,6 +129,10 @@ function countBorrowableExitUnits(cards: Card[]): number {
     return cards.filter(card => isBorrowableExitUnit(card)).length;
 }
 
+function countBottomableNonTriggerTrashCards(cards: Card[]): number {
+    return cards.filter(card => !String(card.text ?? '').includes('트리거')).length;
+}
+
 function countLowCostRedeployUnits(cards: Card[]): number {
     return cards.filter(card =>
         card.type === CardType.UNIT
@@ -154,6 +164,16 @@ function countOpponentNonEncounterUnits(actor: PlayerState, opponent: PlayerStat
         }
     }
     return count;
+}
+
+function countLeaderActiveDestroyOutletsInHand(actor: PlayerState): number {
+    return actor.hand.reduce((count, card) => {
+        const cardKey = getCardKey(card);
+        if (cardKey === 'BT05-045') return count + 1;
+        if (cardKey === 'BT05-038') return count + 1;
+        if (cardKey === 'BT05-040') return count + 1;
+        return count;
+    }, 0);
 }
 
 function hasValuableReturnTarget(actor: PlayerState): boolean {
@@ -201,6 +221,12 @@ function getActionCard(actor: PlayerState, action: PracticeMainPhaseAction): Car
         return getActivateEffectSourceCard(actor, action);
     }
     return null;
+}
+
+function isBt05LeaderActivateAction(actor: PlayerState, action: PracticeMainPhaseAction): boolean {
+    return action.type === 'ACTIVATE_EFFECT'
+        && action.sourceType === 'LEADER'
+        && getCardKey(getActivateEffectSourceCard(actor, action)) === BT05_NIKKI_LEADER_ID;
 }
 
 function scoreBorrowTarget(actor: PlayerState, opponent: PlayerState | null, card: Card): number {
@@ -277,6 +303,118 @@ function scoreBt05043DiscardTarget(actor: PlayerState, opponent: PlayerState | n
     score -= exactnessPenalty;
     score -= card.cost * 120;
     return score;
+}
+
+function scoreLeaderDestroyTarget(actor: PlayerState, opponent: PlayerState | null, card: Card): number {
+    const cardKey = getCardKey(card);
+    const mixedActive = hasMixedField(getFieldAttributes(actor));
+    const opponentUnitCount = countOpponentUnits(opponent);
+    const opponentNonEncounterCount = countOpponentNonEncounterUnits(actor, opponent);
+    const emptyZoneCount = countEmptyUnitZones(actor);
+    const lowCostRedeployCount = countLowCostRedeployUnits(actor.trash);
+    const bottomableTrashCount = countBottomableNonTriggerTrashCards(actor.trash) + 1;
+
+    switch (cardKey) {
+        case 'BT05-041':
+            if (!mixedActive || bottomableTrashCount < 3) return -16000;
+            return 18000 + Math.floor(bottomableTrashCount / 3) * 2200;
+        case 'BT05-039':
+            if (!mixedActive || emptyZoneCount <= 0 || lowCostRedeployCount <= 0) return -12000;
+            return 14800 + Math.min(1200, lowCostRedeployCount * 250);
+        case 'BT05-038':
+            if (!mixedActive || opponentNonEncounterCount <= 0) return -11500;
+            return 13600 + opponentNonEncounterCount * 250;
+        case 'BT05-040':
+            if (!mixedActive || opponentUnitCount <= 0) return -11200;
+            return 13200 + opponentUnitCount * 200;
+        case 'ST09-011':
+            return actor.hand.length <= 2 ? 5200 : -4500;
+        case 'BT05-033':
+            return opponentUnitCount > 0 ? 4200 : -5200;
+        default:
+            return BT05_FINISHER_IDS.has(cardKey) ? -14000 : -7000;
+    }
+}
+
+function scoreLeaderReturnTarget(actor: PlayerState, card: Card, hasReturnOutlet: boolean): number {
+    if (!hasReturnOutlet) return Number.NEGATIVE_INFINITY;
+
+    const cardKey = getCardKey(card);
+    const mixedActive = hasMixedField(getFieldAttributes(actor));
+    const lowCostRedeployCount = countLowCostRedeployUnits(actor.trash);
+
+    switch (cardKey) {
+        case 'BT05-040':
+            return 15400;
+        case 'BT05-038':
+            return 15000;
+        case 'BT05-039':
+            return mixedActive && lowCostRedeployCount > 0 ? 14600 : 11800;
+        case 'BT05-036':
+            return 13400;
+        case 'BT05-041':
+            return mixedActive ? -5000 : 9000;
+        default:
+            return BT05_FINISHER_IDS.has(cardKey) ? 7800 : Number.NEGATIVE_INFINITY;
+    }
+}
+
+function getBestLeaderDestroyPlan(actor: PlayerState, opponent: PlayerState | null): { card: Card; zoneIndex: number; score: number } | null {
+    let bestPlan: { card: Card; zoneIndex: number; score: number } | null = null;
+
+    for (let zoneIndex = 0; zoneIndex < actor.unitZones.length; zoneIndex += 1) {
+        const unit = actor.unitZones[zoneIndex].unit;
+        if (!unit) continue;
+
+        const score = scoreLeaderDestroyTarget(actor, opponent, unit);
+        if (!bestPlan || score > bestPlan.score) {
+            bestPlan = { card: unit, zoneIndex, score };
+        }
+    }
+
+    return bestPlan;
+}
+
+function getBestLeaderReturnPlan(actor: PlayerState, hasReturnOutlet: boolean): { card: Card; zoneIndex: number; score: number } | null {
+    let bestPlan: { card: Card; zoneIndex: number; score: number } | null = null;
+
+    for (let zoneIndex = 0; zoneIndex < actor.unitZones.length; zoneIndex += 1) {
+        const unit = actor.unitZones[zoneIndex].unit;
+        if (!unit) continue;
+
+        const score = scoreLeaderReturnTarget(actor, unit, hasReturnOutlet);
+        if (!bestPlan || score > bestPlan.score) {
+            bestPlan = { card: unit, zoneIndex, score };
+        }
+    }
+
+    return bestPlan;
+}
+
+function hasPlayableLeaderReturnOutlet(context: PracticeMainPhaseContext): boolean {
+    return context.actions.some(action => {
+        if (action.type === 'PLAY_SKILL') {
+            const card = context.actor.hand[action.handIndex];
+            return getCardKey(card) === 'BT05-045';
+        }
+        if (action.type === 'PLAY_UNIT') {
+            const card = context.actor.hand[action.handIndex];
+            const cardKey = getCardKey(card);
+            return cardKey === 'BT05-038' || cardKey === 'BT05-040';
+        }
+        return false;
+    });
+}
+
+function chooseLeaderMode(actor: PlayerState, opponent: PlayerState | null, hasReturnOutlet: boolean): 'RETURN' | 'DESTROY' | null {
+    const bestDestroy = getBestLeaderDestroyPlan(actor, opponent);
+    const bestReturn = getBestLeaderReturnPlan(actor, hasReturnOutlet);
+    const destroyScore = bestDestroy?.score ?? Number.NEGATIVE_INFINITY;
+    const returnScore = bestReturn?.score ?? Number.NEGATIVE_INFINITY;
+    const bestScore = Math.max(destroyScore, returnScore);
+
+    if (bestScore < 12000) return null;
+    return destroyScore >= returnScore ? 'DESTROY' : 'RETURN';
 }
 
 function getCardSpecificOpeningScore(card: Card, actor: PlayerState, mixedBefore: boolean, mixedAfter: boolean): number {
@@ -457,6 +595,18 @@ function scoreMidgameAction(context: PracticeMainPhaseContext, action: PracticeM
         }
     }
 
+    if (isBt05LeaderActivateAction(context.actor, action)) {
+        const hasReturnOutlet = hasPlayableLeaderReturnOutlet(context) || countLeaderActiveDestroyOutletsInHand(context.actor) > 0;
+        const leaderMode = chooseLeaderMode(context.actor, opponent, hasReturnOutlet);
+        if (!leaderMode) return Number.NEGATIVE_INFINITY;
+
+        if (leaderMode === 'DESTROY') {
+            return getBestLeaderDestroyPlan(context.actor, opponent)?.score ?? Number.NEGATIVE_INFINITY;
+        }
+
+        return getBestLeaderReturnPlan(context.actor, hasReturnOutlet)?.score ?? Number.NEGATIVE_INFINITY;
+    }
+
     return Number.NEGATIVE_INFINITY;
 }
 
@@ -472,6 +622,10 @@ function chooseBestMidgameAction(context: PracticeMainPhaseContext): PracticeMai
 
         if (action.type === 'PLAY_UNIT') {
             return cardKey === 'BT05-036' || cardKey === 'BT05-039';
+        }
+
+        if (isBt05LeaderActivateAction(context.actor, action)) {
+            return true;
         }
 
         return false;
@@ -490,7 +644,18 @@ function chooseBestMidgameAction(context: PracticeMainPhaseContext): PracticeMai
         }
     }
 
-    return bestScore >= 9000 ? bestAction : null;
+    if (bestScore >= 9000) return bestAction;
+
+    const hasLeaderAction = context.actions.some(action => isBt05LeaderActivateAction(context.actor, action));
+    const hasOtherProgressAction = context.actions.some(action => {
+        if (action.type === 'NEXT_PHASE') return false;
+        return !isBt05LeaderActivateAction(context.actor, action);
+    });
+    if (hasLeaderAction && !hasOtherProgressAction) {
+        return context.actions.find((action): action is PracticeMainPhaseAction => action.type === 'NEXT_PHASE') ?? null;
+    }
+
+    return null;
 }
 
 function scoreLowCostRedeployTarget(actor: PlayerState, opponent: PlayerState | null, card: Card): number {
@@ -590,6 +755,38 @@ function chooseBt05043DiscardAction(context: PracticeHandTargetContext): Practic
     return bestScore > Number.NEGATIVE_INFINITY ? bestAction : null;
 }
 
+function chooseBt05LeaderOptionAction(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null {
+    const pending = context.engine.state.pendingEffect;
+    if (pending?.actionType !== 'BT05_032_SELECT_OPTION') return null;
+
+    const opponent = getOpponent(context.engine, context.actorPlayerId);
+    const hasReturnOutlet = countLeaderActiveDestroyOutletsInHand(context.actor) > 0;
+    const preferredMode = chooseLeaderMode(context.actor, opponent, hasReturnOutlet);
+    if (!preferredMode) return null;
+
+    const preferredCardId = preferredMode === 'DESTROY' ? BT05_LEADER_DESTROY_OPTION_ID : BT05_LEADER_RETURN_OPTION_ID;
+    return context.actions.find(action => context.engine.state.revealedCards[action.revealedIndex]?.id === preferredCardId) ?? null;
+}
+
+function chooseBt05LeaderZoneAction(context: PracticeZoneTargetContext): PracticeZoneTargetAction | null {
+    const pending = context.engine.state.pendingEffect;
+    const opponent = getOpponent(context.engine, context.actorPlayerId);
+
+    if (pending?.actionType === 'BT05_032_SELECT_FRIENDLY_DESTROY') {
+        const bestPlan = getBestLeaderDestroyPlan(context.actor, opponent);
+        if (!bestPlan) return null;
+        return context.actions.find(action => action.targetPlayerId === context.actorPlayerId && action.zoneIndex === bestPlan.zoneIndex) ?? null;
+    }
+
+    if (pending?.actionType === 'BT05_032_SELECT_FRIENDLY_RETURN') {
+        const bestPlan = getBestLeaderReturnPlan(context.actor, countLeaderActiveDestroyOutletsInHand(context.actor) > 0);
+        if (!bestPlan) return null;
+        return context.actions.find(action => action.targetPlayerId === context.actorPlayerId && action.zoneIndex === bestPlan.zoneIndex) ?? null;
+    }
+
+    return null;
+}
+
 export const bt05UnluckyBunnyNikkiOpeningProfile: PracticeProfile = {
     id: 'practice-bt05-nikki-open-v1',
     label: 'Practice BT05 Nikki Open v1',
@@ -627,5 +824,13 @@ export const bt05UnluckyBunnyNikkiOpeningProfile: PracticeProfile = {
             return chooseBt05BorrowTrashAction(context);
         }
         return chooseBt05RedeployTrashAction(context);
+    },
+    chooseZoneTargetAction(context: PracticeZoneTargetContext): PracticeZoneTargetAction | null {
+        if (!isBt05NikkiLeader(context.actor)) return null;
+        return chooseBt05LeaderZoneAction(context);
+    },
+    chooseRevealedTargetAction(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null {
+        if (!isBt05NikkiLeader(context.actor)) return null;
+        return chooseBt05LeaderOptionAction(context);
     },
 };
