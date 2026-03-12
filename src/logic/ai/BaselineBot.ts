@@ -130,8 +130,19 @@ export class BaselineBot {
             return readyConfirmAction;
         }
 
+        const actor = this.getPlayerById(engine, actorPlayerId);
+
         const handActions = this.filterByType(actions, 'SELECT_HAND_TARGET');
         if (handActions.length > 0) {
+            if (actor && this.practiceProfile?.chooseHandTargetAction) {
+                const practiceAction = this.practiceProfile.chooseHandTargetAction({
+                    engine,
+                    actorPlayerId,
+                    actor,
+                    actions: handActions,
+                });
+                if (practiceAction) return practiceAction;
+            }
             const handAction = this.pickHandTargetAction(engine, actorPlayerId, handActions);
             if (handAction) return handAction;
         }
@@ -144,6 +155,15 @@ export class BaselineBot {
 
         const trashActions = this.filterByType(actions, 'SELECT_TRASH_TARGET');
         if (trashActions.length > 0) {
+            if (actor && this.practiceProfile?.chooseTrashTargetAction) {
+                const practiceAction = this.practiceProfile.chooseTrashTargetAction({
+                    engine,
+                    actorPlayerId,
+                    actor,
+                    actions: trashActions,
+                });
+                if (practiceAction) return practiceAction;
+            }
             const trashAction = this.pickTrashTargetAction(engine, trashActions);
             if (trashAction) return trashAction;
         }

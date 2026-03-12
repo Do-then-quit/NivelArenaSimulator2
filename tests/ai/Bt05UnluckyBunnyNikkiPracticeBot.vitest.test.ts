@@ -15,6 +15,12 @@ function getCard(cardId: string): Card {
     return { ...card };
 }
 
+function getCardKey(card: Card | null | undefined): string {
+    if (!card) return '';
+    const match = card.id.match(/^[A-Z]{2}\d{2}-\d{3}/);
+    return match?.[0] ?? card.id;
+}
+
 function makeLeader(id: string): Card {
     return {
         id,
@@ -241,5 +247,110 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
 
         const bot = resolveBotFactory('practice-bt05-nikki-open-v1')('practice');
         expect(typeof bot.chooseAction).toBe('function');
+    });
+
+    it('prefers BT05-044 over a raw BT05-041 body once trash is primed for a strong mixed borrow turn', () => {
+        const engine = createEngine({ seed: 2026031210 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 6;
+        p1.unitZones[0].unit = getCard('BT05-033');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-041'), getCard('BT05-044')];
+        p1.trash = [getCard('BT05-039'), getCard('BT05-064'), getCard('ST09-011')];
+        p2.unitZones[0].unit = getCard('ST01-011');
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('PLAY_SKILL');
+        if (action?.type === 'PLAY_SKILL') {
+            expect(getCardKey(p1.hand[action.handIndex])).toBe('BT05-044');
+        }
+    });
+
+    it('prioritizes BT05-039 as a borrow target when a mixed redeploy line is ready', () => {
+        const engine = createEngine({ seed: 2026031211 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 6;
+        p1.unitZones[0].unit = getCard('BT05-033');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-044')];
+        p1.trash = [getCard('BT05-039'), getCard('ST09-011'), getCard('BT05-064')];
+
+        engine.playSkill(0);
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('SELECT_TRASH_TARGET');
+        if (action?.type === 'SELECT_TRASH_TARGET') {
+            expect(getCardKey(p1.trash[action.trashIndex])).toBe('BT05-039');
+        }
+    });
+
+    it('keeps BT05-041 in hand when BT05-043 can use a less valuable discard instead', () => {
+        const engine = createEngine({ seed: 2026031212 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 6;
+        p1.hand = [getCard('BT05-043'), getCard('BT05-041'), getCard('BT05-039')];
+        p2.unitZones[0].unit = getCard('BT05-036');
+
+        engine.playSkill(0);
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('SELECT_HAND_TARGET');
+        if (action?.type === 'SELECT_HAND_TARGET') {
+            expect(getCardKey(p1.hand[action.handIndex])).toBe('BT05-039');
+        }
+    });
+
+    it('redeploys BT05-064 first from BT05-039 exit when the line needs cheap board plus draw', () => {
+        const engine = createEngine({ seed: 2026031213 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = p1.id;
+        p1.leaderLevel = 6;
+        p1.hand = [];
+        p1.unitZones[0].unit = getCard('BT05-039');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.trash = [getCard('BT05-064'), getCard('BT05-033')];
+
+        engine.destroyUnit(p1, p1.unitZones[0], undefined, 'EFFECT');
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('SELECT_TRASH_TARGET');
+        if (action?.type === 'SELECT_TRASH_TARGET') {
+            expect(getCardKey(p1.trash[action.trashIndex])).toBe('BT05-064');
+        }
     });
 });
