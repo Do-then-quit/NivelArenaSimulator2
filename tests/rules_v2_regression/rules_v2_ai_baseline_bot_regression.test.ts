@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DUMMY_CARDS } from '../../src/logic/CardDatabase';
 import { GameEngine } from '../../src/logic/GameEngine';
 import { ActivationCondition, Attribute, Card, CardType, Phase } from '../../src/logic/types';
 import { BaselineBot, runBaselineSelfPlay } from '../../src/logic/ai/BaselineBot';
@@ -99,5 +100,30 @@ describe('Rules v2 AI Baseline Bot Regression', () => {
         expect(result.terminationReason === 'invalid_action').toBe(false);
         expect(result.terminationReason === 'no_action').toBe(false);
         expect(result.terminationReason === 'winner' || result.terminationReason === 'max_steps').toBe(true);
+    });
+
+    it('does not expose awakened-only BT05-032 leader active before awakening', () => {
+        const actualLeader = DUMMY_CARDS.find(card => card.id === 'BT05-032');
+        expect(actualLeader).toBeTruthy();
+        if (!actualLeader) return;
+
+        const engine = createEngine(20260312, { ...actualLeader }, makeLeader('P2L'));
+        const p1 = engine.state.players[0];
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        p1.leaderLevel = 2;
+        p1.levelZone = { ...actualLeader, isAwakened: false };
+        p1.unitZones[0].unit = makeUnit('ALLY', { attribute: Attribute.LIGHTNING });
+
+        const legal = engine.getLegalActions(p1.id);
+
+        expect(
+            legal.some(
+                action =>
+                    action.type === 'ACTIVATE_EFFECT'
+                    && action.sourceType === 'LEADER'
+                    && action.effectIndex === 2,
+            ),
+        ).toBe(false);
     });
 });

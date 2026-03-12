@@ -30,6 +30,11 @@ function effectHasPhaseAttackCondition(condition: any): boolean {
     return false;
 }
 
+function requiresAwakenedLeader(effect: Effect): boolean {
+    const description = effect.description || '';
+    return description.includes('각성면') || description.includes('AWAKENED');
+}
+
 function getTargetCard(target: any): Card | null {
     if (!target) return null;
     if (typeof target === 'object' && 'unit' in target) return target.unit ?? null;
@@ -229,13 +234,15 @@ export function buildLegalActions(engine: any, actorPlayerId?: string): EngineAc
                 });
             });
 
-            const leader = actor.levelZone;
-            if (leader?.effects) {
-                const leaderActivatedKeys = ((actor as any).leaderActivatedEffectKeys || {}) as Record<string, boolean>;
-                leader.effects.forEach((effect: Effect, effectIndex: number) => {
-                    const activatableInPhase =
-                        (effect.activation === ActivationCondition.ACTIVE && (engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK)) ||
-                        (
+                const leader = actor.levelZone;
+                if (leader?.effects) {
+                    const leaderActivatedKeys = ((actor as any).leaderActivatedEffectKeys || {}) as Record<string, boolean>;
+                    leader.effects.forEach((effect: Effect, effectIndex: number) => {
+                        if (!leader.isAwakened && requiresAwakenedLeader(effect)) return;
+
+                        const activatableInPhase =
+                            (effect.activation === ActivationCondition.ACTIVE && (engine.state.phase === Phase.MAIN || engine.state.phase === Phase.ATTACK)) ||
+                            (
                             effect.activation === ActivationCondition.ACTIVE_MAIN &&
                             (
                                 engine.state.phase === Phase.MAIN ||

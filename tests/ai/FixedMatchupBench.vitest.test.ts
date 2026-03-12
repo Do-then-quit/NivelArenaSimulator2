@@ -58,10 +58,10 @@ describe('Fixed matchup bench', () => {
         expect(report.sides.swapped.matches.map(match => match.seed)).toEqual([2026032000, 2026032001, 2026032002]);
     }, 15000);
 
-    it('runs the curated BT05 meta mirror without activate-effect source crashes', () => {
+    it('runs the curated BT05 meta mirror without early-turn deadlock regressions', () => {
         const report = runFixedMatchupBatch({
             matchupId: 'fm-c-bt05-unlucky-bunny-nikki-mirror',
-            gamesPerSide: 1,
+            gamesPerSide: 2,
             maxSteps: 1200,
             enableMulligan: true,
             traceLimit: 8,
@@ -73,6 +73,11 @@ describe('Fixed matchup bench', () => {
         });
 
         expect(report.matchup.id).toBe('fm-c-bt05-unlucky-bunny-nikki-mirror');
-        expect(report.combined.totalGames).toBe(2);
+        expect(report.combined.totalGames).toBe(4);
+        expect(report.combined.unfinished).toBe(0);
+        expect(report.combined.terminationCounts.max_steps).toBe(0);
+        expect(report.combined.terminationCounts.no_action).toBe(0);
+        expect(report.combined.terminationCounts.invalid_action).toBe(0);
+        expect(report.combined.avgTurns).toBeGreaterThan(1);
     }, 15000);
 });

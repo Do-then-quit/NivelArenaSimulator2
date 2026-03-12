@@ -51,7 +51,7 @@
 - [x] trigger 오탐을 줄여 현재 덱이 합법으로 materialize 되게 보정
 - [x] leader/item `ACTIVATE_EFFECT`에서 baseline/scorer가 크래시 나지 않도록 보정
 - [x] fixed matchup bench 스모크가 새 덱 미러에서 실행되도록 연결
-- [ ] baseline 또는 practice profile이 턴 1 leader active 반복 루프 없이 실제 게임을 진행
+- [x] baseline 또는 practice profile이 턴 1 leader active 반복 루프 없이 실제 게임을 진행
 
 ## 활성 이정표
 
@@ -68,14 +68,25 @@
 
 ## M1. 병적 루프 제거
 
-- [ ] 빈 필드에서 의미 없는 리더 액티브 반복이 발생하지 않는다.
-- [ ] 턴 진행이 막히지 않고 최소한 초반 배치/전개 라인으로 넘어간다.
-- [ ] 미러 스모크에서 `turnCount=1`, `phase=MAIN`, `max_steps` 고착 사례가 사라진다.
-- [ ] 이 문제를 재현하는 회귀 테스트가 추가된다.
+- [x] 빈 필드에서 의미 없는 리더 액티브 반복이 발생하지 않는다.
+- [x] 턴 진행이 막히지 않고 최소한 초반 배치/전개 라인으로 넘어간다.
+- [x] 미러 스모크에서 `turnCount=1`, `phase=MAIN`, `max_steps` 고착 사례가 사라진다.
+- [x] 이 문제를 재현하는 회귀 테스트가 추가된다.
 
 완료 기준:
 `fm-c-bt05-unlucky-bunny-nikki-mirror` 10게임 dev seed 스모크에서
 턴 1 고착이 재발하지 않아야 한다.
+
+검증 메모 (2026-03-12):
+- `rules_v2_ai_baseline_bot_regression.test.ts`에 각성 전 `BT05-032` 리더 액티브 비노출 회귀 추가
+- `AI_FIXED_BENCH_MATCHUP=fm-c-bt05-unlucky-bunny-nikki-mirror AI_FIXED_BENCH_GAMES_PER_SIDE=10 ... npm run ai:fixed:bench`
+  실행 결과:
+  - combined `20`게임
+  - `winner=20`
+  - `max_steps=0`
+  - `no_action=0`
+  - `invalid_action=0`
+  - avgTurns `12.8`
 
 ## M2. 오프닝 플랜 이해
 
@@ -142,8 +153,8 @@
 - [x] 덱 레지스트리 추가
 - [x] 합법성 검증 보정
 - [x] 미러 매치업 스모크 연결
-- [ ] 턴 1 고착 재현 테스트 작성
-- [ ] 턴 1 고착 수정
+- [x] 턴 1 고착 재현 테스트 작성
+- [x] 턴 1 고착 수정
 - [ ] 멀리건 규칙 추가
 - [ ] 초반 전개 규칙 추가
 - [ ] 트래시/엑시트 차용 우선순위 추가
@@ -176,7 +187,7 @@ AI_FIXED_BENCH_MATCHUP=fm-c-bt05-unlucky-bunny-nikki-mirror AI_FIXED_BENCH_GAMES
 
 ## 현재 알려진 병목
 
-- 현재 baseline 미러는 리더 액티브 반복으로 `max_steps` 종료가 남아 있다.
-- 즉 "덱을 넣고 돌릴 수 있다" 단계까지는 완료됐고,
-  "이 덱을 이해하며 플레이한다" 단계는 아직 시작점이다.
-- 다음 실제 구현 우선순위는 `M1. 병적 루프 제거`다.
+- 턴 1 리더 액티브 고착은 해소됐다.
+- 이제 병목은 "멈추지 않느냐"가 아니라
+  "이 덱의 오프닝 플랜과 혼합 상태를 얼마나 의도적으로 켜느냐"다.
+- 다음 실제 구현 우선순위는 `M2. 오프닝 플랜 이해`다.
