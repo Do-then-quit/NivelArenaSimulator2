@@ -183,10 +183,10 @@
 ## M4. 전술 선택 품질
 
 - [x] 코스트 지불 시 저가치 카드부터 버리는 기본 규칙이 들어간다.
-- [ ] 타겟 선택에서 제거 가치가 낮은 유닛을 우선 치지 않는다.
+- [x] 타겟 선택에서 제거 가치가 낮은 유닛을 우선 치지 않는다.
 - [x] optional effect를 의미 없이 남발하지 않는다.
 - [x] 아이템 `BT05-081`, `BT05-082` 장착/이동/소모 판단이 개선된다.
-- [ ] 자기 킬각 오픈과 과투자 업그레이드가 반복되지 않는다.
+- [x] 자기 킬각 오픈과 과투자 업그레이드가 반복되지 않는다.
 
 이 단계의 출력물:
 카드별 priority table 또는 deck profile 문서/코드가 있어야 한다.
@@ -225,10 +225,45 @@
   - tactical KPI: `self_lethal_open_rate 0`, `wasteful_upgrade_rate 0.5714`
 - `npm run ai:regression` 재통과
 
-현재 M4 잔여 초점:
-- 상대 제거 타겟의 가치판단을 더 명시적으로 넣기
-- low-value lane 업그레이드 남발을 더 줄이기
-- mirror 20게임 리플레이로 업그레이드 오판 로그를 수동 확인하기
+검증 메모 (2026-03-12, M4 part 2):
+- `src/logic/ai/practice/deckProfiles/bt05UnluckyBunnyNikki.ts`
+  에 아래 잔여 전술 규칙 추가
+  - `PLAY_UNIT`의 lane-fit 점수화로 `BT05-036`, `BT05-039`, `BT05-041`, `BT05-072`
+    업그레이드가 실제 압박/교환 개선이 없으면 `NEXT_PHASE`로 넘기거나 빈 lane을 우선 잡는 규칙
+  - `SELECT_ZONE_TARGET`에서 leader active 외의 일반 BT05 타겟팅도
+    practice profile이 직접 고르게 연결
+  - `BT05-043` lower-cost destroy target 우선순위
+  - `BT05-038`, `BT05-040`, `BT05-045`의 destroy 대상 가치판단
+  - `BT05-034` return 부여 대상 가치판단
+  - `[트리거]를 가지지 않은` 문구를 실제 trigger 보유와 혼동하지 않도록
+    local `isTriggerCard` 판정 추가
+- `tests/ai/Bt05UnluckyBunnyNikkiPracticeBot.vitest.test.ts`
+  시나리오 확장으로 아래 라인 보호
+  - `BT05-039` empty lane 전개 우선
+  - `BT05-072` wasteful upgrade skip
+  - `BT05-043` high-value enemy destroy target
+  - `BT05-038` stocked trash 기준 self-sacrifice target
+  - `BT05-034` return target
+- `npx vitest run tests/ai/Bt05UnluckyBunnyNikkiPracticeBot.vitest.test.ts`
+  `30/30` 통과
+- `npx vitest run tests/ai/FixedMatchupBench.vitest.test.ts tests/rules_v2_regression/rules_v2_ai_baseline_bot_regression.test.ts`
+  `8/8` 통과
+- `npx tsc --noEmit --pretty false --incremental false`
+  통과
+- `AI_FIXED_BENCH_MATCHUP=fm-c-bt05-unlucky-bunny-nikki-mirror AI_FIXED_BENCH_GAMES_PER_SIDE=10 ... npm run ai:fixed:bench`
+  결과:
+  - combined `20`게임
+  - `winner=20`
+  - `max_steps=0`
+  - `no_action=0`
+  - `invalid_action=0`
+  - avgTurns `12.5`
+  - tactical KPI: `self_lethal_open_rate 0`, `wasteful_upgrade_rate 0.3784`
+- `npm run ai:regression` 재통과
+
+M4 후속 관찰 메모:
+- mirror 20게임 리플레이를 수동 확인해서 남아 있는 `wasteful_upgrade_rate 0.3784` 로그를 분류한다.
+- 남은 개선은 `M5`로 넘기기 전, 특정 카드 조합에서의 업그레이드 오판을 리플레이 기반으로 수집하는 단계다.
 
 ## M5. 덱 전용 practice profile 분리
 

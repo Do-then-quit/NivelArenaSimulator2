@@ -699,4 +699,144 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
         expect(action).not.toBeNull();
         expect(action?.type).toBe('ACTIVATE_EFFECT');
     });
+
+    it('deploys BT05-039 into an empty lane instead of overwriting a live mixed board lane', () => {
+        const engine = createEngine({ seed: 2026031225 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 14;
+        p1.unitZones[0].unit = getCard('BT05-041');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-039')];
+        p1.trash = [getCard('BT05-039'), getCard('BT05-064')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('PLAY_UNIT');
+        if (action?.type === 'PLAY_UNIT') {
+            expect(getCardKey(p1.hand[action.handIndex])).toBe('BT05-039');
+            expect(action.zoneIndex).toBe(2);
+        }
+    });
+
+    it('skips BT05-072 when every legal upgrade lane is a low-value overwrite', () => {
+        const engine = createEngine({ seed: 2026031226 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 12;
+        p1.unitZones[0].unit = getCard('BT05-034');
+        p1.unitZones[1].unit = getCard('BT05-034');
+        p1.unitZones[2].unit = getCard('BT05-034');
+        p1.hand = [getCard('BT05-072')];
+        p1.trash = [getCard('BT05-039'), getCard('BT05-040'), getCard('BT05-038'), getCard('ST09-011')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
+    it('uses BT05-043 to destroy the highest-value opposing unit that fits the discarded cost', () => {
+        const engine = createEngine({ seed: 2026031227 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+        const p2 = engine.state.players[1];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 6;
+        p1.hand = [getCard('BT05-043'), getCard('BT05-040')];
+        p2.unitZones[0].unit = getCard('BT05-033');
+        p2.unitZones[1].unit = getCard('BT05-036');
+
+        engine.playSkill(0);
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+
+        const discardAction = bot.chooseAction(engine, p1.id);
+        expect(discardAction?.type).toBe('SELECT_HAND_TARGET');
+        expect(engine.step(discardAction!)).toBe(true);
+        expect(engine.state.interactionMode).toBe('SELECT_TARGET');
+
+        const destroyAction = bot.chooseAction(engine, p1.id);
+
+        expect(destroyAction).not.toBeNull();
+        expect(destroyAction?.type).toBe('SELECT_ZONE_TARGET');
+        if (destroyAction?.type === 'SELECT_ZONE_TARGET') {
+            expect(destroyAction.targetPlayerId).toBe(p2.id);
+            expect(destroyAction.zoneIndex).toBe(1);
+        }
+    });
+
+    it('sacrifices BT05-041 first for BT05-038 entry when the stocked trash makes it the best payoff', () => {
+        const engine = createEngine({ seed: 2026031228 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('BT05-041');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.trash = [getCard('BT05-033'), getCard('BT05-065'), getCard('ST09-011')];
+        setTargetSelection(engine, p1.id, {
+            sourceCard: getCard('BT05-038'),
+            sourcePlayerId: p1.id,
+            controllerPlayerId: p1.id,
+            actionType: 'DESTROY_UNIT',
+            actionValue: {},
+            effectDescription: 'BT05-038 entry destroy 1 friendly unit',
+            validTargets: 'MY_FIELD',
+            targetSchema: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        });
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('SELECT_ZONE_TARGET');
+        if (action?.type === 'SELECT_ZONE_TARGET') {
+            expect(action.targetPlayerId).toBe(p1.id);
+            expect(action.zoneIndex).toBe(0);
+        }
+    });
+
+    it('grants BT05-034 return to BT05-041 over a filler body', () => {
+        const engine = createEngine({ seed: 2026031229 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        p1.unitZones[0].unit = getCard('BT05-041');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        setTargetSelection(engine, p1.id, {
+            sourceCard: getCard('BT05-034'),
+            sourcePlayerId: p1.id,
+            controllerPlayerId: p1.id,
+            actionType: 'GRANT_EFFECT',
+            actionValue: {},
+            effectDescription: 'BT05-034 grant return',
+            validTargets: 'MY_FIELD',
+            targetSchema: {
+                scope: 'MY_FIELD',
+                type: 'UNIT',
+                count: 1,
+                selectMode: 'MANUAL',
+            },
+            selectedTargets: [],
+        });
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('SELECT_ZONE_TARGET');
+        if (action?.type === 'SELECT_ZONE_TARGET') {
+            expect(action.targetPlayerId).toBe(p1.id);
+            expect(action.zoneIndex).toBe(0);
+        }
+    });
 });

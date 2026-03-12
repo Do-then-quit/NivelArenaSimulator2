@@ -86,6 +86,43 @@ function hasMixedField(attributes: Set<Attribute>): boolean {
     return attributes.has(Attribute.STORM) && attributes.has(Attribute.LIGHTNING);
 }
 
+function normalizeKeywordText(card: Card | null | undefined): string {
+    const rawKeywords = (card as { keywords?: unknown } | null | undefined)?.keywords;
+    if (Array.isArray(rawKeywords)) {
+        return rawKeywords.map(keyword => String(keyword)).join(' ');
+    }
+    if (typeof rawKeywords === 'string') {
+        return rawKeywords;
+    }
+    return '';
+}
+
+function hasTriggerEffectSegment(card: Card | null | undefined): boolean {
+    const effectSegments = (card as Card & {
+        effectSegments?: Array<{ isTriggerSegment?: boolean }> | unknown;
+    } | null | undefined)?.effectSegments;
+
+    return Array.isArray(effectSegments) && effectSegments.some(segment => segment?.isTriggerSegment === true);
+}
+
+function isTriggerCard(card: Card | null | undefined): boolean {
+    if (!card) return false;
+    if (hasTriggerEffectSegment(card)) return true;
+
+    const keywordText = normalizeKeywordText(card).toLowerCase();
+    if (keywordText.includes('트리거') || keywordText.includes('trigger')) return true;
+
+    const text = String(card.text ?? '').toLowerCase();
+    return (
+        text.startsWith('[트리거] ')
+        || text.startsWith('trigger:')
+        || text.includes('\n[트리거] ')
+        || text.includes('\ntrigger:')
+        || text.includes('. [트리거] ')
+        || text.includes('. trigger:')
+    );
+}
+
 function addsMissingAttribute(attributes: Set<Attribute>, attribute: Attribute): boolean {
     if (attribute === Attribute.NONE) return false;
     if (attributes.size === 0) return false;
@@ -136,8 +173,7 @@ function isOpeningWindow(context: PracticeMainPhaseContext): boolean {
 function isBorrowableExitUnit(card: Card | null | undefined): boolean {
     if (!card || card.type !== CardType.UNIT) return false;
     const keywords = String(card.keywords ?? '');
-    const text = String(card.text ?? '');
-    return keywords.includes('엑시트') && !text.includes('트리거');
+    return keywords.includes('엑시트') && !isTriggerCard(card);
 }
 
 function countBorrowableExitUnits(cards: Card[]): number {
@@ -145,14 +181,14 @@ function countBorrowableExitUnits(cards: Card[]): number {
 }
 
 function countBottomableNonTriggerTrashCards(cards: Card[]): number {
-    return cards.filter(card => !String(card.text ?? '').includes('트리거')).length;
+    return cards.filter(card => !isTriggerCard(card)).length;
 }
 
 function countLowCostRedeployUnits(cards: Card[]): number {
     return cards.filter(card =>
         card.type === CardType.UNIT
         && card.cost <= 2
-        && !String(card.text ?? '').includes('트리거'),
+        && !isTriggerCard(card),
     ).length;
 }
 
@@ -440,7 +476,7 @@ function scoreBt05041BottomCandidate(card: Card): number {
         case 'BT05-033':
             return 4200;
         default:
-            return !String(card.text ?? '').includes('트리거') ? 2200 : -4000;
+            return !isTriggerCard(card) ? 2200 : -4000;
     }
 }
 
@@ -753,6 +789,80 @@ function getCardSpecificOpeningScore(card: Card, actor: PlayerState, mixedBefore
     }
 }
 
+function previewUpgradedUnitStats(
+    context: PracticeMainPhaseContext,
+    action: Extract<PracticeMainPhaseAction, { type: 'PLAY_UNIT' }>,
+    card: Card,
+): { power: number; hit: number } {
+    const zone = context.actor.unitZones[action.zoneIndex];
+    const originalUnit = zone.unit;
+    const originalBuffs = zone.buffs;
+    const originalTemporaryEffects = zone.temporaryEffects;
+
+    zone.unit = card;
+    zone.buffs = [];
+    zone.temporaryEffects = [];
+
+    try {
+        return {
+            power: context.engine.getUnitPower(zone, context.actor),
+            hit: context.engine.getUnitHit(zone, context.actor),
+        };
+    } finally {
+        zone.unit = originalUnit;
+        zone.buffs = originalBuffs;
+        zone.temporaryEffects = originalTemporaryEffects;
+    }
+}
+
+function scorePlayUnitLaneFit(
+    context: PracticeMainPhaseContext,
+    action: Extract<PracticeMainPhaseAction, { type: 'PLAY_UNIT' }>,
+    card: Card,
+): number {
+    const zone = context.actor.unitZones[action.zoneIndex];
+    if (!zone.unit) {
+        return 5200 + Math.max(0, card.hit ?? 0) * 500;
+    }
+
+    const opponent = getOpponent(context.engine, context.actorPlayerId);
+    const oldValue = getUnitStrategicValue(context.actor, zone.unit);
+    const newValue = getUnitStrategicValue(context.actor, card);
+    const oldPower = context.engine.getUnitPower(zone, context.actor);
+    const oldHit = context.engine.getUnitHit(zone, context.actor);
+    const preview = previewUpgradedUnitStats(context, action, card);
+    const rawDelta = newValue - oldValue;
+    let score = -8500 + Math.max(-3500, Math.min(2500, Math.floor(rawDelta * 0.45)));
+
+    const opposingZone = opponent?.unitZones[action.zoneIndex];
+    if (opposingZone?.unit && opponent) {
+        const opposingPower = context.engine.getUnitPower(opposingZone, opponent);
+        if (oldPower <= opposingPower && preview.power > opposingPower) {
+            score += 7000;
+        } else if (preview.power > oldPower && rawDelta >= 3500) {
+            score += 1500;
+        }
+    } else {
+        if (preview.hit > oldHit) {
+            score += 6000 + (preview.hit - oldHit) * 1000;
+        } else if (preview.power > oldPower + 1500) {
+            score += 1200;
+        }
+    }
+
+    if (oldValue >= 10000 && rawDelta < 2500) score -= 4500;
+    if (preview.hit <= oldHit && rawDelta < 2500) score -= 2500;
+    return score;
+}
+
+function isClearlyWastefulUpgradePlay(
+    context: PracticeMainPhaseContext,
+    action: Extract<PracticeMainPhaseAction, { type: 'PLAY_UNIT' }>,
+    card: Card,
+): boolean {
+    return !!context.actor.unitZones[action.zoneIndex]?.unit && scorePlayUnitLaneFit(context, action, card) < 0;
+}
+
 function getLaneScoreForItem(actor: PlayerState, zoneIndex: number): number {
     const zone = actor.unitZones[zoneIndex];
     if (!zone?.unit) return Number.NEGATIVE_INFINITY;
@@ -915,6 +1025,39 @@ function scoreMidgameActivateEffectAction(context: PracticeMainPhaseContext, car
     return 3600 + bestLootScore + Math.floor(unitValue * 0.1);
 }
 
+function scoreMidgamePlayUnitAction(
+    context: PracticeMainPhaseContext,
+    action: Extract<PracticeMainPhaseAction, { type: 'PLAY_UNIT' }>,
+    card: Card,
+    bestBorrowScore: number,
+    mixedActive: boolean,
+    emptyZoneCount: number,
+    lowCostRedeployCount: number,
+): number {
+    const laneFitScore = scorePlayUnitLaneFit(context, action, card);
+    const cardKey = getCardKey(card);
+
+    switch (cardKey) {
+        case 'BT05-036':
+            if (bestBorrowScore < 3000) return Number.NEGATIVE_INFINITY;
+            return 8800 + bestBorrowScore + laneFitScore;
+        case 'BT05-039':
+            if (bestBorrowScore < 3000) return Number.NEGATIVE_INFINITY;
+            return 8200 + bestBorrowScore + (mixedActive && emptyZoneCount > 0 && lowCostRedeployCount > 0 ? 2200 : 0) + laneFitScore;
+        case 'BT05-041': {
+            const bottomableCount = countBottomableNonTriggerTrashCards(context.actor.trash) + 1;
+            const damagePotential = Math.floor(bottomableCount / 3);
+            return 7600 + (mixedActive ? 1200 : 0) + damagePotential * 1700 + laneFitScore;
+        }
+        case 'BT05-072': {
+            const borrowableExitCount = countBorrowableExitUnits(context.actor.trash);
+            return 6200 + Math.max(0, 4 - borrowableExitCount) * 900 + laneFitScore;
+        }
+        default:
+            return Number.NEGATIVE_INFINITY;
+    }
+}
+
 function scoreMidgameAction(context: PracticeMainPhaseContext, action: PracticeMainPhaseAction): number {
     const card = getActionCard(context.actor, action);
     const opponent = getOpponent(context.engine, context.actorPlayerId);
@@ -947,15 +1090,15 @@ function scoreMidgameAction(context: PracticeMainPhaseContext, action: PracticeM
     }
 
     if (action.type === 'PLAY_UNIT' && card) {
-        const cardKey = getCardKey(card);
-        if (cardKey === 'BT05-036') {
-            if (bestBorrowScore < 3000) return Number.NEGATIVE_INFINITY;
-            return 8800 + bestBorrowScore;
-        }
-        if (cardKey === 'BT05-039') {
-            if (bestBorrowScore < 3000) return Number.NEGATIVE_INFINITY;
-            return 8200 + bestBorrowScore + (mixedActive && emptyZoneCount > 0 && lowCostRedeployCount > 0 ? 2200 : 0);
-        }
+        return scoreMidgamePlayUnitAction(
+            context,
+            action,
+            card,
+            bestBorrowScore,
+            mixedActive,
+            emptyZoneCount,
+            lowCostRedeployCount,
+        );
     }
 
     if (action.type === 'PLAY_ITEM' && card) {
@@ -992,7 +1135,10 @@ function chooseBestMidgameAction(context: PracticeMainPhaseContext): PracticeMai
         }
 
         if (action.type === 'PLAY_UNIT') {
-            return cardKey === 'BT05-036' || cardKey === 'BT05-039';
+            return cardKey === 'BT05-036'
+                || cardKey === 'BT05-039'
+                || cardKey === 'BT05-041'
+                || cardKey === 'BT05-072';
         }
 
         if (action.type === 'PLAY_ITEM') {
@@ -1027,7 +1173,13 @@ function chooseBestMidgameAction(context: PracticeMainPhaseContext): PracticeMai
 
     const hasUnhandledProgressAction = context.actions.some(action => {
         if (action.type === 'NEXT_PHASE') return false;
-        return !handledActions.includes(action);
+        if (handledActions.includes(action)) return false;
+        if (action.type === 'PLAY_UNIT') {
+            const card = context.actor.hand[action.handIndex];
+            if (!card) return false;
+            return !isClearlyWastefulUpgradePlay(context, action, card);
+        }
+        return true;
     });
     if (!hasUnhandledProgressAction) {
         return context.actions.find((action): action is PracticeMainPhaseAction => action.type === 'NEXT_PHASE') ?? null;
@@ -1201,6 +1353,130 @@ function chooseBt05ConfirmTargetsAction(context: PracticeConfirmTargetsContext):
     return null;
 }
 
+function getEnemyZoneThreatScore(context: PracticeZoneTargetContext, zoneIndex: number): number {
+    const opponent = getOpponent(context.engine, context.actorPlayerId);
+    if (!opponent) return Number.NEGATIVE_INFINITY;
+
+    const targetZone = opponent.unitZones[zoneIndex];
+    const targetUnit = targetZone?.unit;
+    if (!targetUnit) return Number.NEGATIVE_INFINITY;
+
+    const power = context.engine.getUnitPower(targetZone, opponent);
+    const hit = context.engine.getUnitHit(targetZone, opponent);
+    const cardKey = getCardKey(targetUnit);
+    let score = (targetUnit.cost ?? 0) * 1400 + power + hit * 2200;
+
+    if (context.actor.unitZones[zoneIndex]?.unit) score += 1200;
+    if (cardKey === 'BT05-041') score += 5000;
+    else if (cardKey === 'BT05-040') score += 3800;
+    else if (cardKey === 'BT05-039') score += 3400;
+    else if (cardKey === 'BT05-038') score += 3000;
+    else if (cardKey === 'BT05-036') score += 2600;
+    else if (cardKey === 'ST09-011') score += 2000;
+
+    return score;
+}
+
+function scoreBt05DebuffZoneTarget(context: PracticeZoneTargetContext, action: PracticeZoneTargetAction): number {
+    const opponent = getOpponent(context.engine, context.actorPlayerId);
+    if (!opponent || action.targetPlayerId === context.actorPlayerId) return Number.NEGATIVE_INFINITY;
+
+    const targetZone = opponent.unitZones[action.zoneIndex];
+    const targetUnit = targetZone?.unit;
+    if (!targetUnit) return Number.NEGATIVE_INFINITY;
+
+    const baseThreat = getEnemyZoneThreatScore(context, action.zoneIndex);
+    const ownZone = context.actor.unitZones[action.zoneIndex];
+    const debuffAmount = Math.abs(Number(context.engine.state.pendingEffect?.actionValue?.value ?? 2000));
+    const targetPower = context.engine.getUnitPower(targetZone, opponent);
+    let score = baseThreat;
+
+    if (ownZone?.unit) {
+        const ownPower = context.engine.getUnitPower(ownZone, context.actor);
+        if (ownPower < targetPower && ownPower >= targetPower - debuffAmount) {
+            score += 7000;
+        } else if (ownPower >= targetPower && ownPower < targetPower + debuffAmount) {
+            score += 2200;
+        }
+    }
+
+    return score;
+}
+
+function scoreBt05EnemyDestroyZoneTarget(context: PracticeZoneTargetContext, action: PracticeZoneTargetAction): number {
+    const opponent = getOpponent(context.engine, context.actorPlayerId);
+    if (!opponent || action.targetPlayerId === context.actorPlayerId) return Number.NEGATIVE_INFINITY;
+
+    const targetZone = opponent.unitZones[action.zoneIndex];
+    const targetUnit = targetZone?.unit;
+    if (!targetUnit) return Number.NEGATIVE_INFINITY;
+
+    let score = getEnemyZoneThreatScore(context, action.zoneIndex);
+    const ownZone = context.actor.unitZones[action.zoneIndex];
+    if (ownZone?.unit) {
+        const ownPower = context.engine.getUnitPower(ownZone, context.actor);
+        const targetPower = context.engine.getUnitPower(targetZone, opponent);
+        if (targetPower >= ownPower) score += 2500;
+    }
+    return score;
+}
+
+function scoreBt05FriendlySacrificeTarget(context: PracticeZoneTargetContext, action: PracticeZoneTargetAction): number {
+    if (action.targetPlayerId !== context.actorPlayerId) return Number.NEGATIVE_INFINITY;
+
+    const unit = context.actor.unitZones[action.zoneIndex]?.unit;
+    if (!unit) return Number.NEGATIVE_INFINITY;
+
+    const opponent = getOpponent(context.engine, context.actorPlayerId);
+    const exploitScore = scoreLeaderDestroyTarget(context.actor, opponent, unit);
+    if (exploitScore > 0) return 12000 + exploitScore;
+    return -getUnitStrategicValue(context.actor, unit);
+}
+
+function scoreBt05GrantReturnTarget(context: PracticeZoneTargetContext, action: PracticeZoneTargetAction): number {
+    if (action.targetPlayerId !== context.actorPlayerId) return Number.NEGATIVE_INFINITY;
+
+    const unit = context.actor.unitZones[action.zoneIndex]?.unit;
+    if (!unit) return Number.NEGATIVE_INFINITY;
+
+    return Math.max(scoreLeaderReturnTarget(context.actor, unit, true), getUnitStrategicValue(context.actor, unit));
+}
+
+function chooseBt05GeneralZoneAction(context: PracticeZoneTargetContext): PracticeZoneTargetAction | null {
+    const pending = context.engine.state.pendingEffect;
+    if (!pending) return null;
+
+    const sourceCardKey = getCardKey(pending.sourceCard);
+    let bestAction: PracticeZoneTargetAction | null = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    for (const action of context.actions) {
+        let score = Number.NEGATIVE_INFINITY;
+
+        if (pending.actionType === 'BUFF_POWER' && sourceCardKey === 'BT05-033' && Number(pending.actionValue?.value ?? 0) < 0) {
+            score = scoreBt05DebuffZoneTarget(context, action);
+        } else if (pending.actionType === 'GRANT_EFFECT' && sourceCardKey === 'BT05-034') {
+            score = scoreBt05GrantReturnTarget(context, action);
+        } else if (
+            pending.actionType === 'DESTROY_UNIT'
+            && (sourceCardKey === 'BT05-038' || sourceCardKey === 'BT05-040' || sourceCardKey === 'BT05-045')
+        ) {
+            score = action.targetPlayerId === context.actorPlayerId
+                ? scoreBt05FriendlySacrificeTarget(context, action)
+                : scoreBt05EnemyDestroyZoneTarget(context, action);
+        } else if (pending.actionType === 'BT05_043_SELECT_TARGET') {
+            score = scoreBt05EnemyDestroyZoneTarget(context, action);
+        }
+
+        if (score > bestScore) {
+            bestAction = action;
+            bestScore = score;
+        }
+    }
+
+    return bestScore > Number.NEGATIVE_INFINITY ? bestAction : null;
+}
+
 function chooseBt05LeaderOptionAction(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null {
     const pending = context.engine.state.pendingEffect;
     if (pending?.actionType !== 'BT05_032_SELECT_OPTION') return null;
@@ -1273,7 +1549,7 @@ export const bt05UnluckyBunnyNikkiOpeningProfile: PracticeProfile = {
     },
     chooseZoneTargetAction(context: PracticeZoneTargetContext): PracticeZoneTargetAction | null {
         if (!isBt05NikkiLeader(context.actor)) return null;
-        return chooseBt05LeaderZoneAction(context);
+        return chooseBt05LeaderZoneAction(context) ?? chooseBt05GeneralZoneAction(context);
     },
     chooseRevealedTargetAction(context: PracticeRevealedTargetContext): PracticeRevealedTargetAction | null {
         if (!isBt05NikkiLeader(context.actor)) return null;
