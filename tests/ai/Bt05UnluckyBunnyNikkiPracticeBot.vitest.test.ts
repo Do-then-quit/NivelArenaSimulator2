@@ -3,6 +3,7 @@ import { DUMMY_CARDS } from '../../src/logic/CardDatabase';
 import { GameEngine } from '../../src/logic/GameEngine';
 import { normalizeBotModelId } from '../../src/logic/ai/BotRegistry';
 import { PracticeBot } from '../../src/logic/ai/practice/PracticeBot';
+import { PracticeStrongBot } from '../../src/logic/ai/practice/PracticeStrongBot';
 import { bt05UnluckyBunnyNikkiOpeningProfile } from '../../src/logic/ai/practice/deckProfiles/bt05UnluckyBunnyNikki';
 import { Attribute, Card, CardType, Phase } from '../../src/logic/types';
 import { getAvailableBotIds, resolveBotFactory } from '../../scripts/ai/bot_registry';
@@ -52,6 +53,10 @@ function createEngine(options: { enableMulligan?: boolean; seed?: number } = {})
 
 function createPracticeBot(): PracticeBot {
     return new PracticeBot('BT05Practice', bt05UnluckyBunnyNikkiOpeningProfile);
+}
+
+function createStrongPracticeBot(): PracticeStrongBot {
+    return new PracticeStrongBot('BT05StrongPractice', bt05UnluckyBunnyNikkiOpeningProfile);
 }
 
 function setMainPhase(engine: GameEngine, actorPlayerId: string): void {
@@ -276,6 +281,14 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
         expect(normalizeBotModelId('practice-bt05-nikki')).toBe('practice-bt05-nikki-open-v1');
 
         const bot = resolveBotFactory('practice-bt05-nikki-open-v1')('practice');
+        expect(typeof bot.chooseAction).toBe('function');
+    });
+
+    it('registers the BT05 strong practice profile in both CLI and UI bot registries', () => {
+        expect(getAvailableBotIds()).toContain('practice-bt05-nikki-strong-v1');
+        expect(normalizeBotModelId('practice-bt05-nikki-strong')).toBe('practice-bt05-nikki-strong-v1');
+
+        const bot = resolveBotFactory('practice-bt05-nikki-strong-v1')('practice-strong');
         expect(typeof bot.chooseAction).toBe('function');
     });
 
@@ -698,6 +711,26 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
 
         expect(action).not.toBeNull();
         expect(action?.type).toBe('ACTIVATE_EFFECT');
+    });
+
+    it('strong practice bot preserves the BT05 opening equip preference while using the strong-v3 base', () => {
+        const engine = createEngine({ seed: 2026031230 });
+        const bot = createStrongPracticeBot();
+        const p1 = engine.state.players[0];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 2;
+        p1.unitZones[0].unit = getCard('BT05-033');
+        p1.hand = [getCard('ST09-011'), getCard('BT05-081')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('PLAY_ITEM');
+        if (action?.type === 'PLAY_ITEM') {
+            expect(getCardKey(p1.hand[action.handIndex])).toBe('BT05-081');
+            expect(action.zoneIndex).toBe(0);
+        }
     });
 
     it('deploys BT05-039 into an empty lane instead of overwriting a live mixed board lane', () => {

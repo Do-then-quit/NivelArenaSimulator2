@@ -268,15 +268,33 @@ M4 후속 관찰 메모:
 ## M5. 덱 전용 practice profile 분리
 
 - [x] 범용 baseline 패치가 아니라 별도 deck-aware profile로 분리된다.
-- [ ] `strong-v3` 기반 또는 동급의 practice profile ID가 정의된다.
+- [x] `strong-v3` 기반 또는 동급의 practice profile ID가 정의된다.
 - [x] CLI 벤치 레지스트리와 UI/replay 레지스트리에 같은 프로필이 등록된다.
 - [x] 덱 전용 정책이 공통 엔진과 분리된 파일에 정리된다.
 
 권장 파일 방향:
 - `src/logic/ai/practice/PracticeBot.ts`
+- `src/logic/ai/practice/PracticeStrongBot.ts`
 - `src/logic/ai/practice/deckProfiles/bt05UnluckyBunnyNikki.ts`
 - `scripts/ai/bot_registry.ts`
 - `src/logic/ai/BotRegistry.ts`
+
+검증 메모 (2026-03-12, M5):
+- `strong-v3` 위에 BT05 practice hook만 먼저 적용하는
+  `PracticeStrongBot` wrapper를 추가
+- 신규 프로필 ID:
+  - `practice-bt05-nikki-strong-v1`
+- 레지스트리 연결:
+  - CLI `scripts/ai/bot_registry.ts`
+  - UI `src/logic/ai/BotRegistry.ts`
+- `tests/ai/PracticeStrongBot.vitest.test.ts`
+  로 profile override / strong fallback 둘 다 보호
+- `tests/ai/Bt05UnluckyBunnyNikkiPracticeBot.vitest.test.ts`
+  에 strong practice registry / opening preference 시나리오 추가
+- `tests/ai/FixedMatchupBench.vitest.test.ts`
+  에 strong practice mirror 안정성 스모크 추가
+- `npx vitest run tests/ai/PracticeStrongBot.vitest.test.ts tests/ai/Bt05UnluckyBunnyNikkiPracticeBot.vitest.test.ts tests/ai/FixedMatchupBench.vitest.test.ts`
+  `39/39` 통과
 
 ## M6. 수용 게이트
 
@@ -303,7 +321,7 @@ M4 후속 관찰 메모:
 - [x] 초반 전개 규칙 추가
 - [x] 트래시/엑시트 차용 우선순위 추가
 - [x] 코스트 지불 우선순위 추가
-- [ ] 타겟 선택 우선순위 추가
+- [x] 타겟 선택 우선순위 추가
 - [x] 아이템 운용 규칙 추가
 - [ ] 리플레이 20게임 수동 검수
 - [ ] 교차 매치업 1종 추가

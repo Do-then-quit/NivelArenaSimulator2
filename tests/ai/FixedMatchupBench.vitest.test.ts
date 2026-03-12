@@ -101,4 +101,25 @@ describe('Fixed matchup bench', () => {
         expect(report.combined.terminationCounts.no_action).toBe(0);
         expect(report.combined.terminationCounts.invalid_action).toBe(0);
     }, 15000);
+
+    it('runs the BT05 strong practice profile in the curated mirror without stability regressions', () => {
+        const report = runFixedMatchupBatch({
+            matchupId: 'fm-c-bt05-unlucky-bunny-nikki-mirror',
+            gamesPerSide: 1,
+            maxSteps: 1200,
+            enableMulligan: true,
+            traceLimit: 8,
+            startSeed: 2026032016,
+            player1BotId: 'practice-bt05-nikki-strong-v1',
+            player2BotId: 'practice-bt05-nikki-strong-v1',
+            measureRuntime: false,
+            suppressLogs: false,
+        });
+
+        expect(report.combined.totalGames).toBe(2);
+        expect(report.combined.unfinished).toBe(0);
+        expect(report.combined.terminationCounts.max_steps).toBe(0);
+        expect(report.combined.terminationCounts.no_action).toBe(0);
+        expect(report.combined.terminationCounts.invalid_action).toBe(0);
+    }, 15000);
 });
