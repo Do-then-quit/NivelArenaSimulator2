@@ -1,5 +1,6 @@
 import { Card } from './logic/types';
 import { DeckPersistence, SavedDeck } from './logic/DeckPersistence';
+import { BotModelId, getBotModelLabel } from './logic/ai/BotRegistry';
 
 export interface SetupStartOptions {
     revealBotHand: boolean;
@@ -8,6 +9,17 @@ export interface SetupStartOptions {
 export interface SetupUIOptions {
     showBotHandVisibilityOption?: boolean;
     defaultRevealBotHand?: boolean;
+    availableBotModels?: Array<{ id: BotModelId; label: string }>;
+    selectedBotModelId?: BotModelId;
+    onBotModelChange?: (botId: BotModelId) => void;
+}
+
+interface ResolvedSetupUIOptions {
+    showBotHandVisibilityOption: boolean;
+    defaultRevealBotHand: boolean;
+    availableBotModels: Array<{ id: BotModelId; label: string }>;
+    selectedBotModelId: BotModelId | null;
+    onBotModelChange: (botId: BotModelId) => void;
 }
 
 export class SetupUI {
@@ -15,10 +27,11 @@ export class SetupUI {
     private cards: Card[];
     private onStart: (deck1: Card[], deck2: Card[], leader1: Card, leader2: Card, options: SetupStartOptions) => void;
     private onBack: () => void;
-    private uiOptions: Required<SetupUIOptions>;
+    private uiOptions: ResolvedSetupUIOptions;
     private selectedDeck1: SavedDeck | null = null;
     private selectedDeck2: SavedDeck | null = null;
     private revealBotHand: boolean;
+    private selectedBotModelId: BotModelId | null;
 
     constructor(
         container: HTMLElement,
@@ -34,8 +47,12 @@ export class SetupUI {
         this.uiOptions = {
             showBotHandVisibilityOption: options.showBotHandVisibilityOption ?? false,
             defaultRevealBotHand: options.defaultRevealBotHand ?? true,
+            availableBotModels: options.availableBotModels ?? [],
+            selectedBotModelId: options.selectedBotModelId ?? null,
+            onBotModelChange: options.onBotModelChange ?? (() => undefined),
         };
         this.revealBotHand = this.uiOptions.defaultRevealBotHand;
+        this.selectedBotModelId = this.uiOptions.selectedBotModelId ?? null;
 
         const allDecks = DeckPersistence.getAllDecks();
         if (allDecks.length > 0) {
@@ -80,7 +97,22 @@ export class SetupUI {
 
                 ${this.uiOptions.showBotHandVisibilityOption ? `
                     <div class="setup-extra-options">
-                        <h3>Baseline Bot Hand Visibility</h3>
+                        ${this.uiOptions.availableBotModels.length > 0 ? `
+                            <h3>Bot Options</h3>
+                            <div class="deck-select">
+                                <label>Opponent Bot:</label>
+                                <select id="setup-bot-model-select">
+                                    ${this.uiOptions.availableBotModels.map(bot => `
+                                        <option value="${bot.id}" ${this.selectedBotModelId === bot.id ? 'selected' : ''}>${bot.label}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                            <div class="preview-info" id="setup-bot-model-preview">
+                                <strong>Selected:</strong> ${this.selectedBotModelId ? getBotModelLabel(this.selectedBotModelId) : 'Bot'}
+                            </div>
+                        ` : `
+                            <h3>Bot Options</h3>
+                        `}
                         <label class="setup-radio-option">
                             <input type="radio" name="bot-hand-visibility" value="hide" ${this.revealBotHand ? '' : 'checked'}>
                             <span>Hide Bot Hand (Recommended)</span>
@@ -116,6 +148,16 @@ export class SetupUI {
         p2Select?.addEventListener('change', () => {
             this.selectedDeck2 = DeckPersistence.getDeck(p2Select.value);
             this.updatePreviews();
+        });
+
+        const botModelSelect = document.getElementById('setup-bot-model-select') as HTMLSelectElement | null;
+        botModelSelect?.addEventListener('change', () => {
+            this.selectedBotModelId = botModelSelect.value as BotModelId;
+            this.uiOptions.onBotModelChange(this.selectedBotModelId);
+            const preview = document.getElementById('setup-bot-model-preview');
+            if (preview) {
+                preview.innerHTML = `<strong>Selected:</strong> ${getBotModelLabel(this.selectedBotModelId)}`;
+            }
         });
 
         if (this.uiOptions.showBotHandVisibilityOption) {

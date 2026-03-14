@@ -7,6 +7,7 @@ import {
     BotLike,
     BotModelId,
     getAvailableBotModels,
+    getBotModelLabel,
 } from '../logic/ai/BotRegistry';
 import {
     BotReplayActionLog,
@@ -136,11 +137,20 @@ export const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
 };
 
 export const HUMAN_VS_BASELINE_CONFIG: MatchControlConfig = {
-    label: 'HUMAN vs BASELINE BOT',
+    label: 'HUMAN vs Baseline',
     player1Control: 'HUMAN',
     player2Control: 'BOT',
     player2BotId: 'baseline',
 };
+
+export function createHumanVsBotConfig(botId: BotModelId = 'baseline'): MatchControlConfig {
+    return {
+        label: `HUMAN vs ${getBotModelLabel(botId)}`,
+        player1Control: 'HUMAN',
+        player2Control: 'BOT',
+        player2BotId: botId,
+    };
+}
 
 export interface UITestResult {
     testId: string;

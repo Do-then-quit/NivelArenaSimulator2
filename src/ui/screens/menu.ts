@@ -6,6 +6,7 @@ import { getDeckBuilderCards } from '../../logic/DeckBuilderCardPool';
 import { DeckBuilderUI } from '../../DeckBuilderUI';
 import { SetupUI } from '../../SetupUI';
 import {
+    createHumanVsBotConfig,
     uiState,
     Screen,
     HUMAN_VS_BASELINE_CONFIG,
@@ -21,7 +22,7 @@ export function renderMenu() {
                 <button id="start-game-btn" class="primary-btn">Quick Play (ST01 vs ST01)</button>
                 <button id="start-vs-bot-btn" class="primary-btn">Quick Play vs Baseline Bot</button>
                 <button id="custom-sim-btn" class="primary-btn">Custom Simulation (PvP)</button>
-                <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Baseline Bot</button>
+                <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Selected Bot</button>
                 <button id="online-room-btn" class="primary-btn">Online Match (Room Code)</button>
                 <button id="bot-replay-btn" class="primary-btn">Simulate Bot vs Bot (Replay)</button>
                 <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
@@ -51,8 +52,11 @@ export function renderMenu() {
     });
 
     document.getElementById('custom-vs-bot-btn')?.addEventListener('click', () => {
-        uiState.pendingSetupConfig = HUMAN_VS_BASELINE_CONFIG;
-        uiState.pendingMatchViewConfig = getDefaultViewConfig(HUMAN_VS_BASELINE_CONFIG);
+        const lastBotId = uiState.pendingSetupConfig.player2Control === 'BOT'
+            ? (uiState.pendingSetupConfig.player2BotId ?? HUMAN_VS_BASELINE_CONFIG.player2BotId ?? 'baseline')
+            : (HUMAN_VS_BASELINE_CONFIG.player2BotId ?? 'baseline');
+        uiState.pendingSetupConfig = createHumanVsBotConfig(lastBotId);
+        uiState.pendingMatchViewConfig = getDefaultViewConfig(uiState.pendingSetupConfig);
         uiState.currentScreen = Screen.SETUP;
         uiState.render?.();
     });
@@ -103,6 +107,29 @@ export function renderDeckBuilder() {
 }
 
 export function renderSetup() {
+    const applySetupBotLabels = () => {
+        const title = uiState.app.querySelector('.setup-screen h1');
+        if (title) {
+            const p2BotLabel = uiState.pendingSetupConfig.player2BotId
+                ? getBotModelLabel(uiState.pendingSetupConfig.player2BotId)
+                : 'Bot';
+            title.textContent = uiState.pendingSetupConfig.player2Control === 'BOT'
+                ? `Simulation Setup (vs ${p2BotLabel})`
+                : 'Simulation Setup';
+        }
+
+        const playerHeaders = uiState.app.querySelectorAll('.player-setup h3');
+        const p2Header = playerHeaders.item(1) as HTMLElement | null;
+        if (p2Header) {
+            const p2BotLabel = uiState.pendingSetupConfig.player2BotId
+                ? getBotModelLabel(uiState.pendingSetupConfig.player2BotId)
+                : 'Bot';
+            p2Header.textContent = uiState.pendingSetupConfig.player2Control === 'BOT'
+                ? `Player 2 (${p2BotLabel})`
+                : 'Player 2';
+        }
+    };
+
     const setupUI = new SetupUI(
         uiState.app,
         DUMMY_CARDS,
@@ -118,28 +145,21 @@ export function renderSetup() {
         {
             showBotHandVisibilityOption: hasBotPlayer(uiState.pendingSetupConfig),
             defaultRevealBotHand: uiState.pendingMatchViewConfig.revealBotHand,
+            availableBotModels: uiState.pendingSetupConfig.player2Control === 'BOT'
+                ? uiState.availableBotModels
+                : [],
+            selectedBotModelId: uiState.pendingSetupConfig.player2BotId ?? 'baseline',
+            onBotModelChange: (botId) => {
+                const revealBotHand = uiState.pendingMatchViewConfig.revealBotHand;
+                uiState.pendingSetupConfig = createHumanVsBotConfig(botId);
+                uiState.pendingMatchViewConfig = {
+                    ...getDefaultViewConfig(uiState.pendingSetupConfig),
+                    revealBotHand,
+                };
+                applySetupBotLabels();
+            },
         },
     );
     setupUI.render();
-
-    const title = uiState.app.querySelector('.setup-screen h1');
-    if (title) {
-        const p2BotLabel = uiState.pendingSetupConfig.player2BotId
-            ? getBotModelLabel(uiState.pendingSetupConfig.player2BotId)
-            : 'Bot';
-        title.textContent = uiState.pendingSetupConfig.player2Control === 'BOT'
-            ? `Simulation Setup (vs ${p2BotLabel})`
-            : 'Simulation Setup';
-    }
-
-    const playerHeaders = uiState.app.querySelectorAll('.player-setup h3');
-    const p2Header = playerHeaders.item(1) as HTMLElement | null;
-    if (p2Header) {
-        const p2BotLabel = uiState.pendingSetupConfig.player2BotId
-            ? getBotModelLabel(uiState.pendingSetupConfig.player2BotId)
-            : 'Bot';
-        p2Header.textContent = uiState.pendingSetupConfig.player2Control === 'BOT'
-            ? `Player 2 (${p2BotLabel})`
-            : 'Player 2';
-    }
+    applySetupBotLabels();
 }
