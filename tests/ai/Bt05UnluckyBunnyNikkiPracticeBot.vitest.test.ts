@@ -292,6 +292,14 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
         expect(typeof bot.chooseAction).toBe('function');
     });
 
+    it('registers the promoted BT05 strong-v2 profile and keeps candidate-v2 as its UI alias', () => {
+        expect(getAvailableBotIds()).toContain('practice-bt05-nikki-strong-v2');
+        expect(normalizeBotModelId('practice-bt05-nikki-candidate-v2')).toBe('practice-bt05-nikki-strong-v2');
+
+        const bot = resolveBotFactory('practice-bt05-nikki-strong-v2')('practice-strong-v2');
+        expect(typeof bot.chooseAction).toBe('function');
+    });
+
     it('prefers BT05-044 over a raw BT05-041 body once trash is primed for a strong mixed borrow turn', () => {
         const engine = createEngine({ seed: 2026031210 });
         const bot = createPracticeBot();

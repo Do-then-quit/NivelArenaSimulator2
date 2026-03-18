@@ -65,6 +65,61 @@ describe('PracticeStrongBot', () => {
         expect(action?.type).toBe('NEXT_PHASE');
     });
 
+    it('can hold main-phase control for Nikki-like profiles on ambiguous early turns instead of handing over to strong-v3', () => {
+        const engine = createEngine(2026031233);
+        const actor = engine.state.players[0];
+        const profile: PracticeProfile = {
+            id: 'practice-bt05-nikki-hold-test',
+            label: 'Practice BT05 Nikki Hold Test',
+            chooseMainPhaseAction() {
+                return null;
+            },
+        };
+        const bot = new PracticeStrongBot('PracticeStrongBot-Hold', profile, {
+            preferPracticeMainPhaseHold: true,
+        });
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = actor.id;
+        actor.leaderLevel = 2;
+        actor.hand = [getCard('BT05-064')];
+
+        const action = bot.chooseAction(engine, actor.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
+    it('keeps the Nikki hold gate narrow by falling back to strong-v3 in late-game turns', () => {
+        const engine = createEngine(2026031234);
+        const actor = engine.state.players[0];
+        const profile: PracticeProfile = {
+            id: 'practice-bt05-nikki-hold-test',
+            label: 'Practice BT05 Nikki Hold Test',
+            chooseMainPhaseAction() {
+                return null;
+            },
+        };
+        const bot = new PracticeStrongBot('PracticeStrongBot-Hold-Late', profile, {
+            preferPracticeMainPhaseHold: true,
+            preferPracticeMainPhaseHoldMaxLeaderLevel: 6,
+        });
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = actor.id;
+        actor.leaderLevel = 8;
+        actor.hand = [getCard('BT05-064')];
+
+        const action = bot.chooseAction(engine, actor.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).not.toBe('NEXT_PHASE');
+    });
+
     it('falls back to strong-v3 when the practice profile has no override', () => {
         const engine = createEngine(2026031232);
         const actor = engine.state.players[0];
@@ -88,5 +143,6 @@ describe('PracticeStrongBot', () => {
 
         expect(action).not.toBeNull();
         expect(engine.getLegalActions(actor.id)).toContainEqual(action);
+        expect(action?.type).not.toBe('NEXT_PHASE');
     });
 });

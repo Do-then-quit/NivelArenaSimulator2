@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GameEngine } from '../../src/logic/GameEngine';
-import { StrongBotV3 } from '../../src/logic/ai/StrongBotV3';
+import { scoreStrongBotCandidate, StrongBotV3 } from '../../src/logic/ai/StrongBotV3';
 import { ActivationCondition, Attribute, Card, CardType, Phase } from '../../src/logic/types';
 
 function makeLeader(id: string): Card {
@@ -192,6 +192,49 @@ describe('StrongBotV3', () => {
         expect(topKActionB).not.toBeNull();
         expect(topKActionA).toEqual(topKActionB);
         expect(topKActionA).toEqual(baselineAction);
+    });
+
+    it('prefers the more stable candidate when immediate and rollout scores disagree sharply', () => {
+        const stable = scoreStrongBotCandidate(100, 100, {
+            actionScoreWeight: 1,
+            stateScoreWeight: 1,
+            rolloutDisagreementPenaltyWeight: 0.02,
+            closeBoardStateScoreThreshold: 2200,
+            closeBoardDisagreementBoost: 0.55,
+            closeBoardOvercommitPenaltyWeight: 0.01,
+        });
+        const brittle = scoreStrongBotCandidate(190, 10, {
+            actionScoreWeight: 1,
+            stateScoreWeight: 1,
+            rolloutDisagreementPenaltyWeight: 0.02,
+            closeBoardStateScoreThreshold: 2200,
+            closeBoardDisagreementBoost: 0.55,
+            closeBoardOvercommitPenaltyWeight: 0.01,
+        });
+
+        expect(stable).toBe(200);
+        expect(brittle).toBe(196.4);
+        expect(stable).toBeGreaterThan(brittle);
+    });
+
+    it('penalizes overcommit more strongly in close board states than in distant ones', () => {
+        const options = {
+            actionScoreWeight: 1,
+            stateScoreWeight: 1,
+            rolloutDisagreementPenaltyWeight: 0.02,
+            closeBoardStateScoreThreshold: 2200,
+            closeBoardDisagreementBoost: 0.55,
+            closeBoardOvercommitPenaltyWeight: 0.01,
+        } as const;
+
+        const closeOvercommit = scoreStrongBotCandidate(200, 20, options, 0);
+        const closeUndercommit = scoreStrongBotCandidate(20, 200, options, 0);
+        const farOvercommit = scoreStrongBotCandidate(200, 20, options, 6000);
+        const farUndercommit = scoreStrongBotCandidate(20, 200, options, 6000);
+
+        expect(closeUndercommit).toBeGreaterThan(closeOvercommit);
+        expect(farOvercommit).toBeCloseTo(farUndercommit, 10);
+        expect(closeOvercommit).toBeLessThan(farOvercommit);
     });
 
 });

@@ -13,15 +13,24 @@ import {
     PracticeZoneTargetAction,
 } from './types';
 
+export interface PracticeStrongBotOptions extends Partial<StrongBotV3Options> {
+    preferPracticeMainPhaseHold?: boolean;
+    preferPracticeMainPhaseHoldMaxLeaderLevel?: number;
+}
+
 export class PracticeStrongBot {
     readonly name: string;
     readonly profile: PracticeProfile;
     private readonly delegate: StrongBotV3;
+    private readonly preferPracticeMainPhaseHold: boolean;
+    private readonly preferPracticeMainPhaseHoldMaxLeaderLevel: number;
 
-    constructor(name: string, profile: PracticeProfile, options: Partial<StrongBotV3Options> = {}) {
+    constructor(name: string, profile: PracticeProfile, options: PracticeStrongBotOptions = {}) {
         this.name = name;
         this.profile = profile;
         this.delegate = new StrongBotV3(`${name}-StrongV3`, options);
+        this.preferPracticeMainPhaseHold = options.preferPracticeMainPhaseHold ?? false;
+        this.preferPracticeMainPhaseHoldMaxLeaderLevel = options.preferPracticeMainPhaseHoldMaxLeaderLevel ?? 6;
     }
 
     public chooseAction(engine: GameEngine, actorPlayerId?: string): EngineAction | null {
@@ -137,12 +146,20 @@ export class PracticeStrongBot {
                 || action.type === 'ACTIVATE_EFFECT'
                 || action.type === 'NEXT_PHASE'
             ));
-            return this.profile.chooseMainPhaseAction({
+            const practiceAction = this.profile.chooseMainPhaseAction({
                 engine,
                 actorPlayerId,
                 actor,
                 actions: practiceActions,
             });
+            if (practiceAction) return practiceAction;
+
+            if (this.shouldHoldMainPhaseFallback(engine, actor, practiceActions)) {
+                const nextPhaseAction = practiceActions.find((action): action is Extract<PracticeMainPhaseAction, { type: 'NEXT_PHASE' }> => action.type === 'NEXT_PHASE');
+                if (nextPhaseAction) return nextPhaseAction;
+            }
+
+            return null;
         }
 
         return null;
@@ -150,6 +167,27 @@ export class PracticeStrongBot {
 
     private getPlayerById(engine: GameEngine, actorPlayerId: string): PlayerState | null {
         return engine.state.players.find(player => player.id === actorPlayerId) ?? null;
+    }
+
+    private shouldHoldMainPhaseFallback(
+        engine: GameEngine,
+        actor: PlayerState,
+        actions: PracticeMainPhaseAction[],
+    ): boolean {
+        if (!this.preferPracticeMainPhaseHold) return false;
+        if (!this.isNikkiPracticeProfile()) return false;
+        if (engine.state.phase !== Phase.MAIN || engine.state.interactionMode !== 'NORMAL') return false;
+        if (actor.leaderLevel > this.preferPracticeMainPhaseHoldMaxLeaderLevel) return false;
+
+        const hasNextPhase = actions.some(action => action.type === 'NEXT_PHASE');
+        const hasProgressAction = actions.some(action => action.type !== 'NEXT_PHASE');
+        return hasNextPhase && hasProgressAction;
+    }
+
+    private isNikkiPracticeProfile(): boolean {
+        const profileId = this.profile.id.trim().toLowerCase();
+        const profileLabel = this.profile.label.trim().toLowerCase();
+        return profileId.startsWith('practice-bt05-nikki') || profileLabel.includes('nikki');
     }
 
     private filterByType(actions: EngineAction[], type: 'RESOLVE_MULLIGAN'): PracticeMulliganAction[];
