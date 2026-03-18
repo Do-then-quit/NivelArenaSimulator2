@@ -774,6 +774,49 @@ describe('BT05 Unlucky Bunny Nikki practice bot opening profile', () => {
         expect(action?.type).toBe('NEXT_PHASE');
     });
 
+    it('places BT05-072 into an empty lane instead of overwriting a live lane when a free lane exists', () => {
+        const engine = createEngine({ seed: 2026031226 });
+        const bot = createPracticeBot();
+        const p1 = engine.state.players[0];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 12;
+        p1.unitZones[0].unit = getCard('BT05-041');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-072')];
+        p1.trash = [getCard('BT05-039'), getCard('BT05-040'), getCard('BT05-038'), getCard('ST09-011')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('PLAY_UNIT');
+        if (action?.type === 'PLAY_UNIT') {
+            expect(getCardKey(p1.hand[action.handIndex])).toBe('BT05-072');
+            expect(action.zoneIndex).toBe(2);
+        }
+    });
+
+    it('keeps strong practice control of BT05-064 midgame placement to preserve mix and take the empty lane', () => {
+        const engine = createEngine({ seed: 2026031235 });
+        const bot = createStrongPracticeBot();
+        const p1 = engine.state.players[0];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 8;
+        p1.unitZones[0].unit = getCard('BT05-033');
+        p1.unitZones[2].unit = getCard('BT05-066');
+        p1.hand = [getCard('BT05-064')];
+
+        const action = bot.chooseAction(engine, p1.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('PLAY_UNIT');
+        if (action?.type === 'PLAY_UNIT') {
+            expect(getCardKey(p1.hand[action.handIndex])).toBe('BT05-064');
+            expect(action.zoneIndex).toBe(1);
+        }
+    });
+
     it('uses BT05-043 to destroy the highest-value opposing unit that fits the discarded cost', () => {
         const engine = createEngine({ seed: 2026031227 });
         const bot = createPracticeBot();

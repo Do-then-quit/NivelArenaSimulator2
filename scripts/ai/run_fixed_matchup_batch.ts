@@ -75,6 +75,11 @@ export interface FixedMatchupBatchReport {
     };
 }
 
+export interface FixedMatchupArtifactPaths {
+    latestPath: string;
+    archivePath: string;
+}
+
 function roundTo(value: number, digits: number): number {
     const p = 10 ** digits;
     return Math.round(value * p) / p;
@@ -131,6 +136,33 @@ function resolveOutputPath(defaultOutputPath: string): string | undefined {
     return raw.trim();
 }
 
+function sanitizeArtifactSegment(value: string): string {
+    const normalized = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    return normalized.replace(/^-+|-+$/g, '') || 'unknown';
+}
+
+function summarizeSeedList(seedList: number[]): string {
+    if (seedList.length === 0) return 'no-seeds';
+
+    const first = seedList[0];
+    const last = seedList[seedList.length - 1];
+    const isSequential = seedList.every((seed, index) => seed === first + index);
+
+    if (seedList.length === 1) {
+        return `seed-${first}`;
+    }
+
+    if (isSequential) {
+        return `seed-${first}-to-${last}`;
+    }
+
+    if (seedList.length <= 4) {
+        return `seeds-${seedList.join('-')}`;
+    }
+
+    return `seeds-${first}-to-${last}-n${seedList.length}`;
+}
+
 function parseIntEnv(name: string, fallback: number): number {
     const raw = process.env[name];
     if (!raw) return fallback;
@@ -154,11 +186,35 @@ function parseSeedSuiteName(raw: string | undefined): SeedSuiteName | undefined 
     return undefined;
 }
 
-function writeIfRequested(outputPath: string | undefined, report: FixedMatchupBatchReport): void {
+export function buildFixedMatchupArtifactPaths(
+    outputPath: string,
+    report: Pick<FixedMatchupBatchReport, 'matchup' | 'config'>,
+): FixedMatchupArtifactPaths {
+    const latestPath = path.resolve(outputPath);
+    const archiveDirectory = path.join(path.dirname(latestPath), 'runs');
+    const seedLabel = report.config.seedSuiteName
+        ? `suite-${sanitizeArtifactSegment(report.config.seedSuiteName)}`
+        : summarizeSeedList(report.config.seedList);
+    const archiveSlug = [
+        sanitizeArtifactSegment(report.matchup.id),
+        `p1-${sanitizeArtifactSegment(report.config.player1BotId)}`,
+        `p2-${sanitizeArtifactSegment(report.config.player2BotId)}`,
+        seedLabel,
+    ].join('__');
+
+    return {
+        latestPath,
+        archivePath: path.join(archiveDirectory, `${archiveSlug}.json`),
+    };
+}
+
+export function writeFixedMatchupArtifacts(outputPath: string | undefined, report: FixedMatchupBatchReport): void {
     if (!outputPath) return;
-    const resolved = path.resolve(outputPath);
-    fs.mkdirSync(path.dirname(resolved), { recursive: true });
-    fs.writeFileSync(resolved, JSON.stringify(report, null, 2), 'utf8');
+    const { latestPath, archivePath } = buildFixedMatchupArtifactPaths(outputPath, report);
+    for (const targetPath of [latestPath, archivePath]) {
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+        fs.writeFileSync(targetPath, JSON.stringify(report, null, 2), 'utf8');
+    }
 }
 
 function cloneDeckSource(deck: Card[]): Card[] {
@@ -375,7 +431,7 @@ function runCli(): void {
     };
 
     const report = runFixedMatchupBatch(config);
-    writeIfRequested(resolveOutputPath(manifest.fixedMatchupBench.outputPath), report);
+    writeFixedMatchupArtifacts(resolveOutputPath(manifest.fixedMatchupBench.outputPath), report);
     console.log(JSON.stringify(report, null, 2));
 }
 

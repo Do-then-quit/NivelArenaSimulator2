@@ -100,7 +100,10 @@ function rankActionsWithLookahead(
     return ranked;
 }
 
-function aggregateScores(scores: number[], mode: CounterfactualRolloutOptions['opponentReplyAggregation']): number {
+export function aggregateOpponentReplyScores(
+    scores: number[],
+    mode: CounterfactualRolloutOptions['opponentReplyAggregation'],
+): number {
     if (scores.length === 0) return Number.NaN;
     if (mode === 'max') return Math.max(...scores);
     if (mode === 'mean') return scores.reduce((sum, score) => sum + score, 0) / scores.length;
@@ -112,7 +115,11 @@ function aggregateScores(scores: number[], mode: CounterfactualRolloutOptions['o
         weightedSum += scores[i] * weight;
         totalWeight += weight;
     }
-    return totalWeight > 0 ? weightedSum / totalWeight : scores[0];
+    if (totalWeight <= 0) return scores[0];
+
+    const weightedAverage = weightedSum / totalWeight;
+    const spreadPenalty = Math.max(0, scores[0] - scores[scores.length - 1]) * 0.08;
+    return weightedAverage - spreadPenalty;
 }
 
 export function runCounterfactualRollout(
@@ -196,7 +203,7 @@ export function runCounterfactualRollout(
                     }
 
                     if (replyScores.length > 0) {
-                        const aggregatedReplyScore = aggregateScores(replyScores, options.opponentReplyAggregation);
+                        const aggregatedReplyScore = aggregateOpponentReplyScores(replyScores, options.opponentReplyAggregation);
                         const blend = clamp01(options.opponentReplyBlend);
                         stateScore = stateScore * (1 - blend) + aggregatedReplyScore * blend;
                         opponentReplyApplied = true;

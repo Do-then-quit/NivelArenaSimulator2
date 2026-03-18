@@ -31,6 +31,7 @@ const BT05_BORROW_SOURCE_IDS = new Set(['BT05-033', 'ST09-011', 'BT05-038', 'BT0
 const BT05_LOW_COST_REDEPLOY_IDS = new Set(['BT05-033', 'BT05-034', 'BT05-064', 'BT05-066', 'ST09-011']);
 const BT05_FINISHER_IDS = new Set(['BT05-038', 'BT05-039', 'BT05-040', 'BT05-041']);
 const BT05_DISCARD_SAFE_IDS = new Set(['BT05-064', 'BT05-065', 'BT05-066']);
+const BT05_MIDGAME_TEMPO_UNIT_IDS = new Set(['BT05-033', 'BT05-034', 'BT05-064', 'BT05-065', 'BT05-066', 'ST09-011']);
 const BT05_REVEAL_TRASH_PRIORITY_IDS = new Set(['BT05-033', 'ST09-011', 'BT05-038', 'BT05-039', 'BT05-040', 'BT05-064', 'BT05-065', 'BT05-066', 'BT05-081', 'BT05-082', 'BT05-046']);
 const BT05_LEADER_RETURN_OPTION_ID = 'BT05-032-RETURN';
 const BT05_LEADER_DESTROY_OPTION_ID = 'BT05-032-DESTROY';
@@ -815,6 +816,41 @@ function previewUpgradedUnitStats(
     }
 }
 
+function getFieldAttributesAfterUnitPlay(
+    actor: PlayerState,
+    action: Extract<PracticeMainPhaseAction, { type: 'PLAY_UNIT' }>,
+    card: Card,
+): Set<Attribute> {
+    const attributes = new Set<Attribute>();
+
+    for (let zoneIndex = 0; zoneIndex < actor.unitZones.length; zoneIndex += 1) {
+        const zone = actor.unitZones[zoneIndex];
+        const unit = zoneIndex === action.zoneIndex ? card : zone.unit;
+        const unitAttribute = unit?.attribute;
+        if (unitAttribute && unitAttribute !== Attribute.NONE) {
+            attributes.add(unitAttribute);
+        }
+
+        for (const item of zone.items) {
+            if (item.attribute !== Attribute.NONE) {
+                attributes.add(item.attribute);
+            }
+        }
+    }
+
+    return attributes;
+}
+
+function wouldBreakMixedFieldOnUnitPlay(
+    actor: PlayerState,
+    action: Extract<PracticeMainPhaseAction, { type: 'PLAY_UNIT' }>,
+    card: Card,
+): boolean {
+    const attributesBefore = getFieldAttributes(actor);
+    if (!hasMixedField(attributesBefore)) return false;
+    return !hasMixedField(getFieldAttributesAfterUnitPlay(actor, action, card));
+}
+
 function scorePlayUnitLaneFit(
     context: PracticeMainPhaseContext,
     action: Extract<PracticeMainPhaseAction, { type: 'PLAY_UNIT' }>,
@@ -1035,27 +1071,93 @@ function scoreMidgamePlayUnitAction(
     lowCostRedeployCount: number,
 ): number {
     const laneFitScore = scorePlayUnitLaneFit(context, action, card);
+    if (context.actor.unitZones[action.zoneIndex]?.unit && emptyZoneCount > 0 && laneFitScore < 0) {
+        return Number.NEGATIVE_INFINITY;
+    }
+
+    const occupiedLanePenalty = context.actor.unitZones[action.zoneIndex]?.unit && emptyZoneCount > 0
+        ? 2400
+        : 0;
+    const mixedBreakPenalty = wouldBreakMixedFieldOnUnitPlay(context.actor, action, card) ? 9000 : 0;
+    const laneAdjustedScore = laneFitScore - occupiedLanePenalty - mixedBreakPenalty;
     const cardKey = getCardKey(card);
 
     switch (cardKey) {
-        case 'BT05-036':
-            if (bestBorrowScore < 3000) return Number.NEGATIVE_INFINITY;
-            return 8800 + bestBorrowScore + laneFitScore;
+        case 'BT05-036': {
+            const relaxedBorrowFloor = !context.actor.unitZones[action.zoneIndex]?.unit && mixedActive ? 1200 : 3000;
+            if (bestBorrowScore < relaxedBorrowFloor) return Number.NEGATIVE_INFINITY;
+            return 8800 + bestBorrowScore + laneAdjustedScore;
+        }
         case 'BT05-039':
             if (bestBorrowScore < 3000) return Number.NEGATIVE_INFINITY;
-            return 8200 + bestBorrowScore + (mixedActive && emptyZoneCount > 0 && lowCostRedeployCount > 0 ? 2200 : 0) + laneFitScore;
+            return 8200 + bestBorrowScore + (mixedActive && emptyZoneCount > 0 && lowCostRedeployCount > 0 ? 2200 : 0) + laneAdjustedScore;
         case 'BT05-041': {
             const bottomableCount = countBottomableNonTriggerTrashCards(context.actor.trash) + 1;
             const damagePotential = Math.floor(bottomableCount / 3);
-            return 7600 + (mixedActive ? 1200 : 0) + damagePotential * 1700 + laneFitScore;
+            return 7600 + (mixedActive ? 1200 : 0) + damagePotential * 1700 + laneAdjustedScore;
         }
         case 'BT05-072': {
             const borrowableExitCount = countBorrowableExitUnits(context.actor.trash);
-            return 6200 + Math.max(0, 4 - borrowableExitCount) * 900 + laneFitScore;
+            return 6200 + Math.max(0, 4 - borrowableExitCount) * 900 + laneAdjustedScore;
         }
         default:
             return Number.NEGATIVE_INFINITY;
     }
+}
+
+function scoreMidgameTempoUnitAction(
+    context: PracticeMainPhaseContext,
+    action: Extract<PracticeMainPhaseAction, { type: 'PLAY_UNIT' }>,
+    card: Card,
+    mixedActive: boolean,
+    emptyZoneCount: number,
+): number {
+    const laneFitScore = scorePlayUnitLaneFit(context, action, card);
+    const occupiedLane = !!context.actor.unitZones[action.zoneIndex]?.unit;
+    if (occupiedLane && emptyZoneCount > 0 && laneFitScore < 0) {
+        return Number.NEGATIVE_INFINITY;
+    }
+
+    const attributesBefore = getFieldAttributes(context.actor);
+    const attributesAfter = getFieldAttributesAfterUnitPlay(context.actor, action, card);
+    const mixedBefore = hasMixedField(attributesBefore);
+    const mixedAfter = hasMixedField(attributesAfter);
+    if (mixedBefore && !mixedAfter) {
+        return Number.NEGATIVE_INFINITY;
+    }
+
+    const opponent = getOpponent(context.engine, context.actorPlayerId);
+    const cardKey = getCardKey(card);
+    let score = laneFitScore + (occupiedLane ? 1200 : 4200);
+
+    if (!mixedBefore && mixedAfter) score += 7200;
+    if (!mixedActive && mixedAfter) score += 1800;
+
+    switch (cardKey) {
+        case 'BT05-034':
+            score += hasValuableReturnTarget(context.actor) ? 4200 : 1600;
+            break;
+        case 'BT05-064':
+            score += 4200 + (context.actor.hand.length <= 2 ? 900 : 0);
+            break;
+        case 'BT05-065':
+            score += mixedAfter ? 4300 : 1200;
+            score += context.actor.damage.length > 0 ? 700 : 0;
+            break;
+        case 'BT05-066':
+            score += 3800 + (countBorrowableExitUnits(context.actor.trash) < 3 ? 900 : 0);
+            break;
+        case 'ST09-011':
+            score += 3600 + (context.actor.hand.length <= 2 ? 1200 : 200);
+            break;
+        case 'BT05-033':
+            score += 3200 + (countOpponentUnits(opponent) > 0 ? 500 : 0);
+            break;
+        default:
+            return Number.NEGATIVE_INFINITY;
+    }
+
+    return score;
 }
 
 function scoreMidgameAction(context: PracticeMainPhaseContext, action: PracticeMainPhaseAction): number {
@@ -1090,6 +1192,16 @@ function scoreMidgameAction(context: PracticeMainPhaseContext, action: PracticeM
     }
 
     if (action.type === 'PLAY_UNIT' && card) {
+        if (BT05_MIDGAME_TEMPO_UNIT_IDS.has(getCardKey(card))) {
+            return scoreMidgameTempoUnitAction(
+                context,
+                action,
+                card,
+                mixedActive,
+                emptyZoneCount,
+            );
+        }
+
         return scoreMidgamePlayUnitAction(
             context,
             action,
@@ -1135,6 +1247,10 @@ function chooseBestMidgameAction(context: PracticeMainPhaseContext): PracticeMai
         }
 
         if (action.type === 'PLAY_UNIT') {
+            if (BT05_MIDGAME_TEMPO_UNIT_IDS.has(cardKey)) {
+                return true;
+            }
+
             return cardKey === 'BT05-036'
                 || cardKey === 'BT05-039'
                 || cardKey === 'BT05-041'
