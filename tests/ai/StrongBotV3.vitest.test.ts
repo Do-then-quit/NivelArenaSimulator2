@@ -217,7 +217,7 @@ describe('StrongBotV3', () => {
         expect(stable).toBeGreaterThan(brittle);
     });
 
-    it('penalizes overcommit more strongly in close board states than in distant ones', () => {
+    it('leans toward a higher reply ceiling only in close board states', () => {
         const options = {
             actionScoreWeight: 1,
             stateScoreWeight: 1,
@@ -227,14 +227,14 @@ describe('StrongBotV3', () => {
             closeBoardOvercommitPenaltyWeight: 0.01,
         } as const;
 
-        const closeOvercommit = scoreStrongBotCandidate(200, 20, options, 0);
-        const closeUndercommit = scoreStrongBotCandidate(20, 200, options, 0);
-        const farOvercommit = scoreStrongBotCandidate(200, 20, options, 6000);
-        const farUndercommit = scoreStrongBotCandidate(20, 200, options, 6000);
+        const closeStable = scoreStrongBotCandidate(100, 100, options, 0, 100);
+        const closeSpeculative = scoreStrongBotCandidate(70, 110, options, 0, 220);
+        const farStable = scoreStrongBotCandidate(100, 100, options, 6000, 100);
+        const farSpeculative = scoreStrongBotCandidate(70, 110, options, 6000, 220);
 
-        expect(closeUndercommit).toBeGreaterThan(closeOvercommit);
-        expect(farOvercommit).toBeCloseTo(farUndercommit, 10);
-        expect(closeOvercommit).toBeLessThan(farOvercommit);
+        expect(closeSpeculative).toBeGreaterThan(closeStable);
+        expect(closeSpeculative).toBeGreaterThan(farSpeculative);
+        expect(farStable).toBeGreaterThan(farSpeculative);
     });
 
 });

@@ -105,7 +105,7 @@ describe('BT05 Unlucky Bunny Nikki candidate profile', () => {
         }
     });
 
-    it('takes empty-lane tempo only when it completes the missing storm-lightning mix', () => {
+    it('takes the mix-completing tempo on the stronger lane', () => {
         const engine = createEngine({ seed: 2026031803 });
         const bot = createCandidateBot();
         const p1 = engine.state.players[0];
@@ -126,7 +126,73 @@ describe('BT05 Unlucky Bunny Nikki candidate profile', () => {
         }
     });
 
-    it('defers when the field is already mixed and only filler tempo remains', () => {
+    it('upgrades the stronger occupied lane instead of mirroring the filler line', () => {
+        const engine = createEngine({ seed: 20260318032 });
+        const candidateBot = createCandidateBot();
+        const baseBot = new PracticeStrongBot('BT05BasePractice', bt05UnluckyBunnyNikkiOpeningProfile);
+        const p1 = engine.state.players[0];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 7;
+        p1.unitZones[0].unit = getCard('BT05-033');
+        p1.hand = [getCard('BT05-065'), getCard('BT05-034')];
+
+        const baseAction = baseBot.chooseAction(engine, p1.id);
+        const candidateAction = candidateBot.chooseAction(engine, p1.id);
+
+        expect(baseAction).not.toBeNull();
+        expect(baseAction?.type).toBe('PLAY_UNIT');
+        if (baseAction?.type === 'PLAY_UNIT') {
+            expect(getCardKey(p1.hand[baseAction.handIndex])).toBe('BT05-065');
+            expect(baseAction.zoneIndex).toBe(1);
+        }
+        expect(candidateAction).not.toBeNull();
+        expect(candidateAction?.type).toBe('PLAY_UNIT');
+        if (candidateAction?.type === 'PLAY_UNIT') {
+            expect(getCardKey(p1.hand[candidateAction.handIndex])).toBe('BT05-034');
+            expect(candidateAction.zoneIndex).toBe(1);
+        }
+    });
+
+    it('prefers the stronger occupied lane over a thin overwrite', () => {
+        const engine = createEngine({ seed: 20260318033 });
+        const candidateBot = createCandidateBot();
+        const p1 = engine.state.players[0];
+
+        setMainPhase(engine, p1.id);
+        p1.leaderLevel = 7;
+        p1.unitZones[0].unit = getCard('BT05-033');
+        p1.unitZones[1].unit = getCard('BT05-064');
+        p1.hand = [getCard('BT05-033'), getCard('BT05-034')];
+
+        const legalActions = engine.getLegalActions(p1.id);
+        const overwriteAction = legalActions.find(action =>
+            action.type === 'PLAY_UNIT'
+            && action.zoneIndex === 1
+            && getCardKey(p1.hand[action.handIndex]) === 'BT05-034'
+            && getCardKey(p1.unitZones[action.zoneIndex].unit) === 'BT05-064',
+        );
+
+        expect(overwriteAction).not.toBeNull();
+
+        const originalChooseMainPhaseAction = bt05UnluckyBunnyNikkiOpeningProfile.chooseMainPhaseAction;
+        bt05UnluckyBunnyNikkiOpeningProfile.chooseMainPhaseAction = () => overwriteAction ?? null;
+
+        try {
+            const candidateAction = candidateBot.chooseAction(engine, p1.id);
+
+            expect(candidateAction).not.toBeNull();
+            expect(candidateAction?.type).toBe('PLAY_UNIT');
+            if (candidateAction?.type === 'PLAY_UNIT') {
+                expect(getCardKey(p1.hand[candidateAction.handIndex])).toBe('BT05-034');
+                expect(candidateAction.zoneIndex).toBe(2);
+            }
+        } finally {
+            bt05UnluckyBunnyNikkiOpeningProfile.chooseMainPhaseAction = originalChooseMainPhaseAction;
+        }
+    });
+
+    it('keeps the filler card on the open lane when it remains the best line', () => {
         const engine = createEngine({ seed: 20260318031 });
         const p1 = engine.state.players[0];
 
@@ -141,10 +207,11 @@ describe('BT05 Unlucky Bunny Nikki candidate profile', () => {
 
         expect(candidateAction).not.toBeNull();
         expect(baseAction).not.toBeNull();
-        expect(candidateAction?.type).toBe(baseAction?.type);
+        expect(candidateAction?.type).toBe('PLAY_UNIT');
         if (candidateAction?.type === 'PLAY_UNIT' && baseAction?.type === 'PLAY_UNIT') {
-            expect(candidateAction.handIndex).toBe(baseAction.handIndex);
-            expect(candidateAction.zoneIndex).toBe(baseAction.zoneIndex);
+            expect(getCardKey(p1.hand[candidateAction.handIndex])).toBe('ST09-011');
+            expect(candidateAction.zoneIndex).toBe(2);
+            expect(baseAction.zoneIndex).toBe(2);
         }
     });
 

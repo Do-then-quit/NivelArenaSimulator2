@@ -54,6 +54,29 @@ export interface NikkiCandidateLoopRoundReport {
     report: FixedMatchupBatchReport;
 }
 
+export interface NikkiCandidateLoopDiagnosticSlice {
+    label: string;
+    roundStartIndex: number;
+    roundEndIndex: number;
+    roundCount: number;
+    seedLabel: string;
+    totalGames: number;
+    candidateWins: number;
+    incumbentWins: number;
+    candidateWinRate: number;
+    incumbentWinRate: number;
+    netWins: number;
+    winRateDelta: number;
+    avgSteps: number;
+    avgTurns: number;
+}
+
+export interface NikkiCandidateLoopDiagnostics {
+    bucketRoundSize: number;
+    roundSlices: NikkiCandidateLoopDiagnosticSlice[];
+    bucketSlices: NikkiCandidateLoopDiagnosticSlice[];
+}
+
 export interface NikkiCandidateLoopReport {
     generatedAt: string;
     config: NikkiCandidateLoopConfig & {
@@ -75,6 +98,7 @@ export interface NikkiCandidateLoopReport {
         terminationCounts: FixedMatchupBatchReport['combined']['terminationCounts'];
         avgSteps: number;
         avgTurns: number;
+        diagnostics: NikkiCandidateLoopDiagnostics;
     };
 }
 
@@ -187,6 +211,98 @@ function buildTacticalSummary(counts: TacticalKpiCounts): NikkiCandidateLoopRole
     };
 }
 
+function collectUniqueSeeds(rounds: NikkiCandidateLoopRoundReport[]): number[] {
+    const uniqueSeeds: number[] = [];
+    const seen = new Set<number>();
+
+    for (const round of rounds) {
+        for (const seed of round.seedList) {
+            if (seen.has(seed)) continue;
+            seen.add(seed);
+            uniqueSeeds.push(seed);
+        }
+    }
+
+    return uniqueSeeds;
+}
+
+function sumRoundSteps(round: NikkiCandidateLoopRoundReport): number {
+    return round.report.sides.primary.matches.reduce((sum, match) => sum + match.steps, 0)
+        + round.report.sides.swapped.matches.reduce((sum, match) => sum + match.steps, 0);
+}
+
+function sumRoundTurns(round: NikkiCandidateLoopRoundReport): number {
+    return round.report.sides.primary.matches.reduce((sum, match) => sum + match.turnCount, 0)
+        + round.report.sides.swapped.matches.reduce((sum, match) => sum + match.turnCount, 0);
+}
+
+function buildDiagnosticSlice(
+    rounds: NikkiCandidateLoopRoundReport[],
+    roundStartIndex: number,
+    roundEndIndex: number,
+    label: string,
+): NikkiCandidateLoopDiagnosticSlice {
+    let candidateWins = 0;
+    let incumbentWins = 0;
+    let totalGames = 0;
+    let totalSteps = 0;
+    let totalTurns = 0;
+
+    for (const round of rounds) {
+        const combined = round.report.combined;
+        candidateWins += combined.wins.player1Bot;
+        incumbentWins += combined.wins.player2Bot;
+        totalGames += combined.totalGames;
+        totalSteps += sumRoundSteps(round);
+        totalTurns += sumRoundTurns(round);
+    }
+
+    const seedLabel = summarizeSeedList(collectUniqueSeeds(rounds));
+    return {
+        label,
+        roundStartIndex,
+        roundEndIndex,
+        roundCount: rounds.length,
+        seedLabel,
+        totalGames,
+        candidateWins,
+        incumbentWins,
+        candidateWinRate: roundTo(safeDivide(candidateWins, totalGames), 4),
+        incumbentWinRate: roundTo(safeDivide(incumbentWins, totalGames), 4),
+        netWins: candidateWins - incumbentWins,
+        winRateDelta: roundTo(safeDivide(candidateWins - incumbentWins, totalGames), 4),
+        avgSteps: roundTo(safeDivide(totalSteps, totalGames), 2),
+        avgTurns: roundTo(safeDivide(totalTurns, totalGames), 2),
+    };
+}
+
+function buildDiagnostics(rounds: NikkiCandidateLoopRoundReport[]): NikkiCandidateLoopDiagnostics {
+    const roundSlices = rounds.map(round => buildDiagnosticSlice(
+        [round],
+        round.roundIndex,
+        round.roundIndex,
+        `round ${round.roundIndex + 1}`,
+    ));
+    const bucketRoundSize = Math.max(1, Math.ceil(rounds.length / 4));
+    const bucketSlices: NikkiCandidateLoopDiagnosticSlice[] = [];
+
+    for (let start = 0; start < rounds.length; start += bucketRoundSize) {
+        const end = Math.min(rounds.length - 1, start + bucketRoundSize - 1);
+        bucketSlices.push(buildDiagnosticSlice(
+            rounds.slice(start, end + 1),
+            start,
+            end,
+            `rounds ${start + 1}-${end + 1}`,
+        ));
+    }
+
+    return {
+        bucketRoundSize,
+        roundSlices,
+        bucketSlices,
+    };
+}
+
 function resolveOutputPath(defaultOutputPath: string): string | undefined {
     const raw = process.env.AI_NIKKI_LOOP_OUTPUT;
     if (!raw || raw.trim().length === 0) return defaultOutputPath;
@@ -295,10 +411,8 @@ function aggregateRoundReports(rounds: NikkiCandidateLoopRoundReport[]): NikkiCa
         incumbentWins += combined.wins.player2Bot;
         candidateCount = mergeTacticalCounts(candidateCount, combined.tacticalKPIs.byPlayer.player1);
         incumbentCount = mergeTacticalCounts(incumbentCount, combined.tacticalKPIs.byPlayer.player2);
-        totalSteps += round.report.sides.primary.matches.reduce((sum, match) => sum + match.steps, 0)
-            + round.report.sides.swapped.matches.reduce((sum, match) => sum + match.steps, 0);
-        totalTurns += round.report.sides.primary.matches.reduce((sum, match) => sum + match.turnCount, 0)
-            + round.report.sides.swapped.matches.reduce((sum, match) => sum + match.turnCount, 0);
+        totalSteps += sumRoundSteps(round);
+        totalTurns += sumRoundTurns(round);
         terminationCounts.winner += combined.terminationCounts.winner;
         terminationCounts.max_steps += combined.terminationCounts.max_steps;
         terminationCounts.no_action += combined.terminationCounts.no_action;
@@ -336,6 +450,7 @@ function aggregateRoundReports(rounds: NikkiCandidateLoopRoundReport[]): NikkiCa
         terminationCounts,
         avgSteps: roundTo(safeDivide(totalSteps, totalGames), 2),
         avgTurns: roundTo(safeDivide(totalTurns, totalGames), 2),
+        diagnostics: buildDiagnostics(rounds),
     };
 }
 

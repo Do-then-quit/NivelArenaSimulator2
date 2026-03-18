@@ -1,5 +1,6 @@
 import { GameEngine } from '../../GameEngine';
 import { EngineAction, GameState } from '../../types';
+import { toStableActionKey } from '../StableActionCodec';
 import { evaluateObservedState, ObservationEvaluatorOptions, scoreObservedAction } from './ObservationEvaluator';
 
 export interface CounterfactualRolloutOptions extends ObservationEvaluatorOptions {
@@ -25,14 +26,6 @@ interface RankedAction {
     score: number;
 }
 
-function toActionKey(action: EngineAction): string {
-    const payload = Object.entries(action)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${String(value)}`)
-        .join('|');
-    return `${action.type}|${payload}`;
-}
-
 function getDefaultActorId(state: GameState): string {
     return state.players[state.turnPlayerIndex].id;
 }
@@ -41,7 +34,7 @@ function getInteractionSignature(state: GameState, action: EngineAction): string
     const pending = state.pendingEffect;
     const actionType = pending?.actionType ?? 'NONE';
     const selectedCount = pending?.selectedTargets?.length ?? 0;
-    return `${state.interactionMode}|${actionType}|${selectedCount}|${toActionKey(action)}`;
+    return `${state.interactionMode}|${actionType}|${selectedCount}|${toStableActionKey(action)}`;
 }
 
 function getWinnerBonus(state: GameState, actorPlayerId: string): number {
@@ -94,7 +87,7 @@ function rankActionsWithLookahead(
 
     ranked.sort((a, b) => {
         if (a.score !== b.score) return b.score - a.score;
-        return toActionKey(a.action).localeCompare(toActionKey(b.action));
+        return toStableActionKey(a.action).localeCompare(toStableActionKey(b.action));
     });
 
     return ranked;

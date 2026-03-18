@@ -1,5 +1,6 @@
 import { GameEngine } from '../GameEngine';
 import { EngineAction, Phase } from '../types';
+import { toStableActionKey } from './StableActionCodec';
 import { scoreAction } from './eval/ActionScorer';
 import { evaluateState } from './eval/StateEvaluator';
 import { StrongBot } from './StrongBot';
@@ -349,10 +350,6 @@ export class StrongBotV2 {
     }
 
     private toActionKey(action: EngineAction): string {
-        const payload = Object.entries(action)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([key, value]) => `${key}=${String(value)}`)
-            .join('|');
-        return `${action.type}|${payload}`;
+        return toStableActionKey(action);
     }
 }

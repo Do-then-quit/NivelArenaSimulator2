@@ -65,17 +65,42 @@ describe('PracticeStrongBot', () => {
         expect(action?.type).toBe('NEXT_PHASE');
     });
 
-    it('can hold main-phase control for Nikki-like profiles on ambiguous early turns instead of handing over to strong-v3', () => {
+    it('automatically holds early main-phase control for BT05 Nikki strong bot names instead of handing over to strong-v3', () => {
         const engine = createEngine(2026031233);
         const actor = engine.state.players[0];
         const profile: PracticeProfile = {
-            id: 'practice-bt05-nikki-hold-test',
-            label: 'Practice BT05 Nikki Hold Test',
+            id: 'test-profile',
+            label: 'Test Profile',
             chooseMainPhaseAction() {
                 return null;
             },
         };
-        const bot = new PracticeStrongBot('PracticeStrongBot-Hold', profile, {
+        const bot = new PracticeStrongBot('Practice BT05 Nikki Strong v1-P1', profile);
+
+        engine.state.turnPlayerIndex = 0;
+        engine.state.phase = Phase.MAIN;
+        engine.state.interactionMode = 'NORMAL';
+        engine.state.interactionOwnerPlayerId = actor.id;
+        actor.leaderLevel = 2;
+        actor.hand = [getCard('BT05-064')];
+
+        const action = bot.chooseAction(engine, actor.id);
+
+        expect(action).not.toBeNull();
+        expect(action?.type).toBe('NEXT_PHASE');
+    });
+
+    it('can still be force-enabled explicitly for a generic practice bot name', () => {
+        const engine = createEngine(2026031235);
+        const actor = engine.state.players[0];
+        const profile: PracticeProfile = {
+            id: 'test-profile-explicit',
+            label: 'Test Profile Explicit',
+            chooseMainPhaseAction() {
+                return null;
+            },
+        };
+        const bot = new PracticeStrongBot('PracticeStrongBot-Explicit', profile, {
             preferPracticeMainPhaseHold: true,
         });
 
@@ -96,16 +121,13 @@ describe('PracticeStrongBot', () => {
         const engine = createEngine(2026031234);
         const actor = engine.state.players[0];
         const profile: PracticeProfile = {
-            id: 'practice-bt05-nikki-hold-test',
-            label: 'Practice BT05 Nikki Hold Test',
+            id: 'test-profile-late',
+            label: 'Practice BT05 Nikki Strong Late Test',
             chooseMainPhaseAction() {
                 return null;
             },
         };
-        const bot = new PracticeStrongBot('PracticeStrongBot-Hold-Late', profile, {
-            preferPracticeMainPhaseHold: true,
-            preferPracticeMainPhaseHoldMaxLeaderLevel: 6,
-        });
+        const bot = new PracticeStrongBot('Practice BT05 Nikki Strong v2-P1', profile);
 
         engine.state.turnPlayerIndex = 0;
         engine.state.phase = Phase.MAIN;

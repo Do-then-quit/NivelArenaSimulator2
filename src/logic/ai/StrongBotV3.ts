@@ -7,6 +7,7 @@ import {
     scoreObservedAction,
 } from './eval/ObservationEvaluator';
 import { runCounterfactualRollout } from './eval/CounterfactualRollout';
+import { toStableActionKey } from './StableActionCodec';
 
 export interface StrongBotV3Options {
     beamWidth: number;
@@ -52,6 +53,29 @@ const DEFAULT_OPTIONS: StrongBotV3Options = {
     repeatMemoryCapacity: 96,
 };
 
+function computeBoardCloseness(rootStateScore: number | undefined, threshold: number): number {
+    if (typeof rootStateScore !== 'number' || !Number.isFinite(rootStateScore)) return 0;
+    return Math.max(0, 1 - Math.abs(rootStateScore) / Math.max(1, threshold));
+}
+
+function blendRolloutWithReplyCeiling(
+    rolloutScore: number,
+    replyCeilingScore: number | undefined,
+    closeness: number,
+): number {
+    if (typeof replyCeilingScore !== 'number' || !Number.isFinite(replyCeilingScore) || closeness <= 0) {
+        return rolloutScore;
+    }
+
+    const delta = replyCeilingScore - rolloutScore;
+    if (delta <= 0) {
+        return rolloutScore + delta * closeness * 0.15;
+    }
+
+    const lift = 0.2 + closeness * 0.55;
+    return rolloutScore + delta * lift;
+}
+
 export function scoreStrongBotCandidate(
     immediateScore: number,
     rolloutScore: number,
@@ -65,12 +89,14 @@ export function scoreStrongBotCandidate(
         | 'closeBoardOvercommitPenaltyWeight'
     >,
     rootStateScore?: number,
+    replyCeilingScore?: number,
 ): number {
-    const weightedTotal = immediateScore * options.actionScoreWeight + rolloutScore * options.stateScoreWeight;
+    const closeness = computeBoardCloseness(rootStateScore, options.closeBoardStateScoreThreshold);
+    const rolloutReferenceScore = replyCeilingScore === undefined
+        ? rolloutScore - Math.max(0, rolloutScore - immediateScore) * closeness * 0.45
+        : blendRolloutWithReplyCeiling(rolloutScore, replyCeilingScore, closeness);
+    const weightedTotal = immediateScore * options.actionScoreWeight + rolloutReferenceScore * options.stateScoreWeight;
     const disagreementPenalty = Math.abs(immediateScore - rolloutScore) * options.rolloutDisagreementPenaltyWeight;
-    const closeness = typeof rootStateScore === 'number'
-        ? Math.max(0, 1 - Math.abs(rootStateScore) / Math.max(1, options.closeBoardStateScoreThreshold))
-        : 0;
     const overcommitPenalty = Math.max(0, immediateScore - rolloutScore) * options.closeBoardOvercommitPenaltyWeight * closeness;
     const disagreementBoost = disagreementPenalty * options.closeBoardDisagreementBoost * closeness;
     return weightedTotal - disagreementPenalty - disagreementBoost - overcommitPenalty;
@@ -109,6 +135,8 @@ export class StrongBotV3 {
         if (rankedActions.length === 0) return null;
 
         const rootStateScore = evaluateObservedState(observation.state, resolvedActorId, evalOptions).total;
+        const rootBoardCloseness = computeBoardCloseness(rootStateScore, this.options.closeBoardStateScoreThreshold);
+        const sampleReplyCeiling = this.options.enableOpponentReplyPly && rootBoardCloseness > 0.12;
         let bestAction = rankedActions[0];
         let bestScore = Number.NEGATIVE_INFINITY;
         let bestKey = this.toActionKey(bestAction);
@@ -127,7 +155,20 @@ export class StrongBotV3 {
                 opponentReplyTopK: this.options.opponentReplyTopK,
                 opponentReplyAggregation: this.options.opponentReplyAggregation,
             }).score;
-            const total = scoreStrongBotCandidate(immediate, rollout, this.options, rootStateScore);
+            const replyCeilingRollout = sampleReplyCeiling
+                ? runCounterfactualRollout(engine, resolvedActorId, action, {
+                    ...evalOptions,
+                    enableInteractionRollout: this.options.enableInteractionRollout,
+                    enableOpponentReplyPly: this.options.enableOpponentReplyPly,
+                    maxInteractionDepth: this.options.interactionRolloutDepth,
+                    interactionDiscount: this.options.interactionDiscount,
+                    interactionScoreWeight: this.options.rolloutInteractionScoreWeight,
+                    opponentReplyBlend: this.options.opponentReplyBlend,
+                    opponentReplyTopK: Math.max(this.options.opponentReplyTopK, 3),
+                    opponentReplyAggregation: 'max',
+                }).score
+                : undefined;
+            const total = scoreStrongBotCandidate(immediate, rollout, this.options, rootStateScore, replyCeilingRollout);
             const actionKey = this.toActionKey(action);
             if (total > bestScore || (total === bestScore && actionKey < bestKey)) {
                 bestAction = action;
@@ -220,10 +261,6 @@ export class StrongBotV3 {
     }
 
     private toActionKey(action: EngineAction): string {
-        const payload = Object.entries(action)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([key, value]) => `${key}=${String(value)}`)
-            .join('|');
-        return `${action.type}|${payload}`;
+        return toStableActionKey(action);
     }
 }

@@ -13,8 +13,8 @@ const BOT_REGISTRY: Record<string, BotFactory> = {
     'baseline-a': (name: string) => new BaselineBot(name),
     'baseline-b': (name: string) => new BaselineBot(name),
     'practice-bt05-nikki-open-v1': (name: string) => new PracticeBot(name, bt05UnluckyBunnyNikkiOpeningProfile),
-    'practice-bt05-nikki-strong-v1': (name: string) => new PracticeStrongBot(name, bt05UnluckyBunnyNikkiOpeningProfile),
-    'practice-bt05-nikki-strong-v2': (name: string) => new PracticeStrongBot(name, bt05UnluckyBunnyNikkiOpeningProfile, {
+    'practice-bt05-nikki-strong-v1': (name: string) => new PracticeStrongBot(`Practice BT05 Nikki Strong v1 ${name}`, bt05UnluckyBunnyNikkiOpeningProfile),
+    'practice-bt05-nikki-strong-v2': (name: string) => new PracticeStrongBot(`Practice BT05 Nikki Strong v2 ${name}`, bt05UnluckyBunnyNikkiOpeningProfile, {
         beamWidth: 4,
         interactionRolloutDepth: 4,
         opponentReplyTopK: 1,
@@ -23,7 +23,7 @@ const BOT_REGISTRY: Record<string, BotFactory> = {
         rolloutDisagreementPenaltyWeight: 0.03,
         closeBoardOvercommitPenaltyWeight: 0.018,
     }),
-    'practice-bt05-nikki-candidate-v2': (name: string) => new PracticeStrongBot(name, bt05UnluckyBunnyNikkiCandidateProfile, {
+    'practice-bt05-nikki-candidate-v2': (name: string) => new PracticeStrongBot(`Practice BT05 Nikki Strong Candidate v2 ${name}`, bt05UnluckyBunnyNikkiCandidateProfile, {
         beamWidth: 4,
         interactionRolloutDepth: 4,
         opponentReplyTopK: 1,

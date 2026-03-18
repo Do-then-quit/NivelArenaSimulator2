@@ -15,6 +15,7 @@
         "ai:bench": "tsx scripts/ai/run_match_batch.ts",
         "ai:fixed:bench": "tsx scripts/ai/run_fixed_matchup_batch.ts",
         "ai:bt05:loop": "tsx scripts/ai/run_bt05_nikki_candidate_loop.ts",
+        "ai:bt05:rl-export": "tsx scripts/ai/run_bt05_nikki_selfplay_export.ts",
         "ai:ladder": "tsx scripts/ai/elo_ladder.ts",
         "ai:deck-search": "tsx scripts/ai/run_deck_search.ts",
         "ai:regression": "tsx scripts/ai/run_ai_regression.ts",

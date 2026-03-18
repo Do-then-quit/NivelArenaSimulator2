@@ -75,9 +75,9 @@ export function createBotForModel(botId: BotModelId, name: string): BotLike {
         case 'practice-bt05-nikki-open-v1':
             return new PracticeBot(name, bt05UnluckyBunnyNikkiOpeningProfile);
         case 'practice-bt05-nikki-strong-v1':
-            return new PracticeStrongBot(name, bt05UnluckyBunnyNikkiOpeningProfile);
+            return new PracticeStrongBot(`Practice BT05 Nikki Strong v1 ${name}`, bt05UnluckyBunnyNikkiOpeningProfile);
         case 'practice-bt05-nikki-strong-v2':
-            return new PracticeStrongBot(name, bt05UnluckyBunnyNikkiOpeningProfile, {
+            return new PracticeStrongBot(`Practice BT05 Nikki Strong v2 ${name}`, bt05UnluckyBunnyNikkiOpeningProfile, {
                 beamWidth: 4,
                 interactionRolloutDepth: 4,
                 opponentReplyTopK: 1,

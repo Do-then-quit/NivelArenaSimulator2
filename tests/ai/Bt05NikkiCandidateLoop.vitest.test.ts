@@ -289,9 +289,81 @@ describe('BT05 Nikki candidate loop', () => {
         expect(report.summary.candidate.tacticalKPIs.wasteful_upgrade_rate).toBeCloseTo(0.2273, 4);
         expect(report.summary.incumbent.tacticalKPIs.wasteful_upgrade_rate).toBeCloseTo(0.3684, 4);
         expect(report.summary.delta.wasteful_upgrade_rate).toBeCloseTo(-0.1411, 4);
+        expect(report.summary.diagnostics.bucketRoundSize).toBe(1);
+        expect(report.summary.diagnostics.roundSlices).toHaveLength(2);
+        expect(report.summary.diagnostics.bucketSlices).toHaveLength(2);
         expect(report.rounds.map(round => round.seedList)).toEqual([
             [2026032000],
             [2026032001],
         ]);
+    });
+
+    it('adds compact round-bucket diagnostics that highlight improving seed pockets', () => {
+        const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nivel-nikki-loop-diagnostics-'));
+        const outputPath = path.join(outputDir, 'latest.json');
+        const config = {
+            matchupId: 'fm-c-bt05-unlucky-bunny-nikki-mirror',
+            incumbentBotId: 'practice-bt05-nikki-strong-v1',
+            candidateBotId: 'practice-bt05-nikki-candidate-v1',
+            rounds: 8,
+            gamesPerSide: 1,
+            maxSteps: 1200,
+            enableMulligan: true,
+            startSeed: 2026032000,
+            seedStride: 1,
+            measureRuntime: false,
+            suppressLogs: true,
+            outputPath,
+        } satisfies Parameters<typeof runBt05NikkiCandidateLoop>[0];
+
+        const roundSpecs = [
+            { candidateWins: 0, incumbentWins: 2 },
+            { candidateWins: 0, incumbentWins: 2 },
+            { candidateWins: 1, incumbentWins: 1 },
+            { candidateWins: 1, incumbentWins: 1 },
+            { candidateWins: 2, incumbentWins: 0 },
+            { candidateWins: 2, incumbentWins: 0 },
+            { candidateWins: 1, incumbentWins: 1 },
+            { candidateWins: 0, incumbentWins: 2 },
+        ];
+        const roundReports = roundSpecs.map((spec, roundIndex) => makeRoundReport(
+            roundIndex,
+            spec.candidateWins,
+            spec.incumbentWins,
+            makeCounts({ upgradeActionCount: 10 + roundIndex, wastefulUpgradeCount: 2, lethalOpportunityCount: 4, lethalMissCount: 1, selfLethalCheckCount: 8, selfLethalOpenCount: 1 }),
+            makeCounts({ upgradeActionCount: 9 + roundIndex, wastefulUpgradeCount: 3, lethalOpportunityCount: 4, lethalMissCount: 2, selfLethalCheckCount: 8, selfLethalOpenCount: 1 }),
+        ));
+        const runRound = (_config: Parameters<typeof runBt05NikkiCandidateLoop>[0], seedList: number[]) => {
+            const seed = seedList[0] ?? 0;
+            const roundIndex = seed - 2026032000;
+            const roundReport = roundReports[roundIndex];
+            if (!roundReport) {
+                throw new Error(`Unexpected seed ${seed}`);
+            }
+            return roundReport;
+        };
+
+        const report = runBt05NikkiCandidateLoop(config, { runRound });
+
+        expect(report.summary.diagnostics.bucketRoundSize).toBe(2);
+        expect(report.summary.diagnostics.roundSlices).toHaveLength(8);
+        expect(report.summary.diagnostics.bucketSlices).toHaveLength(4);
+        expect(report.summary.diagnostics.bucketSlices.map(slice => slice.label)).toEqual([
+            'rounds 1-2',
+            'rounds 3-4',
+            'rounds 5-6',
+            'rounds 7-8',
+        ]);
+        expect(report.summary.diagnostics.bucketSlices[2]).toMatchObject({
+            roundStartIndex: 4,
+            roundEndIndex: 5,
+            roundCount: 2,
+            candidateWins: 4,
+            incumbentWins: 0,
+            netWins: 4,
+            winRateDelta: 1,
+        });
+        expect(report.summary.diagnostics.bucketSlices[2].seedLabel).toBe('seed-2026032004-to-2026032005');
+        expect(report.summary.diagnostics.bucketSlices[0].winRateDelta).toBe(-1);
     });
 });

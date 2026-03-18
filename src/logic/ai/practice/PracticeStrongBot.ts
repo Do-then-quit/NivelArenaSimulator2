@@ -18,6 +18,10 @@ export interface PracticeStrongBotOptions extends Partial<StrongBotV3Options> {
     preferPracticeMainPhaseHoldMaxLeaderLevel?: number;
 }
 
+function normalizeBridgeToken(value: string): string {
+    return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
 export class PracticeStrongBot {
     readonly name: string;
     readonly profile: PracticeProfile;
@@ -29,7 +33,7 @@ export class PracticeStrongBot {
         this.name = name;
         this.profile = profile;
         this.delegate = new StrongBotV3(`${name}-StrongV3`, options);
-        this.preferPracticeMainPhaseHold = options.preferPracticeMainPhaseHold ?? false;
+        this.preferPracticeMainPhaseHold = options.preferPracticeMainPhaseHold ?? this.shouldAutoEnableBt05NikkiStrongBridge(name);
         this.preferPracticeMainPhaseHoldMaxLeaderLevel = options.preferPracticeMainPhaseHoldMaxLeaderLevel ?? 6;
     }
 
@@ -175,7 +179,6 @@ export class PracticeStrongBot {
         actions: PracticeMainPhaseAction[],
     ): boolean {
         if (!this.preferPracticeMainPhaseHold) return false;
-        if (!this.isNikkiPracticeProfile()) return false;
         if (engine.state.phase !== Phase.MAIN || engine.state.interactionMode !== 'NORMAL') return false;
         if (actor.leaderLevel > this.preferPracticeMainPhaseHoldMaxLeaderLevel) return false;
 
@@ -184,10 +187,9 @@ export class PracticeStrongBot {
         return hasNextPhase && hasProgressAction;
     }
 
-    private isNikkiPracticeProfile(): boolean {
-        const profileId = this.profile.id.trim().toLowerCase();
-        const profileLabel = this.profile.label.trim().toLowerCase();
-        return profileId.startsWith('practice-bt05-nikki') || profileLabel.includes('nikki');
+    private shouldAutoEnableBt05NikkiStrongBridge(name: string): boolean {
+        const normalizedName = normalizeBridgeToken(name);
+        return normalizedName.includes('practicebt05nikkistrong') || normalizedName.includes('bt05nikkistrong');
     }
 
     private filterByType(actions: EngineAction[], type: 'RESOLVE_MULLIGAN'): PracticeMulliganAction[];
