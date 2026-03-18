@@ -2,6 +2,11 @@ import { GameEngine } from '../../GameEngine';
 import { EngineAction, Phase, PlayerState } from '../../types';
 import { StrongBotV3, StrongBotV3Options } from '../StrongBotV3';
 import {
+    buildBt05NikkiMainPhaseHoldSignature,
+    Bt05NikkiMainPhaseHoldPolicy,
+    shouldApplyBt05NikkiMainPhaseHoldPolicy,
+} from './Bt05NikkiMainPhaseHoldPolicy';
+import {
     PracticeConfirmTargetsAction,
     PracticeHandTargetAction,
     PracticeMainPhaseAction,
@@ -16,6 +21,7 @@ import {
 export interface PracticeStrongBotOptions extends Partial<StrongBotV3Options> {
     preferPracticeMainPhaseHold?: boolean;
     preferPracticeMainPhaseHoldMaxLeaderLevel?: number;
+    learnedMainPhaseHoldPolicy?: Bt05NikkiMainPhaseHoldPolicy;
 }
 
 function normalizeBridgeToken(value: string): string {
@@ -28,6 +34,7 @@ export class PracticeStrongBot {
     private readonly delegate: StrongBotV3;
     private readonly preferPracticeMainPhaseHold: boolean;
     private readonly preferPracticeMainPhaseHoldMaxLeaderLevel: number;
+    private readonly learnedMainPhaseHoldPolicy?: Bt05NikkiMainPhaseHoldPolicy;
 
     constructor(name: string, profile: PracticeProfile, options: PracticeStrongBotOptions = {}) {
         this.name = name;
@@ -35,6 +42,7 @@ export class PracticeStrongBot {
         this.delegate = new StrongBotV3(`${name}-StrongV3`, options);
         this.preferPracticeMainPhaseHold = options.preferPracticeMainPhaseHold ?? this.shouldAutoEnableBt05NikkiStrongBridge(name);
         this.preferPracticeMainPhaseHoldMaxLeaderLevel = options.preferPracticeMainPhaseHoldMaxLeaderLevel ?? 6;
+        this.learnedMainPhaseHoldPolicy = options.learnedMainPhaseHoldPolicy;
     }
 
     public chooseAction(engine: GameEngine, actorPlayerId?: string): EngineAction | null {
@@ -158,6 +166,9 @@ export class PracticeStrongBot {
             });
             if (practiceAction) return practiceAction;
 
+            const learnedHoldAction = this.chooseLearnedMainPhaseHoldAction(engine, actorPlayerId, practiceActions);
+            if (learnedHoldAction) return learnedHoldAction;
+
             if (this.shouldHoldMainPhaseFallback(engine, actor, practiceActions)) {
                 const nextPhaseAction = practiceActions.find((action): action is Extract<PracticeMainPhaseAction, { type: 'NEXT_PHASE' }> => action.type === 'NEXT_PHASE');
                 if (nextPhaseAction) return nextPhaseAction;
@@ -185,6 +196,22 @@ export class PracticeStrongBot {
         const hasNextPhase = actions.some(action => action.type === 'NEXT_PHASE');
         const hasProgressAction = actions.some(action => action.type !== 'NEXT_PHASE');
         return hasNextPhase && hasProgressAction;
+    }
+
+    private chooseLearnedMainPhaseHoldAction(
+        engine: GameEngine,
+        actorPlayerId: string,
+        actions: PracticeMainPhaseAction[],
+    ): Extract<PracticeMainPhaseAction, { type: 'NEXT_PHASE' }> | null {
+        const nextPhaseAction = actions.find((action): action is Extract<PracticeMainPhaseAction, { type: 'NEXT_PHASE' }> => action.type === 'NEXT_PHASE');
+        if (!nextPhaseAction) return null;
+
+        const signature = buildBt05NikkiMainPhaseHoldSignature(engine.state, actorPlayerId, actions);
+        if (!shouldApplyBt05NikkiMainPhaseHoldPolicy(this.learnedMainPhaseHoldPolicy, signature)) {
+            return null;
+        }
+
+        return nextPhaseAction;
     }
 
     private shouldAutoEnableBt05NikkiStrongBridge(name: string): boolean {

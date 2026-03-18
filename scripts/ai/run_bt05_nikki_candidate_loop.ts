@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveBotFactory } from './bot_registry';
 import { resolveFixedMatchup } from './fixed_matchup/registry';
-import { MatchReport, runSingleMatch } from './match_harness';
+import { BotFactory, MatchReport, runSingleMatch } from './match_harness';
 import { loadPhase0Manifest, resolvePhase0ManifestPath } from './phase0_manifest';
 import {
     FixedMatchupBatchReport,
@@ -113,6 +113,8 @@ interface RoundSeedSource {
 }
 
 interface RunLoopOptions {
+    candidateBotFactory?: BotFactory;
+    incumbentBotFactory?: BotFactory;
     runRound?: (config: NikkiCandidateLoopConfig, seedList: number[]) => FixedMatchupBatchReport;
 }
 
@@ -511,10 +513,14 @@ function summarizeSeatMatches(matches: MatchReport[]): FixedMatchupBatchReport['
     };
 }
 
-function buildHeadToHeadRoundReport(config: NikkiCandidateLoopConfig, seedList: number[]): FixedMatchupBatchReport {
+function buildHeadToHeadRoundReport(
+    config: NikkiCandidateLoopConfig,
+    seedList: number[],
+    factories: { candidateBotFactory?: BotFactory; incumbentBotFactory?: BotFactory } = {},
+): FixedMatchupBatchReport {
     const matchup = resolveFixedMatchup(config.matchupId);
-    const candidateFactory = resolveBotFactory(config.candidateBotId);
-    const incumbentFactory = resolveBotFactory(config.incumbentBotId);
+    const candidateFactory = factories.candidateBotFactory ?? resolveBotFactory(config.candidateBotId);
+    const incumbentFactory = factories.incumbentBotFactory ?? resolveBotFactory(config.incumbentBotId);
     const primaryMatches: MatchReport[] = [];
     const swappedMatches: MatchReport[] = [];
 
@@ -683,7 +689,14 @@ export function runBt05NikkiCandidateLoop(
         throw new Error('Nikki candidate loop requires at least 1 game per side.');
     }
 
-    const runRound = options.runRound ?? buildHeadToHeadRoundReport;
+    const runRound = options.runRound ?? ((roundConfig: NikkiCandidateLoopConfig, seedList: number[]) => buildHeadToHeadRoundReport(
+        roundConfig,
+        seedList,
+        {
+            candidateBotFactory: options.candidateBotFactory,
+            incumbentBotFactory: options.incumbentBotFactory,
+        },
+    ));
     const rounds: NikkiCandidateLoopRoundReport[] = [];
     const artifactPaths = config.outputPath
         ? buildNikkiCandidateLoopArtifactPaths(config.outputPath, config)

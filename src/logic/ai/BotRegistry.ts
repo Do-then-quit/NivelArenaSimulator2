@@ -1,8 +1,8 @@
 import { GameEngine } from '../GameEngine';
 import { EngineAction } from '../types';
 import { BaselineBot } from './BaselineBot';
-import { bt05UnluckyBunnyNikkiCandidateProfile } from './practice/deckProfiles/bt05UnluckyBunnyNikkiCandidate';
 import { bt05UnluckyBunnyNikkiOpeningProfile } from './practice/deckProfiles/bt05UnluckyBunnyNikki';
+import { resolveBt05NikkiMainPhaseHoldPolicyFromEnv } from './practice/Bt05NikkiMainPhaseHoldPolicyLoader';
 import { PracticeBot } from './practice/PracticeBot';
 import { PracticeStrongBot } from './practice/PracticeStrongBot';
 import { StrongBot } from './StrongBot';
@@ -14,6 +14,7 @@ export type BotModelId =
     | 'practice-bt05-nikki-open-v1'
     | 'practice-bt05-nikki-strong-v1'
     | 'practice-bt05-nikki-strong-v2'
+    | 'practice-bt05-nikki-learned-hold-v1'
     | 'strong-v1'
     | 'strong-v2'
     | 'strong-v3';
@@ -28,6 +29,7 @@ const BOT_LABEL_BY_ID: Record<BotModelId, string> = {
     'practice-bt05-nikki-open-v1': 'Practice BT05 Nikki Open v1',
     'practice-bt05-nikki-strong-v1': 'Practice BT05 Nikki Strong v1',
     'practice-bt05-nikki-strong-v2': 'Practice BT05 Nikki Strong v2',
+    'practice-bt05-nikki-learned-hold-v1': 'Practice BT05 Nikki Learned Hold v1',
     'strong-v1': 'Strong v1',
     'strong-v2': 'Strong v2',
     'strong-v3': 'Strong v3',
@@ -38,6 +40,9 @@ export function normalizeBotModelId(input: string): BotModelId {
     if (raw === 'baseline' || raw === 'baseline-a' || raw === 'baseline-b') return 'baseline';
     if (raw === 'practice-bt05-nikki-strong-v2' || raw === 'practice-bt05-nikki-candidate-v2' || raw === 'practice-bt05-nikki-strong-candidate') {
         return 'practice-bt05-nikki-strong-v2';
+    }
+    if (raw === 'practice-bt05-nikki-learned-hold-v1' || raw === 'practice-bt05-nikki-learned-hold') {
+        return 'practice-bt05-nikki-learned-hold-v1';
     }
     if (raw === 'practice-bt05-nikki-strong-v1' || raw === 'practice-bt05-nikki-strong' || raw === 'bt05-nikki-strong-practice') {
         return 'practice-bt05-nikki-strong-v1';
@@ -55,6 +60,7 @@ export function getAvailableBotModels(): Array<{ id: BotModelId; label: string }
         'practice-bt05-nikki-open-v1',
         'practice-bt05-nikki-strong-v1',
         'practice-bt05-nikki-strong-v2',
+        'practice-bt05-nikki-learned-hold-v1',
         'strong-v1',
         'strong-v2',
         'strong-v3',
@@ -85,6 +91,11 @@ export function createBotForModel(botId: BotModelId, name: string): BotLike {
                 opponentReplyBlend: 0.62,
                 rolloutDisagreementPenaltyWeight: 0.03,
                 closeBoardOvercommitPenaltyWeight: 0.018,
+            });
+        case 'practice-bt05-nikki-learned-hold-v1':
+            return new PracticeStrongBot(`Practice BT05 Nikki Learned Hold v1 ${name}`, bt05UnluckyBunnyNikkiOpeningProfile, {
+                preferPracticeMainPhaseHold: false,
+                learnedMainPhaseHoldPolicy: resolveBt05NikkiMainPhaseHoldPolicyFromEnv(),
             });
         case 'strong-v1':
             return new StrongBot(name);

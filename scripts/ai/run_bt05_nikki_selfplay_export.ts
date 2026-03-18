@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createRandomProvider } from '../../src/logic/random';
 import { GameEngine } from '../../src/logic/GameEngine';
 import { encodeStableAction, StableEncodedAction, toStableActionKey } from '../../src/logic/ai/StableActionCodec';
+import { buildBt05NikkiMainPhaseHoldSignature } from '../../src/logic/ai/practice/Bt05NikkiMainPhaseHoldPolicy';
 import { Buff, Card, EngineAction, EngineObservation, GameState, PendingEffect, PlayerState, UnitZoneState } from '../../src/logic/types';
 import { materializeDeckForMatch, validateDeckAgainstLeader } from './deck_pool';
 import { resolveFixedMatchup } from './fixed_matchup/registry';
@@ -20,6 +21,7 @@ export interface Bt05NikkiSelfPlayExportConfig {
     player2BotId: string;
     explorationRate: number;
     suppressLogs: boolean;
+    includeObservations?: boolean;
     seedList?: number[];
     seedSuiteName?: SeedSuiteName;
     seedSuitePath?: string;
@@ -143,10 +145,11 @@ export interface Bt05NikkiSelfPlayTransition {
     phase: GameState['phase'];
     interactionMode: GameState['interactionMode'];
     decisionSource: 'bot' | 'explore-random';
-    observation: CompactObservationSnapshot;
+    observation: CompactObservationSnapshot | null;
     legalActionKeys: string[];
     chosenActionIndex: number;
     chosenAction: StableEncodedAction;
+    mainPhaseHoldSignature: string | null;
     nextObservation: CompactObservationSnapshot | null;
     done: boolean;
     terminalReason: MatchTerminationReason | null;
@@ -222,6 +225,11 @@ export interface Bt05NikkiSelfPlayExportReport {
 export interface Bt05NikkiSelfPlayArtifactPaths {
     latestPath: string;
     archivePath: string;
+}
+
+interface RunSelfPlayExportOptions {
+    player1BotFactory?: BotFactory;
+    player2BotFactory?: BotFactory;
 }
 
 function roundTo(value: number, digits: number): number {
@@ -547,7 +555,8 @@ function collectEpisode(
         const actorBotId = actorSeat === 1 ? config.player1BotId : config.player2BotId;
         const actorBot = actorSeat === 1 ? bot1 : bot2;
         const observation = engine.getObservation(actorPlayerId);
-        const compactCurrentObservation = compactObservation(observation);
+        const compactCurrentObservation = config.includeObservations === false ? null : compactObservation(observation);
+        const mainPhaseHoldSignature = buildBt05NikkiMainPhaseHoldSignature(engine.state, actorPlayerId, observation.legalActions);
         if (!observation.canAct || observation.legalActions.length === 0) {
             reason = 'no_action';
             break;
@@ -581,7 +590,9 @@ function collectEpisode(
         const nextObservation = engine.state.winner
             ? null
             : engine.getObservation(engine.state.interactionOwnerPlayerId ?? engine.currentPlayer.id);
-        const compactNextObservation = nextObservation ? compactObservation(nextObservation) : null;
+        const compactNextObservation = nextObservation && config.includeObservations !== false
+            ? compactObservation(nextObservation)
+            : null;
         transitions.push({
             stepIndex: steps,
             actorPlayerId,
@@ -596,6 +607,7 @@ function collectEpisode(
             legalActionKeys,
             chosenActionIndex,
             chosenAction: encodeStableAction(action),
+            mainPhaseHoldSignature,
             nextObservation: compactNextObservation,
             done: false,
             terminalReason: null,
@@ -629,11 +641,14 @@ function collectEpisode(
     });
 }
 
-export function runBt05NikkiSelfPlayExport(config: Bt05NikkiSelfPlayExportConfig): Bt05NikkiSelfPlayExportReport {
+export function runBt05NikkiSelfPlayExport(
+    config: Bt05NikkiSelfPlayExportConfig,
+    options: RunSelfPlayExportOptions = {},
+): Bt05NikkiSelfPlayExportReport {
     const matchup = resolveFixedMatchup(config.matchupId);
     const seeds = resolveSeeds(config);
-    const player1BotFactory = resolveBotFactory(config.player1BotId);
-    const player2BotFactory = resolveBotFactory(config.player2BotId);
+    const player1BotFactory = options.player1BotFactory ?? resolveBotFactory(config.player1BotId);
+    const player2BotFactory = options.player2BotFactory ?? resolveBotFactory(config.player2BotId);
     const episodes: Bt05NikkiSelfPlayEpisode[] = [];
 
     for (const seed of seeds) {
@@ -771,6 +786,7 @@ function buildConfigFromEnv(): Bt05NikkiSelfPlayExportConfig {
         player2BotId: process.env.AI_NIKKI_RL_PLAYER2_BOT_ID ?? 'practice-bt05-nikki-strong-v1',
         explorationRate: Math.max(0, Math.min(1, parseFloatEnv('AI_NIKKI_RL_EXPLORATION_RATE', 0))),
         suppressLogs: parseBoolEnv('AI_NIKKI_RL_SUPPRESS_LOGS', true),
+        includeObservations: parseBoolEnv('AI_NIKKI_RL_INCLUDE_OBSERVATIONS', true),
         seedList: parseSeedListCsv(process.env.AI_NIKKI_RL_SEED_LIST),
         seedSuiteName: parseSeedSuiteName(process.env.AI_NIKKI_RL_SEED_SUITE),
         seedSuitePath: process.env.AI_NIKKI_RL_SEED_SUITE_PATH,

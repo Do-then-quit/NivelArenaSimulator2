@@ -6,6 +6,7 @@ describe('Bot registry phase4.1 profiles', () => {
         const ids = getAvailableBotIds();
         expect(ids).toContain('strong-v3.1-topk3');
         expect(ids).toContain('strong-v3.1-topk3-mean');
+        expect(ids).toContain('practice-bt05-nikki-learned-hold-v1');
     });
 
     it('resolves strong-v3.1 prefix ids to the phase4.1 topk3 profile factory', () => {

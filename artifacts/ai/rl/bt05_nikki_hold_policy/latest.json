@@ -1,0 +1,4265 @@
+{
+  "generatedAt": "2026-03-18T09:06:27.903Z",
+  "config": {
+    "inputPaths": [
+      "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\ai\\rl\\bt05_nikki_learning_loop\\runs\\iteration-01\\selfplay.json"
+    ],
+    "minSamples": 1,
+    "minHoldRate": 1,
+    "minAverageReturnToGo": 0,
+    "policyId": "bt05-nikki-main-phase-hold-perfect-s1",
+    "label": "BT05 Nikki Main Phase Hold Perfect hold s1"
+  },
+  "inputs": [
+    {
+      "path": "E:\\TempPrj\\NivelArenaSimulator2\\artifacts\\ai\\rl\\bt05_nikki_learning_loop\\runs\\iteration-01\\selfplay.json",
+      "episodeCount": 20,
+      "transitionCount": 3253
+    }
+  ],
+  "policy": {
+    "id": "bt05-nikki-main-phase-hold-perfect-s1",
+    "label": "BT05 Nikki Main Phase Hold Perfect hold s1",
+    "minSamples": 1,
+    "minHoldRate": 1,
+    "minAverageReturnToGo": 0,
+    "entries": {
+      "lvl=0-2|md=0|od=0|mh=3-4|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 6,
+        "holdCount": 4,
+        "continueCount": 2,
+        "holdRate": 0.6667,
+        "avgReturnToGo": -0.3333
+      },
+      "lvl=0-2|md=0|od=0|mh=3-4|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=0|od=0|mh=3-4|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=0|od=0|mh=3-4|oh=5-6|mf=2|of=0|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 2,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=3-4|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": 0
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": 0
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=3-4|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 2,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 0
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=5-6|mf=0|of=0|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=5-6|mf=0|of=0|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 13,
+        "holdCount": 0,
+        "continueCount": 13,
+        "holdRate": 0,
+        "avgReturnToGo": 0.0769
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=5-6|mf=0|of=0|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=5-6|mf=0|of=0|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 6,
+        "holdCount": 0,
+        "continueCount": 6,
+        "holdRate": 0,
+        "avgReturnToGo": -0.3333
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=0|od=0|mh=5-6|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": 0
+      },
+      "lvl=0-2|md=0|od=0|mh=7+|oh=3-4|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=0|od=0|mh=7+|oh=3-4|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=0|od=0|mh=7+|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=0|od=0|mh=7+|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=3-4|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=3-4|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 6,
+        "holdCount": 0,
+        "continueCount": 6,
+        "holdRate": 0,
+        "avgReturnToGo": 0
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 4,
+        "holdCount": 0,
+        "continueCount": 4,
+        "holdRate": 0,
+        "avgReturnToGo": 0
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 4,
+        "holdCount": 0,
+        "continueCount": 4,
+        "holdRate": 0,
+        "avgReturnToGo": 0.5
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=0-2|md=1-2|od=0|mh=5-6|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=3-4|mf=0|of=0|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=3-4|mf=1|of=0|direct=1|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=3-4|mf=2|of=0|direct=2|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=5-6|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=5-6|mf=1|of=1|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=1|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=1|emptyLaneU=2|playI=1|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=7+|oh=0-2|mf=2|of=2|direct=0|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=7+|oh=3-4|mf=1|of=0|direct=1|oppDirect=0|playU=2+|upgradeU=1|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=7+|oh=3-4|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=7+|oh=3-4|mf=2|of=1|direct=2|oppDirect=1|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=7+|oh=3-4|mf=2|of=1|direct=2|oppDirect=1|playU=1|upgradeU=0|emptyLaneU=1|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=0|od=1-2|mh=7+|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=3-4|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=3-4|mh=7+|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=0|od=3-4|mh=7+|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=5-6|mf=1|of=1|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=5-6|mf=1|of=1|direct=0|oppDirect=0|playU=2+|upgradeU=1|emptyLaneU=2|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=7+|mf=1|of=1|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=7+|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=3-4|oh=7+|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=1|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=1|upgradeU=1|emptyLaneU=0|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=2|emptyLaneU=0|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 1,
+        "continueCount": 1,
+        "holdRate": 0.5,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=0|mh=5-6|oh=7+|mf=2|of=0|direct=2|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=3-4|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=3-4|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=1|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=3-4|mf=1|of=2|direct=1|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=3-4|mf=3|of=0|direct=3|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=5-6|mf=1|of=1|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=3-4|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2+|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=1|act=0": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=2|of=1|direct=2|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=2|of=1|direct=2|oppDirect=1|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=3|of=0|direct=3|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=2+|upgradeU=1|emptyLaneU=2|playI=1|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=1|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=1|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 1,
+        "continueCount": 1,
+        "holdRate": 0.5,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=7+|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=5-6|oh=7+|mf=1|of=1|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=7+|oh=3-4|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=7+|oh=3-4|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2|emptyLaneU=2+|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=7+|oh=3-4|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=7+|oh=3-4|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=7+|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=7+|oh=5-6|mf=1|of=0|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=1-2|mh=7+|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=3-4|mh=3-4|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=1|emptyLaneU=2|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=3-4|mh=5-6|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=1|emptyLaneU=2|playI=1|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=3-4|mh=5-6|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=1-2|od=3-4|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=2|emptyLaneU=0|playI=1|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=1-2|od=3-4|mh=7+|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=1|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=3-4|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=3-4|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=3-4|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=5-6|oh=3-4|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=5-6|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=5-6|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=5-6|oh=5-6|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=3-4|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=3-4|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=3-4|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=3-4|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=3-4|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=3-4|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=3-4|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=3-4|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=3-4|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2|upgradeU=1|emptyLaneU=1|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=2|of=0|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=2|oppDirect=1|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=1|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=5-6|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=5-6|mf=2|of=0|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=5-6|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=1|upgradeU=0|emptyLaneU=1|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=1-2|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=3-4|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=1|emptyLaneU=2|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=2|upgradeU=1|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=3-4|mh=7+|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=3-4|od=3-4|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=5-6|od=1-2|mh=5-6|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=5-6|od=3-4|mh=3-4|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=3-4|md=5-6|od=3-4|mh=5-6|oh=3-4|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=1|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=5-6|od=3-4|mh=5-6|oh=3-4|mf=3|of=1|direct=2|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=3-4|md=5-6|od=3-4|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=0|od=5-6|mh=7+|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=0|od=5-6|mh=7+|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=0|od=5-6|mh=7+|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=2|upgradeU=1|emptyLaneU=1|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=3-4|oh=3-4|mf=1|of=1|direct=1|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=3-4|oh=3-4|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=3-4|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=3-4|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=5-6|oh=3-4|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=5-6|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=1|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=2|upgradeU=1|emptyLaneU=1|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=3-4|mf=0|of=0|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=3-4|mf=1|of=0|direct=1|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=3-4|mf=2|of=0|direct=2|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=3-4|mf=3|of=0|direct=3|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=1|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=3-4|mh=7+|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=5-6|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=5-6|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=5-6|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=5-6|mh=7+|oh=3-4|mf=3|of=0|direct=3|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=5-6|mh=7+|oh=7+|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=5-6|mh=7+|oh=7+|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=1-2|od=5-6|mh=7+|oh=7+|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=0|mh=0-2|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=0|mh=3-4|oh=5-6|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=0|mh=3-4|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=0|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=0|mh=5-6|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=0|mh=7+|oh=7+|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=3-4|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=3-4|oh=7+|mf=0|of=0|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=3-4|oh=7+|mf=0|of=1|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=3-4|oh=7+|mf=1|of=1|direct=1|oppDirect=1|playU=1|upgradeU=1|emptyLaneU=0|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=3-4|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=0|act=1+": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=7+|mf=1|of=1|direct=1|oppDirect=1|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=7+|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=5-6|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=7+|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=1|emptyLaneU=2|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=7+|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=7+|oh=7+|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=7+|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=7+|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=7+|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=7+|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=1-2|mh=7+|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=3-4|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=1|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=2|upgradeU=0|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=5-6|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=1|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=3-4|mh=7+|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=0-2|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=3-4|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=5-6|oh=0-2|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=2|upgradeU=1|emptyLaneU=1|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=0-2|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=3-4|od=5-6|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=0|act=1+": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=0|mh=5-6|oh=7+|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=0|mh=5-6|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=0|mh=7+|oh=7+|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=0|mh=7+|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=0-2|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=0-2|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=3-4|oh=5-6|mf=0|of=3|direct=0|oppDirect=3|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=3-4|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=3-4|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=3-4|oh=7+|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=3-4|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=5-6|oh=5-6|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=7+|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=1-2|mh=7+|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=3-4|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=3-4|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=3-4|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=7+|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 1,
+        "continueCount": 1,
+        "holdRate": 0.5,
+        "avgReturnToGo": 0
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=5-6|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1+|act=1": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=1|emptyLaneU=2+|playI=0|playS=1+|act=1+": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2|upgradeU=1|emptyLaneU=1|playI=0|playS=0|act=1+": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=7+|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=1|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=3-4|mh=7+|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=0-2|oh=3-4|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=0-2|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=3-4|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=3-4|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=3-4|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=3-4|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=3-4|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=3-4|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=3-4|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=3-4|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=3-4|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=1|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=3-4|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=3-4|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=3-4|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=1|act=1+": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=5-6|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=7+|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=7+|oh=5-6|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=7+|oh=7+|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=7+|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=5-6|mh=7+|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=7+|mh=3-4|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=7+|mh=3-4|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=7+|mh=3-4|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=7+|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=7+|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=7+|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=5-6|od=7+|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=1-2|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=1-2|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=3-4|mh=0-2|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=3-4|mh=3-4|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=3-4|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=1|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=3-4|mh=5-6|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=3-4|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=3-4|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=5-6|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=5-6|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 2,
+        "holdCount": 1,
+        "continueCount": 1,
+        "holdRate": 0.5,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=5-6|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=5-6|mh=7+|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=3-4|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=5-6|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=7+|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=7+|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=7+|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=7+|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=5-6|md=7+|od=7+|mh=7+|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1+": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=3-4|od=5-6|mh=5-6|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=3-4|od=5-6|mh=7+|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=3-4|od=5-6|mh=7+|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=3-4|od=7+|mh=5-6|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=3-4|mh=5-6|oh=7+|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=2|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=3-4|mh=5-6|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=3-4|mh=7+|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=3-4|mh=7+|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=3-4|mh=7+|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=3-4|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=5-6|oh=0-2|mf=2|of=2|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=5-6|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=5-6|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=1|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=5-6|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=7+|oh=0-2|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=7+|oh=0-2|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=7+|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=7+|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=7+|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=5-6|mh=7+|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=5-6|oh=0-2|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=5-6|oh=0-2|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=5-6|oh=0-2|mf=2|of=1|direct=1|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=5-6|oh=0-2|mf=2|of=1|direct=2|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=5-6|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=0-2|mf=1|of=1|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=0-2|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=0-2|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=0-2|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 2,
+        "holdCount": 0,
+        "continueCount": 2,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=5-6|od=7+|mh=7+|oh=7+|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=1-2|mh=0-2|oh=7+|mf=1|of=3|direct=0|oppDirect=2|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=1-2|mh=3-4|oh=7+|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=1-2|mh=3-4|oh=7+|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=1-2|mh=5-6|oh=7+|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=1-2|mh=5-6|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=1-2|mh=7+|oh=7+|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=1-2|mh=7+|oh=7+|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=1-2|mh=7+|oh=7+|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=3-4|mh=3-4|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=3-4|mh=5-6|oh=7+|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=3-4|mh=5-6|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=3-4|mh=7+|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=3-4|mh=7+|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=3-4|mh=7+|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=1|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=3-4|mh=7+|oh=7+|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=0-2|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=0-2|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=0-2|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=0-2|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=3-4|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=3-4|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=3-4|oh=5-6|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=3-4|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=3-4|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=3-4|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=3-4|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=3-4|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=3-4|mf=3|of=1|direct=2|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1+": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=7+|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=1|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=5-6|oh=7+|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=3-4|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=3-4|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=3-4|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=3-4|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=3-4|mf=3|of=1|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=1+|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=5-6|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=1|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=7+|mf=1|of=1|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=7+|mf=2|of=0|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=7+|mf=2|of=0|direct=2|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=5-6|mh=7+|oh=7+|mf=3|of=0|direct=3|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=3-4|mf=1|of=1|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=3-4|mf=1|of=3|direct=0|oppDirect=2|playU=2|upgradeU=0|emptyLaneU=2|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=0-2|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=0-2|mf=2|of=1|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2|upgradeU=0|emptyLaneU=2|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=3-4|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=2|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=5-6|mf=1|of=2|direct=1|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=5-6|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=1|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2|emptyLaneU=1|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=3-4|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=0-2|mf=1|of=1|direct=0|oppDirect=0|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=0-2|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=0-2|mf=3|of=1|direct=2|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=0-2|mf=3|of=1|direct=2|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=0-2|mf=3|of=1|direct=2|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=0-2|mf=3|of=1|direct=2|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 3,
+        "holdCount": 1,
+        "continueCount": 2,
+        "holdRate": 0.3333,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=3-4|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=3-4|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=2|of=1|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=2|of=2|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=2|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=1|direct=2|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=2|upgradeU=2|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=5-6|oh=7+|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=0-2|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=3-4|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=3-4|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=0|upgradeU=0|emptyLaneU=0|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=1|upgradeU=1|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=3-4|mf=3|of=2|direct=1|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=1|act=1+": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=3-4|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 1,
+        "continueCount": 0,
+        "holdRate": 1,
+        "avgReturnToGo": -1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=5-6|mf=0|of=3|direct=0|oppDirect=3|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=1|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=5-6|mf=1|of=3|direct=0|oppDirect=2|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=5-6|mf=2|of=1|direct=2|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=5-6|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=5-6|mf=3|of=3|direct=0|oppDirect=0|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=7+|mf=0|of=2|direct=0|oppDirect=2|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=7+|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=7+|mf=1|of=2|direct=0|oppDirect=1|playU=2+|upgradeU=0|emptyLaneU=2+|playI=1+|playS=0|act=0": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=7+|mf=2|of=2|direct=0|oppDirect=0|playU=1|upgradeU=0|emptyLaneU=1|playI=0|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=7+|mf=2|of=2|direct=1|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=0|playI=1+|playS=0|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": 1
+      },
+      "lvl=7+|md=7+|od=7+|mh=7+|oh=7+|mf=2|of=3|direct=0|oppDirect=1|playU=2+|upgradeU=2+|emptyLaneU=2+|playI=1+|playS=1+|act=1": {
+        "samples": 1,
+        "holdCount": 0,
+        "continueCount": 1,
+        "holdRate": 0,
+        "avgReturnToGo": -1
+      }
+    }
+  },
+  "summary": {
+    "episodeCount": 20,
+    "transitionCount": 3253,
+    "eligibleTransitionCount": 656,
+    "signatureCount": 604,
+    "retainedEntryCount": 50,
+    "avgHoldRate": 0.2219
+  }
+}

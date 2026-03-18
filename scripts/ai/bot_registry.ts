@@ -3,6 +3,7 @@ import { StrongBot } from '../../src/logic/ai/StrongBot';
 import { StrongBotV2 } from '../../src/logic/ai/StrongBotV2';
 import { StrongBotV3 } from '../../src/logic/ai/StrongBotV3';
 import { PracticeBot } from '../../src/logic/ai/practice/PracticeBot';
+import { resolveBt05NikkiMainPhaseHoldPolicyFromEnv } from '../../src/logic/ai/practice/Bt05NikkiMainPhaseHoldPolicyLoader';
 import { PracticeStrongBot } from '../../src/logic/ai/practice/PracticeStrongBot';
 import { bt05UnluckyBunnyNikkiCandidateProfile } from '../../src/logic/ai/practice/deckProfiles/bt05UnluckyBunnyNikkiCandidate';
 import { bt05UnluckyBunnyNikkiOpeningProfile } from '../../src/logic/ai/practice/deckProfiles/bt05UnluckyBunnyNikki';
@@ -32,6 +33,10 @@ const BOT_REGISTRY: Record<string, BotFactory> = {
         rolloutDisagreementPenaltyWeight: 0.03,
         closeBoardOvercommitPenaltyWeight: 0.018,
     }),
+    'practice-bt05-nikki-learned-hold-v1': (name: string) => new PracticeStrongBot(`Practice BT05 Nikki Learned Hold v1 ${name}`, bt05UnluckyBunnyNikkiOpeningProfile, {
+        preferPracticeMainPhaseHold: false,
+        learnedMainPhaseHoldPolicy: resolveBt05NikkiMainPhaseHoldPolicyFromEnv(),
+    }),
     strong: (name: string) => new StrongBot(name),
     'strong-v1': (name: string) => new StrongBot(name),
     'strong-v2': (name: string) => new StrongBotV2(name),
@@ -51,6 +56,7 @@ export function resolveBotFactory(botId: string): BotFactory {
     if (direct) return direct;
     if (botId.startsWith('baseline')) return BOT_REGISTRY.baseline;
     if (botId.startsWith('practice-bt05-nikki-candidate')) return BOT_REGISTRY['practice-bt05-nikki-strong-v2'];
+    if (botId.startsWith('practice-bt05-nikki-learned-hold')) return BOT_REGISTRY['practice-bt05-nikki-learned-hold-v1'];
     if (botId.startsWith('practice-bt05-nikki-strong-v2')) return BOT_REGISTRY['practice-bt05-nikki-strong-v2'];
     if (botId.startsWith('practice-bt05-nikki-strong')) return BOT_REGISTRY['practice-bt05-nikki-strong-v1'];
     if (botId.startsWith('practice-bt05-nikki')) return BOT_REGISTRY['practice-bt05-nikki-open-v1'];
