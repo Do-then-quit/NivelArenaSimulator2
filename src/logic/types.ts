@@ -270,6 +270,72 @@ export type EngineAction =
     | { type: 'SELECT_REVEALED_TARGET'; actorPlayerId: string; revealedIndex: number }
     | { type: 'CONFIRM_TARGETS'; actorPlayerId: string };
 
+export type Command = EngineAction;
+
+export type UiActionGroup = 'PHASE' | 'PLAY' | 'ATTACK' | 'ACTIVE' | 'INTERACTION' | 'SYSTEM';
+
+export interface ActionAvailability {
+    id: string;
+    action: EngineAction | null;
+    actionType: EngineAction['type'] | 'PASS_PRIORITY';
+    group: UiActionGroup;
+    label: string;
+    enabled: boolean;
+    reason?: string;
+    preview?: string;
+    sourcePlayerId?: string;
+    targetPlayerId?: string;
+    handIndex?: number;
+    zoneIndex?: number;
+    itemIndex?: number;
+    emphasis?: 'PRIMARY' | 'SECONDARY' | 'WARNING';
+}
+
+export interface MandatoryQueueItem {
+    id: string;
+    title: string;
+    reason: string;
+    blocking: boolean;
+    sourceCardName?: string;
+    controllerPlayerId?: string;
+    actionType?: string;
+    preview?: string;
+}
+
+export interface TimingWindow {
+    phase: Phase;
+    phaseLabel: string;
+    combatStep: GameState['combatStep'];
+    combatStepLabel: string | null;
+    interactionMode: GameState['interactionMode'];
+    interactionOwnerPlayerId: string | null;
+    awaitingInput: boolean;
+    awaitingMandatory: boolean;
+}
+
+export type AuditTrailCategory = 'PHASE' | 'EFFECT' | 'INTERACTION' | 'RULE' | 'COMBAT' | 'SYSTEM';
+
+export interface AuditTrailEntry {
+    id: string;
+    createdAtMs: number;
+    category: AuditTrailCategory;
+    title: string;
+    detail: string;
+    turnCount: number;
+    phase: Phase;
+    sourcePlayerId?: string;
+    sourceCardName?: string;
+}
+
+export interface EngineUiSnapshot {
+    actorPlayerId: string;
+    legalActions: EngineAction[];
+    visibleActions: ActionAvailability[];
+    mandatoryQueue: MandatoryQueueItem[];
+    timingWindow: TimingWindow;
+    auditTrail: AuditTrailEntry[];
+}
+
 export interface EngineObservation {
     actorPlayerId: string;
     canAct: boolean;

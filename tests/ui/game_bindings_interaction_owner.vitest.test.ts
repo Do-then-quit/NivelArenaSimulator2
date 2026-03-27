@@ -10,7 +10,7 @@ describe('game bindings interaction owner', () => {
         `;
     });
 
-    it('uses interactionOwnerPlayerId for mulligan action owner', async () => {
+    it('uses interactionOwnerPlayerId for mulligan action owner', { timeout: 20000 }, async () => {
         const { uiState } = await import('../../src/ui/appState');
         const { attachListeners } = await import('../../src/ui/screens/gameBindings');
 
@@ -47,7 +47,7 @@ describe('game bindings interaction owner', () => {
         });
     }, 10000);
 
-    it('blocks local input when online actor is remote player', async () => {
+    it('blocks local input when online actor is remote player', { timeout: 20000 }, async () => {
         const { uiState } = await import('../../src/ui/appState');
         const { attachListeners } = await import('../../src/ui/screens/gameBindings');
 

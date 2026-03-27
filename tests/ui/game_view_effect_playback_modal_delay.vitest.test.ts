@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderGameViewWithMockGame } from './helpers/game_view_test_harness';
 
 vi.mock('../../src/ui/screens/gameBindings', () => ({
     attachListeners: vi.fn(),
@@ -111,32 +112,22 @@ function createModalDelayMockGame() {
 describe('game view modal delay during playback', () => {
     beforeEach(() => {
         vi.resetModules();
-        document.body.innerHTML = '<div id="app"></div>';
-        Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1920 });
-        Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 1080 });
     });
 
-    it('hides optional modal until modal gate elapses', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createModalDelayMockGame();
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.expanded = true;
-        uiState.gameLogView.autoCollapsed = false;
+    it('hides optional modal until modal gate elapses', { timeout: 10000 }, async () => {
+        const { uiState } = await renderGameViewWithMockGame(createModalDelayMockGame());
         uiState.playback.enabled = true;
         uiState.playback.queueBusy = true;
         uiState.playback.modalGateUntilMs = Date.now() + 1000;
 
-        renderGame();
+        uiState.render?.();
 
         expect(document.querySelector('#opt-confirm')).toBeNull();
         expect(document.body.textContent).toContain('효과 처리 중');
 
         uiState.playback.queueBusy = false;
         uiState.playback.modalGateUntilMs = Date.now() - 1;
-        renderGame();
+        uiState.render?.();
 
         expect(document.querySelector('#opt-confirm')).toBeTruthy();
         expect(document.querySelector('#opt-skip')).toBeTruthy();

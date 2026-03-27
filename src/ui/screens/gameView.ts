@@ -1,4 +1,4 @@
-import { Phase, Card, GameState, PendingEffect } from '../../logic/types';
+import { ActionAvailability, EngineUiSnapshot, Phase, Card, GameState, PendingEffect } from '../../logic/types';
 import { PHASE_THEME_CLASSES, Screen, uiState } from '../appState';
 import {
     canLocalHumanInput,
@@ -284,6 +284,262 @@ function renderPlaybackLogPanel(): string {
             `}
         </aside>
     `;
+}
+
+const PHASE_RIBBON_STEPS = [
+    { phase: Phase.LEVEL_UP, label: '레벨업' },
+    { phase: Phase.DRAW, label: '드로우' },
+    { phase: Phase.MAIN, label: '메인' },
+    { phase: Phase.ATTACK, label: '어택' },
+    { phase: Phase.END, label: '엔드' },
+];
+
+const ATTACK_STEP_ORDER = [
+    { key: 'ATTACK_DECLARATION', label: '공격 선언' },
+    { key: 'DEFENSE_DECLARATION', label: '방어 선언' },
+    { key: 'BATTLE', label: '전투/대미지' },
+    { key: 'BATTLE_END', label: '전투 종료' },
+] as const;
+
+function getRibbonPhaseIndex(phase: Phase): number {
+    if (phase === Phase.BLOCK) return PHASE_RIBBON_STEPS.findIndex(step => step.phase === Phase.ATTACK);
+    return PHASE_RIBBON_STEPS.findIndex(step => step.phase === phase);
+}
+
+function getAttackStepIndex(snapshot: EngineUiSnapshot): number {
+    if (snapshot.timingWindow.combatStep === 'ATTACK_DECLARATION') return 0;
+    if (snapshot.timingWindow.combatStep === 'DEFENSE_DECLARATION') return 1;
+    if (snapshot.timingWindow.combatStep === 'BATTLE') return 2;
+    if (snapshot.timingWindow.combatStep === 'BATTLE_END') return 3;
+    if (snapshot.timingWindow.phase === Phase.ATTACK) return 0;
+    if (snapshot.timingWindow.phase === Phase.BLOCK) return 1;
+    return -1;
+}
+
+function renderPhaseRibbon(snapshot: EngineUiSnapshot): string {
+    const currentIndex = getRibbonPhaseIndex(snapshot.timingWindow.phase);
+    const interactionTag = snapshot.timingWindow.awaitingInput
+        ? '입력 대기'
+        : snapshot.timingWindow.awaitingMandatory
+            ? '효과 해결'
+            : '자동 진행 가능';
+
+    return `
+        <div class="phase-ribbon-panel">
+            <div class="phase-ribbon-main">
+                ${PHASE_RIBBON_STEPS.map((step, index) => {
+                    const stateClass = index < currentIndex
+                        ? 'done'
+                        : index === currentIndex
+                            ? 'active'
+                            : 'upcoming';
+                    return `
+                        <div class="phase-ribbon-step ${stateClass}">
+                            <span class="phase-ribbon-index">${index + 1}</span>
+                            <span class="phase-ribbon-label">${step.label}</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <div class="phase-ribbon-meta">
+                <span class="phase-ribbon-meta-label">현재</span>
+                <strong>${escapeHtml(snapshot.timingWindow.phaseLabel)}</strong>
+                <span class="phase-ribbon-meta-dot"></span>
+                <span>${escapeHtml(interactionTag)}</span>
+            </div>
+        </div>
+    `;
+}
+
+function renderAttackStepBar(snapshot: EngineUiSnapshot): string {
+    if (snapshot.timingWindow.phase !== Phase.ATTACK && snapshot.timingWindow.phase !== Phase.BLOCK) return '';
+    const currentIndex = getAttackStepIndex(snapshot);
+    return `
+        <div class="attack-step-panel">
+            ${ATTACK_STEP_ORDER.map((step, index) => {
+                const stateClass = index < currentIndex
+                    ? 'done'
+                    : index === currentIndex
+                        ? 'active'
+                        : 'upcoming';
+                return `<div class="attack-step-chip ${stateClass}">${step.label}</div>`;
+            }).join('')}
+        </div>
+    `;
+}
+
+function renderMandatoryQueue(snapshot: EngineUiSnapshot): string {
+    if (snapshot.mandatoryQueue.length === 0) return '';
+    return `
+        <div class="mandatory-queue-panel">
+            <div class="mandatory-queue-title">해결 대기열</div>
+            <div class="mandatory-queue-items">
+                ${snapshot.mandatoryQueue.map((item) => `
+                    <div class="mandatory-queue-item ${item.blocking ? 'blocking' : ''}">
+                        <div class="mandatory-queue-header">
+                            <strong>${escapeHtml(item.title)}</strong>
+                            <span class="mandatory-queue-badge">${item.blocking ? '강제' : '대기'}</span>
+                        </div>
+                        ${item.sourceCardName ? `<div class="mandatory-queue-source">${escapeHtml(item.sourceCardName)}</div>` : ''}
+                        <div class="mandatory-queue-reason">${escapeHtml(item.reason)}</div>
+                        ${item.preview ? `<div class="mandatory-queue-preview">${escapeHtml(item.preview)}</div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function getActionGroupLabel(group: ActionAvailability['group']): string {
+    switch (group) {
+        case 'PHASE':
+            return '페이즈 진행';
+        case 'INTERACTION':
+            return '현재 입력';
+        case 'PLAY':
+            return '배치 / 업그레이드 / 스킬';
+        case 'ATTACK':
+            return '공격';
+        case 'ACTIVE':
+            return '액티브';
+        default:
+            return '시스템';
+    }
+}
+
+function renderActionPanel(snapshot: EngineUiSnapshot): string {
+    const grouped = new Map<ActionAvailability['group'], ActionAvailability[]>();
+    snapshot.visibleActions.forEach((action) => {
+        const bucket = grouped.get(action.group) ?? [];
+        bucket.push(action);
+        grouped.set(action.group, bucket);
+    });
+
+    const groupOrder: ActionAvailability['group'][] = ['PHASE', 'INTERACTION', 'PLAY', 'ATTACK', 'ACTIVE', 'SYSTEM'];
+    const visibleGroups = groupOrder.filter(group => (grouped.get(group)?.length ?? 0) > 0);
+
+    return `
+        <section class="ux-action-panel">
+            <div class="ux-action-panel-title">지금 할 수 있는 행동</div>
+            ${visibleGroups.length === 0 ? '<div class="ux-action-empty">현재 표시할 행동이 없습니다.</div>' : ''}
+            ${visibleGroups.map((group) => `
+                <div class="ux-action-group">
+                    <div class="ux-action-group-title">${getActionGroupLabel(group)}</div>
+                    ${(grouped.get(group) ?? []).map((action) => `
+                        <div class="ux-action-row ${action.enabled ? 'enabled' : 'disabled'}" data-action-type="${action.actionType}">
+                            <div class="ux-action-row-top">
+                                <span class="ux-action-label">${escapeHtml(action.label)}</span>
+                                <span class="ux-action-state">${action.enabled ? '가능' : '불가'}</span>
+                            </div>
+                            ${action.preview ? `<div class="ux-action-preview">${escapeHtml(action.preview)}</div>` : ''}
+                            ${action.reason ? `<div class="ux-action-reason">${escapeHtml(action.reason)}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('')}
+        </section>
+    `;
+}
+
+function renderAuditTrailPanel(snapshot: EngineUiSnapshot): string {
+    const visibleEntries = snapshot.auditTrail.slice(0, 5);
+    return `
+        <section class="audit-trail-panel">
+            <div class="audit-trail-title">판정 요약</div>
+            <div class="audit-trail-list">
+                ${visibleEntries.map((entry) => `
+                    <div class="audit-trail-item">
+                        <div class="audit-trail-meta">
+                            <span class="audit-trail-badge">${escapeHtml(entry.category)}</span>
+                            <span>${formatPlaybackLogTime(entry.createdAtMs)}</span>
+                            <span>턴 ${entry.turnCount}</span>
+                        </div>
+                        <div class="audit-trail-head">${escapeHtml(entry.title)}</div>
+                        <div class="audit-trail-detail">${escapeHtml(entry.detail)}</div>
+                    </div>
+                `).join('')}
+            </div>
+        </section>
+    `;
+}
+
+function buildFallbackUiSnapshot(game: any, actorPlayerId: string): EngineUiSnapshot {
+    const legalActions = typeof game?.getLegalActions === 'function'
+        ? game.getLegalActions(actorPlayerId)
+        : [];
+    const phaseLabelMap: Record<string, string> = {
+        LEVEL_UP: '레벨업',
+        DRAW: '드로우',
+        MAIN: '메인',
+        ATTACK: '어택',
+        BLOCK: '블록',
+        END: '엔드',
+    };
+    const combatStepLabelMap: Record<string, string> = {
+        NONE: '대기',
+        ATTACK_DECLARATION: '공격 선언',
+        DEFENSE_DECLARATION: '방어 선언',
+        BATTLE: '전투/대미지',
+        BATTLE_END: '전투 종료',
+    };
+    const interactionTitleMap: Record<string, string> = {
+        SELECT_MULLIGAN: '멀리건 선택',
+        SELECT_TARGET: '대상 선택',
+        SELECT_COST: '비용 선택',
+        SELECT_OPTIONAL: '선택형 효과 확인',
+    };
+
+    const visibleActions: ActionAvailability[] = legalActions.map((action: any, index: number) => ({
+        id: `fallback:${action?.type ?? 'UNKNOWN'}:${index}`,
+        action,
+        actionType: action?.type ?? 'UNKNOWN',
+        group: game?.state?.interactionMode && game.state.interactionMode !== 'NORMAL' ? 'INTERACTION' : 'SYSTEM',
+        label: interactionTitleMap[action?.type] ?? String(action?.type ?? '행동'),
+        enabled: true,
+        sourcePlayerId: action?.actorPlayerId ?? actorPlayerId,
+    }));
+
+    const pendingEffect = game?.state?.pendingEffect ?? null;
+    const mandatoryQueue = pendingEffect
+        ? [{
+            id: `fallback:mandatory:${pendingEffect.actionType ?? 'PENDING'}`,
+            title: interactionTitleMap[game.state.interactionMode] ?? '효과 해결 대기',
+            reason: pendingEffect.triggerReason
+                || pendingEffect.sourceEffectDescription
+                || pendingEffect.effectDescription
+                || '현재 해결해야 할 효과가 있습니다.',
+            blocking: true,
+            sourceCardName: pendingEffect.sourceCard?.name,
+            controllerPlayerId: pendingEffect.controllerPlayerId ?? pendingEffect.sourcePlayerId,
+            actionType: pendingEffect.actionType,
+            preview: pendingEffect.sourceEffectDescription || pendingEffect.effectDescription || undefined,
+        }]
+        : [];
+
+    return {
+        actorPlayerId,
+        legalActions,
+        visibleActions,
+        mandatoryQueue,
+        timingWindow: {
+            phase: game?.state?.phase ?? Phase.MAIN,
+            phaseLabel: phaseLabelMap[String(game?.state?.phase ?? Phase.MAIN)] ?? String(game?.state?.phase ?? Phase.MAIN),
+            combatStep: game?.state?.combatStep ?? 'NONE',
+            combatStepLabel: combatStepLabelMap[String(game?.state?.combatStep ?? 'NONE')] ?? '대기',
+            interactionMode: game?.state?.interactionMode ?? 'NORMAL',
+            interactionOwnerPlayerId: game?.state?.interactionOwnerPlayerId ?? actorPlayerId,
+            awaitingInput: game?.state?.interactionMode && game.state.interactionMode !== 'NORMAL',
+            awaitingMandatory: mandatoryQueue.length > 0,
+        },
+        auditTrail: [],
+    };
+}
+
+function getUiSnapshotForRender(game: any, actorPlayerId: string): EngineUiSnapshot {
+    if (typeof game?.getUiSnapshot === 'function') {
+        return game.getUiSnapshot(actorPlayerId);
+    }
+    return buildFallbackUiSnapshot(game, actorPlayerId);
 }
 
 function renderVerificationSessionPanel(): string {
@@ -960,12 +1216,95 @@ function getSkillPromptSelectionStateForPlayer(playerId: string): {
     return emptyState;
 }
 
+interface LaneUiState {
+    enabled: boolean;
+    blocked: boolean;
+    reasons: string[];
+}
+
+interface ActiveUiState {
+    enabled: boolean;
+    used: boolean;
+    reasons: string[];
+}
+
+function buildLaneUiState(snapshot: EngineUiSnapshot, playerId: string): Map<number, LaneUiState> {
+    const laneState = new Map<number, LaneUiState>();
+    snapshot.visibleActions
+        .filter((action) =>
+            action.sourcePlayerId === playerId &&
+            (action.actionType === 'PLAY_UNIT' || action.actionType === 'PLAY_ITEM') &&
+            typeof action.zoneIndex === 'number' &&
+            action.zoneIndex >= 0,
+        )
+        .forEach((action) => {
+            const lane = action.zoneIndex as number;
+            const current = laneState.get(lane) ?? { enabled: false, blocked: false, reasons: [] };
+            if (action.enabled) {
+                current.enabled = true;
+            } else {
+                current.blocked = true;
+                if (action.reason && !current.reasons.includes(action.reason)) {
+                    current.reasons.push(action.reason);
+                }
+            }
+            laneState.set(lane, current);
+        });
+    return laneState;
+}
+
+function buildZoneActiveUiState(snapshot: EngineUiSnapshot, playerId: string): Map<number, ActiveUiState> {
+    const activeState = new Map<number, ActiveUiState>();
+    snapshot.visibleActions
+        .filter((action) =>
+            action.sourcePlayerId === playerId &&
+            action.actionType === 'ACTIVATE_EFFECT' &&
+            typeof action.zoneIndex === 'number' &&
+            action.zoneIndex >= 0,
+        )
+        .forEach((action) => {
+            const lane = action.zoneIndex as number;
+            const current = activeState.get(lane) ?? { enabled: false, used: false, reasons: [] };
+            if (action.enabled) {
+                current.enabled = true;
+            } else {
+                current.used = current.used || (action.reason?.includes('이미 사용') ?? false);
+                if (action.reason && !current.reasons.includes(action.reason)) {
+                    current.reasons.push(action.reason);
+                }
+            }
+            activeState.set(lane, current);
+        });
+    return activeState;
+}
+
+function buildLeaderActiveUiState(snapshot: EngineUiSnapshot, playerId: string): ActiveUiState | null {
+    const leaderActions = snapshot.visibleActions.filter((action) =>
+        action.sourcePlayerId === playerId &&
+        action.actionType === 'ACTIVATE_EFFECT' &&
+        action.zoneIndex === -1,
+    );
+    if (leaderActions.length === 0) return null;
+    return leaderActions.reduce<ActiveUiState>((acc, action) => {
+        if (action.enabled) {
+            acc.enabled = true;
+        } else {
+            acc.used = acc.used || (action.reason?.includes('이미 사용') ?? false);
+            if (action.reason && !acc.reasons.includes(action.reason)) {
+                acc.reasons.push(action.reason);
+            }
+        }
+        return acc;
+    }, { enabled: false, used: false, reasons: [] });
+}
+
 function renderPlayer(
     player: any,
     isOpponent: boolean,
     isMainPhase: boolean,
     legalActions: any[],
     inputOwnerId: string,
+    uiSnapshot: EngineUiSnapshot,
 ) {
     if (!uiState.game) return '';
     const localHumanCanInput = canLocalHumanInput();
@@ -1018,6 +1357,9 @@ function renderPlayer(
     const trashZoneSelectedClass = selectedTrashCount > 0 ? 'selection-zone-selected' : '';
     const skillPromptState = getSkillPromptSelectionStateForPlayer(player.id);
     const skillPromptTargetCount = skillPromptState.candidateSkillIndexes.size;
+    const laneUiState = buildLaneUiState(uiSnapshot, player.id);
+    const zoneActiveUiState = buildZoneActiveUiState(uiSnapshot, player.id);
+    const leaderActiveUiState = buildLeaderActiveUiState(uiSnapshot, player.id);
     const leaderHasActivatableEffect =
         isInputOwnerPlayer &&
         player.levelZone?.isAwakened === true &&
@@ -1028,6 +1370,9 @@ function renderPlayer(
             <div class="leader-slot">
                 ${player.levelZone ? renderCard(player.levelZone, true) : ''}
                 ${isInputOwnerPlayer && localHumanCanInput && leaderHasActivatableEffect ? '<button class="leader-active-btn">Active</button>' : ''}
+                ${leaderActiveUiState && !leaderActiveUiState.enabled
+                    ? `<div class="zone-action-status ${leaderActiveUiState.used ? 'used' : 'unavailable'}">${leaderActiveUiState.used ? 'ACTIVE 사용 완료' : 'ACTIVE 불가'}</div>`
+                    : ''}
             </div>
 
             ${Array.from({ length: 10 }, (_, i) => 10 - i).map(lv => `
@@ -1048,9 +1393,22 @@ function renderPlayer(
         const canAttackFromThisZone = isInputOwnerPlayer && attackActionZoneSet.has(i);
         const isSelected = uiState.game!.state.pendingEffect?.selectedTargets?.includes(z);
         const unitCost = z.unit ? resolveCardCostForDisplay(z.unit) : 0;
+        const laneState = laneUiState.get(i);
+        const laneStateClass = isInputOwnerPlayer && isMainPhase
+            ? laneState?.enabled
+                ? 'lane-playable'
+                : laneState?.blocked
+                    ? 'lane-blocked'
+                    : ''
+            : '';
+        const laneStateTitle = laneState?.reasons.length ? escapeHtml(laneState.reasons.join(' / ')) : '';
+        const zoneActiveState = zoneActiveUiState.get(i);
+        const zoneStatusBadge = zoneActiveState && !zoneActiveState.enabled
+            ? `<div class="zone-action-status ${zoneActiveState.used ? 'used' : 'unavailable'}" title="${escapeHtml(zoneActiveState.reasons.join(' / '))}">${zoneActiveState.used ? 'ACTIVE 사용 완료' : 'ACTIVE 불가'}</div>`
+            : '';
 
         return `
-                    <div class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''}" data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
+                    <div class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''} ${laneStateClass}" ${laneStateTitle ? `title="${laneStateTitle}"` : ''} data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
                         ${z.unit ? renderCard(z.unit, false, uiState.game!.getUnitPower(z, player), uiState.game!.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
 
                         ${z.items.length > 0 ? `
@@ -1068,6 +1426,7 @@ function renderPlayer(
 
                         ${z.unit && isInputOwnerPlayer && localHumanCanInput && canAttackFromThisZone ? '<button class="attack-btn">Attack</button>' : ''}
                         ${isInputOwnerPlayer && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">Active</button>' : ''}
+                        ${zoneStatusBadge}
                         ${(canBlockWithThisZone || showPassControl) && localHumanCanInput ? `
                             <div class="block-controls">
                                 ${canBlockWithThisZone ? `<button class="block-btn" data-blocker-zone-index="${i}">Block</button>` : ''}
@@ -1171,7 +1530,8 @@ export function renderGame() {
     const inputOwnerId = getActionOwnerPlayerId(uiState.game);
     const inputOwner = uiState.game.state.players.find(player => player.id === inputOwnerId) ?? null;
     const localHumanCanInput = canLocalHumanInput();
-    const inputOwnerLegalActions = uiState.game.getLegalActions(inputOwnerId);
+    const uiSnapshot = getUiSnapshotForRender(uiState.game, inputOwnerId);
+    const inputOwnerLegalActions = uiSnapshot.legalActions;
     const inputOwnerControl = inputOwner
         ? (isBotControlledPlayer(inputOwner.id) ? getBotLabelForPlayerId(inputOwner.id) : 'Human')
         : 'N/A';
@@ -1280,6 +1640,9 @@ export function renderGame() {
       ${isMobilePortraitLayout ? renderMobileFloatingMenuButton(inOnlineMatch) : ''}
       ${isMobilePortraitLayout ? renderMobileInteractionOverlay(interactionBannerHtml) : ''}
       ${isMobilePortraitLayout ? renderPlaybackToasts() : ''}
+      ${renderPhaseRibbon(uiSnapshot)}
+      ${renderAttackStepBar(uiSnapshot)}
+      ${renderMandatoryQueue(uiSnapshot)}
       <div class="game-layout-root">
         <div class="battle-fit-viewport">
           <div class="battle-fit-content" style="--battle-scale: 1;">
@@ -1297,11 +1660,11 @@ export function renderGame() {
     }).join('')}
             </div>
 
-            ${renderPlayer(topPlayer, true, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
+            ${renderPlayer(topPlayer, true, isMainPhase, inputOwnerLegalActions, inputOwnerId, uiSnapshot)}
 
             <div class="game-divider"></div>
 
-            ${renderPlayer(bottomPlayer, false, isMainPhase, inputOwnerLegalActions, inputOwnerId)}
+            ${renderPlayer(bottomPlayer, false, isMainPhase, inputOwnerLegalActions, inputOwnerId, uiSnapshot)}
 
             <div class="hand-zone fan-layout ${bottomHandPulseClass}" style="--hand-step:${bottomHandStepPx}px;">
                 ${bottomPlayer.hand.map((c, i) => {
@@ -1331,9 +1694,12 @@ export function renderGame() {
           ${renderPlaybackToasts()}
           ${renderPlaybackLogPanel()}
           <div class="game-controls">
+            ${renderActionPanel(uiSnapshot)}
+            ${renderAuditTrailPanel(uiSnapshot)}
             <div class="status-bar">
               <div class="status-item"><span>Turn</span> <strong>${uiState.game.state.turnCount}</strong></div>
-              <div class="status-item"><span>Phase</span> <strong>${uiState.game.state.phase}</strong></div>
+              <div class="status-item"><span>Phase</span> <strong>${uiSnapshot.timingWindow.phaseLabel}</strong></div>
+              <div class="status-item"><span>Step</span> <strong>${uiSnapshot.timingWindow.combatStepLabel ?? '없음'}</strong></div>
               <div class="status-item"><span>Active</span> <strong>${uiState.game.currentPlayer.name}</strong></div>
               <div class="status-item"><span>Mode</span> <strong>${uiState.activeMatchConfig.label}</strong></div>
               <div class="status-item"><span>Bot Hand</span> <strong>${uiState.activeMatchViewConfig.revealBotHand ? 'Shown' : 'Hidden'}</strong></div>

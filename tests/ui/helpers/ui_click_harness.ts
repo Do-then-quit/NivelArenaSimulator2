@@ -10,7 +10,10 @@ export function getCard(id: string): Card {
     return JSON.parse(JSON.stringify(card));
 }
 
-export function createEngine(seed: number = 20260303): GameEngine {
+export function createEngine(
+    seed: number = 20260303,
+    options: { enableUiTrace?: boolean } = {},
+): GameEngine {
     const leader1 = getCard('ST01-001');
     const leader2 = getCard('ST01-001');
     const deck1 = Array.from({ length: 30 }, () => getCard('ST01-002'));
@@ -18,6 +21,7 @@ export function createEngine(seed: number = 20260303): GameEngine {
 
     return new GameEngine('P1', 'P2', deck1, deck2, leader1, leader2, {
         enableMulligan: false,
+        enableUiTrace: options.enableUiTrace ?? false,
         seed,
     });
 }

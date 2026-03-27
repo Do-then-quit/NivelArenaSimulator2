@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderGameViewWithMockGame } from './helpers/game_view_test_harness';
 
 vi.mock('../../src/ui/screens/gameBindings', () => ({
     attachListeners: vi.fn(),
@@ -75,18 +76,12 @@ function createBasePlayers() {
 describe('game view selection zone highlight', () => {
     beforeEach(() => {
         vi.resetModules();
-        document.body.innerHTML = '<div id="app"></div>';
-        Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1920 });
-        Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 1080 });
     });
 
-    it('marks damage/trash zones as selection candidates from legal actions', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
+    it('marks damage/trash zones as selection candidates from legal actions', { timeout: 10000 }, async () => {
         const { p1, p2 } = createBasePlayers();
 
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = {
+        const game = {
             state: {
                 players: [p1, p2],
                 turnPlayerIndex: 0,
@@ -131,26 +126,19 @@ describe('game view selection zone highlight', () => {
             getUnitHit: (zone: any) => zone.unit?.hit ?? 0,
             isPendingCardTarget: () => false,
         } as any;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.expanded = true;
-        uiState.gameLogView.autoCollapsed = false;
-
-        renderGame();
+        await renderGameViewWithMockGame(game);
 
         expect(document.querySelector('.opponent .damage-zone.selection-zone-candidate')).toBeTruthy();
         expect(document.querySelector('.opponent .trash-zone.selection-zone-candidate')).toBeTruthy();
         expect(document.querySelectorAll('.selection-progress-badge').length).toBeGreaterThan(0);
     });
 
-    it('maps skill prompt selection to skill cards and hides revealed modal', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
+    it('maps skill prompt selection to skill cards and hides revealed modal', { timeout: 10000 }, async () => {
         const { p1, p2 } = createBasePlayers();
         const revealedOption0 = createCard('rv-0', 'Option 0', 'SKILL');
         const revealedOption1 = createCard('rv-1', 'Option 1', 'SKILL');
 
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = {
+        const game = {
             state: {
                 players: [p1, p2],
                 turnPlayerIndex: 0,
@@ -197,11 +185,7 @@ describe('game view selection zone highlight', () => {
             getUnitHit: (zone: any) => zone.unit?.hit ?? 0,
             isPendingCardTarget: () => false,
         } as any;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.expanded = true;
-        uiState.gameLogView.autoCollapsed = false;
-
-        renderGame();
+        await renderGameViewWithMockGame(game);
 
         expect(document.querySelector('.current .skill-card-item[data-index="1"].target-candidate')).toBeTruthy();
         expect(document.querySelector('.current .skill-card-item[data-index="1"].selected-target')).toBeTruthy();

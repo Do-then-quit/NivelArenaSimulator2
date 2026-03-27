@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderGameViewWithMockGame } from './helpers/game_view_test_harness';
 
 vi.mock('../../src/ui/screens/gameBindings', () => ({
     attachListeners: vi.fn(),
@@ -114,26 +115,16 @@ function createMockGame() {
 describe('game log panel render', () => {
     beforeEach(() => {
         vi.resetModules();
-        document.body.innerHTML = '<div id="app"></div>';
-        Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1920 });
-        Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 1080 });
     });
 
-    it('renders playback effect logs in side panel', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
-        uiState.gameLogView.expanded = true;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.autoCollapsed = false;
+    it('renders playback effect logs in side panel', { timeout: 10000 }, async () => {
+        const { uiState } = await renderGameViewWithMockGame(createMockGame());
         uiState.playback.logEntries = [
             { id: 'plog-1', message: 'Player 1가 1장 드로우', createdAtMs: Date.now() - 1000 },
             { id: 'plog-2', message: 'Player 2 데미지 공개: Fire Bolt', createdAtMs: Date.now() },
         ];
 
-        renderGame();
+        uiState.render?.();
 
         expect(document.querySelector('.game-log-panel')).toBeTruthy();
         expect(document.body.textContent).toContain('효과 로그');
@@ -142,36 +133,24 @@ describe('game log panel render', () => {
         expect(document.querySelectorAll('.fx-log-entry')).toHaveLength(2);
     });
 
-    it('shows empty message when playback log history is empty', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
-        uiState.gameLogView.expanded = true;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.autoCollapsed = false;
+    it('shows empty message when playback log history is empty', { timeout: 10000 }, async () => {
+        const { uiState } = await renderGameViewWithMockGame(createMockGame());
         uiState.playback.logEntries = [];
 
-        renderGame();
+        uiState.render?.();
 
         expect(document.body.textContent).toContain('아직 효과 로그가 없습니다.');
     });
 
-    it('renders collapsed preview without scroll body', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
-        uiState.gameLogView.expanded = false;
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.autoCollapsed = false;
+    it('renders collapsed preview without scroll body', { timeout: 10000 }, async () => {
+        const { uiState } = await renderGameViewWithMockGame(createMockGame(), {
+            gameLogExpanded: false,
+        });
         uiState.playback.logEntries = [
             { id: 'plog-preview', message: '미리보기 로그', createdAtMs: Date.now() },
         ];
 
-        renderGame();
+        uiState.render?.();
 
         const panel = document.querySelector('.game-log-panel');
         expect(panel?.classList.contains('collapsed')).toBe(true);

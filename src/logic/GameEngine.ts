@@ -4,6 +4,7 @@ import { RuleValidator } from './RuleValidator';
 import { TargetSelector } from './TargetSelector';
 import { createRandomProvider, RandomProvider } from './random';
 import { buildLegalActions } from './engine/targeting/LegalActionBuilder';
+import { buildUiSnapshot } from './engine/ui/UiSnapshotBuilder';
 import {
     confirmTargets as runConfirmTargets,
     handleEffectCompletion as runHandleEffectCompletion,
@@ -46,6 +47,7 @@ import {
 
 type EngineAction = import('./types').EngineAction;
 type EngineObservation = import('./types').EngineObservation;
+type EngineUiSnapshot = import('./types').EngineUiSnapshot;
 
 interface GameEngineOptions {
     seed?: number;
@@ -101,6 +103,7 @@ export class GameEngine {
     private isRuleProcessing = false;
     private pendingRuleProcessing = false;
     private readonly uiTraceEvents: UiTraceEvent[] = [];
+    private readonly uiTraceHistory: UiTraceEvent[] = [];
 
     constructor(
         player1Name: string,
@@ -163,6 +166,10 @@ export class GameEngine {
         if (this.uiTraceEvents.length > 1024) {
             this.uiTraceEvents.splice(0, this.uiTraceEvents.length - 1024);
         }
+        this.uiTraceHistory.push(event);
+        if (this.uiTraceHistory.length > 256) {
+            this.uiTraceHistory.splice(0, this.uiTraceHistory.length - 256);
+        }
     }
 
     public traceUiEvent(type: UiTraceEventType, payload: Partial<UiTraceEvent> = {}) {
@@ -174,6 +181,11 @@ export class GameEngine {
         const drained = [...this.uiTraceEvents];
         this.uiTraceEvents.length = 0;
         return drained;
+    }
+
+    public peekUiTraceHistory(limit: number = 12): UiTraceEvent[] {
+        const safeLimit = Math.max(1, Math.trunc(limit || 12));
+        return this.uiTraceHistory.slice(-safeLimit);
     }
 
     // Delegate-heavy refactors keep some members invoked indirectly from extracted modules.
@@ -1088,6 +1100,10 @@ export class GameEngine {
 
     public getLegalActions(actorPlayerId?: string): EngineAction[] {
         return buildLegalActions(this, actorPlayerId);
+    }
+
+    public getUiSnapshot(actorPlayerId: string): EngineUiSnapshot {
+        return buildUiSnapshot(this, actorPlayerId);
     }
 
     public step(action: EngineAction): boolean {

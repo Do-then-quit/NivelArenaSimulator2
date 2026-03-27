@@ -1,0 +1,37 @@
+keywords:
+  ENTRY:
+    label_ko: "엔트리"
+    timing: "유닛 존 등장 시"
+    ui_rule: "강제 효과로 해결 대기열 최상단에 표시"
+  PASSIVE:
+    label_ko: "패시브"
+    timing: "존에 존재하는 동안 지속"
+    ui_rule: "상태/제약 이유에 녹여서 표기"
+  ACTIVE:
+    label_ko: "액티브"
+    timing: "메인 또는 어택 중 수동 발동"
+    ui_rule: "유닛당 턴 1회 사용 여부를 노출"
+  ACTIVE_MAIN:
+    label_ko: "메인 액티브"
+    timing: "메인 중 수동 발동"
+    ui_rule: "메인 전용 제한을 이유 문구로 표기"
+  ATTACKER:
+    label_ko: "어태커"
+    timing: "공격 선언 이후"
+    ui_rule: "공격 선언 또는 전투 로그와 함께 원인 표기"
+  DEFENDER:
+    label_ko: "디펜더"
+    timing: "방어 선언 시"
+    ui_rule: "방어 선언 단계에서만 표기"
+  GUARDIAN:
+    label_ko: "가디언"
+    timing: "인접 레인 방어 가능 시"
+    ui_rule: "인접 레인 관계를 보드에서 드러냄"
+  DAMAGE_TRIGGER:
+    label_ko: "데미지 트리거"
+    timing: "데미지 공개 시"
+    ui_rule: "데미지 카드 공개와 함께 판정 로그 기록"
+  TURN_END:
+    label_ko: "턴 종료"
+    timing: "엔드 처리 중"
+    ui_rule: "핸드 조정/턴 종료 효과를 강제 흐름으로 표기"

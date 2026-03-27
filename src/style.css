@@ -88,6 +88,193 @@ body.game-screen #app {
     will-change: transform;
 }
 
+.phase-ribbon-panel,
+.attack-step-panel,
+.mandatory-queue-panel {
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid rgba(127, 197, 255, 0.2);
+    background: rgba(18, 20, 33, 0.82);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(10px);
+}
+
+.phase-ribbon-panel {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.phase-ribbon-main {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.phase-ribbon-step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease;
+}
+
+.phase-ribbon-step.done {
+    background: rgba(88, 111, 149, 0.2);
+    color: #9fb0d2;
+}
+
+.phase-ribbon-step.active {
+    background: linear-gradient(135deg, rgba(74, 158, 255, 0.22), rgba(255, 196, 90, 0.16));
+    border-color: rgba(127, 197, 255, 0.48);
+    box-shadow: 0 0 0 1px rgba(127, 197, 255, 0.2), 0 8px 24px rgba(74, 158, 255, 0.18);
+    color: #f5fbff;
+}
+
+.phase-ribbon-step.upcoming {
+    background: rgba(255, 255, 255, 0.03);
+    color: #7f91b7;
+}
+
+.phase-ribbon-index {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.phase-ribbon-label {
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.phase-ribbon-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #d3def4;
+    font-size: 0.82rem;
+}
+
+.phase-ribbon-meta-label {
+    color: #7f91b7;
+    text-transform: uppercase;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+
+.phase-ribbon-meta-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: #7fc5ff;
+}
+
+.attack-step-panel {
+    padding: 10px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.attack-step-chip {
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #91a6cf;
+}
+
+.attack-step-chip.done {
+    color: #d1def6;
+    background: rgba(104, 144, 207, 0.18);
+}
+
+.attack-step-chip.active {
+    color: #fff6d3;
+    background: rgba(255, 196, 90, 0.2);
+    border-color: rgba(255, 196, 90, 0.35);
+}
+
+.mandatory-queue-panel {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mandatory-queue-title {
+    font-size: 0.84rem;
+    font-weight: 800;
+    color: #f3f6ff;
+}
+
+.mandatory-queue-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.mandatory-queue-item {
+    min-width: 220px;
+    flex: 1 1 240px;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mandatory-queue-item.blocking {
+    border-color: rgba(255, 196, 90, 0.42);
+    box-shadow: 0 0 0 1px rgba(255, 196, 90, 0.1);
+}
+
+.mandatory-queue-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.mandatory-queue-header strong {
+    color: #fff;
+    font-size: 0.84rem;
+}
+
+.mandatory-queue-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #fff6d3;
+    background: rgba(255, 196, 90, 0.2);
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.mandatory-queue-source,
+.mandatory-queue-preview {
+    color: #9fb0d2;
+    font-size: 0.74rem;
+}
+
+.mandatory-queue-reason {
+    color: #eef4ff;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
 .game-side-rail {
     min-height: 0;
     display: flex;
@@ -1253,6 +1440,154 @@ body.phase-theme-end {
     color: #fff;
 }
 
+.ux-action-panel,
+.audit-trail-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ux-action-panel-title,
+.audit-trail-title {
+    color: #f4f7ff;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.ux-action-empty {
+    color: #8fa3c9;
+    font-size: 0.78rem;
+}
+
+.ux-action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ux-action-group-title {
+    color: #90a5cf;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.ux-action-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ux-action-row.enabled {
+    background: rgba(74, 158, 255, 0.08);
+    border-color: rgba(74, 158, 255, 0.26);
+}
+
+.ux-action-row.disabled {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.ux-action-row-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.ux-action-label {
+    color: #f6fbff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.ux-action-state {
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #b8c8e6;
+}
+
+.ux-action-row.enabled .ux-action-state {
+    background: rgba(117, 232, 171, 0.16);
+    color: #b8ffd6;
+}
+
+.ux-action-row.disabled .ux-action-state {
+    background: rgba(255, 107, 107, 0.12);
+    color: #ffd0d0;
+}
+
+.ux-action-preview {
+    color: #b9cae8;
+    font-size: 0.74rem;
+}
+
+.ux-action-reason {
+    color: #ffd8a8;
+    font-size: 0.74rem;
+    line-height: 1.4;
+}
+
+.audit-trail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.audit-trail-item {
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.audit-trail-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    color: #8fa3c9;
+    font-size: 0.68rem;
+}
+
+.audit-trail-badge {
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    background: rgba(127, 197, 255, 0.12);
+    border: 1px solid rgba(127, 197, 255, 0.22);
+    color: #d9ecff;
+}
+
+.audit-trail-head {
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.audit-trail-detail {
+    color: #d2def5;
+    font-size: 0.76rem;
+    line-height: 1.4;
+}
+
 .primary-btn {
     background: linear-gradient(135deg, #4a9eff 0%, #2b6cb0 100%);
     color: white;
@@ -1325,6 +1660,14 @@ body.phase-theme-end {
     box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
 }
 
+.unit-zone.lane-playable {
+    box-shadow: inset 0 0 0 2px rgba(117, 232, 171, 0.42), 0 0 16px rgba(117, 232, 171, 0.2);
+}
+
+.unit-zone.lane-blocked {
+    box-shadow: inset 0 0 0 2px rgba(255, 196, 90, 0.32), 0 0 16px rgba(255, 196, 90, 0.12);
+}
+
 .unit-zone.invalid-target {
     border-color: #f44336;
     box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
@@ -1373,6 +1716,33 @@ body.phase-theme-end {
     cursor: pointer;
     font-weight: bold;
     z-index: 12;
+}
+
+.zone-action-status {
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    z-index: 12;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #d9e6fb;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.zone-action-status.used {
+    background: rgba(255, 196, 90, 0.18);
+    color: #fff0c4;
+    border-color: rgba(255, 196, 90, 0.35);
+}
+
+.zone-action-status.unavailable {
+    background: rgba(255, 107, 107, 0.14);
+    color: #ffd8d8;
+    border-color: rgba(255, 107, 107, 0.24);
 }
 
 .cost-candidate {

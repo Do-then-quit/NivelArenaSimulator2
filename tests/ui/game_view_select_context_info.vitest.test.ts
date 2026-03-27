@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderGameViewWithMockGame } from './helpers/game_view_test_harness';
 
 vi.mock('../../src/ui/screens/gameBindings', () => ({
     attachListeners: vi.fn(),
@@ -129,22 +130,10 @@ function createMockGame() {
 describe('game view select interaction context', () => {
     beforeEach(() => {
         vi.resetModules();
-        document.body.innerHTML = '<div id="app"></div>';
-        Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1920 });
-        Object.defineProperty(window, 'innerHeight', { configurable: true, writable: true, value: 1080 });
     });
 
-    it('renders source/effect/reason context in select target banner', async () => {
-        const { uiState, Screen } = await import('../../src/ui/appState');
-        const { renderGame } = await import('../../src/ui/screens/gameView');
-
-        uiState.currentScreen = Screen.GAME;
-        uiState.game = createMockGame();
-        uiState.gameLogView.manualOverride = true;
-        uiState.gameLogView.expanded = true;
-        uiState.gameLogView.autoCollapsed = false;
-
-        renderGame();
+    it('renders source/effect/reason context in select target banner', { timeout: 10000 }, async () => {
+        await renderGameViewWithMockGame(createMockGame());
 
         const text = document.body.textContent || '';
         expect(text).toContain('출처 카드');

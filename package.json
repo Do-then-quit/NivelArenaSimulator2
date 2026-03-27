@@ -11,6 +11,7 @@
         "relay:start": "tsx server/index.ts",
         "preview": "vite preview --host 0.0.0.0",
         "test": "vitest run",
+        "test:ux-harness": "vitest run tests/ui/game_ux_snapshot.vitest.test.ts tests/ui/game_ux_render.vitest.test.ts tests/ui/game_log_panel_render.vitest.test.ts tests/ui/game_view_select_context_info.vitest.test.ts tests/ui/game_view_selection_zone_highlight.vitest.test.ts",
         "test:bot-soak": "vitest run tests/rules_v2_regression/rules_v2_ai_bot_selfplay_soak_regression.test.ts",
         "ai:bench": "tsx scripts/ai/run_match_batch.ts",
         "ai:ladder": "tsx scripts/ai/elo_ladder.ts",

@@ -1,0 +1,31 @@
+overrides:
+  normal_place_or_upgrade_once_per_lane:
+    source: "base_rule"
+    rule: "같은 유닛 존의 일반 배치/업그레이드는 턴당 1회"
+    ui_copy: "이 라인은 이번 턴 일반 배치/업그레이드를 이미 사용했습니다."
+
+  effect_based_deploy_is_separate:
+    source: "official_qna"
+    rule: "효과로 유닛을 배치하는 경우 같은 존에 여러 번 배치 가능"
+    ui_copy: "효과로 배치 가능"
+    implementation_note: "normal deploy availability와 별도 그룹 또는 배지로 분리"
+
+  entry_is_mandatory:
+    source: "official_qna"
+    rule: "엔트리는 반드시 발동"
+    ui_copy: "이 유닛이 유닛 존에 등장했기 때문에 발동"
+
+  active_once_per_unit_per_turn:
+    source: "keyword_rule"
+    rule: "액티브는 유닛당 턴 1회"
+    ui_copy: "이번 턴에 이미 사용한 액티브입니다."
+
+  guardian_adjacent_lane_only:
+    source: "keyword_rule"
+    rule: "가디언은 인접 레인 기준"
+    ui_copy: "인접 레인에서만 가디언/방어 선언 가능"
+
+  deck_zero_not_immediate_loss:
+    source: "official_qna"
+    rule: "덱 0장은 즉시 패배가 아니고, 이후 드로우 요구 시 패배"
+    ui_copy: "덱은 0장이지만 즉시 패배는 아닙니다. 다음 드로우 요구가 발생하면 패배합니다."
