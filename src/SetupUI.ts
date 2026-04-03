@@ -48,16 +48,16 @@ export class SetupUI {
         const allDecks = DeckPersistence.getAllDecks();
 
         this.container.innerHTML = `
-            <div class="setup-screen">
-                <h1>Simulation Setup</h1>
+            <div class="setup-screen" data-testid="setup-screen">
+                <h1>시뮬레이션 설정</h1>
                 <div class="setup-main">
                     <div class="player-setup">
-                        <h3>Player 1</h3>
+                        <h3>플레이어 1</h3>
                         <div class="deck-select">
-                            <label>Selected Deck:</label>
-                            <select id="p1-deck-select">
+                            <label>선택한 덱</label>
+                            <select id="p1-deck-select" data-testid="setup-p1-deck-select">
                                 ${allDecks.map(d => `<option value="${d.id}" ${this.selectedDeck1?.id === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
-                                ${allDecks.length === 0 ? '<option value="">No Decks Saved</option>' : ''}
+                                ${allDecks.length === 0 ? '<option value="">저장된 덱이 없습니다</option>' : ''}
                             </select>
                         </div>
                         <div id="p1-deck-preview" class="deck-preview-small"></div>
@@ -66,12 +66,12 @@ export class SetupUI {
                     <div class="vs-divider">VS</div>
 
                     <div class="player-setup">
-                        <h3>Player 2</h3>
+                        <h3>플레이어 2</h3>
                         <div class="deck-select">
-                            <label>Selected Deck:</label>
-                            <select id="p2-deck-select">
+                            <label>선택한 덱</label>
+                            <select id="p2-deck-select" data-testid="setup-p2-deck-select">
                                 ${allDecks.map(d => `<option value="${d.id}" ${this.selectedDeck2?.id === d.id ? 'selected' : ''}>${d.name}</option>`).join('')}
-                                ${allDecks.length === 0 ? '<option value="">No Decks Saved</option>' : ''}
+                                ${allDecks.length === 0 ? '<option value="">저장된 덱이 없습니다</option>' : ''}
                             </select>
                         </div>
                         <div id="p2-deck-preview" class="deck-preview-small"></div>
@@ -80,21 +80,21 @@ export class SetupUI {
 
                 ${this.uiOptions.showBotHandVisibilityOption ? `
                     <div class="setup-extra-options">
-                        <h3>Baseline Bot Hand Visibility</h3>
+                        <h3>베이스라인 봇 패 공개</h3>
                         <label class="setup-radio-option">
                             <input type="radio" name="bot-hand-visibility" value="hide" ${this.revealBotHand ? '' : 'checked'}>
-                            <span>Hide Bot Hand (Recommended)</span>
+                            <span>비공개 (권장)</span>
                         </label>
                         <label class="setup-radio-option">
                             <input type="radio" name="bot-hand-visibility" value="show" ${this.revealBotHand ? 'checked' : ''}>
-                            <span>Show Bot Hand</span>
+                            <span>공개</span>
                         </label>
                     </div>
                 ` : ''}
 
                 <div class="setup-actions">
-                    <button id="setup-back" class="secondary-btn">Back to Menu</button>
-                    <button id="setup-start" class="primary-btn" ${allDecks.length === 0 ? 'disabled' : ''}>Start Simulation</button>
+                    <button id="setup-back" data-testid="setup-back-btn" class="secondary-btn">메뉴로</button>
+                    <button id="setup-start" data-testid="setup-start-btn" class="primary-btn" ${allDecks.length === 0 ? 'disabled' : ''}>시뮬레이션 시작</button>
                 </div>
             </div>
         `;
@@ -128,7 +128,7 @@ export class SetupUI {
 
         document.getElementById('setup-start')?.addEventListener('click', () => {
             if (!this.selectedDeck1 || !this.selectedDeck2) {
-                alert('Please select decks for both players!');
+                alert('두 플레이어의 덱을 모두 선택해주세요.');
                 return;
             }
 
@@ -142,7 +142,7 @@ export class SetupUI {
             const leader2 = this.cards.find(c => c.id === this.selectedDeck2?.leaderId);
 
             if (!leader1 || !leader2) {
-                alert('Both decks must have a leader!');
+                alert('두 덱 모두 리더가 필요합니다.');
                 return;
             }
 
@@ -158,17 +158,17 @@ export class SetupUI {
             if (!container) return;
 
             if (!deck) {
-                container.innerHTML = 'No deck selected';
+                container.innerHTML = '선택한 덱이 없습니다';
                 return;
             }
 
             const leader = this.cards.find(c => c.id === deck.leaderId);
             container.innerHTML = `
                 <div class="preview-info">
-                    <strong>Leader:</strong> ${leader?.name || 'None'}
+                    <strong>리더:</strong> ${leader?.name || '없음'}
                 </div>
                 <div class="preview-info">
-                    <strong>Cards:</strong> ${deck.cardIds.length}/40
+                    <strong>카드 수:</strong> ${deck.cardIds.length}/40
                 </div>
             `;
         };

@@ -18,13 +18,16 @@
         "ai:deck-search": "tsx scripts/ai/run_deck_search.ts",
         "ai:regression": "tsx scripts/ai/run_ai_regression.ts",
         "ai:phase4:matrix": "tsx scripts/ai/run_phase4_stress_matrix.ts",
-        "ai:phase4.1:promote": "tsx scripts/ai/run_phase41_promotion_gate.ts"
+        "ai:phase4.1:promote": "tsx scripts/ai/run_phase41_promotion_gate.ts",
+        "test:ux-harness:e2e": "playwright test -c playwright.config.ts tests/e2e/game_ux_harness.spec.ts",
+        "test:ux-harness:report": "tsx scripts/ux/build_ux_scorecard.ts"
     },
     "dependencies": {
         "tsx": "^4.21.0",
         "ws": "^8.18.3"
     },
     "devDependencies": {
+        "@playwright/test": "^1.59.1",
         "@types/jsdom": "^27.0.0",
         "@types/node": "^25.0.3",
         "@vitest/coverage-v8": "^4.0.16",

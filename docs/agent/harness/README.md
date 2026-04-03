@@ -1,46 +1,58 @@
 # Game UX Harness
 
 ## 목적
-- 게임 화면 전용 UX 하네스를 둔다.
-- 엔진의 룰 판정과 UI의 설명력을 같은 품질 축으로 다룬다.
-- 다음 작업부터는 planner -> generator -> evaluator 순서로만 UX 개선을 진행한다.
+- 데스크톱 `Quick Play`와 브라우저에서 재현 가능한 checkpoint를 같은 UX 게이트로 평가한다.
+- 엔진의 `EngineUiSnapshot`을 단일 source of truth로 유지한다.
+- 룰 정확성, 설명력, 입력 우선순위를 Vitest + Playwright + scorecard 산출물까지 닫힌 루프로 관리한다.
 
-## 현재 구현 기준
-- 엔진 계약:
-  - `step()`
-  - `getLegalActions()`
-  - `getUiSnapshot(actorPlayerId)`
-- 테스트 체크포인트:
+## 단일 시나리오 정의
+- 공통 시나리오/점수 기준은 `scripts/ux/uxHarnessScenarios.ts`를 기준으로 유지한다.
+- 현재 포함된 시나리오:
+  - `quick-play-main`
   - `P1_MAIN_AFTER_MULLIGAN`
   - `ATTACK_DECLARE_WINDOW`
+  - `BLOCK_DECISION_WINDOW`
   - `MANDATORY_TARGET_SELECTION`
-- 하네스 테스트 명령:
-  - `npm run test:ux-harness`
+  - `END_PHASE_HAND_ADJUST`
 
-## 작업 순서
+## 실행 명령
+- deterministic gate: `npm run test:ux-harness`
+- browser flow capture: `npm run test:ux-harness:e2e`
+- scorecard build: `npm run test:ux-harness:report`
+
+## Dev Checkpoint Loader
+- 개발 서버에서 `/?uxCheckpoint=<CHECKPOINT_NAME>`로 직접 checkpoint 화면을 연다.
+- 지원 checkpoint:
+  - `P1_MAIN_AFTER_MULLIGAN`
+  - `ATTACK_DECLARE_WINDOW`
+  - `BLOCK_DECISION_WINDOW`
+  - `MANDATORY_TARGET_SELECTION`
+  - `END_PHASE_HAND_ADJUST`
+- loader는 dev 전용이며 `src/main.ts`에서 초기 부팅 시 처리한다.
+
+## 평가 순서
 1. Planner
-   - 룰 스냅샷, 존 모델, 타이밍, 키워드, override, UX 계약, open question만 갱신한다.
+   - 룰 축, checkpoint, 평가 기준, open question을 먼저 고정한다.
 2. Generator
-   - UI는 엔진이 준 `EngineUiSnapshot`만 렌더링한다.
-   - 룰 계산을 UI에 재구현하지 않는다.
-   - 새 UX는 named checkpoint 하나 이상에 연결한다.
+   - UI는 `EngineUiSnapshot`만 렌더링한다.
+   - legality, priority, timing reasoning을 UI에서 다시 추론하지 않는다.
+   - 새 UX는 최소 한 개 이상의 named checkpoint와 연결한다.
 3. Evaluator
-   - Vitest로 결정론적 게이트를 통과시킨다.
-   - 라이브 브라우저에서 checklist를 따라 직접 눌러 본다.
-   - 스크린샷, scorecard, next findings를 `artifacts/ux-harness/`에 남긴다.
+   - `npm run test:ux-harness`로 계약/렌더 회귀를 통과시킨다.
+   - `npm run test:ux-harness:e2e`로 Quick Play 실제 흐름과 checkpoint 화면을 캡처한다.
+   - `npm run test:ux-harness:report`로 `artifacts/ux-harness/scorecard.json`과 `scorecard.md`를 생성한다.
+
+## 산출물
+- raw browser observations: `artifacts/ux-harness/raw/*.json`
+- screenshots: `artifacts/ux-harness/screenshots/*.png`
+- score summary: `artifacts/ux-harness/scorecard.json`
+- markdown summary: `artifacts/ux-harness/scorecard.md`
 
 ## Structured Handoff
 - 변경한 룰 축:
 - 변경한 checkpoint:
-- 추가/수정한 테스트:
+- 추가/수정한 deterministic test:
+- 추가/수정한 browser scenario:
+- scorecard 결과:
 - 남은 evaluator finding:
-- 다음 스프린트에서 볼 리스크:
-
-## Sprint Contract Template
-- 목표 스코프:
-- 룰 기준:
-- UX 완료 정의:
-- checkpoint:
-- deterministic tests:
-- browser evaluator path:
-- 차단 요인 / open question:
+- 다음 스프린트 리스크:

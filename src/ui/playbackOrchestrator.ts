@@ -8,6 +8,7 @@ export interface PlaybackBeat {
     durationMs: number;
     modalGateMs: number;
     toastMessage?: string;
+    toastKind?: PlaybackToast['kind'];
     pulseTargets: Array<{ playerId: string; zone: 'HAND' | 'DECK' | 'DAMAGE' }>;
 }
 
@@ -28,6 +29,15 @@ const PLAYBACK_TIMING_BY_SPEED: Record<PlaybackSpeed, PlaybackTiming> = {
     FAST: { beatMs: 180, modalGateMs: 120 },
 };
 
+const PHASE_LABELS: Record<string, string> = {
+    LEVEL_UP: '레벨업',
+    DRAW: '드로우',
+    MAIN: '메인',
+    ATTACK: '어택',
+    BLOCK: '방어',
+    END: '엔드',
+};
+
 let beatCounter = 0;
 let activeBeatTimer: number | null = null;
 const beatQueue: PlaybackBeat[] = [];
@@ -46,7 +56,7 @@ function getPlayerName(playerId: string | undefined): string {
     return uiState.game?.state.players.find(player => player.id === playerId)?.name ?? playerId;
 }
 
-function appendToast(message: string, durationMs: number): void {
+function appendToast(message: string, durationMs: number, kind: PlaybackToast['kind'] = 'DEFAULT'): void {
     const now = Date.now();
     const minToastLifetimeMs = 2400;
     const toast: PlaybackToast = {
@@ -54,6 +64,7 @@ function appendToast(message: string, durationMs: number): void {
         message,
         createdAtMs: now,
         expiresAtMs: now + Math.max(minToastLifetimeMs, durationMs * 3),
+        kind,
     };
     uiState.playback.toasts.push(toast);
     if (uiState.playback.toasts.length > 5) {
@@ -87,28 +98,46 @@ function buildCardsDrawnMessage(event: UiTraceEvent): string {
     return `${playerName}가 ${count}장 드로우`;
 }
 
-function buildToastMessage(event: UiTraceEvent): string | null {
+function buildToastPayload(event: UiTraceEvent): { message: string; kind: PlaybackToast['kind'] } | null {
     switch (event.type) {
         case 'CARDS_DRAWN':
-            return buildCardsDrawnMessage(event);
+            return {
+                message: buildCardsDrawnMessage(event),
+                kind: 'DRAW',
+            };
         case 'DAMAGE_CARD_REVEALED': {
             const playerName = getPlayerName(event.targetPlayerId);
             const cardName = event.sourceCardName ?? '카드';
-            return `${playerName} 데미지 공개: ${cardName}`;
+            return {
+                message: `${playerName} 데미지 공개: ${cardName}`,
+                kind: 'DRAW',
+            };
         }
         case 'DAMAGE_TRIGGER_ACTIVATED': {
             const playerName = getPlayerName(event.targetPlayerId);
             const cardName = event.sourceCardName ?? '데미지 카드';
-            return `${playerName} 트리거 발동: ${cardName}`;
+            return {
+                message: `${playerName} 트리거 발동: ${cardName}`,
+                kind: 'EFFECT',
+            };
         }
         case 'INTERACTION_OPENED':
-            return '효과 선택 창 준비 중...';
+            return {
+                message: '효과 선택 창 준비 중...',
+                kind: 'INTERACTION',
+            };
         case 'PHASE_CHANGED':
-            return `페이즈 전환: ${event.phase}`;
+            return {
+                message: `페이즈 전환: ${PHASE_LABELS[event.phase] ?? event.phase}`,
+                kind: 'PHASE',
+            };
         case 'EFFECT_EXECUTED':
-            return event.effectDescription
-                ? `효과: ${event.effectDescription}`
-                : (event.sourceCardName ? `${event.sourceCardName} 효과 처리` : '효과 처리');
+            return {
+                message: event.effectDescription
+                    ? `효과: ${event.effectDescription}`
+                    : (event.sourceCardName ? `${event.sourceCardName} 효과 처리` : '효과 처리'),
+                kind: 'EFFECT',
+            };
         default:
             return null;
     }
@@ -133,13 +162,14 @@ function buildPulseTargets(event: UiTraceEvent): Array<{ playerId: string; zone:
 export function buildPlaybackBeats(events: UiTraceEvent[], speed: PlaybackSpeed): PlaybackBeat[] {
     const timing = getTiming(speed);
     return events.map((event) => {
-        const toastMessage = buildToastMessage(event);
+        const toastPayload = buildToastPayload(event);
         const beat: PlaybackBeat = {
             id: nextBeatId(),
             eventType: event.type,
             durationMs: timing.beatMs,
             modalGateMs: event.type === 'INTERACTION_OPENED' ? timing.modalGateMs : 0,
-            toastMessage: toastMessage ?? undefined,
+            toastMessage: toastPayload?.message,
+            toastKind: toastPayload?.kind,
             pulseTargets: buildPulseTargets(event),
         };
         return beat;
@@ -164,7 +194,7 @@ function runNextBeat(): void {
         uiState.playback.modalGateUntilMs = Math.max(uiState.playback.modalGateUntilMs, Date.now() + beat.modalGateMs);
     }
     if (beat.toastMessage) {
-        appendToast(beat.toastMessage, beat.durationMs);
+        appendToast(beat.toastMessage, beat.durationMs, beat.toastKind ?? 'DEFAULT');
         appendPlaybackLog(beat.toastMessage);
     }
     uiState.playback.activePulseTargets = beat.pulseTargets;

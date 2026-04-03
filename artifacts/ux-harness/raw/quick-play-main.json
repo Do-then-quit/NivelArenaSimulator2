@@ -1,0 +1,108 @@
+{
+  "id": "quick-play-main",
+  "label": "Quick Play -> Keep Hand -> Keep Hand -> P1 MAIN",
+  "source": "quick-play",
+  "checkpoint": null,
+  "expectations": {
+    "id": "quick-play-main",
+    "label": "Quick Play -> Keep Hand -> Keep Hand -> P1 MAIN",
+    "source": "quick-play",
+    "expectedPhase": "메인",
+    "expectedActionGroup": "PLAY",
+    "expectMandatoryQueue": false,
+    "expectAttackStep": false,
+    "expectSelectionProgress": false,
+    "expectConfirmTargets": false,
+    "expectDisabledSummary": true,
+    "expectNextPhase": true
+  },
+  "observation": {
+    "capturedAt": "2026-04-03T06:00:17.853Z",
+    "screenshotPath": "artifacts/ux-harness/screenshots/quick-play-main.png",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "activePhaseText": "메인",
+    "phaseRibbonVisible": true,
+    "attackStepVisible": false,
+    "mandatoryQueueVisible": false,
+    "mandatoryQueueReadable": true,
+    "mandatoryProgressVisible": false,
+    "mandatoryProgressText": "",
+    "actionGroupTestIds": [
+      "ux-action-group-PHASE",
+      "ux-action-group-PLAY"
+    ],
+    "actionSubjectCount": 6,
+    "actionRowCount": 14,
+    "disabledSummaryCount": 5,
+    "confirmTargetsVisible": false,
+    "nextPhaseVisible": true,
+    "nextPhaseDisabled": false,
+    "selectionBadgeCount": 0,
+    "auditTrailCount": 4,
+    "logEntryCount": 0,
+    "toastKinds": [
+      "PHASE",
+      "PHASE"
+    ],
+    "toastStackInTopBarCount": 0,
+    "toastStackInControlsCount": 1,
+    "mulliganModalVisible": false,
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  "assertions": [
+    {
+      "id": "phase-ribbon-visible",
+      "passed": true,
+      "detail": "phase ribbon should be visible on every scenario"
+    },
+    {
+      "id": "phase-match",
+      "passed": true,
+      "detail": "expected active phase to include 메인, received: 메인"
+    },
+    {
+      "id": "action-group",
+      "passed": true,
+      "detail": "expected action group ux-action-group-PLAY"
+    },
+    {
+      "id": "mandatory-queue",
+      "passed": true,
+      "detail": "mandatory queue visible=false, expected=false"
+    },
+    {
+      "id": "attack-step-bar",
+      "passed": true,
+      "detail": "attack step visible=false, expected=false"
+    },
+    {
+      "id": "confirm-targets",
+      "passed": true,
+      "detail": "confirm-targets visible=false, expected=false"
+    },
+    {
+      "id": "next-phase-cta",
+      "passed": true,
+      "detail": "next-phase visible=true, disabled=false, expectedEnabled=true"
+    },
+    {
+      "id": "disabled-summary",
+      "passed": true,
+      "detail": "disabled summary count=5"
+    },
+    {
+      "id": "mandatory-queue-readable",
+      "passed": true,
+      "detail": "mandatory queue readable=true"
+    },
+    {
+      "id": "toast-stack-location",
+      "passed": true,
+      "detail": "toast stack in top bar count=0"
+    }
+  ]
+}

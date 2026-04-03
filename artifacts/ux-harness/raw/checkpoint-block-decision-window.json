@@ -1,0 +1,109 @@
+{
+  "id": "checkpoint-block-decision-window",
+  "label": "Checkpoint: BLOCK_DECISION_WINDOW",
+  "source": "checkpoint",
+  "checkpoint": "BLOCK_DECISION_WINDOW",
+  "expectations": {
+    "id": "checkpoint-block-decision-window",
+    "label": "Checkpoint: BLOCK_DECISION_WINDOW",
+    "source": "checkpoint",
+    "checkpoint": "BLOCK_DECISION_WINDOW",
+    "expectedPhase": "어택",
+    "expectedActionGroup": "INTERACTION",
+    "expectMandatoryQueue": false,
+    "expectAttackStep": true,
+    "expectSelectionProgress": false,
+    "expectConfirmTargets": false,
+    "expectDisabledSummary": false,
+    "expectNextPhase": false
+  },
+  "observation": {
+    "capturedAt": "2026-04-03T06:00:26.265Z",
+    "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-block-decision-window.png",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "activePhaseText": "어택",
+    "phaseRibbonVisible": true,
+    "attackStepVisible": true,
+    "mandatoryQueueVisible": false,
+    "mandatoryQueueReadable": true,
+    "mandatoryProgressVisible": false,
+    "mandatoryProgressText": "",
+    "actionGroupTestIds": [
+      "ux-action-group-INTERACTION"
+    ],
+    "actionSubjectCount": 1,
+    "actionRowCount": 2,
+    "disabledSummaryCount": 0,
+    "confirmTargetsVisible": false,
+    "nextPhaseVisible": true,
+    "nextPhaseDisabled": true,
+    "selectionBadgeCount": 0,
+    "auditTrailCount": 4,
+    "logEntryCount": 0,
+    "toastKinds": [
+      "DRAW",
+      "DRAW",
+      "PHASE"
+    ],
+    "toastStackInTopBarCount": 0,
+    "toastStackInControlsCount": 1,
+    "mulliganModalVisible": false,
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  "assertions": [
+    {
+      "id": "phase-ribbon-visible",
+      "passed": true,
+      "detail": "phase ribbon should be visible on every scenario"
+    },
+    {
+      "id": "phase-match",
+      "passed": true,
+      "detail": "expected active phase to include 어택, received: 어택"
+    },
+    {
+      "id": "action-group",
+      "passed": true,
+      "detail": "expected action group ux-action-group-INTERACTION"
+    },
+    {
+      "id": "mandatory-queue",
+      "passed": true,
+      "detail": "mandatory queue visible=false, expected=false"
+    },
+    {
+      "id": "attack-step-bar",
+      "passed": true,
+      "detail": "attack step visible=true, expected=true"
+    },
+    {
+      "id": "confirm-targets",
+      "passed": true,
+      "detail": "confirm-targets visible=false, expected=false"
+    },
+    {
+      "id": "next-phase-cta",
+      "passed": true,
+      "detail": "next-phase visible=true, disabled=true, expectedEnabled=false"
+    },
+    {
+      "id": "disabled-summary",
+      "passed": true,
+      "detail": "disabled summary count=0"
+    },
+    {
+      "id": "mandatory-queue-readable",
+      "passed": true,
+      "detail": "mandatory queue readable=true"
+    },
+    {
+      "id": "toast-stack-location",
+      "passed": true,
+      "detail": "toast stack in top bar count=0"
+    }
+  ]
+}

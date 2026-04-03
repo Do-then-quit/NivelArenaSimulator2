@@ -277,14 +277,19 @@ export type UiActionGroup = 'PHASE' | 'PLAY' | 'ATTACK' | 'ACTIVE' | 'INTERACTIO
 export interface ActionAvailability {
     id: string;
     action: EngineAction | null;
-    actionType: EngineAction['type'] | 'PASS_PRIORITY';
+    actionType: EngineAction['type'] | 'PASS_PRIORITY' | 'UNKNOWN';
     group: UiActionGroup;
     label: string;
+    detailLabel?: string;
     enabled: boolean;
     reason?: string;
     preview?: string;
     sourcePlayerId?: string;
     targetPlayerId?: string;
+    sourceCardId?: string;
+    sourceCardName?: string;
+    subjectKey?: string;
+    subjectLabel?: string;
     handIndex?: number;
     zoneIndex?: number;
     itemIndex?: number;
@@ -300,6 +305,9 @@ export interface MandatoryQueueItem {
     controllerPlayerId?: string;
     actionType?: string;
     preview?: string;
+    progressCurrent?: number;
+    progressTotal?: number | null;
+    progressLabel?: string;
 }
 
 export interface TimingWindow {
@@ -489,6 +497,7 @@ export interface PendingEffect {
     | 'ALL_UNITS'
     | 'MY_UNITS'
     | 'OPP_UNITS'
+    | 'OPP_FIELD'
     | 'SHARED_LANE'
     | 'MY_TRASH'
     | 'MY_HAND'

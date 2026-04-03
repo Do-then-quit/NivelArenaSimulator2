@@ -249,9 +249,30 @@ body.game-screen #app {
     gap: 8px;
 }
 
+.mandatory-queue-header-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
 .mandatory-queue-header strong {
     color: #fff;
     font-size: 0.84rem;
+}
+
+.mandatory-queue-progress {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(127, 197, 255, 0.28);
+    background: rgba(74, 158, 255, 0.12);
+    color: #dbeeff;
+    font-size: 0.68rem;
+    font-weight: 800;
 }
 
 .mandatory-queue-badge {
@@ -1475,6 +1496,139 @@ body.phase-theme-end {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.4px;
+}
+
+.ux-action-subject {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ux-action-subject-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.ux-action-subject-title {
+    color: #f6fbff;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.ux-action-subject-meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.ux-action-subject-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ux-action-subject-count.enabled {
+    background: rgba(117, 232, 171, 0.14);
+    border-color: rgba(117, 232, 171, 0.26);
+    color: #cffff1;
+}
+
+.ux-action-subject-count.disabled {
+    background: rgba(255, 196, 90, 0.14);
+    border-color: rgba(255, 196, 90, 0.28);
+    color: #ffefc7;
+}
+
+.ux-action-subject-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ux-action-disabled-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 10px;
+    background: rgba(255, 196, 90, 0.08);
+    border: 1px solid rgba(255, 196, 90, 0.18);
+}
+
+.ux-action-disabled-count {
+    color: #ffefc7;
+    font-size: 0.74rem;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.ux-action-disabled-reasons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.ux-action-reason-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #ffe3b4;
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.ux-action-reason-chip.muted {
+    color: #d2def5;
+}
+
+.ux-action-disabled-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 2px;
+}
+
+.ux-action-disabled-stack summary {
+    cursor: pointer;
+    color: #8fa3c9;
+    font-size: 0.72rem;
+    font-weight: 700;
+    list-style: none;
+}
+
+.ux-action-disabled-stack summary::-webkit-details-marker {
+    display: none;
+}
+
+.ux-action-disabled-stack summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 6px;
+    transition: transform 0.15s ease;
+}
+
+.ux-action-disabled-stack[open] summary::before {
+    transform: rotate(90deg);
 }
 
 .ux-action-row {
@@ -3675,6 +3829,10 @@ body.deck-builder-screen #app {
     gap: 6px;
 }
 
+.game-controls > .fx-toast-stack {
+    margin-top: -2px;
+}
+
 .fx-toast-item {
     border-radius: 10px;
     border: 1px solid rgba(255, 215, 140, 0.42);
@@ -3686,6 +3844,12 @@ body.deck-builder-screen #app {
     line-height: 1.35;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.38);
     animation: fx-toast-in 120ms ease-out;
+}
+
+.fx-toast-item.phase-toast {
+    border-color: rgba(127, 197, 255, 0.38);
+    background: rgba(13, 28, 49, 0.9);
+    color: #e5f5ff;
 }
 
 .fx-pulse-zone {

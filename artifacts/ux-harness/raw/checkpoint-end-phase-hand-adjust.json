@@ -1,0 +1,111 @@
+{
+  "id": "checkpoint-end-phase-hand-adjust",
+  "label": "Checkpoint: END_PHASE_HAND_ADJUST",
+  "source": "checkpoint",
+  "checkpoint": "END_PHASE_HAND_ADJUST",
+  "expectations": {
+    "id": "checkpoint-end-phase-hand-adjust",
+    "label": "Checkpoint: END_PHASE_HAND_ADJUST",
+    "source": "checkpoint",
+    "checkpoint": "END_PHASE_HAND_ADJUST",
+    "expectedPhase": "엔드",
+    "expectedActionGroup": "INTERACTION",
+    "expectMandatoryQueue": true,
+    "expectAttackStep": false,
+    "expectSelectionProgress": false,
+    "expectConfirmTargets": true,
+    "expectDisabledSummary": false,
+    "expectNextPhase": false
+  },
+  "observation": {
+    "capturedAt": "2026-04-03T06:00:29.984Z",
+    "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-end-phase-hand-adjust.png",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "activePhaseText": "엔드",
+    "phaseRibbonVisible": true,
+    "attackStepVisible": false,
+    "mandatoryQueueVisible": true,
+    "mandatoryQueueReadable": true,
+    "mandatoryProgressVisible": true,
+    "mandatoryProgressText": "0 / 1 선택",
+    "actionGroupTestIds": [
+      "ux-action-group-PHASE",
+      "ux-action-group-INTERACTION",
+      "ux-action-group-PLAY"
+    ],
+    "actionSubjectCount": 10,
+    "actionRowCount": 26,
+    "disabledSummaryCount": 10,
+    "confirmTargetsVisible": true,
+    "nextPhaseVisible": true,
+    "nextPhaseDisabled": true,
+    "selectionBadgeCount": 0,
+    "auditTrailCount": 3,
+    "logEntryCount": 0,
+    "toastKinds": [
+      "DRAW",
+      "DRAW",
+      "INTERACTION"
+    ],
+    "toastStackInTopBarCount": 0,
+    "toastStackInControlsCount": 1,
+    "mulliganModalVisible": false,
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  "assertions": [
+    {
+      "id": "phase-ribbon-visible",
+      "passed": true,
+      "detail": "phase ribbon should be visible on every scenario"
+    },
+    {
+      "id": "phase-match",
+      "passed": true,
+      "detail": "expected active phase to include 엔드, received: 엔드"
+    },
+    {
+      "id": "action-group",
+      "passed": true,
+      "detail": "expected action group ux-action-group-INTERACTION"
+    },
+    {
+      "id": "mandatory-queue",
+      "passed": true,
+      "detail": "mandatory queue visible=true, expected=true"
+    },
+    {
+      "id": "attack-step-bar",
+      "passed": true,
+      "detail": "attack step visible=false, expected=false"
+    },
+    {
+      "id": "confirm-targets",
+      "passed": true,
+      "detail": "confirm-targets visible=true, expected=true"
+    },
+    {
+      "id": "next-phase-cta",
+      "passed": true,
+      "detail": "next-phase visible=true, disabled=true, expectedEnabled=false"
+    },
+    {
+      "id": "disabled-summary",
+      "passed": true,
+      "detail": "disabled summary count=10"
+    },
+    {
+      "id": "mandatory-queue-readable",
+      "passed": true,
+      "detail": "mandatory queue readable=true"
+    },
+    {
+      "id": "toast-stack-location",
+      "passed": true,
+      "detail": "toast stack in top bar count=0"
+    }
+  ]
+}

@@ -1,0 +1,258 @@
+{
+  "generatedAt": "2026-04-03T06:02:30.445Z",
+  "thresholds": {
+    "total": 92,
+    "rulesAccuracy": 38,
+    "actionClarity": 18,
+    "timingCausality": 13,
+    "mandatoryHiddenCount": 0
+  },
+  "weights": {
+    "rulesAccuracy": 40,
+    "phaseStepVisibility": 20,
+    "actionClarity": 20,
+    "timingCausality": 15,
+    "visualStability": 5
+  },
+  "scenarioCount": 6,
+  "totalAverage": 100,
+  "categoryAverages": {
+    "rulesAccuracy": 40,
+    "phaseStepVisibility": 20,
+    "actionClarity": 20,
+    "timingCausality": 15,
+    "visualStability": 5
+  },
+  "mandatoryHiddenCount": 0,
+  "passes": true,
+  "scenarios": [
+    {
+      "id": "quick-play-main",
+      "label": "Quick Play -> Keep Hand -> Keep Hand -> P1 MAIN",
+      "source": "quick-play",
+      "checkpoint": null,
+      "screenshotPath": "artifacts/ux-harness/screenshots/quick-play-main.png",
+      "categoryScores": {
+        "rulesAccuracy": {
+          "score": 40,
+          "max": 40,
+          "notes": []
+        },
+        "phaseStepVisibility": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "actionClarity": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "timingCausality": {
+          "score": 15,
+          "max": 15,
+          "notes": []
+        },
+        "visualStability": {
+          "score": 5,
+          "max": 5,
+          "notes": []
+        }
+      },
+      "total": 100,
+      "maxTotal": 100,
+      "failedAssertions": [],
+      "mandatoryHiddenCount": 0
+    },
+    {
+      "id": "checkpoint-p1-main-after-mulligan",
+      "label": "Checkpoint: P1_MAIN_AFTER_MULLIGAN",
+      "source": "checkpoint",
+      "checkpoint": "P1_MAIN_AFTER_MULLIGAN",
+      "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-p1-main-after-mulligan.png",
+      "categoryScores": {
+        "rulesAccuracy": {
+          "score": 40,
+          "max": 40,
+          "notes": []
+        },
+        "phaseStepVisibility": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "actionClarity": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "timingCausality": {
+          "score": 15,
+          "max": 15,
+          "notes": []
+        },
+        "visualStability": {
+          "score": 5,
+          "max": 5,
+          "notes": []
+        }
+      },
+      "total": 100,
+      "maxTotal": 100,
+      "failedAssertions": [],
+      "mandatoryHiddenCount": 0
+    },
+    {
+      "id": "checkpoint-attack-declare-window",
+      "label": "Checkpoint: ATTACK_DECLARE_WINDOW",
+      "source": "checkpoint",
+      "checkpoint": "ATTACK_DECLARE_WINDOW",
+      "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-attack-declare-window.png",
+      "categoryScores": {
+        "rulesAccuracy": {
+          "score": 40,
+          "max": 40,
+          "notes": []
+        },
+        "phaseStepVisibility": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "actionClarity": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "timingCausality": {
+          "score": 15,
+          "max": 15,
+          "notes": []
+        },
+        "visualStability": {
+          "score": 5,
+          "max": 5,
+          "notes": []
+        }
+      },
+      "total": 100,
+      "maxTotal": 100,
+      "failedAssertions": [],
+      "mandatoryHiddenCount": 0
+    },
+    {
+      "id": "checkpoint-block-decision-window",
+      "label": "Checkpoint: BLOCK_DECISION_WINDOW",
+      "source": "checkpoint",
+      "checkpoint": "BLOCK_DECISION_WINDOW",
+      "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-block-decision-window.png",
+      "categoryScores": {
+        "rulesAccuracy": {
+          "score": 40,
+          "max": 40,
+          "notes": []
+        },
+        "phaseStepVisibility": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "actionClarity": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "timingCausality": {
+          "score": 15,
+          "max": 15,
+          "notes": []
+        },
+        "visualStability": {
+          "score": 5,
+          "max": 5,
+          "notes": []
+        }
+      },
+      "total": 100,
+      "maxTotal": 100,
+      "failedAssertions": [],
+      "mandatoryHiddenCount": 0
+    },
+    {
+      "id": "checkpoint-mandatory-target-selection",
+      "label": "Checkpoint: MANDATORY_TARGET_SELECTION",
+      "source": "checkpoint",
+      "checkpoint": "MANDATORY_TARGET_SELECTION",
+      "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-mandatory-target-selection.png",
+      "categoryScores": {
+        "rulesAccuracy": {
+          "score": 40,
+          "max": 40,
+          "notes": []
+        },
+        "phaseStepVisibility": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "actionClarity": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "timingCausality": {
+          "score": 15,
+          "max": 15,
+          "notes": []
+        },
+        "visualStability": {
+          "score": 5,
+          "max": 5,
+          "notes": []
+        }
+      },
+      "total": 100,
+      "maxTotal": 100,
+      "failedAssertions": [],
+      "mandatoryHiddenCount": 0
+    },
+    {
+      "id": "checkpoint-end-phase-hand-adjust",
+      "label": "Checkpoint: END_PHASE_HAND_ADJUST",
+      "source": "checkpoint",
+      "checkpoint": "END_PHASE_HAND_ADJUST",
+      "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-end-phase-hand-adjust.png",
+      "categoryScores": {
+        "rulesAccuracy": {
+          "score": 40,
+          "max": 40,
+          "notes": []
+        },
+        "phaseStepVisibility": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "actionClarity": {
+          "score": 20,
+          "max": 20,
+          "notes": []
+        },
+        "timingCausality": {
+          "score": 15,
+          "max": 15,
+          "notes": []
+        },
+        "visualStability": {
+          "score": 5,
+          "max": 5,
+          "notes": []
+        }
+      },
+      "total": 100,
+      "maxTotal": 100,
+      "failedAssertions": [],
+      "mandatoryHiddenCount": 0
+    }
+  ]
+}

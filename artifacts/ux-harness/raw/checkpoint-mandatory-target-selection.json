@@ -1,0 +1,111 @@
+{
+  "id": "checkpoint-mandatory-target-selection",
+  "label": "Checkpoint: MANDATORY_TARGET_SELECTION",
+  "source": "checkpoint",
+  "checkpoint": "MANDATORY_TARGET_SELECTION",
+  "expectations": {
+    "id": "checkpoint-mandatory-target-selection",
+    "label": "Checkpoint: MANDATORY_TARGET_SELECTION",
+    "source": "checkpoint",
+    "checkpoint": "MANDATORY_TARGET_SELECTION",
+    "expectedPhase": "메인",
+    "expectedActionGroup": "INTERACTION",
+    "expectMandatoryQueue": true,
+    "expectAttackStep": false,
+    "expectSelectionProgress": false,
+    "expectConfirmTargets": true,
+    "expectDisabledSummary": false,
+    "expectNextPhase": false
+  },
+  "observation": {
+    "capturedAt": "2026-04-03T06:00:28.024Z",
+    "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-mandatory-target-selection.png",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "activePhaseText": "메인",
+    "phaseRibbonVisible": true,
+    "attackStepVisible": false,
+    "mandatoryQueueVisible": true,
+    "mandatoryQueueReadable": true,
+    "mandatoryProgressVisible": true,
+    "mandatoryProgressText": "0 / 1 선택",
+    "actionGroupTestIds": [
+      "ux-action-group-PHASE",
+      "ux-action-group-INTERACTION",
+      "ux-action-group-ATTACK"
+    ],
+    "actionSubjectCount": 3,
+    "actionRowCount": 3,
+    "disabledSummaryCount": 3,
+    "confirmTargetsVisible": true,
+    "nextPhaseVisible": true,
+    "nextPhaseDisabled": true,
+    "selectionBadgeCount": 0,
+    "auditTrailCount": 3,
+    "logEntryCount": 0,
+    "toastKinds": [
+      "DRAW",
+      "DRAW",
+      "INTERACTION"
+    ],
+    "toastStackInTopBarCount": 0,
+    "toastStackInControlsCount": 1,
+    "mulliganModalVisible": false,
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  "assertions": [
+    {
+      "id": "phase-ribbon-visible",
+      "passed": true,
+      "detail": "phase ribbon should be visible on every scenario"
+    },
+    {
+      "id": "phase-match",
+      "passed": true,
+      "detail": "expected active phase to include 메인, received: 메인"
+    },
+    {
+      "id": "action-group",
+      "passed": true,
+      "detail": "expected action group ux-action-group-INTERACTION"
+    },
+    {
+      "id": "mandatory-queue",
+      "passed": true,
+      "detail": "mandatory queue visible=true, expected=true"
+    },
+    {
+      "id": "attack-step-bar",
+      "passed": true,
+      "detail": "attack step visible=false, expected=false"
+    },
+    {
+      "id": "confirm-targets",
+      "passed": true,
+      "detail": "confirm-targets visible=true, expected=true"
+    },
+    {
+      "id": "next-phase-cta",
+      "passed": true,
+      "detail": "next-phase visible=true, disabled=true, expectedEnabled=false"
+    },
+    {
+      "id": "disabled-summary",
+      "passed": true,
+      "detail": "disabled summary count=3"
+    },
+    {
+      "id": "mandatory-queue-readable",
+      "passed": true,
+      "detail": "mandatory queue readable=true"
+    },
+    {
+      "id": "toast-stack-location",
+      "passed": true,
+      "detail": "toast stack in top bar count=0"
+    }
+  ]
+}

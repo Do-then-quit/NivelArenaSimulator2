@@ -325,7 +325,7 @@ function renderPhaseRibbon(snapshot: EngineUiSnapshot): string {
             : '자동 진행 가능';
 
     return `
-        <div class="phase-ribbon-panel">
+        <div class="phase-ribbon-panel" data-testid="phase-ribbon">
             <div class="phase-ribbon-main">
                 ${PHASE_RIBBON_STEPS.map((step, index) => {
                     const stateClass = index < currentIndex
@@ -334,9 +334,9 @@ function renderPhaseRibbon(snapshot: EngineUiSnapshot): string {
                             ? 'active'
                             : 'upcoming';
                     return `
-                        <div class="phase-ribbon-step ${stateClass}">
+                        <div class="phase-ribbon-step ${stateClass}" data-testid="phase-ribbon-step" data-phase="${step.phase}">
                             <span class="phase-ribbon-index">${index + 1}</span>
-                            <span class="phase-ribbon-label">${step.label}</span>
+                            <span class="phase-ribbon-label" data-testid="phase-ribbon-label">${step.label}</span>
                         </div>
                     `;
                 }).join('')}
@@ -355,14 +355,14 @@ function renderAttackStepBar(snapshot: EngineUiSnapshot): string {
     if (snapshot.timingWindow.phase !== Phase.ATTACK && snapshot.timingWindow.phase !== Phase.BLOCK) return '';
     const currentIndex = getAttackStepIndex(snapshot);
     return `
-        <div class="attack-step-panel">
+        <div class="attack-step-panel" data-testid="attack-step-bar">
             ${ATTACK_STEP_ORDER.map((step, index) => {
                 const stateClass = index < currentIndex
                     ? 'done'
                     : index === currentIndex
                         ? 'active'
                         : 'upcoming';
-                return `<div class="attack-step-chip ${stateClass}">${step.label}</div>`;
+                return `<div class="attack-step-chip ${stateClass}" data-testid="attack-step-chip" data-step="${step.key}">${step.label}</div>`;
             }).join('')}
         </div>
     `;
@@ -371,14 +371,17 @@ function renderAttackStepBar(snapshot: EngineUiSnapshot): string {
 function renderMandatoryQueue(snapshot: EngineUiSnapshot): string {
     if (snapshot.mandatoryQueue.length === 0) return '';
     return `
-        <div class="mandatory-queue-panel">
+        <div class="mandatory-queue-panel" data-testid="mandatory-queue">
             <div class="mandatory-queue-title">해결 대기열</div>
             <div class="mandatory-queue-items">
                 ${snapshot.mandatoryQueue.map((item) => `
-                    <div class="mandatory-queue-item ${item.blocking ? 'blocking' : ''}">
+                    <div class="mandatory-queue-item ${item.blocking ? 'blocking' : ''}" data-testid="mandatory-queue-item" data-action-type="${escapeHtml(item.actionType ?? 'UNKNOWN')}">
                         <div class="mandatory-queue-header">
                             <strong>${escapeHtml(item.title)}</strong>
-                            <span class="mandatory-queue-badge">${item.blocking ? '강제' : '대기'}</span>
+                            <div class="mandatory-queue-header-meta">
+                                ${item.progressLabel ? `<span class="mandatory-queue-progress" data-testid="mandatory-queue-progress">${escapeHtml(item.progressLabel)}</span>` : ''}
+                                <span class="mandatory-queue-badge">${item.blocking ? '강제' : '대기'}</span>
+                            </div>
                         </div>
                         ${item.sourceCardName ? `<div class="mandatory-queue-source">${escapeHtml(item.sourceCardName)}</div>` : ''}
                         <div class="mandatory-queue-reason">${escapeHtml(item.reason)}</div>
@@ -407,6 +410,62 @@ function getActionGroupLabel(group: ActionAvailability['group']): string {
     }
 }
 
+interface RenderedActionSubject {
+    key: string;
+    label: string;
+    actions: ActionAvailability[];
+}
+
+function groupActionsBySubject(actions: ActionAvailability[]): RenderedActionSubject[] {
+    const subjects = new Map<string, RenderedActionSubject>();
+    actions.forEach((action) => {
+        const key = action.subjectKey ?? `${action.group}:${action.id}`;
+        const current = subjects.get(key) ?? {
+            key,
+            label: action.subjectLabel ?? action.sourceCardName ?? action.label,
+            actions: [],
+        };
+        current.actions.push(action);
+        subjects.set(key, current);
+    });
+    return Array.from(subjects.values()).sort((left, right) => left.label.localeCompare(right.label, 'ko'));
+}
+
+function renderActionRow(action: ActionAvailability): string {
+    const rowLabel = action.detailLabel ?? action.label;
+    return `
+        <div
+            class="ux-action-row ${action.enabled ? 'enabled' : 'disabled'}"
+            data-testid="ux-action-row"
+            data-action-type="${action.actionType}"
+            data-action-enabled="${action.enabled ? '1' : '0'}"
+        >
+            <div class="ux-action-row-top">
+                <span class="ux-action-label">${escapeHtml(rowLabel)}</span>
+                <span class="ux-action-state">${action.enabled ? '가능' : '불가'}</span>
+            </div>
+            ${action.preview ? `<div class="ux-action-preview">${escapeHtml(action.preview)}</div>` : ''}
+            ${action.reason ? `<div class="ux-action-reason">${escapeHtml(action.reason)}</div>` : ''}
+        </div>
+    `;
+}
+
+function renderDisabledReasonSummary(actions: ActionAvailability[]): string {
+    const uniqueReasons = Array.from(new Set(actions.map(action => action.reason).filter(Boolean) as string[]));
+    if (uniqueReasons.length === 0) {
+        return `<div class="ux-action-disabled-summary" data-testid="ux-action-disabled-summary">현재 불가 ${actions.length}건</div>`;
+    }
+    return `
+        <div class="ux-action-disabled-summary" data-testid="ux-action-disabled-summary">
+            <span class="ux-action-disabled-count">현재 불가 ${actions.length}건</span>
+            <div class="ux-action-disabled-reasons">
+                ${uniqueReasons.slice(0, 2).map((reason) => `<span class="ux-action-reason-chip">${escapeHtml(reason)}</span>`).join('')}
+                ${uniqueReasons.length > 2 ? `<span class="ux-action-reason-chip muted">+${uniqueReasons.length - 2}</span>` : ''}
+            </div>
+        </div>
+    `;
+}
+
 function renderActionPanel(snapshot: EngineUiSnapshot): string {
     const grouped = new Map<ActionAvailability['group'], ActionAvailability[]>();
     snapshot.visibleActions.forEach((action) => {
@@ -419,22 +478,40 @@ function renderActionPanel(snapshot: EngineUiSnapshot): string {
     const visibleGroups = groupOrder.filter(group => (grouped.get(group)?.length ?? 0) > 0);
 
     return `
-        <section class="ux-action-panel">
+        <section class="ux-action-panel" data-testid="ux-action-panel">
             <div class="ux-action-panel-title">지금 할 수 있는 행동</div>
             ${visibleGroups.length === 0 ? '<div class="ux-action-empty">현재 표시할 행동이 없습니다.</div>' : ''}
             ${visibleGroups.map((group) => `
-                <div class="ux-action-group">
+                <div class="ux-action-group" data-testid="ux-action-group-${group}">
                     <div class="ux-action-group-title">${getActionGroupLabel(group)}</div>
-                    ${(grouped.get(group) ?? []).map((action) => `
-                        <div class="ux-action-row ${action.enabled ? 'enabled' : 'disabled'}" data-action-type="${action.actionType}">
-                            <div class="ux-action-row-top">
-                                <span class="ux-action-label">${escapeHtml(action.label)}</span>
-                                <span class="ux-action-state">${action.enabled ? '가능' : '불가'}</span>
+                    ${groupActionsBySubject(grouped.get(group) ?? []).map((subject) => {
+                        const enabledActions = subject.actions.filter((action) => action.enabled);
+                        const disabledActions = subject.actions.filter((action) => !action.enabled);
+                        const showSubjectHeader = subject.label !== subject.actions[0]?.label || subject.actions.length > 1 || group === 'PLAY' || group === 'ATTACK' || group === 'ACTIVE';
+                        return `
+                            <div class="ux-action-subject" data-testid="ux-action-subject" data-subject-key="${escapeHtml(subject.key)}">
+                                ${showSubjectHeader ? `
+                                    <div class="ux-action-subject-header">
+                                        <div class="ux-action-subject-title">${escapeHtml(subject.label)}</div>
+                                        <div class="ux-action-subject-meta">
+                                            ${enabledActions.length > 0 ? `<span class="ux-action-subject-count enabled">가능 ${enabledActions.length}</span>` : ''}
+                                            ${disabledActions.length > 0 ? `<span class="ux-action-subject-count disabled">불가 ${disabledActions.length}</span>` : ''}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                <div class="ux-action-subject-body">
+                                    ${enabledActions.map(renderActionRow).join('')}
+                                    ${disabledActions.length > 0 ? `
+                                        ${renderDisabledReasonSummary(disabledActions)}
+                                        <details class="ux-action-disabled-stack">
+                                            <summary>불가 세부 사유 보기</summary>
+                                            ${disabledActions.map(renderActionRow).join('')}
+                                        </details>
+                                    ` : ''}
+                                </div>
                             </div>
-                            ${action.preview ? `<div class="ux-action-preview">${escapeHtml(action.preview)}</div>` : ''}
-                            ${action.reason ? `<div class="ux-action-reason">${escapeHtml(action.reason)}</div>` : ''}
-                        </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
             `).join('')}
         </section>
@@ -495,8 +572,11 @@ function buildFallbackUiSnapshot(game: any, actorPlayerId: string): EngineUiSnap
         actionType: action?.type ?? 'UNKNOWN',
         group: game?.state?.interactionMode && game.state.interactionMode !== 'NORMAL' ? 'INTERACTION' : 'SYSTEM',
         label: interactionTitleMap[action?.type] ?? String(action?.type ?? '행동'),
+        detailLabel: interactionTitleMap[action?.type] ?? String(action?.type ?? '행동'),
         enabled: true,
         sourcePlayerId: action?.actorPlayerId ?? actorPlayerId,
+        subjectKey: `fallback:${action?.type ?? 'UNKNOWN'}:${action?.actorPlayerId ?? actorPlayerId}`,
+        subjectLabel: interactionTitleMap[action?.type] ?? '기본 행동',
     }));
 
     const pendingEffect = game?.state?.pendingEffect ?? null;
@@ -513,6 +593,13 @@ function buildFallbackUiSnapshot(game: any, actorPlayerId: string): EngineUiSnap
             controllerPlayerId: pendingEffect.controllerPlayerId ?? pendingEffect.sourcePlayerId,
             actionType: pendingEffect.actionType,
             preview: pendingEffect.sourceEffectDescription || pendingEffect.effectDescription || undefined,
+            progressCurrent: Array.isArray(pendingEffect.selectedTargets) ? pendingEffect.selectedTargets.length : 0,
+            progressTotal: typeof pendingEffect.targetSchema?.count === 'number' && pendingEffect.targetSchema.count > 0
+                ? pendingEffect.targetSchema.count
+                : null,
+            progressLabel: typeof pendingEffect.targetSchema?.count === 'number' && pendingEffect.targetSchema.count > 0
+                ? `${Array.isArray(pendingEffect.selectedTargets) ? pendingEffect.selectedTargets.length : 0} / ${pendingEffect.targetSchema.count} 선택`
+                : undefined,
         }]
         : [];
 
@@ -547,7 +634,7 @@ function renderVerificationSessionPanel(): string {
     if (uiState.verificationPanelCollapsed) {
         return `
             <div class="verification-session-collapsed">
-                <button id="verification-panel-toggle-btn" class="secondary-btn">Show Test Panel</button>
+                <button id="verification-panel-toggle-btn" class="secondary-btn">테스트 패널 보기</button>
             </div>
         `;
     }
@@ -558,14 +645,14 @@ function renderVerificationSessionPanel(): string {
     return `
         <div class="verification-session-panel">
             <div class="verification-session-actions">
-                <button id="verification-back-btn" class="secondary-btn">Back to Verification (V)</button>
-                <button id="verification-next-btn" class="primary-btn" ${hasNextTest ? '' : 'disabled'}>Next Test (N)</button>
-                <button id="verification-panel-toggle-btn" class="secondary-btn">Hide Panel</button>
+                <button id="verification-back-btn" class="secondary-btn">검증 화면으로 (V)</button>
+                <button id="verification-next-btn" class="primary-btn" ${hasNextTest ? '' : 'disabled'}>다음 테스트 (N)</button>
+                <button id="verification-panel-toggle-btn" class="secondary-btn">패널 숨기기</button>
             </div>
             <div class="verification-session-meta">
                 <strong>${currentOrder} / ${totalTests}</strong>
                 <span>${uiState.verificationSession.currentTestId}</span>
-                ${hasNextTest ? '' : '<span class="verification-session-last">Last test in this run</span>'}
+                ${hasNextTest ? '' : '<span class="verification-session-last">이번 실행의 마지막 테스트</span>'}
             </div>
             <div class="verification-session-instructions">${safeInstructions}</div>
         </div>
@@ -575,13 +662,13 @@ function renderVerificationSessionPanel(): string {
 function getReplayTerminationLabel(reason: string): string {
     switch (reason) {
         case 'winner':
-            return 'Winner reached';
+            return '승자 결정';
         case 'max_steps':
-            return 'Stopped by max steps';
+            return '최대 스텝 도달';
         case 'no_action':
-            return 'Stopped: bot had no legal action';
+            return '중단: 봇이 행동을 찾지 못함';
         case 'invalid_action':
-            return 'Stopped: invalid action';
+            return '중단: 잘못된 액션';
         default:
             return reason;
     }
@@ -589,30 +676,30 @@ function getReplayTerminationLabel(reason: string): string {
 
 function renderGameControlButtons(localHumanCanInput: boolean): string {
     if (!uiState.replaySession || !uiState.game) {
-        return `<button id="next-phase" class="primary-btn" ${uiState.game?.state.phase === Phase.BLOCK || uiState.game?.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}>Next Phase</button>`;
+        return `<button id="next-phase" data-testid="next-phase-cta" class="primary-btn" ${uiState.game?.state.phase === Phase.BLOCK || uiState.game?.state.interactionMode !== 'NORMAL' || !localHumanCanInput ? 'disabled' : ''}>다음 페이즈</button>`;
     }
 
     const replay = uiState.replaySession;
     const consumed = replay.currentActionIndex;
     const total = replay.actions.length;
-    const lastAction = consumed > 0 ? replay.actions[consumed - 1].summary : 'Not started';
-    const nextAction = consumed < total ? replay.actions[consumed].summary : 'Replay complete';
+    const lastAction = consumed > 0 ? replay.actions[consumed - 1].summary : '아직 시작되지 않음';
+    const nextAction = consumed < total ? replay.actions[consumed].summary : '리플레이 완료';
     const winnerName = replay.result.winnerId
-        ? uiState.game.state.players.find(player => player.id === replay.result.winnerId)?.name ?? 'Winner'
-        : 'None';
+        ? uiState.game.state.players.find(player => player.id === replay.result.winnerId)?.name ?? '승자'
+        : '없음';
     const disabledNext = consumed >= total ? 'disabled' : '';
 
     return `
         <div class="replay-controls">
             <div class="replay-status">
-                <div><strong>Replay:</strong> ${consumed} / ${total}</div>
-                <div><strong>Last:</strong> ${lastAction}</div>
-                <div><strong>Next:</strong> ${nextAction}</div>
-                <div><strong>Result:</strong> ${getReplayTerminationLabel(replay.result.terminationReason)} / Winner: ${winnerName}</div>
+                <div><strong>리플레이:</strong> ${consumed} / ${total}</div>
+                <div><strong>직전:</strong> ${lastAction}</div>
+                <div><strong>다음:</strong> ${nextAction}</div>
+                <div><strong>결과:</strong> ${getReplayTerminationLabel(replay.result.terminationReason)} / 승자: ${winnerName}</div>
             </div>
             <div class="replay-actions">
-                <button id="replay-restart" class="secondary-btn">Restart Replay</button>
-                <button id="replay-next-action" class="primary-btn" ${disabledNext}>Next Action</button>
+                <button id="replay-restart" class="secondary-btn">리플레이 처음으로</button>
+                <button id="replay-next-action" class="primary-btn" ${disabledNext}>다음 액션</button>
             </div>
         </div>
     `;
@@ -627,8 +714,8 @@ function renderReplayOverlayControls(): string {
 
     return `
         <div class="replay-overlay-controls">
-            <button id="replay-overlay-restart" class="secondary-btn">Restart Replay</button>
-            <button id="replay-overlay-next-action" class="primary-btn" ${disabledNext}>Next Action</button>
+            <button id="replay-overlay-restart" class="secondary-btn">리플레이 처음으로</button>
+            <button id="replay-overlay-next-action" class="primary-btn" ${disabledNext}>다음 액션</button>
         </div>
     `;
 }
@@ -643,8 +730,16 @@ function renderPlaybackToasts(): string {
     const toasts = uiState.playback.toasts.filter(toast => toast.expiresAtMs > now).slice(-3);
     if (toasts.length === 0) return '';
     return `
-        <div class="fx-toast-stack">
-            ${toasts.map(toast => `<div class="fx-toast-item">${escapeHtml(toast.message)}</div>`).join('')}
+        <div class="fx-toast-stack" data-testid="ux-toast-stack">
+            ${toasts.map(toast => `
+                <div
+                    class="fx-toast-item ${toast.kind === 'PHASE' ? 'phase-toast' : ''}"
+                    data-testid="ux-toast-item"
+                    data-toast-kind="${toast.kind}"
+                >
+                    ${escapeHtml(toast.message)}
+                </div>
+            `).join('')}
         </div>
     `;
 }
@@ -666,7 +761,7 @@ function renderPlaybackControls(): string {
                     ${option.label}
                 </button>
             `).join('')}
-            <button id="playback-skip-btn" class="secondary-btn small-btn">Skip (Space)</button>
+            <button id="playback-skip-btn" class="secondary-btn small-btn">즉시 스킵 (스페이스)</button>
         </div>
     `;
 }
@@ -674,7 +769,7 @@ function renderPlaybackControls(): string {
 function renderMobileFloatingMenuButton(inOnlineMatch: boolean): string {
     return `
         <div class="mobile-floating-menu">
-            <button id="db-back-to-menu" class="secondary-btn game-menu-btn mobile-menu-fab">${inOnlineMatch ? 'Room' : 'Menu'}</button>
+            <button id="db-back-to-menu" class="secondary-btn game-menu-btn mobile-menu-fab">${inOnlineMatch ? '룸으로' : '메뉴'}</button>
         </div>
     `;
 }
@@ -695,7 +790,7 @@ function renderMobileFloatingActions(localHumanCanInput: boolean): string {
     return `
         <div class="mobile-floating-actions">
             <button id="mobile-log-fab" class="secondary-btn mobile-fab">로그</button>
-            ${uiState.replaySession ? '' : `<button id="next-phase" class="primary-btn mobile-fab mobile-next-phase-fab" ${nextPhaseDisabled ? 'disabled' : ''}>Next</button>`}
+            ${uiState.replaySession ? '' : `<button id="next-phase" data-testid="next-phase-cta" class="primary-btn mobile-fab mobile-next-phase-fab" ${nextPhaseDisabled ? 'disabled' : ''}>다음</button>`}
         </div>
     `;
 }
@@ -882,18 +977,18 @@ function renderOptionalEffectModal() {
     const pending = uiState.game.state.pendingEffect as any;
     if (!pending) return '';
 
-    const description = pending.effectDescription ?? 'Activate optional effect?';
+    const description = pending.effectDescription ?? '선택형 효과를 사용할지 결정하세요.';
     const contextHtml = renderPendingEffectContext(pending as PendingEffect, 'SELECT_OPTIONAL');
 
     return `
         <div class="modal-overlay">
             <div class="modal-content">
-                <h3>Optional Effect</h3>
+                <h3>선택형 효과</h3>
                 <p>${description}</p>
                 ${contextHtml}
                 <div class="modal-actions">
-                    <button id="opt-confirm" class="primary-btn">Activate</button>
-                    <button id="opt-skip" class="secondary-btn">Skip</button>
+                    <button id="opt-confirm" class="primary-btn">효과 사용</button>
+                    <button id="opt-skip" class="secondary-btn">건너뛰기</button>
                 </div>
             </div>
         </div>
@@ -978,10 +1073,10 @@ function renderTrashModal() {
     return `
         <div class="modal-overlay selection-modal-overlay">
             <div class="trash-modal">
-                <h3>Select a card from Trash</h3>
+                <h3>트래시에서 카드 선택</h3>
                 ${showConfirm ? `
                     <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
-                        Select cards (${selectedCount}/${targetCount}) then confirm
+                        ${selectedCount} / ${targetCount}장 선택 후 확정
                     </p>
                 ` : ''}
                 <div class="trash-grid">
@@ -996,7 +1091,7 @@ function renderTrashModal() {
                 </div>
                 ${showConfirm ? `
                     <div class="modal-actions">
-                        <button id="confirm-targets-modal-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                        <button id="confirm-targets-modal-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'}>선택 확정</button>
                     </div>
                 ` : ''}
             </div>
@@ -1022,17 +1117,17 @@ function renderRevealedCardsModal() {
     const targetCount = pending?.targetSchema?.count ?? 1;
     const selectedCount = pending?.selectedTargets?.length ?? 0;
     const selectionGuide = !isSelecting
-        ? 'Cards revealed by effect'
+        ? '효과로 공개된 카드입니다.'
         : isTakeAll
-            ? 'Cards matching the filter will be added to hand'
+            ? '조건에 맞는 카드가 모두 패에 들어갑니다.'
             : targetCount > 1
-                ? `Select ${targetCount} cards (${selectedCount}/${targetCount}) then confirm`
-                : 'Select a card to add to hand';
+                ? `${selectedCount} / ${targetCount}장 선택 후 확정`
+                : '패에 넣을 카드 1장을 선택하세요.';
 
     return `
         <div class="modal-overlay selection-modal-overlay">
             <div class="trash-modal">
-                <h3>Revealed Cards</h3>
+                <h3>공개된 카드</h3>
                 <p style="text-align: center; color: #a0aec0; margin-bottom: 20px;">
                     ${selectionGuide}
                 </p>
@@ -1055,7 +1150,7 @@ function renderRevealedCardsModal() {
                 </div>
                 ${isSelecting ? `
                     <div class="modal-actions">
-                        <button id="confirm-targets-modal-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                        <button id="confirm-targets-modal-btn" class="primary-btn" ${canConfirm ? '' : 'disabled'}>선택 확정</button>
                     </div>
                 ` : ''}
             </div>
@@ -1074,22 +1169,22 @@ function renderMulliganModal() {
     const localHumanCanInput = canLocalHumanInput();
     const revealActorHand = shouldRevealHandForPlayer(actor.id);
     const waitingLabel = isBotControlledPlayer(actor.id)
-        ? `${getBotLabelForPlayerId(actor.id)} is deciding...`
-        : 'Waiting for input...';
+        ? `${getBotLabelForPlayerId(actor.id)}가 판단 중입니다...`
+        : '입력을 기다리는 중입니다...';
 
     return `
         <div class="modal-overlay mulligan-overlay">
             <div class="mulligan-modal">
-                <h3>Mulligan</h3>
+                <h3>멀리건</h3>
                 <p class="mulligan-desc">
-                    ${actor.name} can choose one time: keep this opening hand or redraw all 5 cards.
+                    ${actor.name}이 시작 패를 유지할지, 5장을 모두 다시 뽑을지 한 번 결정할 수 있습니다.
                 </p>
                 <div class="mulligan-hand-preview">
                     ${actor.hand.map(card => revealActorHand ? renderCard(card, true) : renderHiddenHandCard(true)).join('')}
                 </div>
                 <div class="mulligan-actions">
-                    <button id="mulligan-keep-btn" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'} style="background:#636e72;">Keep Hand</button>
-                    <button id="mulligan-redraw-btn" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'}>Full Mulligan</button>
+                    <button id="mulligan-keep-btn" data-testid="mulligan-keep-cta" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'} style="background:#636e72;">패 유지</button>
+                    <button id="mulligan-redraw-btn" data-testid="mulligan-redraw-cta" class="primary-btn" ${localHumanCanInput ? '' : 'disabled'}>전체 멀리건</button>
                 </div>
                 ${!localHumanCanInput ? `<p class="mulligan-waiting">${waitingLabel}</p>` : ''}
             </div>
@@ -1110,66 +1205,66 @@ function renderGameOverModal() {
     const loserUnits = loser.unitZones.filter(zone => !!zone.unit).length;
 
     const outcomeReason = loser.damage.length >= 10
-        ? 'Defeat Condition: Damage Zone reached 10 cards'
+        ? '패배 조건: 데미지존 10장 도달'
         : loser.deck.length === 0
-            ? 'Defeat Condition: Deck ran out during draw/damage processing'
-            : 'Defeat Condition met by game rules';
+            ? '패배 조건: 드로우/데미지 처리 중 덱이 소진됨'
+            : '패배 조건: 게임 규칙에 따른 패배';
 
     return `
         <div class="modal-overlay game-over-overlay">
             <div class="game-over-modal">
-                <h2>Game Over</h2>
-                <p class="game-over-winner">${winner.name} Wins</p>
+                <h2>대전 종료</h2>
+                <p class="game-over-winner">${winner.name} 승리</p>
                 <p class="game-over-reason">${outcomeReason}</p>
 
                 <div class="game-over-score">
-                    Damage Score: ${player1.name} ${player1.damage.length} : ${player2.damage.length} ${player2.name}
+                    데미지 스코어: ${player1.name} ${player1.damage.length} : ${player2.damage.length} ${player2.name}
                 </div>
 
                 <div class="game-over-stats">
                     <div class="game-over-row game-over-head">
-                        <span>Stat</span>
+                        <span>항목</span>
                         <span>${winner.name}</span>
                         <span>${loser.name}</span>
                     </div>
                     <div class="game-over-row">
-                        <span>Leader Level</span>
+                        <span>리더 레벨</span>
                         <span>${winner.leaderLevel}</span>
                         <span>${loser.leaderLevel}</span>
                     </div>
                     <div class="game-over-row">
-                        <span>Damage</span>
+                        <span>데미지</span>
                         <span>${winner.damage.length}</span>
                         <span>${loser.damage.length}</span>
                     </div>
                     <div class="game-over-row">
-                        <span>Deck</span>
+                        <span>덱</span>
                         <span>${winner.deck.length}</span>
                         <span>${loser.deck.length}</span>
                     </div>
                     <div class="game-over-row">
-                        <span>Hand</span>
+                        <span>패</span>
                         <span>${winner.hand.length}</span>
                         <span>${loser.hand.length}</span>
                     </div>
                     <div class="game-over-row">
-                        <span>Trash</span>
+                        <span>트래시</span>
                         <span>${winner.trash.length}</span>
                         <span>${loser.trash.length}</span>
                     </div>
                     <div class="game-over-row">
-                        <span>Units on Field</span>
+                        <span>필드 유닛 수</span>
                         <span>${winnerUnits}</span>
                         <span>${loserUnits}</span>
                     </div>
                 </div>
 
                 <div class="game-over-meta">
-                    Final Turn: ${engine.state.turnCount} / Final Phase: ${engine.state.phase}
+                    최종 턴: ${engine.state.turnCount} / 최종 페이즈: ${engine.state.phase}
                 </div>
 
                 <div class="modal-actions">
-                    <button id="game-over-menu-btn" class="primary-btn">${onlineMatch ? 'Back to Online Room' : 'Back to Main Menu'}</button>
+                    <button id="game-over-menu-btn" class="primary-btn">${onlineMatch ? '온라인 룸으로' : '메인 메뉴로'}</button>
                 </div>
             </div>
         </div>
@@ -1369,9 +1464,9 @@ function renderPlayer(
         <div class="level-zone">
             <div class="leader-slot">
                 ${player.levelZone ? renderCard(player.levelZone, true) : ''}
-                ${isInputOwnerPlayer && localHumanCanInput && leaderHasActivatableEffect ? '<button class="leader-active-btn">Active</button>' : ''}
+                ${isInputOwnerPlayer && localHumanCanInput && leaderHasActivatableEffect ? '<button class="leader-active-btn">액티브</button>' : ''}
                 ${leaderActiveUiState && !leaderActiveUiState.enabled
-                    ? `<div class="zone-action-status ${leaderActiveUiState.used ? 'used' : 'unavailable'}">${leaderActiveUiState.used ? 'ACTIVE 사용 완료' : 'ACTIVE 불가'}</div>`
+                    ? `<div class="zone-action-status ${leaderActiveUiState.used ? 'used' : 'unavailable'}">${leaderActiveUiState.used ? '액티브 사용 완료' : '액티브 불가'}</div>`
                     : ''}
             </div>
 
@@ -1404,12 +1499,12 @@ function renderPlayer(
         const laneStateTitle = laneState?.reasons.length ? escapeHtml(laneState.reasons.join(' / ')) : '';
         const zoneActiveState = zoneActiveUiState.get(i);
         const zoneStatusBadge = zoneActiveState && !zoneActiveState.enabled
-            ? `<div class="zone-action-status ${zoneActiveState.used ? 'used' : 'unavailable'}" title="${escapeHtml(zoneActiveState.reasons.join(' / '))}">${zoneActiveState.used ? 'ACTIVE 사용 완료' : 'ACTIVE 불가'}</div>`
+            ? `<div class="zone-action-status ${zoneActiveState.used ? 'used' : 'unavailable'}" title="${escapeHtml(zoneActiveState.reasons.join(' / '))}">${zoneActiveState.used ? '액티브 사용 완료' : '액티브 불가'}</div>`
             : '';
 
         return `
-                    <div class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''} ${laneStateClass}" ${laneStateTitle ? `title="${laneStateTitle}"` : ''} data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}">
-                        ${z.unit ? renderCard(z.unit, false, uiState.game!.getUnitPower(z, player), uiState.game!.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">UNIT</span>'}
+                    <div class="zone unit-zone ${isInputOwnerPlayer && localHumanCanInput ? 'interactive drop-zone' : ''} ${isBlockingTarget ? 'blocking-target' : ''} ${isSelected ? 'selected-target' : ''} ${laneStateClass}" ${laneStateTitle ? `title="${laneStateTitle}"` : ''} data-player="${isOpponent ? 'opponent' : 'current'}" data-index="${i}" data-testid="battle-zone">
+                        ${z.unit ? renderCard(z.unit, false, uiState.game!.getUnitPower(z, player), uiState.game!.getUnitHit(z, player)) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.8rem; font-weight: bold;">유닛</span>'}
 
                         ${z.items.length > 0 ? `
                             <div class="attached-items">
@@ -1424,13 +1519,13 @@ function renderPlayer(
                             </div>
                         ` : ''}
 
-                        ${z.unit && isInputOwnerPlayer && localHumanCanInput && canAttackFromThisZone ? '<button class="attack-btn">Attack</button>' : ''}
-                        ${isInputOwnerPlayer && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">Active</button>' : ''}
+                        ${z.unit && isInputOwnerPlayer && localHumanCanInput && canAttackFromThisZone ? '<button class="attack-btn">공격</button>' : ''}
+                        ${isInputOwnerPlayer && localHumanCanInput && zoneHasActivatableEffect ? '<button class="active-btn">액티브</button>' : ''}
                         ${zoneStatusBadge}
                         ${(canBlockWithThisZone || showPassControl) && localHumanCanInput ? `
                             <div class="block-controls">
-                                ${canBlockWithThisZone ? `<button class="block-btn" data-blocker-zone-index="${i}">Block</button>` : ''}
-                                ${showPassControl ? '<button class="pass-btn">Pass</button>' : ''}
+                                ${canBlockWithThisZone ? `<button class="block-btn" data-blocker-zone-index="${i}">방어</button>` : ''}
+                                ${showPassControl ? '<button class="pass-btn">패스</button>' : ''}
                             </div>
                         ` : ''}
                         ${z.unit ? `<div class="stats">C ${unitCost} | ${uiState.game!.getUnitPower(z, player)} / ${uiState.game!.getUnitHit(z, player)}</div>` : ''}
@@ -1440,21 +1535,21 @@ function renderPlayer(
             </div>
 
             <div class="bottom-center">
-                <div class="damage-zone ${showDamageCardSelectionInline ? 'selection-mode' : 'summary-mode'} ${damagePulseClass} ${damageZoneSelectionClass} ${damageZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
+                <div class="damage-zone ${showDamageCardSelectionInline ? 'selection-mode' : 'summary-mode'} ${damagePulseClass} ${damageZoneSelectionClass} ${damageZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}" data-testid="damage-zone">
                     ${showDamageCardSelectionInline ? damageCardsMarkup : `
                         <div class="damage-summary ${player.damage.length === 0 ? 'empty' : ''}">
                             <div class="damage-card-strip" style="--damage-step:${damageStackStep}px;">
-                                ${damageCardsMarkup || '<div class="damage-card-empty">EMPTY</div>'}
+                                ${damageCardsMarkup || '<div class="damage-card-empty">비어 있음</div>'}
                             </div>
                             <div class="damage-summary-meta">
                                 <div class="damage-count">${player.damage.length}</div>
-                                <div class="damage-label">DAMAGE</div>
-                                ${hasDamageSelectionCandidate ? `<div class="selection-progress-badge">selected ${selectedDamageCount}/${targetCount === 0 ? 'all' : targetCount}</div>` : ''}
+                                <div class="damage-label">데미지</div>
+                                ${hasDamageSelectionCandidate ? `<div class="selection-progress-badge" data-testid="selection-progress-badge">선택 ${selectedDamageCount}/${targetCount === 0 ? '전체' : targetCount}</div>` : ''}
                             </div>
                         </div>
                     `}
                 </div>
-                <div class="skill-zone ${isInputOwnerPlayer && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}">
+                <div class="skill-zone ${isInputOwnerPlayer && isMainPhase && localHumanCanInput ? 'interactive drop-zone-skill' : ''}" data-testid="skill-zone">
                     ${player.skillZone.map((c: any, skillIndex: number) => {
         const skillCost = resolveCardCostForDisplay(c);
         const skillPromptCandidateClass = skillPromptState.candidateSkillIndexes.has(skillIndex) ? 'target-candidate' : '';
@@ -1466,8 +1561,8 @@ function renderPlayer(
                         </div>
                     `;
     }).join('')}
-                    ${skillPromptTargetCount > 0 ? `<div class="selection-progress-badge">selected ${skillPromptState.selectedSkillIndexes.size}/${skillPromptTargetCount}</div>` : ''}
-                    ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">SKILL</span>' : ''}
+                    ${skillPromptTargetCount > 0 ? `<div class="selection-progress-badge" data-testid="selection-progress-badge">선택 ${skillPromptState.selectedSkillIndexes.size}/${skillPromptTargetCount}</div>` : ''}
+                    ${player.skillZone.length === 0 ? '<span style="color: rgba(255,255,255,0.1); font-weight: bold; width: 100%; text-align: center;">스킬</span>' : ''}
                 </div>
             </div>
         </div>
@@ -1475,11 +1570,11 @@ function renderPlayer(
         <div class="field-right">
             <div class="deck-zone ${deckPulseClass}">
                 <div class="deck-count">${player.deck.length}</div>
-                <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">DECK</div>
+                <div style="font-size: 0.6rem; color: #a0aec0; font-weight: bold;">덱</div>
             </div>
-            <div class="trash-zone ${trashZoneSelectionClass} ${trashZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}">
-                ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">TRASH</span>'}
-                ${hasTrashSelectionCandidate ? `<div class="selection-progress-badge">selected ${selectedTrashCount}/${targetCount === 0 ? 'all' : targetCount}</div>` : ''}
+            <div class="trash-zone ${trashZoneSelectionClass} ${trashZoneSelectedClass}" data-player="${isOpponent ? 'opponent' : 'current'}" data-testid="trash-zone">
+                ${player.trash.length > 0 ? renderCard(player.trash[player.trash.length - 1], true) : '<span style="color: rgba(255,255,255,0.1); font-size: 0.7rem; font-weight: bold;">트래시</span>'}
+                ${hasTrashSelectionCandidate ? `<div class="selection-progress-badge" data-testid="selection-progress-badge">선택 ${selectedTrashCount}/${targetCount === 0 ? '전체' : targetCount}</div>` : ''}
             </div>
         </div>
       </div>
@@ -1488,7 +1583,7 @@ function renderPlayer(
 
 export function renderCard(card: Card, isSmall: boolean = false, _calculatedPower?: number, _calculatedHit?: number) {
     const attributeClass = (card.attribute || 'NONE').toString().toLowerCase();
-    const safeName = escapeHtml(card.name || card.id || 'Unknown');
+    const safeName = escapeHtml(card.name || card.id || '알 수 없는 카드');
     const safeId = escapeHtml(card.id || '');
     const safeText = escapeHtml(card.text || '');
 
@@ -1511,7 +1606,7 @@ export function renderHiddenHandCard(isSmall: boolean = false) {
     return `
         <div class="card card-back ${isSmall ? 'small-card' : ''}">
             <div class="card-back-pattern"></div>
-            <div class="card-back-label">HIDDEN</div>
+            <div class="card-back-label">비공개</div>
         </div>
     `;
 }
@@ -1532,9 +1627,11 @@ export function renderGame() {
     const localHumanCanInput = canLocalHumanInput();
     const uiSnapshot = getUiSnapshotForRender(uiState.game, inputOwnerId);
     const inputOwnerLegalActions = uiSnapshot.legalActions;
-    const inputOwnerControl = inputOwner
-        ? (isBotControlledPlayer(inputOwner.id) ? getBotLabelForPlayerId(inputOwner.id) : 'Human')
-        : 'N/A';
+    const inputOwnerControlLabel = !inputOwner
+        ? '없음'
+        : isBotControlledPlayer(inputOwner.id)
+            ? getBotLabelForPlayerId(inputOwner.id)
+            : '플레이어';
     const verificationGame = isVerificationGame();
     const inOnlineMatch = uiState.onlineSession.room?.phase === 'IN_GAME';
     const viewport = getViewportMetrics();
@@ -1581,8 +1678,6 @@ export function renderGame() {
 
     if (uiState.game.state.interactionMode === 'SELECT_TARGET') {
         const pending = uiState.game.state.pendingEffect as PendingEffect | null;
-        const maxCount = pending?.targetSchema?.count || 0;
-        const currentCount = pending?.selectedTargets?.length || 0;
         const actorId = getActionOwnerPlayerId(uiState.game);
         const canConfirm = uiState.game.getLegalActions(actorId).some(action => action.type === 'CONFIRM_TARGETS');
         const needsConfirm =
@@ -1591,22 +1686,22 @@ export function renderGame() {
             pending?.actionType === 'TAKE_ALL_REVEALED' ||
             pending?.actionValue?.allowPartialSelection === true;
         const selectionModeHint = needsConfirm
-            ? '선택 후 Confirm 버튼으로 확정합니다.'
-            : '카드를 클릭하면 즉시 적용됩니다.';
+            ? '필요한 대상을 고른 뒤 선택 확정을 누르세요.'
+            : '카드를 클릭하면 바로 적용됩니다.';
         const sacrificeHint = pending?.actionType === 'SACRIFICE_TO_BUFF'
-            ? (currentCount === 0
-                ? 'Step 1/2: Select the unit to trash.'
-                : currentCount === 1
-                    ? 'Step 2/2: Select the unit to receive +2000 power.'
-                    : 'Selection complete. Confirm to resolve.')
+            ? ((pending?.selectedTargets?.length ?? 0) === 0
+                ? '1단계: 버릴 유닛을 선택하세요.'
+                : (pending?.selectedTargets?.length ?? 0) === 1
+                    ? '2단계: +2000 파워를 받을 유닛을 선택하세요.'
+                    : '선택이 끝났습니다. 선택 확정을 누르세요.')
             : '';
         const contextHtml = renderPendingEffectContext(pending, 'SELECT_TARGET');
 
         interactionBannerHtml = `
             <div class="game-interaction-banner target-mode">
                 <div class="game-interaction-main-row">
-                    <span>SELECT TARGETS (${currentCount}/${maxCount === 0 ? 'All' : maxCount})</span>
-                    <button id="confirm-targets-btn" class="primary-btn small-btn-inline" ${canConfirm ? '' : 'disabled'}>Confirm</button>
+                    <span>대상 선택 진행 중</span>
+                    <button id="confirm-targets-btn" data-testid="confirm-targets-cta" class="primary-btn small-btn-inline" ${canConfirm ? '' : 'disabled'}>선택 확정</button>
                 </div>
                 <span class="game-interaction-sub">${selectionModeHint}</span>
                 ${sacrificeHint ? `<span class="game-interaction-sub">${sacrificeHint}</span>` : ''}
@@ -1619,7 +1714,7 @@ export function renderGame() {
         interactionBannerHtml = `
             <div class="game-interaction-banner cost-mode">
                 <div class="game-interaction-main-row">
-                    <span>SELECT CARD TO TRASH (COST)</span>
+                    <span>코스트 카드 선택</span>
                 </div>
                 ${contextHtml}
             </div>
@@ -1629,7 +1724,7 @@ export function renderGame() {
         interactionBannerHtml += `
             <div class="game-interaction-banner fx-processing-banner">
                 <span>효과 처리 중... 잠시 후 선택 창이 표시됩니다.</span>
-                <span class="game-interaction-sub">Space: 즉시 스킵</span>
+                <span class="game-interaction-sub">스페이스: 즉시 스킵</span>
             </div>
         `;
     }
@@ -1687,24 +1782,24 @@ export function renderGame() {
         ${isMobilePortraitLayout ? '' : `
         <aside class="game-side-rail">
           <div class="game-top-bar">
-            <button id="db-back-to-menu" class="secondary-btn game-menu-btn">${inOnlineMatch ? 'Room' : 'Menu'}</button>
+            <button id="db-back-to-menu" class="secondary-btn game-menu-btn">${inOnlineMatch ? '룸으로' : '메뉴'}</button>
             <div class="game-top-title">NivelArena</div>
             ${interactionBannerHtml}
           </div>
-          ${renderPlaybackToasts()}
           ${renderPlaybackLogPanel()}
           <div class="game-controls">
             ${renderActionPanel(uiSnapshot)}
             ${renderAuditTrailPanel(uiSnapshot)}
             <div class="status-bar">
-              <div class="status-item"><span>Turn</span> <strong>${uiState.game.state.turnCount}</strong></div>
-              <div class="status-item"><span>Phase</span> <strong>${uiSnapshot.timingWindow.phaseLabel}</strong></div>
-              <div class="status-item"><span>Step</span> <strong>${uiSnapshot.timingWindow.combatStepLabel ?? '없음'}</strong></div>
-              <div class="status-item"><span>Active</span> <strong>${uiState.game.currentPlayer.name}</strong></div>
-              <div class="status-item"><span>Mode</span> <strong>${uiState.activeMatchConfig.label}</strong></div>
-              <div class="status-item"><span>Bot Hand</span> <strong>${uiState.activeMatchViewConfig.revealBotHand ? 'Shown' : 'Hidden'}</strong></div>
-              <div class="status-item"><span>Input</span> <strong>${inputOwner?.name ?? 'N/A'} (${inputOwnerControl})</strong></div>
+              <div class="status-item"><span>턴</span> <strong>${uiState.game.state.turnCount}</strong></div>
+              <div class="status-item"><span>페이즈</span> <strong>${uiSnapshot.timingWindow.phaseLabel}</strong></div>
+              <div class="status-item"><span>스텝</span> <strong>${uiSnapshot.timingWindow.combatStepLabel ?? '없음'}</strong></div>
+              <div class="status-item"><span>현재 차례</span> <strong>${uiState.game.currentPlayer.name}</strong></div>
+              <div class="status-item"><span>매치 모드</span> <strong>${uiState.activeMatchConfig.label}</strong></div>
+              <div class="status-item"><span>봇 핸드 공개</span> <strong>${uiState.activeMatchViewConfig.revealBotHand ? '공개' : '비공개'}</strong></div>
+              <div class="status-item"><span>입력권</span> <strong>${inputOwner?.name ?? '없음'} (${inputOwnerControlLabel})</strong></div>
             </div>
+            ${renderPlaybackToasts()}
             ${renderPlaybackControls()}
             ${renderGameControlButtons(localHumanCanInput)}
           </div>

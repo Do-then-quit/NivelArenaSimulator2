@@ -1,0 +1,110 @@
+{
+  "id": "checkpoint-attack-declare-window",
+  "label": "Checkpoint: ATTACK_DECLARE_WINDOW",
+  "source": "checkpoint",
+  "checkpoint": "ATTACK_DECLARE_WINDOW",
+  "expectations": {
+    "id": "checkpoint-attack-declare-window",
+    "label": "Checkpoint: ATTACK_DECLARE_WINDOW",
+    "source": "checkpoint",
+    "checkpoint": "ATTACK_DECLARE_WINDOW",
+    "expectedPhase": "어택",
+    "expectedActionGroup": "ATTACK",
+    "expectMandatoryQueue": false,
+    "expectAttackStep": true,
+    "expectSelectionProgress": false,
+    "expectConfirmTargets": false,
+    "expectDisabledSummary": true,
+    "expectNextPhase": true
+  },
+  "observation": {
+    "capturedAt": "2026-04-03T06:00:24.108Z",
+    "screenshotPath": "artifacts/ux-harness/screenshots/checkpoint-attack-declare-window.png",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "activePhaseText": "어택",
+    "phaseRibbonVisible": true,
+    "attackStepVisible": true,
+    "mandatoryQueueVisible": false,
+    "mandatoryQueueReadable": true,
+    "mandatoryProgressVisible": false,
+    "mandatoryProgressText": "",
+    "actionGroupTestIds": [
+      "ux-action-group-PHASE",
+      "ux-action-group-ATTACK"
+    ],
+    "actionSubjectCount": 4,
+    "actionRowCount": 4,
+    "disabledSummaryCount": 2,
+    "confirmTargetsVisible": false,
+    "nextPhaseVisible": true,
+    "nextPhaseDisabled": false,
+    "selectionBadgeCount": 0,
+    "auditTrailCount": 3,
+    "logEntryCount": 0,
+    "toastKinds": [
+      "DRAW",
+      "DRAW",
+      "PHASE"
+    ],
+    "toastStackInTopBarCount": 0,
+    "toastStackInControlsCount": 1,
+    "mulliganModalVisible": false,
+    "pageErrors": [],
+    "consoleErrors": []
+  },
+  "assertions": [
+    {
+      "id": "phase-ribbon-visible",
+      "passed": true,
+      "detail": "phase ribbon should be visible on every scenario"
+    },
+    {
+      "id": "phase-match",
+      "passed": true,
+      "detail": "expected active phase to include 어택, received: 어택"
+    },
+    {
+      "id": "action-group",
+      "passed": true,
+      "detail": "expected action group ux-action-group-ATTACK"
+    },
+    {
+      "id": "mandatory-queue",
+      "passed": true,
+      "detail": "mandatory queue visible=false, expected=false"
+    },
+    {
+      "id": "attack-step-bar",
+      "passed": true,
+      "detail": "attack step visible=true, expected=true"
+    },
+    {
+      "id": "confirm-targets",
+      "passed": true,
+      "detail": "confirm-targets visible=false, expected=false"
+    },
+    {
+      "id": "next-phase-cta",
+      "passed": true,
+      "detail": "next-phase visible=true, disabled=false, expectedEnabled=true"
+    },
+    {
+      "id": "disabled-summary",
+      "passed": true,
+      "detail": "disabled summary count=2"
+    },
+    {
+      "id": "mandatory-queue-readable",
+      "passed": true,
+      "detail": "mandatory queue readable=true"
+    },
+    {
+      "id": "toast-stack-location",
+      "passed": true,
+      "detail": "toast stack in top bar count=0"
+    }
+  ]
+}

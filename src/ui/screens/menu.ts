@@ -18,14 +18,14 @@ export function renderMenu() {
         <div class="main-menu">
             <h1>NivelArena</h1>
             <div class="menu-buttons">
-                <button id="start-game-btn" class="primary-btn">Quick Play (ST01 vs ST01)</button>
-                <button id="start-vs-bot-btn" class="primary-btn">Quick Play vs Baseline Bot</button>
-                <button id="custom-sim-btn" class="primary-btn">Custom Simulation (PvP)</button>
-                <button id="custom-vs-bot-btn" class="primary-btn">Custom vs Baseline Bot</button>
-                <button id="online-room-btn" class="primary-btn">Online Match (Room Code)</button>
-                <button id="bot-replay-btn" class="primary-btn">Simulate Bot vs Bot (Replay)</button>
-                <button id="deck-builder-btn" class="secondary-btn">Deck Builder</button>
-                <button id="card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">Card Logic Verification</button>
+                <button id="start-game-btn" data-testid="menu-quick-play-btn" class="primary-btn">빠른 대전 (ST01 미러전)</button>
+                <button id="start-vs-bot-btn" data-testid="menu-quick-play-bot-btn" class="primary-btn">빠른 대전 vs 베이스라인 봇</button>
+                <button id="custom-sim-btn" data-testid="menu-custom-sim-btn" class="primary-btn">커스텀 시뮬레이션 (PvP)</button>
+                <button id="custom-vs-bot-btn" data-testid="menu-custom-vs-bot-btn" class="primary-btn">커스텀 시뮬레이션 vs 베이스라인 봇</button>
+                <button id="online-room-btn" data-testid="menu-online-room-btn" class="primary-btn">온라인 대전 (룸 코드)</button>
+                <button id="bot-replay-btn" data-testid="menu-bot-replay-btn" class="primary-btn">봇 vs 봇 리플레이</button>
+                <button id="deck-builder-btn" data-testid="menu-deck-builder-btn" class="secondary-btn">덱 빌더</button>
+                <button id="card-test-btn" data-testid="menu-card-test-btn" class="secondary-btn" style="margin-top: 10px; background: #6c5ce7;">카드 로직 검증</button>
             </div>
         </div>
     `;
@@ -39,7 +39,7 @@ export function renderMenu() {
     document.getElementById('start-vs-bot-btn')?.addEventListener('click', () => {
         const seed = Date.now();
         const { deck1, deck2, leader1, leader2 } = createQuickPlayLoadout(seed);
-        const revealBotHand = window.confirm('Show Baseline Bot hand?\n\nOK: Show hand\nCancel: Hide hand');
+        const revealBotHand = window.confirm('베이스라인 봇의 패를 공개할까요?\n\n확인: 공개\n취소: 비공개');
         uiState.startGame?.(deck1, deck2, leader1, leader2, HUMAN_VS_BASELINE_CONFIG, { revealBotHand });
     });
 
@@ -126,10 +126,10 @@ export function renderSetup() {
     if (title) {
         const p2BotLabel = uiState.pendingSetupConfig.player2BotId
             ? getBotModelLabel(uiState.pendingSetupConfig.player2BotId)
-            : 'Bot';
+            : '봇';
         title.textContent = uiState.pendingSetupConfig.player2Control === 'BOT'
-            ? `Simulation Setup (vs ${p2BotLabel})`
-            : 'Simulation Setup';
+            ? `시뮬레이션 설정 (vs ${p2BotLabel})`
+            : '시뮬레이션 설정';
     }
 
     const playerHeaders = uiState.app.querySelectorAll('.player-setup h3');
@@ -137,9 +137,9 @@ export function renderSetup() {
     if (p2Header) {
         const p2BotLabel = uiState.pendingSetupConfig.player2BotId
             ? getBotModelLabel(uiState.pendingSetupConfig.player2BotId)
-            : 'Bot';
+            : '봇';
         p2Header.textContent = uiState.pendingSetupConfig.player2Control === 'BOT'
-            ? `Player 2 (${p2BotLabel})`
-            : 'Player 2';
+            ? `플레이어 2 (${p2BotLabel})`
+            : '플레이어 2';
     }
 }

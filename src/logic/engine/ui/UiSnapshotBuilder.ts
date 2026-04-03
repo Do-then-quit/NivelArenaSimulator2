@@ -92,6 +92,21 @@ function getLaneLabel(zoneIndex: number): string {
     return `${zoneIndex + 1}라인`;
 }
 
+function createHandSubjectKey(actorId: string, handIndex: number, card: Card): string {
+    return `hand:${actorId}:${handIndex}:${card.id}`;
+}
+
+function createZoneSubjectKey(prefix: string, playerId: string, zoneIndex: number, card: Card): string {
+    return `${prefix}:${playerId}:${zoneIndex}:${card.id}`;
+}
+
+function formatSelectionProgressLabel(current: number, total: number | null, suffix: string): string {
+    if (typeof total === 'number' && Number.isFinite(total) && total > 0) {
+        return `${current} / ${total} ${suffix}`;
+    }
+    return `${current} ${suffix}`;
+}
+
 function toAuditCategory(eventType: string): AuditTrailCategory {
     switch (eventType) {
         case 'PHASE_CHANGED':
@@ -124,7 +139,7 @@ function buildTraceDetail(engine: any, event: UiTraceEvent): { title: string; de
             const interactionLabel = INTERACTION_MODE_LABELS[event.interactionMode || 'NORMAL'] ?? '선택 입력';
             const sourceLabel = event.sourceCardName ?? '효과';
             return {
-                title: '입력 대기',
+                title: event.actionType === 'END_PHASE_HAND_ADJUST' ? '효과 해결 대기' : '입력 대기',
                 detail: `${sourceLabel}로 ${interactionLabel} 창이 열렸습니다.`,
             };
         }
@@ -244,10 +259,13 @@ function buildNextPhaseAvailability(engine: any, actor: PlayerState, legalAction
         actionType: 'NEXT_PHASE',
         group: 'PHASE',
         label: '다음 페이즈',
+        detailLabel: '다음 페이즈',
         enabled,
         reason,
         preview: `${nextPhaseLabel(engine.state.phase)} 페이즈로 이동`,
         sourcePlayerId: actor.id,
+        subjectKey: `phase:${actor.id}`,
+        subjectLabel: '턴 진행',
         emphasis: 'PRIMARY',
     };
 }
@@ -267,10 +285,15 @@ function buildPlayAvailabilities(engine: any, actor: PlayerState, legalActionMap
                     actionType: 'PLAY_UNIT',
                     group: 'PLAY',
                     label: `${card.name} -> ${getLaneLabel(zoneIndex)} ${zone.unit ? '업그레이드' : '일반 배치'}`,
+                    detailLabel: `${getLaneLabel(zoneIndex)} ${zone.unit ? '업그레이드' : '일반 배치'}`,
                     enabled: legalActionMap.has(actionKey(action)),
                     reason: validation.valid ? undefined : normalizeReason(validation.reason, '지금은 일반 배치할 수 없습니다.'),
                     preview: `${getLaneLabel(zoneIndex)}에 ${card.name} ${zone.unit ? '업그레이드' : '배치'}`,
                     sourcePlayerId: actor.id,
+                    sourceCardId: card.id,
+                    sourceCardName: card.name,
+                    subjectKey: createHandSubjectKey(actor.id, handIndex, card),
+                    subjectLabel: card.name,
                     handIndex,
                     zoneIndex,
                 });
@@ -288,10 +311,15 @@ function buildPlayAvailabilities(engine: any, actor: PlayerState, legalActionMap
                     actionType: 'PLAY_ITEM',
                     group: 'PLAY',
                     label: `${card.name} -> ${getLaneLabel(zoneIndex)} 장착`,
+                    detailLabel: `${getLaneLabel(zoneIndex)} 장착`,
                     enabled: legalActionMap.has(actionKey(action)),
                     reason: validation.valid ? undefined : normalizeReason(validation.reason, '지금은 장비할 수 없습니다.'),
                     preview: `${getLaneLabel(zoneIndex)} 유닛에 ${card.name} 장착`,
                     sourcePlayerId: actor.id,
+                    sourceCardId: card.id,
+                    sourceCardName: card.name,
+                    subjectKey: createHandSubjectKey(actor.id, handIndex, card),
+                    subjectLabel: card.name,
                     handIndex,
                     zoneIndex,
                 });
@@ -308,10 +336,15 @@ function buildPlayAvailabilities(engine: any, actor: PlayerState, legalActionMap
                 actionType: 'PLAY_SKILL',
                 group: 'PLAY',
                 label: `${card.name} 사용`,
+                detailLabel: '스킬 사용',
                 enabled: legalActionMap.has(actionKey(action)),
                 reason: validation.valid ? undefined : normalizeReason(validation.reason, '지금은 스킬을 사용할 수 없습니다.'),
                 preview: `${card.name} 스킬 사용`,
                 sourcePlayerId: actor.id,
+                sourceCardId: card.id,
+                sourceCardName: card.name,
+                subjectKey: createHandSubjectKey(actor.id, handIndex, card),
+                subjectLabel: card.name,
                 handIndex,
             });
         }
@@ -402,10 +435,19 @@ function buildActiveEffectAvailability(
         actionType: 'ACTIVATE_EFFECT',
         group: 'ACTIVE',
         label: `${sourceLabel} 액티브: ${effect.description}`,
+        detailLabel: `${sourceLabel} 액티브`,
         enabled,
         reason,
         preview: effect.description,
         sourcePlayerId: actor.id,
+        sourceCardId: sourceCard.id,
+        sourceCardName: sourceCard.name,
+        subjectKey: sourceType === 'LEADER'
+            ? `leader:${actor.id}:${sourceCard.id}`
+            : sourceType === 'ITEM'
+                ? createZoneSubjectKey('item', actor.id, zoneIndex, sourceCard)
+                : createZoneSubjectKey('unit', actor.id, zoneIndex, sourceCard),
+        subjectLabel: sourceCard.name,
         zoneIndex,
         itemIndex,
         emphasis: enabled ? 'SECONDARY' : 'WARNING',
@@ -459,10 +501,15 @@ function buildAttackAvailabilities(engine: any, actor: PlayerState, legalActionM
             actionType: 'ATTACK',
             group: 'ATTACK',
             label: `${getLaneLabel(zoneIndex)} 공격 선언`,
+            detailLabel: `${getLaneLabel(zoneIndex)} 공격 선언`,
             enabled: legalActionMap.has(actionKey(action)),
             reason: validation.valid ? undefined : normalizeReason(validation.reason, '지금은 공격할 수 없습니다.'),
             preview: `${getLaneLabel(zoneIndex)}에서 공격`,
             sourcePlayerId: actor.id,
+            sourceCardId: zone.unit.id,
+            sourceCardName: zone.unit.name,
+            subjectKey: createZoneSubjectKey('attack', actor.id, zoneIndex, zone.unit),
+            subjectLabel: zone.unit.name,
             zoneIndex,
             emphasis: 'PRIMARY',
         });
@@ -481,9 +528,12 @@ function buildInteractionAvailabilities(engine: any, actor: PlayerState, legalAc
                 actionType: 'RESOLVE_MULLIGAN',
                 group: 'INTERACTION',
                 label: '패 유지',
+                detailLabel: '패 유지',
                 enabled: legalActions.some((action) => action.type === 'RESOLVE_MULLIGAN' && action.shouldMulligan === false),
                 preview: '현재 시작 패를 유지합니다.',
                 sourcePlayerId: actor.id,
+                subjectKey: `mulligan:${actor.id}`,
+                subjectLabel: '멀리건 결정',
                 emphasis: 'PRIMARY',
             },
             {
@@ -492,9 +542,12 @@ function buildInteractionAvailabilities(engine: any, actor: PlayerState, legalAc
                 actionType: 'RESOLVE_MULLIGAN',
                 group: 'INTERACTION',
                 label: '전체 멀리건',
+                detailLabel: '전체 멀리건',
                 enabled: legalActions.some((action) => action.type === 'RESOLVE_MULLIGAN' && action.shouldMulligan === true),
                 preview: '시작 패 5장을 모두 다시 뽑습니다.',
                 sourcePlayerId: actor.id,
+                subjectKey: `mulligan:${actor.id}`,
+                subjectLabel: '멀리건 결정',
                 emphasis: 'WARNING',
             },
         );
@@ -509,9 +562,12 @@ function buildInteractionAvailabilities(engine: any, actor: PlayerState, legalAc
                 actionType: 'RESOLVE_OPTIONAL',
                 group: 'INTERACTION',
                 label: '효과 사용',
+                detailLabel: '효과 사용',
                 enabled: legalActions.some((action) => action.type === 'RESOLVE_OPTIONAL' && action.confirm === true),
                 preview: '선택 효과를 사용합니다.',
                 sourcePlayerId: actor.id,
+                subjectKey: `optional:${actor.id}`,
+                subjectLabel: '선택 효과',
                 emphasis: 'PRIMARY',
             },
             {
@@ -520,9 +576,12 @@ function buildInteractionAvailabilities(engine: any, actor: PlayerState, legalAc
                 actionType: 'RESOLVE_OPTIONAL',
                 group: 'INTERACTION',
                 label: '건너뛰기',
+                detailLabel: '건너뛰기',
                 enabled: legalActions.some((action) => action.type === 'RESOLVE_OPTIONAL' && action.confirm === false),
                 preview: '선택 효과를 사용하지 않습니다.',
                 sourcePlayerId: actor.id,
+                subjectKey: `optional:${actor.id}`,
+                subjectLabel: '선택 효과',
                 emphasis: 'SECONDARY',
             },
         );
@@ -537,10 +596,13 @@ function buildInteractionAvailabilities(engine: any, actor: PlayerState, legalAc
             actionType: 'CONFIRM_TARGETS',
             group: 'INTERACTION',
             label: '대상 선택 확정',
+            detailLabel: '대상 선택 확정',
             enabled: canConfirm,
             reason: canConfirm ? undefined : '필요한 대상을 모두 선택하면 확정할 수 있습니다.',
             preview: '현재 선택한 대상으로 효과를 해결합니다.',
             sourcePlayerId: actor.id,
+            subjectKey: `targeting:${actor.id}`,
+            subjectLabel: '대상 선택',
             emphasis: 'PRIMARY',
         });
     }
@@ -556,11 +618,16 @@ function buildInteractionAvailabilities(engine: any, actor: PlayerState, legalAc
                     actionType: 'RESOLVE_BLOCK',
                     group: 'INTERACTION',
                     label: blockAction.shouldBlock
-                        ? `${getLaneLabel(blockAction.blockerZoneIndex ?? 0)}로 방어`
+                        ? `${getLaneLabel(blockAction.blockerZoneIndex ?? 0)}으로 방어`
+                        : '방어하지 않음',
+                    detailLabel: blockAction.shouldBlock
+                        ? `${getLaneLabel(blockAction.blockerZoneIndex ?? 0)}으로 방어`
                         : '방어하지 않음',
                     enabled: true,
                     preview: blockAction.shouldBlock ? '가디언/방어를 선언합니다.' : '방어를 포기합니다.',
                     sourcePlayerId: actor.id,
+                    subjectKey: `block:${actor.id}`,
+                    subjectLabel: '방어 선택',
                     zoneIndex: blockAction.blockerZoneIndex,
                     emphasis: blockAction.shouldBlock ? 'PRIMARY' : 'SECONDARY',
                 });
@@ -579,10 +646,13 @@ function buildSystemWarnings(actor: PlayerState): ActionAvailability[] {
             actionType: 'PASS_PRIORITY',
             group: 'SYSTEM',
             label: '덱 상태 경고',
+            detailLabel: '덱 상태 경고',
             enabled: false,
             reason: '덱은 0장이지만 즉시 패배는 아닙니다. 다음 드로우 요구가 발생하면 패배합니다.',
             preview: '드로우를 요구하는 효과나 규칙 처리 전에 대비가 필요합니다.',
             sourcePlayerId: actor.id,
+            subjectKey: `warning:${actor.id}:deck_zero`,
+            subjectLabel: '시스템 경고',
             emphasis: 'WARNING',
         });
     }
@@ -601,6 +671,61 @@ function resolvePendingReason(engine: any): string {
     return '효과 해결 대기';
 }
 
+function buildMandatoryProgress(engine: any): Pick<MandatoryQueueItem, 'progressCurrent' | 'progressTotal' | 'progressLabel'> {
+    if (engine.state.interactionMode === 'SELECT_MULLIGAN') {
+        const completed = engine.state.mulliganState?.completedPlayerIds?.length ?? 0;
+        const total = Math.max(
+            completed + (engine.state.mulliganState?.pendingPlayerIds?.length ?? 0),
+            engine.state.players?.length ?? 0,
+            1,
+        );
+        return {
+            progressCurrent: completed,
+            progressTotal: total,
+            progressLabel: formatSelectionProgressLabel(completed, total, '결정'),
+        };
+    }
+
+    const pending = engine.state.pendingEffect;
+    if (!pending) {
+        return {};
+    }
+
+    if (engine.state.interactionMode === 'SELECT_TARGET') {
+        const current = pending.selectedTargets?.length ?? 0;
+        const total = typeof pending.targetSchema?.count === 'number' && pending.targetSchema.count > 0
+            ? pending.targetSchema.count
+            : null;
+        return {
+            progressCurrent: current,
+            progressTotal: total,
+            progressLabel: formatSelectionProgressLabel(current, total, '선택'),
+        };
+    }
+
+    if (engine.state.interactionMode === 'SELECT_COST') {
+        const current = pending.costPaidCount ?? 0;
+        const total = typeof pending.costToPay?.amount === 'number'
+            ? pending.costToPay.amount
+            : (typeof pending.actionValue?.requiredDiscardCount === 'number' ? pending.actionValue.requiredDiscardCount : null);
+        return {
+            progressCurrent: current,
+            progressTotal: total,
+            progressLabel: formatSelectionProgressLabel(current, total, '비용 선택'),
+        };
+    }
+
+    if (engine.state.interactionMode === 'SELECT_OPTIONAL') {
+        return {
+            progressCurrent: 0,
+            progressTotal: 1,
+            progressLabel: '결정 필요',
+        };
+    }
+
+    return {};
+}
+
 function buildMandatoryQueue(engine: any): MandatoryQueueItem[] {
     if (engine.state.interactionMode === 'SELECT_MULLIGAN') {
         const pendingPlayerId = engine.state.mulliganState?.pendingPlayerIds?.[0] ?? resolveInteractionOwnerId(engine);
@@ -611,7 +736,8 @@ function buildMandatoryQueue(engine: any): MandatoryQueueItem[] {
             blocking: true,
             controllerPlayerId: pendingPlayerId ?? undefined,
             actionType: 'RESOLVE_MULLIGAN',
-            preview: 'Keep Hand 또는 Full Mulligan 중 하나를 선택하세요.',
+            preview: '패 유지 또는 전체 멀리건 중 하나를 선택하세요.',
+            ...buildMandatoryProgress(engine),
         }];
     }
 
@@ -633,6 +759,7 @@ function buildMandatoryQueue(engine: any): MandatoryQueueItem[] {
             controllerPlayerId: pending.controllerPlayerId ?? pending.sourcePlayerId,
             actionType: pending.actionType,
             preview,
+            ...buildMandatoryProgress(engine),
         }];
     }
 
@@ -647,6 +774,9 @@ function buildMandatoryQueue(engine: any): MandatoryQueueItem[] {
             controllerPlayerId: nextItem.context?.player?.id,
             actionType: nextItem.effect?.action?.type,
             preview: nextItem.effect?.description,
+            progressCurrent: 0,
+            progressTotal: engine.state.effectQueue.length,
+            progressLabel: formatSelectionProgressLabel(0, engine.state.effectQueue.length, '건 대기'),
         }];
     }
 

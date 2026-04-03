@@ -23,7 +23,11 @@ import { applyPhaseThemeClass, renderGame } from './ui/screens/gameView';
 import { renderMenu, renderDeckBuilder, renderSetup } from './ui/screens/menu';
 import { renderOnlineRoom } from './ui/screens/onlineRoom';
 import { renderBotReplaySetup } from './ui/screens/replaySetup';
-import { clearPlaybackLogHistory, clearPlaybackRuntimeState } from './ui/playbackOrchestrator';
+import { clearPlaybackLogHistory, clearPlaybackRuntimeState, consumeEngineUiTraceEvents } from './ui/playbackOrchestrator';
+import {
+    createGameUxCheckpoint,
+    resolveGameUxCheckpointFromSearch,
+} from './ui/harness/gameUxCheckpoints';
 
 function startGame(
     deck1: Card[],
@@ -56,7 +60,7 @@ function startGame(
     uiState.playback.toasts = [];
     uiState.playback.logEntries = [];
     uiState.playback.activePulseTargets = [];
-    uiState.game = new GameEngine('Player 1', 'Player 2', deck1, deck2, leader1, leader2, {
+    uiState.game = new GameEngine('플레이어 1', '플레이어 2', deck1, deck2, leader1, leader2, {
         enableMulligan: true,
         enableUiTrace: uiState.playback.enabled,
     });
@@ -130,6 +134,43 @@ function startVerificationScenario(testId: string, orderedTestIds: string[]) {
     render();
 }
 
+function startUxHarnessCheckpoint() {
+    const checkpoint = import.meta.env.DEV
+        ? resolveGameUxCheckpointFromSearch(window.location.search)
+        : null;
+    if (!checkpoint) return false;
+
+    clearBotStepTimer();
+    clearPlaybackRuntimeState();
+    clearPlaybackLogHistory();
+    uiState.gameLogFeed.clear();
+    uiState.gameLogView.manualOverride = false;
+    uiState.gameLogView.autoCollapsed = false;
+    uiState.gameLogView.expanded = true;
+    uiState.replaySession = null;
+    uiState.verificationSession = null;
+    uiState.verificationPanelCollapsed = false;
+    uiState.mobileGameView.logSheetOpen = false;
+    uiState.mobileGameView.selectedHandIndex = null;
+    uiState.activeMatchConfig = HUMAN_VS_HUMAN_CONFIG;
+    uiState.activeMatchViewConfig = getDefaultViewConfig(HUMAN_VS_HUMAN_CONFIG);
+    uiState.playback.enabled = true;
+    uiState.playback.queueBusy = false;
+    uiState.playback.modalGateUntilMs = 0;
+    uiState.playback.toasts = [];
+    uiState.playback.logEntries = [];
+    uiState.playback.activePulseTargets = [];
+    uiState.game = createGameUxCheckpoint(checkpoint, { enableUiTrace: true });
+    uiState.botByPlayerId.clear();
+    uiState.botLabelByPlayerId.clear();
+    (window as any).debug = new DebugManager(uiState.game, render);
+    uiState.currentScreen = Screen.GAME;
+    uiState.gameLogFeed.pushUiLog(`UX 하네스 체크포인트 로드: ${checkpoint}`, 'SYSTEM');
+    render();
+    consumeEngineUiTraceEvents(uiState.game);
+    return true;
+}
+
 function goToNextVerificationTest() {
     if (!uiState.verificationSession) return;
     const nextIndex = uiState.verificationSession.currentIndex + 1;
@@ -150,13 +191,13 @@ function renderTestScreen() {
 
     uiState.app.innerHTML = `
         <div class="test-screen" style="padding: 20px; color: white; max-width: 800px; margin: 0 auto;">
-            <h1>Card Logic Verification</h1>
+            <h1>카드 로직 검증</h1>
 
             <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px;">
-                    <h3 style="margin: 0;">Select Packs to Test</h3>
+                    <h3 style="margin: 0;">검증할 팩 선택</h3>
                     <button id="toggle-pack-selection-btn" class="secondary-btn" style="padding: 6px 10px; font-size: 0.85rem;">
-                        ${allPacksSelected ? 'Deselect All' : 'Select All'}
+                        ${allPacksSelected ? '전체 해제' : '전체 선택'}
                     </button>
                 </div>
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
@@ -170,26 +211,26 @@ function renderTestScreen() {
             </div>
 
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <button id="back-menu-btn" class="secondary-btn">Back to Menu</button>
+                <button id="back-menu-btn" class="secondary-btn">메뉴로</button>
                 <button id="run-selected-tests-btn" class="primary-btn" ${uiState.testRunning ? 'disabled' : ''}>
-                    ${uiState.testRunning ? 'Running Tests...' : 'Run Selected Tests'}
+                    ${uiState.testRunning ? '테스트 실행 중...' : '선택한 테스트 실행'}
                 </button>
             </div>
 
             <div id="test-results" style="margin-top: 20px;">
-                ${uiState.testResults.length === 0 ? '<p>No tests run yet. Select packs and click "Run Selected Tests".</p>' : ''}
+                ${uiState.testResults.length === 0 ? '<p>아직 실행된 테스트가 없습니다. 팩을 선택한 뒤 테스트를 실행하세요.</p>' : ''}
                 ${uiState.testResults.map(r => `
                     <div class="test-result ${r.success ? 'pass' : 'fail'}" style="margin-bottom: 10px; padding: 10px; border-left: 5px solid ${r.success ? '#00b894' : '#d63031'}; background: rgba(0,0,0,0.3); border-radius: 4px;">
                         <div style="display:flex; justify-content:space-between; align-items: center; font-weight:bold;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <span style="font-size: 1.1em;">${r.testId}</span>
-                                <button class="play-test-btn small-btn" data-testid="${r.testId}" style="font-size: 0.8rem; padding: 2px 8px; background: #0984e3; border: none; border-radius: 4px; color: white; cursor: pointer;">Play</button>
+                                <button class="play-test-btn small-btn" data-testid="${r.testId}" style="font-size: 0.8rem; padding: 2px 8px; background: #0984e3; border: none; border-radius: 4px; color: white; cursor: pointer;">재생</button>
                             </div>
-                            <span style="color: ${r.success ? '#00b894' : '#d63031'}">${r.success ? 'PASS' : 'FAIL'}</span>
+                            <span style="color: ${r.success ? '#00b894' : '#d63031'}">${r.success ? '통과' : '실패'}</span>
                         </div>
-                        ${!r.success && r.error ? `<div style="color: #ff7675; margin-top:5px; background: rgba(214, 48, 49, 0.1); padding: 5px;">Error: ${r.error}</div>` : ''}
+                        ${!r.success && r.error ? `<div style="color: #ff7675; margin-top:5px; background: rgba(214, 48, 49, 0.1); padding: 5px;">오류: ${r.error}</div>` : ''}
                         <details style="margin-top: 5px;">
-                            <summary style="cursor: pointer; color: #a0aec0;">Show Logs</summary>
+                            <summary style="cursor: pointer; color: #a0aec0;">로그 보기</summary>
                             <pre style="font-size: 0.8rem; color: #b2bec3; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; overflow-x: auto; margin-top: 5px;">${r.logs.join('\n')}</pre>
                         </details>
                     </div>
@@ -226,7 +267,7 @@ function renderTestScreen() {
     document.getElementById('run-selected-tests-btn')?.addEventListener('click', async () => {
         if (uiState.testRunning) return;
         if (uiState.selectedPacks.size === 0) {
-            alert('Please select at least one pack.');
+            alert('최소 한 개 이상의 팩을 선택해주세요.');
             return;
         }
 
@@ -309,4 +350,6 @@ uiState.returnToVerificationScreen = returnToVerificationScreen;
 window.addEventListener('keydown', handleVerificationHotkeys);
 window.addEventListener('keydown', handleGameHotkeys);
 
-render();
+if (!startUxHarnessCheckpoint()) {
+    render();
+}

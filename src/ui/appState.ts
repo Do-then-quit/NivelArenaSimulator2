@@ -97,6 +97,7 @@ export interface PlaybackToast {
     message: string;
     createdAtMs: number;
     expiresAtMs: number;
+    kind: 'DEFAULT' | 'PHASE' | 'EFFECT' | 'DRAW' | 'INTERACTION';
 }
 
 export interface PlaybackLogEntry {
@@ -129,13 +130,13 @@ export interface MobileGameViewState {
 }
 
 export const HUMAN_VS_HUMAN_CONFIG: MatchControlConfig = {
-    label: 'HUMAN vs HUMAN',
+    label: '플레이어 vs 플레이어',
     player1Control: 'HUMAN',
     player2Control: 'HUMAN',
 };
 
 export const HUMAN_VS_BASELINE_CONFIG: MatchControlConfig = {
-    label: 'HUMAN vs BASELINE BOT',
+    label: '플레이어 vs 베이스라인 봇',
     player1Control: 'HUMAN',
     player2Control: 'BOT',
     player2BotId: 'baseline',
